@@ -8,10 +8,10 @@ on:
 
 jobs:
   prepare:
+    name: Find Checks 🔍
     runs-on: ubuntu-latest
     outputs:
-      vm-tests: ${{ steps.tests.outputs.vm-tests }}
-      unit-tests: ${{ steps.tests.outputs.unit-tests }}
+      checks: ${{ steps.checks.outputs.checks }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,64 +19,33 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Discover tests
-        id: tests
+      - name: Find Checks 🔍
+        id: checks
         run: |
-          # Get VM tests
-          nix-instantiate --json --eval --strict -E 'with builtins; attrNames (getFlake (toString ./.)).checks.x86_64-linux.vm-tests' \
-            | perl -pe 's|(.*)|vm-tests=\1|' >> $GITHUB_OUTPUT
+          nix-instantiate --json --eval --strict -E 'with builtins; attrNames (getFlake (toString ./.)).checks.${currentSystem}' | perl -pe 's|(.*)|checks=\1|' >> $GITHUB_OUTPUT
 
-          # Get unit tests
-          nix-instantiate --json --eval --strict -E 'with builtins; attrNames (getFlake (toString ./.)).checks.x86_64-linux.unit-tests' \
-            | perl -pe 's|(.*)|unit-tests=\1|' >> $GITHUB_OUTPUT
-
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: DeterminateSystems/nix-installer-action@main
-
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Run format check
-        run: nix build .#checks.x86_64-linux.format -L
-
-      - name: Run statix check
-        run: nix build .#checks.x86_64-linux.statix -L
-
-  unit-tests:
-    needs: prepare
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test: ${{ fromJSON(needs.prepare.outputs.unit-tests) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Run unit test - ${{ matrix.test }}
-        run: nix build .#checks.x86_64-linux.${{ matrix.test }} -L
-
-  vm-tests:
+  checks:
+    name: ${{ matrix.check }}
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        test: ${{ fromJSON(needs.prepare.outputs.vm-tests) }}
+        check: ${{ fromJSON(needs.prepare.outputs.checks) }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: DeterminateSystems/nix-installer-action@main
+
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      # Enable KVM for faster VM tests
+      # Enable KVM for VM tests
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run VM test - ${{ matrix.test }}
-        run: nix build .#checks.x86_64-linux.${{ matrix.test }} -L
+      - name: Run Check 📋
+        run: |
+          nix build -L --impure --expr "with builtins; (getFlake (toString ./.)).checks.\${currentSystem}.${{ matrix.check }}"
