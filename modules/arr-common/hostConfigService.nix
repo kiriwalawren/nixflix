@@ -7,7 +7,6 @@ serviceName: serviceConfig:
 with lib; {
   description = "Configure ${serviceName} via API";
   after = ["${serviceName}.service"];
-  requires = ["${serviceName}.service"];
   wantedBy = ["multi-user.target"];
 
   serviceConfig = {

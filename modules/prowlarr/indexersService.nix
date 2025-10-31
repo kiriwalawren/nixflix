@@ -7,6 +7,7 @@ serviceName: serviceConfig:
 with lib; {
   description = "Configure ${serviceName} indexers via API";
   after = ["${serviceName}-config.service"];
+  requires = ["${serviceName}-config.service"];
   wantedBy = ["multi-user.target"];
 
   serviceConfig = {
