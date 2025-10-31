@@ -25,6 +25,12 @@ in {
       description = "Group under which the service runs";
     };
 
+    user = mkOption {
+      type = types.str;
+      default = serviceName;
+      description = "User under which the service runs";
+    };
+
     mediaDirs = mkOption {
       type = types.listOf (types.submodule {
         options = {
@@ -86,7 +92,7 @@ in {
             else {
               inherit (cfg) group;
               dir = stateDir;
-              owner = serviceName;
+              owner = cfg.user;
             }
           )
         ]
@@ -111,24 +117,23 @@ in {
               }
               // optionalAttrs config.services.postgresql.enable {
                 postgres = {
-                  user = serviceName;
+                  inherit (cfg) user;
                   host = "/run/postgresql";
                   port = 5432;
-                  mainDb = serviceName;
-                  logDb = serviceName;
+                  mainDb = cfg.user;
+                  logDb = cfg.user;
                 };
               };
           }
           // optionalAttrs (!cfg.usesDynamicUser) {
-            user = serviceName;
-            inherit (cfg) group;
+            inherit (cfg) user group;
           };
 
         postgresql = mkIf config.services.postgresql.enable {
-          ensureDatabases = [serviceName];
+          ensureDatabases = [cfg.user];
           ensureUsers = [
             {
-              name = serviceName;
+              name = cfg.user;
               ensureDBOwnership = true;
             }
           ];
@@ -156,13 +161,13 @@ in {
         groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
           gid = globals.gids.${cfg.group};
         };
-        users.${serviceName} =
+        users.${cfg.user} =
           {
             inherit (cfg) group;
             isSystemUser = true;
           }
-          // optionalAttrs (globals.uids ? ${serviceName}) {
-            uid = globals.uids.${serviceName};
+          // optionalAttrs (globals.uids ? ${cfg.user}) {
+            uid = globals.uids.${cfg.user};
           };
       };
 
@@ -199,7 +204,7 @@ in {
             in ''
               mkdir -p /run/${serviceName}
               echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env
-              ${optionalString (!cfg.usesDynamicUser) "chown ${serviceName}:${cfg.group} /run/${serviceName}/env"}
+              ${optionalString (!cfg.usesDynamicUser) "chown ${cfg.user}:${cfg.group} /run/${serviceName}/env"}
               chmod 0${
                 if cfg.usesDynamicUser
                 then "444"
