@@ -25,17 +25,24 @@
 
     checks = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-    in {
-      format = pkgs.runCommand "check-format" {} ''
-        ${pkgs.alejandra}/bin/alejandra --check ${./.}
-        touch $out
-      '';
+      tests = import ./tests {
+        inherit system pkgs;
+        nixosModules = self.nixosModules.default;
+      };
+    in
+      {
+        format = pkgs.runCommand "check-format" {} ''
+          ${pkgs.alejandra}/bin/alejandra --check ${./.}
+          touch $out
+        '';
 
-      statix = pkgs.runCommand "check-statix" {} ''
-        ${pkgs.statix}/bin/statix check ${./.}
-        touch $out
-      '';
-    });
+        statix = pkgs.runCommand "check-statix" {} ''
+          ${pkgs.statix}/bin/statix check ${./.}
+          touch $out
+        '';
+      }
+      // tests.vm-tests
+      // tests.unit-tests);
 
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
