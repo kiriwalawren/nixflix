@@ -81,6 +81,7 @@ pkgs.testers.runNixOSTest {
     # Wait for PostgreSQL
     machine.wait_for_unit("postgresql.service", timeout=60)
     machine.wait_for_open_port(5432, timeout=60)
+    machine.wait_for_unit("postgresql-setup.service", timeout=60)
 
     # Wait for all services
     machine.wait_for_unit("prowlarr.service", timeout=60)

@@ -173,16 +173,39 @@ in {
 
       systemd.services =
         {
+          # Service that waits for PostgreSQL and this service's database to be ready
+          "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
+            description = "Wait for ${capitalizedName} PostgreSQL database to be ready";
+            after = ["postgresql.service" "postgresql-setup.service"];
+            requires = ["postgresql.service" "postgresql-setup.service"];
+            wantedBy = ["multi-user.target"];
+
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              Restart = "on-failure";
+              RestartSec = "2s";
+              StartLimitBurst = 15;
+              StartLimitIntervalSec = "60s";
+            };
+
+            script = ''
+              # Try to connect as the service user and run a simple query
+              ${pkgs.postgresql}/bin/psql -U ${cfg.user} -h /run/postgresql -d ${cfg.user} -c "SELECT 1;" > /dev/null
+              echo "${capitalizedName} PostgreSQL database is ready"
+            '';
+          };
+
           # Ensure main service (radarr.service, etc.) starts after
           # directories are created and configured dependencies
           ${serviceName} = {
             after =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-setup.service")
+              ++ (optional config.services.postgresql.enable "${serviceName}-wait-for-db.service")
               ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
             requires =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-setup.service");
+              ++ (optional config.services.postgresql.enable "${serviceName}-wait-for-db.service");
             wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
           };
         }
