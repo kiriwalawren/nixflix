@@ -10,4 +10,5 @@
   full-stack = import ./full-stack.nix {inherit system pkgs nixosModules;};
   nginx-integration = import ./nginx-integration.nix {inherit system pkgs nixosModules;};
   postgresql-integration = import ./postgresql-integration.nix {inherit system pkgs nixosModules;};
+  mullvad-integration = import ./mullvad-integration.nix {inherit system pkgs nixosModules;};
 }
