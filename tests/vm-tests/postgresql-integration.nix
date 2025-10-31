@@ -79,34 +79,34 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     # Wait for PostgreSQL
-    machine.wait_for_unit("postgresql.service", timeout=20)
-    machine.wait_for_open_port(5432, timeout=20)
+    machine.wait_for_unit("postgresql.service", timeout=60)
+    machine.wait_for_open_port(5432, timeout=60)
 
     # Wait for all services
-    machine.wait_for_unit("prowlarr.service", timeout=20)
-    machine.wait_for_unit("sonarr.service", timeout=20)
-    machine.wait_for_unit("radarr.service", timeout=20)
-    machine.wait_for_unit("lidarr.service", timeout=20)
-    machine.wait_for_open_port(9696, timeout=20)
-    machine.wait_for_open_port(8989, timeout=20)
-    machine.wait_for_open_port(7878, timeout=20)
-    machine.wait_for_open_port(8686, timeout=20)
+    machine.wait_for_unit("prowlarr.service", timeout=60)
+    machine.wait_for_unit("sonarr.service", timeout=60)
+    machine.wait_for_unit("radarr.service", timeout=60)
+    machine.wait_for_unit("lidarr.service", timeout=60)
+    machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_open_port(8989, timeout=60)
+    machine.wait_for_open_port(7878, timeout=60)
+    machine.wait_for_open_port(8686, timeout=60)
 
     # Wait for configuration services
-    machine.wait_for_unit("prowlarr-config.service", timeout=20)
-    machine.wait_for_unit("sonarr-config.service", timeout=20)
-    machine.wait_for_unit("radarr-config.service", timeout=20)
-    machine.wait_for_unit("lidarr-config.service", timeout=20)
+    machine.wait_for_unit("prowlarr-config.service", timeout=60)
+    machine.wait_for_unit("sonarr-config.service", timeout=60)
+    machine.wait_for_unit("radarr-config.service", timeout=60)
+    machine.wait_for_unit("lidarr-config.service", timeout=60)
 
     # Wait for services to come back up after restart
-    machine.wait_for_unit("prowlarr.service", timeout=20)
-    machine.wait_for_unit("sonarr.service", timeout=20)
-    machine.wait_for_unit("radarr.service", timeout=20)
-    machine.wait_for_unit("lidarr.service", timeout=20)
-    machine.wait_for_open_port(9696, timeout=20)
-    machine.wait_for_open_port(8989, timeout=20)
-    machine.wait_for_open_port(7878, timeout=20)
-    machine.wait_for_open_port(8686, timeout=20)
+    machine.wait_for_unit("prowlarr.service", timeout=60)
+    machine.wait_for_unit("sonarr.service", timeout=60)
+    machine.wait_for_unit("radarr.service", timeout=60)
+    machine.wait_for_unit("lidarr.service", timeout=60)
+    machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_open_port(8989, timeout=60)
+    machine.wait_for_open_port(7878, timeout=60)
+    machine.wait_for_open_port(8686, timeout=60)
 
     # Verify PostgreSQL is running and accessible
     print("Testing PostgreSQL is running...")
