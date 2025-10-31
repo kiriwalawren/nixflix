@@ -34,15 +34,15 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     # Wait for Prowlarr to start
-    machine.wait_for_unit("prowlarr.service", timeout=60)
-    machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=20)
+    machine.wait_for_open_port(9696, timeout=20)
 
     # Wait for configuration service (which restarts prowlarr)
-    machine.wait_for_unit("prowlarr-config.service", timeout=60)
+    machine.wait_for_unit("prowlarr-config.service", timeout=20)
 
     # Wait for prowlarr to come back up after restart
-    machine.wait_for_unit("prowlarr.service", timeout=60)
-    machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=20)
+    machine.wait_for_open_port(9696, timeout=20)
 
     # Test API connectivity
     machine.succeed(

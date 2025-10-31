@@ -37,13 +37,13 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     start_all()
 
-    machine.wait_for_unit("lidarr.service", timeout=60)
-    machine.wait_for_open_port(8686, timeout=60)
-    machine.wait_for_unit("lidarr-config.service", timeout=60)
+    machine.wait_for_unit("lidarr.service", timeout=20)
+    machine.wait_for_open_port(8686, timeout=20)
+    machine.wait_for_unit("lidarr-config.service", timeout=20)
 
     # Wait for lidarr to come back up after restart
-    machine.wait_for_unit("lidarr.service", timeout=60)
-    machine.wait_for_open_port(8686, timeout=60)
+    machine.wait_for_unit("lidarr.service", timeout=20)
+    machine.wait_for_open_port(8686, timeout=20)
 
     # Test API connectivity
     machine.succeed(
@@ -52,7 +52,7 @@ pkgs.testers.runNixOSTest {
     )
 
     # Wait for root folders service
-    machine.wait_for_unit("lidarr-rootfolders.service", timeout=60)
+    machine.wait_for_unit("lidarr-rootfolders.service", timeout=20)
 
     # Check root folder
     folders = machine.succeed(

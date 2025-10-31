@@ -37,13 +37,13 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     start_all()
 
-    machine.wait_for_unit("radarr.service", timeout=60)
-    machine.wait_for_open_port(7878, timeout=60)
-    machine.wait_for_unit("radarr-config.service", timeout=60)
+    machine.wait_for_unit("radarr.service", timeout=20)
+    machine.wait_for_open_port(7878, timeout=20)
+    machine.wait_for_unit("radarr-config.service", timeout=20)
 
     # Wait for radarr to come back up after restart
-    machine.wait_for_unit("radarr.service", timeout=60)
-    machine.wait_for_open_port(7878, timeout=60)
+    machine.wait_for_unit("radarr.service", timeout=20)
+    machine.wait_for_open_port(7878, timeout=20)
 
     # Test API connectivity
     machine.succeed(
@@ -52,7 +52,7 @@ pkgs.testers.runNixOSTest {
     )
 
     # Wait for root folders service
-    machine.wait_for_unit("radarr-rootfolders.service", timeout=60)
+    machine.wait_for_unit("radarr-rootfolders.service", timeout=20)
 
     # Check root folder
     folders = machine.succeed(

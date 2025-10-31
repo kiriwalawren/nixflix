@@ -78,34 +78,34 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     # Wait for nginx
-    machine.wait_for_unit("nginx.service", timeout=60)
-    machine.wait_for_open_port(80, timeout=60)
+    machine.wait_for_unit("nginx.service", timeout=20)
+    machine.wait_for_open_port(80, timeout=20)
 
     # Wait for all services
-    machine.wait_for_unit("prowlarr.service", timeout=60)
-    machine.wait_for_unit("sonarr.service", timeout=60)
-    machine.wait_for_unit("radarr.service", timeout=60)
-    machine.wait_for_unit("lidarr.service", timeout=60)
-    machine.wait_for_open_port(9696, timeout=60)
-    machine.wait_for_open_port(8989, timeout=60)
-    machine.wait_for_open_port(7878, timeout=60)
-    machine.wait_for_open_port(8686, timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=20)
+    machine.wait_for_unit("sonarr.service", timeout=20)
+    machine.wait_for_unit("radarr.service", timeout=20)
+    machine.wait_for_unit("lidarr.service", timeout=20)
+    machine.wait_for_open_port(9696, timeout=20)
+    machine.wait_for_open_port(8989, timeout=20)
+    machine.wait_for_open_port(7878, timeout=20)
+    machine.wait_for_open_port(8686, timeout=20)
 
     # Wait for configuration services
-    machine.wait_for_unit("prowlarr-config.service", timeout=60)
-    machine.wait_for_unit("sonarr-config.service", timeout=60)
-    machine.wait_for_unit("radarr-config.service", timeout=60)
-    machine.wait_for_unit("lidarr-config.service", timeout=60)
+    machine.wait_for_unit("prowlarr-config.service", timeout=20)
+    machine.wait_for_unit("sonarr-config.service", timeout=20)
+    machine.wait_for_unit("radarr-config.service", timeout=20)
+    machine.wait_for_unit("lidarr-config.service", timeout=20)
 
     # Wait for services to come back up after restart
-    machine.wait_for_unit("prowlarr.service", timeout=60)
-    machine.wait_for_unit("sonarr.service", timeout=60)
-    machine.wait_for_unit("radarr.service", timeout=60)
-    machine.wait_for_unit("lidarr.service", timeout=60)
-    machine.wait_for_open_port(9696, timeout=60)
-    machine.wait_for_open_port(8989, timeout=60)
-    machine.wait_for_open_port(7878, timeout=60)
-    machine.wait_for_open_port(8686, timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=20)
+    machine.wait_for_unit("sonarr.service", timeout=20)
+    machine.wait_for_unit("radarr.service", timeout=20)
+    machine.wait_for_unit("lidarr.service", timeout=20)
+    machine.wait_for_open_port(9696, timeout=20)
+    machine.wait_for_open_port(8989, timeout=20)
+    machine.wait_for_open_port(7878, timeout=20)
+    machine.wait_for_open_port(8686, timeout=20)
 
     # Test nginx is proxying to Prowlarr
     print("Testing Prowlarr via nginx...")
