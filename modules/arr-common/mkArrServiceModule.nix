@@ -178,11 +178,11 @@ in {
           ${serviceName} = {
             after =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql.service")
+              ++ (optional config.services.postgresql.enable "postgresql-setup.service")
               ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
             requires =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql.service");
+              ++ (optional config.services.postgresql.enable "postgresql-setup.service");
             wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
           };
         }
