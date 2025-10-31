@@ -8,4 +8,5 @@
   lidarr-basic = import ./lidarr-basic.nix {inherit system pkgs nixosModules;};
   prowlarr-basic = import ./prowlarr-basic.nix {inherit system pkgs nixosModules;};
   full-stack = import ./full-stack.nix {inherit system pkgs nixosModules;};
+  nginx-integration = import ./nginx-integration.nix {inherit system pkgs nixosModules;};
 }
