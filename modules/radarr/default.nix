@@ -7,7 +7,7 @@
   inherit (config) nixflix;
   cfg = config.nixflix.radarr;
 in {
-  imports = [(import ./arr-common/mkArrServiceModule.nix "radarr" {} {inherit config lib pkgs;})];
+  imports = [(import ../arr-common/mkArrServiceModule.nix "radarr" {} {inherit config lib pkgs;})];
 
   config.nixflix.radarr = {
     group = lib.mkDefault "media";
