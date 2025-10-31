@@ -4,7 +4,7 @@
   nixosModules,
 }:
 pkgs.testers.runNixOSTest {
-  name = "nginx-integration-test";
+  name = "postgresql-integration-test";
 
   nodes.machine = {
     config,
@@ -15,8 +15,7 @@ pkgs.testers.runNixOSTest {
 
     nixflix = {
       enable = true;
-      nginx.enable = true;
-      serviceNameIsUrlBase = true;
+      postgres.enable = true;
 
       prowlarr = {
         enable = true;
@@ -75,11 +74,13 @@ pkgs.testers.runNixOSTest {
   };
 
   testScript = ''
+    import json
+
     start_all()
 
-    # Wait for nginx
-    machine.wait_for_unit("nginx.service", timeout=60)
-    machine.wait_for_open_port(80, timeout=60)
+    # Wait for PostgreSQL
+    machine.wait_for_unit("postgresql.service", timeout=60)
+    machine.wait_for_open_port(5432, timeout=60)
 
     # Wait for all services
     machine.wait_for_unit("prowlarr.service", timeout=60)
@@ -107,34 +108,68 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_open_port(7878, timeout=60)
     machine.wait_for_open_port(8686, timeout=60)
 
-    # Test nginx is proxying to Prowlarr
-    print("Testing Prowlarr via nginx...")
-    machine.succeed(
-        "curl -f http://localhost/prowlarr/api/v1/system/status "
+    # Verify PostgreSQL is running and accessible
+    print("Testing PostgreSQL is running...")
+    machine.succeed("sudo -u postgres psql -c 'SELECT version();'")
+
+    # Verify PostgreSQL dataDir configuration
+    print("Verifying PostgreSQL data directory...")
+    datadir = machine.succeed("sudo -u postgres psql -t -c 'SHOW data_directory;'").strip()
+    assert "/var/lib/nixflix/postgres" in datadir, f"PostgreSQL dataDir incorrect: {datadir}"
+
+    # Test Prowlarr API and verify PostgreSQL database type
+    print("Testing Prowlarr API and database type...")
+    prowlarr_status = machine.succeed(
+        "curl -f http://localhost:9696/api/v1/system/status "
         "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
     )
+    prowlarr_data = json.loads(prowlarr_status)
+    assert prowlarr_data.get("databaseType") == "postgreSQL", \
+        f"Prowlarr not using PostgreSQL: {prowlarr_data.get('databaseType')}"
 
-    # Test nginx is proxying to Sonarr
-    print("Testing Sonarr via nginx...")
-    machine.succeed(
-        "curl -f http://localhost/sonarr/api/v3/system/status "
+    # Test Sonarr API and verify PostgreSQL database type
+    print("Testing Sonarr API and database type...")
+    sonarr_status = machine.succeed(
+        "curl -f http://localhost:8989/api/v3/system/status "
         "-H 'X-Api-Key: sonarr222222222222222222222222222'"
     )
+    sonarr_data = json.loads(sonarr_status)
+    assert sonarr_data.get("databaseType") == "postgreSQL", \
+        f"Sonarr not using PostgreSQL: {sonarr_data.get('databaseType')}"
 
-    # Test nginx is proxying to Radarr
-    print("Testing Radarr via nginx...")
-    machine.succeed(
-        "curl -f http://localhost/radarr/api/v3/system/status "
+    # Test Radarr API and verify PostgreSQL database type
+    print("Testing Radarr API and database type...")
+    radarr_status = machine.succeed(
+        "curl -f http://localhost:7878/api/v3/system/status "
         "-H 'X-Api-Key: radarr333333333333333333333333333'"
     )
+    radarr_data = json.loads(radarr_status)
+    assert radarr_data.get("databaseType") == "postgreSQL", \
+        f"Radarr not using PostgreSQL: {radarr_data.get('databaseType')}"
 
-    # Test nginx is proxying to Lidarr
-    print("Testing Lidarr via nginx...")
-    machine.succeed(
-        "curl -f http://localhost/lidarr/api/v1/system/status "
+    # Test Lidarr API and verify PostgreSQL database type
+    print("Testing Lidarr API and database type...")
+    lidarr_status = machine.succeed(
+        "curl -f http://localhost:8686/api/v1/system/status "
         "-H 'X-Api-Key: lidarr444444444444444444444444444'"
     )
+    lidarr_data = json.loads(lidarr_status)
+    assert lidarr_data.get("databaseType") == "postgreSQL", \
+        f"Lidarr not using PostgreSQL: {lidarr_data.get('databaseType')}"
 
-    print("Nginx integration test successful! All services accessible via reverse proxy.")
+    # Verify PostgreSQL directory has correct permissions
+    print("Verifying PostgreSQL directory permissions...")
+    stat_output = machine.succeed("stat -c '%a %U %G' /var/lib/nixflix/postgres")
+    perms, owner, group = stat_output.strip().split()
+    assert perms == "700", f"PostgreSQL directory permissions incorrect: {perms}"
+    assert owner == "postgres", f"PostgreSQL directory owner incorrect: {owner}"
+    assert group == "postgres", f"PostgreSQL directory group incorrect: {group}"
+
+    # Verify PostgreSQL is using version 16
+    print("Verifying PostgreSQL version...")
+    version_output = machine.succeed("sudo -u postgres psql -t -c 'SHOW server_version;'")
+    assert "16." in version_output, f"PostgreSQL version incorrect: {version_output}"
+
+    print("PostgreSQL integration test successful! All services running with PostgreSQL enabled.")
   '';
 }

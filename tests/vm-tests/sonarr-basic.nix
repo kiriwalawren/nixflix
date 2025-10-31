@@ -38,15 +38,15 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     # Wait for Sonarr to start
-    machine.wait_for_unit("sonarr.service")
-    machine.wait_for_open_port(8989)
+    machine.wait_for_unit("sonarr.service", timeout=60)
+    machine.wait_for_open_port(8989, timeout=60)
 
     # Wait for configuration service to complete (which restarts sonarr)
-    machine.wait_for_unit("sonarr-config.service")
+    machine.wait_for_unit("sonarr-config.service", timeout=60)
 
     # Wait for sonarr to come back up after restart
-    machine.wait_for_unit("sonarr.service")
-    machine.wait_for_open_port(8989)
+    machine.wait_for_unit("sonarr.service", timeout=60)
+    machine.wait_for_open_port(8989, timeout=60)
 
     # Test API connectivity with the configured API key
     machine.succeed(
@@ -65,7 +65,7 @@ pkgs.testers.runNixOSTest {
     assert "admin" in result, "Username not configured correctly"
 
     # Wait for root folders service to complete
-    machine.wait_for_unit("sonarr-rootfolders.service")
+    machine.wait_for_unit("sonarr-rootfolders.service", timeout=60)
 
     # Check that root folder was created
     folders = machine.succeed(

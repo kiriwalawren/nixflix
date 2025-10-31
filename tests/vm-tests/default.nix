@@ -9,4 +9,5 @@
   prowlarr-basic = import ./prowlarr-basic.nix {inherit system pkgs nixosModules;};
   full-stack = import ./full-stack.nix {inherit system pkgs nixosModules;};
   nginx-integration = import ./nginx-integration.nix {inherit system pkgs nixosModules;};
+  postgresql-integration = import ./postgresql-integration.nix {inherit system pkgs nixosModules;};
 }
