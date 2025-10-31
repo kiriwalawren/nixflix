@@ -11,15 +11,15 @@ in ''
   BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
   echo "Waiting for ${capitalizedName} API to be available..."
-  for i in {1..60}; do
+  for i in {1..90}; do
     if ${pkgs.curl}/bin/curl -s -f "$BASE_URL/system/status?apiKey=$API_KEY" >/dev/null 2>&1; then
       echo "${capitalizedName} API is available"
       exit 0
     fi
-    echo "Waiting for ${capitalizedName} API... ($i/60)"
+    echo "Waiting for ${capitalizedName} API... ($i/90)"
     sleep 1
   done
 
-  echo "${capitalizedName} API not available after 60 seconds" >&2
+  echo "${capitalizedName} API not available after 90 seconds" >&2
   exit 1
 '')

@@ -2,6 +2,7 @@ serviceName: extraConfigOptions: {
   config,
   lib,
   pkgs,
+  usesDynamicUser ? false,
   ...
 }:
 with lib; let
@@ -12,12 +13,6 @@ with lib; let
 in {
   options.nixflix.${serviceName} = {
     enable = mkEnableOption "${capitalizedName}";
-
-    usesDynamicUser = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Whether the service uses systemd DynamicUser";
-    };
 
     group = mkOption {
       type = types.str;
@@ -82,7 +77,7 @@ in {
       nixflix.dirRegistrations =
         [
           (
-            if cfg.usesDynamicUser
+            if usesDynamicUser
             then {
               dir = stateDir;
               owner = "root";
@@ -116,6 +111,7 @@ in {
                 server = {inherit (cfg.config.hostConfig) port urlBase;};
               }
               // optionalAttrs config.services.postgresql.enable {
+                log.dbEnabled = true;
                 postgres = {
                   inherit (cfg) user;
                   host = "/run/postgresql";
@@ -125,7 +121,7 @@ in {
                 };
               };
           }
-          // optionalAttrs (!cfg.usesDynamicUser) {
+          // optionalAttrs (!usesDynamicUser) {
             inherit (cfg) user group;
           };
 
@@ -157,7 +153,7 @@ in {
         };
       };
 
-      users = mkIf (!cfg.usesDynamicUser) {
+      users = mkIf (!usesDynamicUser) {
         groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
           gid = globals.gids.${cfg.group};
         };
@@ -229,9 +225,9 @@ in {
             in ''
               mkdir -p /run/${serviceName}
               echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env
-              ${optionalString (!cfg.usesDynamicUser) "chown ${cfg.user}:${cfg.group} /run/${serviceName}/env"}
+              ${optionalString (!usesDynamicUser) "chown ${cfg.user}:${cfg.group} /run/${serviceName}/env"}
               chmod 0${
-                if cfg.usesDynamicUser
+                if usesDynamicUser
                 then "444"
                 else "400"
               } /run/${serviceName}/env

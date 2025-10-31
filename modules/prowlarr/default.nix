@@ -35,11 +35,15 @@ with lib; let
     };
   };
 in {
-  imports = [(import ../arr-common/mkArrServiceModule.nix "prowlarr" extraConfigOptions {inherit config lib pkgs;})];
+  imports = [
+    (import ../arr-common/mkArrServiceModule.nix "prowlarr" extraConfigOptions {
+      inherit config lib pkgs;
+      usesDynamicUser = true;
+    })
+  ];
 
   config = {
     nixflix.prowlarr = {
-      usesDynamicUser = true;
       config = {
         apiVersion = lib.mkDefault "v1";
         hostConfig = {

@@ -73,8 +73,8 @@ in {
 
     stateDir = mkOption {
       type = types.path;
-      default = "/data/.state/services";
-      example = "/data/.state/services";
+      default = "/data/.state";
+      example = "/data/.state";
       description = ''
         The location of the state directory for the services.
 
