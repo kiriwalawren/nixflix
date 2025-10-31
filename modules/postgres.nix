@@ -39,5 +39,10 @@ in {
       after = ["nixflix-setup-dirs.service"];
       requires = ["nixflix-setup-dirs.service"];
     };
+
+    systemd.targets.postgresql-ready = {
+      after = ["postgresql.service" "postgresql-setup.service"];
+      requires = ["postgresql.service" "postgresql-setup.service"];
+    };
   };
 }

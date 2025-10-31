@@ -125,6 +125,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("sonarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("radarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("lidarr-rootfolders.service", timeout=60)
+    machine.wait_for_unit("prowlarr-indexers.service", timeout=60)
 
     # Verify all processes running under correct user
     machine.succeed("pgrep Prowlarr")

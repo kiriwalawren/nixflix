@@ -173,30 +173,42 @@ in {
 
       systemd.services =
         {
+          # Service that waits for PostgreSQL database role to be ready
+          "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
+            description = "Wait for ${capitalizedName} PostgreSQL database role to be ready";
+            after = ["postgresql.service" "postgresql-setup.service"];
+            wantedBy = ["postgresql-ready.target"];
+
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              User = cfg.user;
+              Group = cfg.group;
+              TimeoutStartSec = "5min";
+            };
+
+            script = ''
+              while true; do
+                if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1;" > /dev/null 2>&1; then
+                  echo "${capitalizedName} PostgreSQL database is ready"
+                  exit 0
+                fi
+                sleep 1
+              done
+            '';
+          };
+
           # Ensure main service (radarr.service, etc.) starts after
           # directories are created and configured dependencies
           ${serviceName} = {
             after =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-setup.service")
+              ++ (optional config.services.postgresql.enable "postgresql-ready.target")
               ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
             requires =
               ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-setup.service");
+              ++ (optional config.services.postgresql.enable "postgresql-ready.target");
             wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-
-            # Wait for PostgreSQL role to be ready before starting
-            serviceConfig = mkIf config.services.postgresql.enable {
-              ExecStartPre = pkgs.writeShellScript "${serviceName}-wait-for-postgres" ''
-                for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-                  ${pkgs.postgresql}/bin/pg_isready -h /run/postgresql && \
-                    ${pkgs.postgresql}/bin/psql -h /run/postgresql -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${cfg.user}';" | grep -q 1 && exit 0
-                  sleep 1
-                done
-                echo "PostgreSQL role ${cfg.user} not available" >&2
-                exit 1
-              '';
-            };
           };
         }
         # Only create config and rootfolders services if apiKeyPath is configured
