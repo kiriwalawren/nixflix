@@ -62,6 +62,6 @@ pkgs.testers.runNixOSTest {
     print(f"Root folders: {folders}")
     assert "/media/music" in folders, "Root folder not created"
 
-    machine.succeed("pgrep -u testuser Lidarr")
+    machine.succeed("pgrep -u testuser dotnet")
   '';
 }

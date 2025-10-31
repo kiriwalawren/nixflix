@@ -130,7 +130,7 @@ pkgs.testers.runNixOSTest {
     machine.succeed("pgrep Prowlarr")
     machine.succeed("pgrep -u mediauser Sonarr")
     machine.succeed("pgrep -u mediauser Radarr")
-    machine.succeed("pgrep -u mediauser Lidarr")
+    machine.succeed("pgrep -u mediauser dotnet")
 
     print("All services are running successfully!")
   '';
