@@ -6,8 +6,9 @@
 }: let
   inherit (config) nixflix;
   cfg = config.nixflix.sonarr;
+  arrCommon = import ../arr-common {inherit config lib pkgs;};
 in {
-  imports = [(import ../arr-common/mkArrServiceModule.nix "sonarr" {} {inherit config lib pkgs;})];
+  imports = [(arrCommon.mkArrServiceModule "sonarr" {})];
 
   config.nixflix.sonarr = {
     group = lib.mkDefault "media";

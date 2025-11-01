@@ -6,6 +6,7 @@
 }:
 with lib; let
   mkProwlarrIndexersService = import ./indexersService.nix {inherit lib pkgs;};
+  arrCommon = import ../arr-common {inherit config lib pkgs; usesDynamicUser = true;};
 
   extraConfigOptions = {
     indexers = mkOption {
@@ -35,12 +36,7 @@ with lib; let
     };
   };
 in {
-  imports = [
-    (import ../arr-common/mkArrServiceModule.nix "prowlarr" extraConfigOptions {
-      inherit config lib pkgs;
-      usesDynamicUser = true;
-    })
-  ];
+  imports = [(arrCommon.mkArrServiceModule "prowlarr" extraConfigOptions)];
 
   config = {
     nixflix.prowlarr = {

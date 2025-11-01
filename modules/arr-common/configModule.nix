@@ -1,4 +1,4 @@
-extraConfigOptions: {lib}:
+{lib}:extraConfigOptions:
 with lib;
   types.submodule {
     options =
