@@ -196,7 +196,7 @@ in {
           description = "Wait for ${capitalizedName} PostgreSQL database role to be ready";
           after = ["postgresql.service" "postgresql-setup.service"];
           before = ["postgresql-ready.target"];
-          wantedBy = ["postgresql-ready.target"];
+          requiredBy = ["postgresql-ready.target"];
 
           serviceConfig =
             {
@@ -221,12 +221,11 @@ in {
               else "SELECT 1";
           in ''
             while true; do
-              ERROR=$(${psqlCmd} -d ${dbUser} -c "${checkCmd}" 2>&1 > /dev/null)
-              if [ $? -eq 0 ]; then
+              if ${psqlCmd} -d ${dbUser} -c "${checkCmd}" > /dev/null 2>&1; then
                 echo "${capitalizedName} PostgreSQL database is ready"
                 exit 0
               fi
-              echo "Waiting for PostgreSQL role ${capitalizedName}... Error: $ERROR"
+              echo "Waiting for PostgreSQL role ${capitalizedName}..."
               sleep 1
             done
           '';

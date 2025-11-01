@@ -29,7 +29,7 @@ jobs:
       - name: Find Checks 🔍
         id: checks
         run: |
-          nix-instantiate --json --eval --strict -E 'with builtins; attrNames (getFlake (toString ./.)).checks.${currentSystem}' | perl -pe 's|(.*)|checks=\1|' >> $GITHUB_OUTPUT
+          nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames | perl -pe 's|(.*)|checks=\1|' >> $GITHUB_OUTPUT
 
   checks:
     name: ${{ matrix.check }}
@@ -63,4 +63,4 @@ jobs:
 
       - name: Run Check 📋
         run: |
-          nix build -L --expr "with builtins; (getFlake (toString ./.)).checks.\${currentSystem}.${{ matrix.check }}"
+          nix build -L .#checks.x86_64-linux.${{ matrix.check }}
