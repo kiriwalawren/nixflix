@@ -25,12 +25,13 @@ in {
     };
 
     location = mkOption {
-      type = types.str;
-      default = "";
-      example = "us nyc";
+      type = types.listOf types.str;
+      default = [];
+      example = ["us" "nyc"];
       description = ''
-        Mullvad server location as a space-separated string.
-        Format: "country city" or "country" (e.g., "us nyc", "se got", "us").
+        Mullvad server location as a list of strings.
+        Format: ["country"] | ["country" "city"] | ["country" "city" "full-server-name"] | ["full-server-name"]
+        Examples: ["us"], ["us" "nyc"], ["se" "got" "se-got-wg-001"], ["se-got-wg-001"]
         Use "mullvad relay list" to see available locations.
         Leave empty to use automatic location selection.
       '';
@@ -115,8 +116,8 @@ in {
             ${mullvadPkg}/bin/mullvad lockdown-mode set off
           ''}
 
-          ${optionalString (cfg.location != "") ''
-            ${mullvadPkg}/bin/mullvad relay set location ${cfg.location}
+          ${optionalString (cfg.location != []) ''
+            ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}
           ''}
 
           ${optionalString cfg.autoConnect ''
