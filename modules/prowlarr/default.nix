@@ -6,7 +6,9 @@
 }:
 with lib; let
   mkProwlarrIndexersService = import ./indexersService.nix {inherit lib pkgs;};
-  arrCommon = import ../arr-common {inherit config lib pkgs; usesDynamicUser = true;};
+  arrCommon = import ../arr-common {
+    inherit config lib pkgs;
+  };
 
   extraConfigOptions = {
     indexers = mkOption {

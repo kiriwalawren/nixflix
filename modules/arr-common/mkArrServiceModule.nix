@@ -2,54 +2,73 @@
   config,
   lib,
   pkgs,
-  usesDynamicUser ? false,
   ...
 }: serviceName: extraConfigOptions:
 with lib; let
-  arrConfigModule = import ./configModule.nix {inherit lib;} extraConfigOptions;
+  arrConfigModule = import ./configModule.nix {inherit lib;};
   mkArrHostConfigService = import ./hostConfigService.nix {inherit lib pkgs;};
   mkArrRootFoldersService = import ./rootFoldersService.nix {inherit lib pkgs;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
+  usesDynamicUser = elem serviceName ["prowlarr"];
+  usesMediaDirs = !(elem serviceName ["prowlarr"]);
 in {
-  options.nixflix.${serviceName} = {
-    enable = mkEnableOption "${capitalizedName}";
+  options.nixflix.${serviceName} =
+    {
+      enable = mkEnableOption "${capitalizedName}";
 
-    group = mkOption {
-      type = types.str;
-      default = serviceName;
-      description = "Group under which the service runs";
-    };
+      config = mkOption {
+        type =
+          arrConfigModule
+          (extraConfigOptions
+            // optionalAttrs usesMediaDirs {
+              rootFolders = mkOption {
+                type = types.listOf types.attrs;
+                default = [];
+                description = ''
+                  List of root folders to create via the API /rootfolder endpoint.
+                  Each folder is an attribute set that will be converted to JSON and sent to the API.
 
-    user = mkOption {
-      type = types.str;
-      default = serviceName;
-      description = "User under which the service runs";
-    };
+                  For Sonarr/Radarr, a simple path is sufficient: {path = "/path/to/folder";}
+                  For Lidarr, additional fields are required like defaultQualityProfileId, etc.
+                '';
+              };
+            });
+        default = {};
+        description = "${capitalizedName} configuration options that will be set via the API.";
+      };
+    }
+    // optionalAttrs (!usesDynamicUser) {
+      group = mkOption {
+        type = types.str;
+        default = serviceName;
+        description = "Group under which the service runs";
+      };
 
-    mediaDirs = mkOption {
-      type = types.listOf (types.submodule {
-        options = {
-          dir = mkOption {
-            type = types.str;
-            description = "Directory path";
+      user = mkOption {
+        type = types.str;
+        default = serviceName;
+        description = "User under which the service runs";
+      };
+    }
+    // optionalAttrs usesMediaDirs {
+      mediaDirs = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            dir = mkOption {
+              type = types.str;
+              description = "Directory path";
+            };
+            owner = mkOption {
+              type = types.str;
+              default = "root";
+              description = "Directory owner";
+            };
           };
-          owner = mkOption {
-            type = types.str;
-            default = "root";
-            description = "Directory owner";
-          };
-        };
-      });
-      default = [];
-      description = "List of media directories to create and manage";
+        });
+        default = [];
+        description = "List of media directories to create and manage";
+      };
     };
-
-    config = mkOption {
-      type = arrConfigModule;
-      default = {};
-      description = "${capitalizedName} configuration options that will be set via the API.";
-    };
-  };
 
   config = let
     inherit (config) nixflix;
@@ -91,7 +110,7 @@ in {
             }
           )
         ]
-        ++ (map (mediaDir: {
+        ++ optionals usesMediaDirs (map (mediaDir: {
             inherit (cfg) group;
             inherit (mediaDir) dir owner;
           })
@@ -244,7 +263,7 @@ in {
           "${serviceName}-config" = mkArrHostConfigService serviceName cfg.config;
         }
         # Only create root folders service if rootFolders is not empty
-        // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
+        // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
           "${serviceName}-rootfolders" = mkArrRootFoldersService serviceName cfg.config;
         };
     };
