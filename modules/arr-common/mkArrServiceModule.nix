@@ -213,14 +213,20 @@ in {
             dbUser = effectiveUser;
             psqlCmd =
               if usesDynamicUser
-              then "sudo -u postgres ${pkgs.postgresql}/bin/psql -d ${dbUser}"
-              else "${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${dbUser}";
+              then "${pkgs.sudo}/bin/sudo -u postgres ${pkgs.postgresql}/bin/psql"
+              else "${pkgs.postgresql}/bin/psql -h /run/postgresql";
+            checkCmd =
+              if usesDynamicUser
+              then "SELECT 1 FROM pg_database WHERE datname='${dbUser}'"
+              else "SELECT 1";
           in ''
             while true; do
-              if ${psqlCmd} -c "SELECT 1;" > /dev/null 2>&1; then
+              ERROR=$(${psqlCmd} -d ${dbUser} -c "${checkCmd}" 2>&1 > /dev/null)
+              if [ $? -eq 0 ]; then
                 echo "${capitalizedName} PostgreSQL database is ready"
                 exit 0
               fi
+              echo "Waiting for PostgreSQL role ${capitalizedName}... Error: $ERROR"
               sleep 1
             done
           '';
@@ -267,8 +273,14 @@ in {
         };
 
         ${serviceName} = {
-          after = ["${serviceName}-env.service"];
-          requires = ["${serviceName}-env.service"];
+          after =
+            ["${serviceName}-env.service" "nixflix-setup-dirs.service"]
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+          requires =
+            ["${serviceName}-env.service" "nixflix-setup-dirs.service"]
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
           serviceConfig.EnvironmentFile = "/run/${serviceName}/env";
         };
 

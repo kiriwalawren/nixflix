@@ -84,6 +84,12 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_open_port(5432, timeout=60)
     machine.wait_for_unit("postgresql-setup.service", timeout=60)
 
+    # Wait for database roles to be ready
+    machine.wait_for_unit("prowlarr-wait-for-db.service", timeout=60)
+    machine.wait_for_unit("sonarr-wait-for-db.service", timeout=60)
+    machine.wait_for_unit("radarr-wait-for-db.service", timeout=60)
+    machine.wait_for_unit("lidarr-wait-for-db.service", timeout=60)
+
     # Wait for all services
     machine.wait_for_unit("prowlarr.service", timeout=60)
     machine.wait_for_unit("sonarr.service", timeout=60)
