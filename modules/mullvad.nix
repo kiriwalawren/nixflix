@@ -128,8 +128,14 @@ in {
           ''}
         '';
         ExecStop = pkgs.writeShellScript "logout-mullvad" ''
+          # Get device name and revoke it
+          DEVICE_NAME=$(${mullvadPkg}/bin/mullvad account get | grep "Device name:" | sed 's/.*Device name:[[:space:]]*//')
+          if [ -n "$DEVICE_NAME" ]; then
+            echo "Revoking device: $DEVICE_NAME"
+            ${mullvadPkg}/bin/mullvad account revoke-device "$DEVICE_NAME" || true
+          fi
+          ${mullvadPkg}/bin/mullvad account logout  || true
           ${mullvadPkg}/bin/mullvad disconnect || true
-          ${mullvadPkg}/bin/mullvad account logout || true
         '';
       };
     };
