@@ -39,27 +39,7 @@ Unit tests verify that NixOS module options generate correct systemd service def
 ### List Available Tests
 
 ```bash
-# List all VM tests
-nix eval .#checks.x86_64-linux --apply 'checks: builtins.attrNames checks.vm-tests'
-
-# List all unit tests
-nix eval .#checks.x86_64-linux --apply 'checks: builtins.attrNames checks.unit-tests'
-```
-
-### Run All Tests
-
-```bash
-nix flake check
-```
-
-### Run Specific Test Category
-
-```bash
-# Run all VM tests
-nix flake check .#checks.x86_64-linux.vm-tests
-
-# Run all unit tests
-nix flake check .#checks.x86_64-linux.unit-tests
+nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames
 ```
 
 ### Run Individual Tests
@@ -94,12 +74,7 @@ This opens a Python REPL where you can interact with the VM:
 
 ## Continuous Integration
 
-Tests run automatically on GitHub Actions for every push and pull request. The workflow:
-
-1. **Prepare Job**: Automatically discovers all available tests from the flake
-2. **Check Job**: Runs format and statix checks
-3. **Unit Tests Job**: Runs all unit tests in parallel
-4. **VM Tests Job**: Runs all VM tests in parallel with KVM acceleration
+Tests run automatically on GitHub Actions for every push and pull request.
 
 When you add new tests to `tests/vm-tests/default.nix` or `tests/unit-tests/default.nix`, they are automatically included in CI - no workflow updates needed!
 
@@ -172,14 +147,6 @@ pkgs.testers.runNixOSTest {
     assertTest "my-unit-test" (/* condition */);
 }
 ```
-
-## Test Best Practices
-
-1. **Keep tests focused**: Each test should validate one specific aspect
-2. **Use descriptive names**: Test names should clearly indicate what they test
-3. **Add assertions**: VM tests should verify expected behavior, not just check services start
-4. **Test edge cases**: Include tests for unusual but valid configurations
-5. **Document complex tests**: Add comments explaining non-obvious test logic
 
 ## Debugging Failed Tests
 
