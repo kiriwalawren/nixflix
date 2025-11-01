@@ -18,17 +18,17 @@ pkgs.testers.runNixOSTest {
       postgres.enable = true;
       stateDir = "/var/lib/nixflix";
 
-      # prowlarr = {
-      #   enable = true;
-      #   config = {
-      #     hostConfig = {
-      #       port = 9696;
-      #       username = "admin";
-      #       passwordPath = "${pkgs.writeText "prowlarr-password" "testpass"}";
-      #     };
-      #     apiKeyPath = "${pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111"}";
-      #   };
-      # };
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            passwordPath = "${pkgs.writeText "prowlarr-password" "testpass"}";
+          };
+          apiKeyPath = "${pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111"}";
+        };
+      };
 
       sonarr = {
         enable = true;
@@ -85,27 +85,27 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("postgresql-setup.service", timeout=60)
 
     # Wait for all services
-    # machine.wait_for_unit("prowlarr.service", timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=60)
     machine.wait_for_unit("sonarr.service", timeout=60)
     machine.wait_for_unit("radarr.service", timeout=60)
     machine.wait_for_unit("lidarr.service", timeout=60)
-    # machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_open_port(9696, timeout=60)
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(7878, timeout=60)
     machine.wait_for_open_port(8686, timeout=60)
 
     # Wait for configuration services
-    # machine.wait_for_unit("prowlarr-config.service", timeout=60)
+    machine.wait_for_unit("prowlarr-config.service", timeout=60)
     machine.wait_for_unit("sonarr-config.service", timeout=60)
     machine.wait_for_unit("radarr-config.service", timeout=60)
     machine.wait_for_unit("lidarr-config.service", timeout=60)
 
     # Wait for services to come back up after restart
-    # machine.wait_for_unit("prowlarr.service", timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=60)
     machine.wait_for_unit("sonarr.service", timeout=60)
     machine.wait_for_unit("radarr.service", timeout=60)
     machine.wait_for_unit("lidarr.service", timeout=60)
-    # machine.wait_for_open_port(9696, timeout=60)
+    machine.wait_for_open_port(9696, timeout=60)
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(7878, timeout=60)
     machine.wait_for_open_port(8686, timeout=60)
@@ -119,15 +119,15 @@ pkgs.testers.runNixOSTest {
     datadir = machine.succeed("sudo -u postgres psql -t -c 'SHOW data_directory;'").strip()
     assert "/var/lib/nixflix/postgres" in datadir, f"PostgreSQL dataDir incorrect: {datadir}"
 
-    # # Test Prowlarr API and verify PostgreSQL database type
-    # print("Testing Prowlarr API and database type...")
-    # prowlarr_status = machine.succeed(
-    #     "curl -f http://localhost:9696/api/v1/system/status "
-    #     "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
-    # )
-    # prowlarr_data = json.loads(prowlarr_status)
-    # assert prowlarr_data.get("databaseType") == "postgreSQL", \
-    #     f"Prowlarr not using PostgreSQL: {prowlarr_data.get('databaseType')}"
+    # Test Prowlarr API and verify PostgreSQL database type
+    print("Testing Prowlarr API and database type...")
+    prowlarr_status = machine.succeed(
+        "curl -f http://localhost:9696/api/v1/system/status "
+        "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
+    )
+    prowlarr_data = json.loads(prowlarr_status)
+    assert prowlarr_data.get("databaseType") == "postgreSQL", \
+        f"Prowlarr not using PostgreSQL: {prowlarr_data.get('databaseType')}"
 
     # Test Sonarr API and verify PostgreSQL database type
     print("Testing Sonarr API and database type...")

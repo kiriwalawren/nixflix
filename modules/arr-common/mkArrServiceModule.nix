@@ -195,6 +195,7 @@ in {
         "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
           description = "Wait for ${capitalizedName} PostgreSQL database role to be ready";
           after = ["postgresql.service" "postgresql-setup.service"];
+          before = ["postgresql-ready.target"];
           wantedBy = ["postgresql-ready.target"];
 
           serviceConfig =
@@ -210,9 +211,13 @@ in {
 
           script = let
             dbUser = effectiveUser;
+            psqlCmd =
+              if usesDynamicUser
+              then "sudo -u postgres ${pkgs.postgresql}/bin/psql -d ${dbUser}"
+              else "${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${dbUser}";
           in ''
             while true; do
-              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${dbUser} -c "SELECT 1;" > /dev/null 2>&1; then
+              if ${psqlCmd} -c "SELECT 1;" > /dev/null 2>&1; then
                 echo "${capitalizedName} PostgreSQL database is ready"
                 exit 0
               fi
@@ -223,20 +228,16 @@ in {
 
         # Ensure main service (radarr.service, etc.) starts after
         # directories are created and configured dependencies
-        ${serviceName} =
-          {
-            after =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-              ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-            requires =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional (!usesDynamicUser && config.services.postgresql.enable) "postgresql-ready.target");
-            wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-          }
-          // optionalAttrs (usesDynamicUser && config.services.postgresql.enable) {
-            requisite = ["postgresql-ready.target"];
-          };
+        ${serviceName} = {
+          after =
+            ["nixflix-setup-dirs.service"]
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+          requires =
+            ["nixflix-setup-dirs.service"]
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+        };
       }
       # Only create config and rootfolders services if apiKeyPath is configured
       // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
