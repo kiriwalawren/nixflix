@@ -132,11 +132,20 @@ in {
               // optionalAttrs config.services.postgresql.enable {
                 log.dbEnabled = true;
                 postgres = {
-                  inherit (cfg) user;
+                  user =
+                    if usesDynamicUser
+                    then serviceName
+                    else cfg.user;
                   host = "/run/postgresql";
                   port = 5432;
-                  mainDb = cfg.user;
-                  logDb = cfg.user;
+                  mainDb =
+                    if usesDynamicUser
+                    then serviceName
+                    else cfg.user;
+                  logDb =
+                    if usesDynamicUser
+                    then serviceName
+                    else cfg.user;
                 };
               };
           }
@@ -145,10 +154,19 @@ in {
           };
 
         postgresql = mkIf config.services.postgresql.enable {
-          ensureDatabases = [cfg.user];
+          ensureDatabases = [
+            (
+              if usesDynamicUser
+              then serviceName
+              else cfg.user
+            )
+          ];
           ensureUsers = [
             {
-              name = cfg.user;
+              name =
+                if usesDynamicUser
+                then serviceName
+                else cfg.user;
               ensureDBOwnership = true;
             }
           ];
@@ -194,17 +212,25 @@ in {
             after = ["postgresql.service" "postgresql-setup.service"];
             wantedBy = ["postgresql-ready.target"];
 
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              User = cfg.user;
-              Group = cfg.group;
-              TimeoutStartSec = "5min";
-            };
+            serviceConfig =
+              {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                TimeoutStartSec = "5min";
+              }
+              // optionalAttrs (!usesDynamicUser) {
+                User = cfg.user;
+                Group = cfg.group;
+              };
 
-            script = ''
+            script = let
+              dbUser =
+                if usesDynamicUser
+                then serviceName
+                else cfg.user;
+            in ''
               while true; do
-                if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1;" > /dev/null 2>&1; then
+                if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${dbUser} -c "SELECT 1;" > /dev/null 2>&1; then
                   echo "${capitalizedName} PostgreSQL database is ready"
                   exit 0
                 fi
@@ -215,16 +241,20 @@ in {
 
           # Ensure main service (radarr.service, etc.) starts after
           # directories are created and configured dependencies
-          ${serviceName} = {
-            after =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-              ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-            requires =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-            wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-          };
+          ${serviceName} =
+            {
+              after =
+                ["nixflix-setup-dirs.service"]
+                ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+                ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+              requires =
+                ["nixflix-setup-dirs.service"]
+                ++ (optional (!usesDynamicUser && config.services.postgresql.enable) "postgresql-ready.target");
+              wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+            }
+            // optionalAttrs (usesDynamicUser && config.services.postgresql.enable) {
+              requisite = ["postgresql-ready.target"];
+            };
         }
         # Only create config and rootfolders services if apiKeyPath is configured
         // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
