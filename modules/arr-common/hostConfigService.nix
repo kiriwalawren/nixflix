@@ -4,7 +4,10 @@
 }:
 # Helper function to create a systemd service that configures *arr basic settings via API
 serviceName: serviceConfig:
-with lib; {
+with lib; let
+  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
+  capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+in {
   description = "Configure ${serviceName} via API";
   after = ["${serviceName}.service"];
   wantedBy = ["multi-user.target"];
@@ -12,11 +15,10 @@ with lib; {
   serviceConfig = {
     Type = "oneshot";
     RemainAfterExit = true;
+    ExecStartPre = mkWaitForApiScript serviceName serviceConfig;
   };
 
-  script = let
-    capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
-  in ''
+  script = ''
     set -eu
 
     # Read secrets
@@ -24,17 +26,6 @@ with lib; {
     AUTH_PASSWORD=$(cat ${serviceConfig.hostConfig.passwordPath})
 
     BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
-
-    # Wait for API to be available (up to 60 seconds)
-    echo "Waiting for ${capitalizedName} API to be available..."
-    for i in {1..60}; do
-      if ${pkgs.curl}/bin/curl -s -f "$BASE_URL/system/status?apiKey=$API_KEY" >/dev/null 2>&1; then
-        echo "${capitalizedName} API is available"
-        break
-      fi
-      echo "Waiting for ${capitalizedName} API... ($i/60)"
-      sleep 1
-    done
 
     # Get current host configuration
     echo "Fetching current host configuration..."

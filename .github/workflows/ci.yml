@@ -7,14 +7,60 @@ on:
       - main
 
 jobs:
-  check:
+  prepare:
+    name: Find Checks 🔍
     runs-on: ubuntu-latest
+    outputs:
+      checks: ${{ steps.checks.outputs.checks }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
 
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v16
+        with:
+          name: kiriwalawren
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Run flake checks
-        run: nix flake check --all-systems
+      - name: Find Checks 🔍
+        id: checks
+        run: |
+          nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames | perl -pe 's|(.*)|checks=\1|' >> $GITHUB_OUTPUT
+
+  checks:
+    name: ${{ matrix.check }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(needs.prepare.outputs.checks) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v16
+        with:
+          name: kiriwalawren
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+
+      # Enable KVM for VM tests
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Check 📋
+        run: |
+          nix build -L .#checks.x86_64-linux.${{ matrix.check }}
