@@ -54,6 +54,12 @@ in {
       description = "Path to file containing the SABnzbd API key";
     };
 
+    nzbKeyPath = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Path to file containing the SABnzbd NZB API key";
+    };
+
     environmentSecrets = mkOption {
       type = types.listOf (types.submodule {
         options = {
