@@ -145,9 +145,7 @@ in {
   serviceConfig = {
     description = "Configure SABnzbd via API";
     after = ["sabnzbd.service"];
-    wants = ["sabnzbd.service"];
-    partOf = ["sabnzbd.service"];
-    wantedBy = ["multi-user.target"];
+    bindsTo = ["sabnzbd.service"];
 
     serviceConfig = {
       Type = "oneshot";

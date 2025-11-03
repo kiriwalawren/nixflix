@@ -165,6 +165,8 @@ in {
       after = ["nixflix-setup-dirs.service" "network-online.target"];
       requires = ["nixflix-setup-dirs.service"];
       wants = ["network-online.target"];
+      # Ensure sabnzbd-config runs every time sabnzbd starts
+      upholds = ["sabnzbd-config.service"];
 
       serviceConfig = {
         ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
@@ -190,7 +192,6 @@ in {
             echo "SABnzbd configuration already exists, skipping creation"
           fi
         '';
-        ExecStartPost = "${pkgs.systemd}/bin/systemctl --no-block restart sabnzbd-config.service";
       };
     };
 
