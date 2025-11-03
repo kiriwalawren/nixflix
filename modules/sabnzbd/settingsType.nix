@@ -75,6 +75,7 @@
       };
       dir = mkOption {
         type = types.str;
+        default = "";
         description = "Directory name for this category";
       };
       priority = mkOption {
@@ -420,8 +421,7 @@ in
             script = "None";
           }
           {
-            name = "default";
-            dir = "_";
+            name = "*";
             priority = 0;
             pp = 3;
             script = "None";
