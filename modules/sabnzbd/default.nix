@@ -29,16 +29,16 @@ in {
       description = "Whether to enable SABnzbd usenet downloader";
     };
 
-    group = mkOption {
-      type = types.str;
-      default = "sabnzbd";
-      description = "Group under which the service runs";
-    };
-
     user = mkOption {
       type = types.str;
-      default = "media";
+      default = "sabnzbd";
       description = "User under which the service runs";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = globals.libraryOwner.group;
+      description = "Group under which the service runs";
     };
 
     downloadsDir = mkOption {
