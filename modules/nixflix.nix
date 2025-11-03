@@ -71,6 +71,24 @@ in {
       '';
     };
 
+    downloadsDir = mkOption {
+      type = types.path;
+      default = "/data/downloads";
+      example = "/data/downloads";
+      description = ''
+        The location of the downloads directory for download clients.
+
+        > **Warning:** Setting this to any path, where the subpath is not
+        > owned by root, will fail! For example:
+        >
+        > ```nix
+        >   downloadsDir = /home/user/downloads
+        > ```
+        >
+        > Is not supported, because `/home/user` is owned by `user`.
+      '';
+    };
+
     stateDir = mkOption {
       type = types.path;
       default = "/data/.state";
@@ -144,6 +162,10 @@ in {
         ${pkgs.coreutils}/bin/mkdir -p ${cfg.mediaDir}
         ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.mediaDir}
         ${pkgs.coreutils}/bin/chmod 0775 ${cfg.mediaDir}
+
+        ${pkgs.coreutils}/bin/mkdir -p ${cfg.downloadsDir}
+        ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.downloadsDir}
+        ${pkgs.coreutils}/bin/chmod 0775 ${cfg.downloadsDir}
 
         # Service-registered directories
         ${concatMapStringsSep "\n" (reg: ''

@@ -7,6 +7,7 @@
     ./postgres.nix
     ./prowlarr
     ./radarr
+    ./sabnzbd
     ./sonarr
   ];
 }
