@@ -57,7 +57,7 @@ in {
 
     ${concatMapStringsSep "\n" (applicationConfig: let
         applicationName = applicationConfig.name;
-        implementationName = applicationConfig.implementationName;
+        inherit (applicationConfig) implementationName;
         inherit (applicationConfig) apiKeyPath;
         allOverrides = builtins.removeAttrs applicationConfig ["implementationName" "apiKeyPath"];
         fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;

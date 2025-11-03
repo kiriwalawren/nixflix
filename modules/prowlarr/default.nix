@@ -19,19 +19,22 @@ with lib; let
     serviceConfig = config.nixflix.${serviceName}.config;
     capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
     useNginx = config.nixflix.nginx.enable or false;
-    baseUrl = if useNginx
+    baseUrl =
+      if useNginx
       then "http://127.0.0.1${serviceConfig.hostConfig.urlBase}"
       else "http://127.0.0.1:${toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}";
-    prowlarrUrl = if useNginx
+    prowlarrUrl =
+      if useNginx
       then "http://127.0.0.1${config.nixflix.prowlarr.config.hostConfig.urlBase}"
       else "http://127.0.0.1:${toString config.nixflix.prowlarr.config.hostConfig.port}${config.nixflix.prowlarr.config.hostConfig.urlBase}";
-  in mkIf (config.nixflix.${serviceName}.enable or false) {
-    name = capitalizedName;
-    implementationName = capitalizedName;
-    apiKeyPath = mkDefault serviceConfig.apiKeyPath;
-    baseUrl = mkDefault baseUrl;
-    prowlarrUrl = mkDefault prowlarrUrl;
-  };
+  in
+    mkIf (config.nixflix.${serviceName}.enable or false) {
+      name = capitalizedName;
+      implementationName = capitalizedName;
+      apiKeyPath = mkDefault serviceConfig.apiKeyPath;
+      baseUrl = mkDefault baseUrl;
+      prowlarrUrl = mkDefault prowlarrUrl;
+    };
 
   # Generate default applications list from enabled services
   defaultApplications = filter (app: app != {}) (map mkDefaultApplication arrServices);
