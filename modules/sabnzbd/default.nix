@@ -16,6 +16,7 @@ with lib; let
   generateMinimalIni = settings: ''
     [misc]
     api_key = $SABNZBD_API_KEY
+    nzb_key = $SABNZBD_NZB_KEY
     url_base = ${settings.url_base}
   '';
 
@@ -167,6 +168,9 @@ in {
           # Export API key
           ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
+          ''}
+          ${optionalString (cfg.apiKeyPath != null) ''
+            export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
           ''}
 
           # Substitute environment variables in template
