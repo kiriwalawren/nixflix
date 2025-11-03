@@ -25,6 +25,18 @@ in {
     {
       enable = mkEnableOption "${capitalizedName}";
 
+      vpn = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            Whether to route ${capitalizedName} traffic through the VPN.
+            When false (default), ${capitalizedName} bypasses the VPN to prevent Cloudflare and image provider blocks.
+            When true, ${capitalizedName} routes through the VPN (requires nixflix.mullvad.enable = true).
+          '';
+        };
+      };
+
       config = mkOption {
         type =
           arrConfigModule
@@ -80,6 +92,14 @@ in {
     };
 
   config = mkIf (nixflix.enable && cfg.enable) {
+    # Assertion: VPN routing requires Mullvad to be enabled
+    assertions = [
+      {
+        assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
+        message = "Cannot enable VPN routing for ${capitalizedName} (nixflix.${serviceName}.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
+      }
+    ];
+
     # Set pattern-based defaults
     nixflix.${serviceName}.config = {
       apiKeyPath = mkDefault null;
@@ -233,16 +253,29 @@ in {
 
         # Ensure main service (radarr.service, etc.) starts after
         # directories are created and configured dependencies
-        ${serviceName} = {
-          after =
-            ["nixflix-setup-dirs.service"]
-            ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-          requires =
-            ["nixflix-setup-dirs.service"]
-            ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-        };
+        ${serviceName} =
+          {
+            after =
+              ["nixflix-setup-dirs.service"]
+              ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+              ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+              ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+            requires =
+              ["nixflix-setup-dirs.service"]
+              ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+              ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+            wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+          }
+          // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
+            serviceConfig.EnvironmentFile = "/run/${serviceName}/env";
+          }
+          // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
+            # Bypass VPN by wrapping with mullvad-exclude
+            serviceConfig.ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
+              exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
+                -nobrowser -data='${stateDir}'
+            '');
+          };
       }
       # Only create config and rootfolders services if apiKeyPath is configured
       // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
@@ -269,18 +302,6 @@ in {
               else "400"
             } /run/${serviceName}/env
           '';
-        };
-
-        ${serviceName} = {
-          after =
-            ["${serviceName}-env.service" "nixflix-setup-dirs.service"]
-            ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-          requires =
-            ["${serviceName}-env.service" "nixflix-setup-dirs.service"]
-            ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-          serviceConfig.EnvironmentFile = "/run/${serviceName}/env";
         };
 
         # Configure service via API

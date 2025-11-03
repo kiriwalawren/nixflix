@@ -111,4 +111,70 @@ in {
     hasAllServices = systemdUnits ? prowlarr && systemdUnits ? prowlarr-config && systemdUnits ? prowlarr-indexers;
   in
     assertTest "prowlarr-service-generation" hasAllServices;
+
+  # Test that prowlarr with indexers generates correct systemd units
+  sabnzbd-service-generation = let
+    config = evalConfig [
+      {
+        nixflix = {
+          enable = true;
+          sabnzbd = {
+            enable = true;
+            downloadsDir = "/downloads/usenet";
+            apiKeyPath = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+            nzbKeyPath = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+            environmentSecrets = [
+              {
+                env = "EWEKA_USERNAME";
+                path = pkgs.writeText "eweka-username" "testuser";
+              }
+              {
+                env = "EWEKA_PASSWORD";
+                path = pkgs.writeText "eweka-password" "testpass123";
+              }
+            ];
+            settings = {
+              port = 8080;
+              host = "127.0.0.1";
+              url_base = "/sabnzbd";
+              ignore_samples = true;
+              direct_unpack = false;
+              article_tries = 5;
+              servers = [
+                {
+                  name = "TestServer";
+                  host = "news.example.com";
+                  port = 563;
+                  username = "$EWEKA_USERNAME";
+                  password = "$EWEKA_PASSWORD";
+                  connections = 10;
+                  ssl = true;
+                  priority = 0;
+                }
+              ];
+              categories = [
+                {
+                  name = "tv";
+                  dir = "tv";
+                  priority = 0;
+                  pp = 3;
+                  script = "None";
+                }
+                {
+                  name = "movies";
+                  dir = "movies";
+                  priority = 1;
+                  pp = 2;
+                  script = "None";
+                }
+              ];
+            };
+          };
+        };
+      }
+    ];
+    systemdUnits = config.config.systemd.services;
+    hasAllServices = systemdUnits ? sabnzbd && systemdUnits ? sabnzbd-config;
+  in
+    assertTest "prowlarr-service-generation" hasAllServices;
 }
