@@ -126,6 +126,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("radarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("lidarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("prowlarr-indexers.service", timeout=60)
+    machine.wait_for_unit("prowlarr-applications.service", timeout=60)
 
     # Verify all processes running under correct user
     machine.succeed("pgrep Prowlarr")
@@ -133,6 +134,47 @@ pkgs.testers.runNixOSTest {
     machine.succeed("pgrep -u mediauser Radarr")
     machine.succeed("pgrep -u mediauser dotnet")
 
+    # Test Prowlarr applications were configured
+    print("Testing Prowlarr applications configuration...")
+    applications = machine.succeed(
+        "curl -s -H 'X-Api-Key: prowlarr11111111111111111111111111' "
+        "http://127.0.0.1:9696/api/v1/applications"
+    )
+
+    # Verify we have 3 applications (Sonarr, Radarr, Lidarr)
+    import json
+    apps = json.loads(applications)
+    assert len(apps) == 3, f"Expected 3 applications, found {len(apps)}"
+
+    # Verify each application type is present
+    app_names = {app['name'] for app in apps}
+    expected_apps = {'Sonarr', 'Radarr', 'Lidarr'}
+    assert app_names == expected_apps, f"Expected {expected_apps}, found {app_names}"
+
+    # Verify implementation names match
+    for app in apps:
+        assert app['implementationName'] == app['name'], \
+            f"Implementation name mismatch for {app['name']}"
+
+    # Verify baseUrl is set correctly for each application
+    for app in apps:
+        if app['name'] == 'Sonarr':
+            expected_url = "http://127.0.0.1:8989"
+            actual_url = next(f['value'] for f in app['fields'] if f['name'] == 'baseUrl')
+            assert actual_url == expected_url, \
+                f"Sonarr baseUrl mismatch: expected {expected_url}, got {actual_url}"
+        elif app['name'] == 'Radarr':
+            expected_url = "http://127.0.0.1:7878"
+            actual_url = next(f['value'] for f in app['fields'] if f['name'] == 'baseUrl')
+            assert actual_url == expected_url, \
+                f"Radarr baseUrl mismatch: expected {expected_url}, got {actual_url}"
+        elif app['name'] == 'Lidarr':
+            expected_url = "http://127.0.0.1:8686"
+            actual_url = next(f['value'] for f in app['fields'] if f['name'] == 'baseUrl')
+            assert actual_url == expected_url, \
+                f"Lidarr baseUrl mismatch: expected {expected_url}, got {actual_url}"
+
+    print("Prowlarr applications configuration verified successfully!")
     print("All services are running successfully!")
   '';
 }
