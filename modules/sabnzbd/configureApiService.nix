@@ -146,11 +146,11 @@ in {
     description = "Configure SABnzbd via API";
     after = ["sabnzbd.service"];
     wants = ["sabnzbd.service"];
+    partOf = ["sabnzbd.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
       Type = "oneshot";
-      RemainAfterExit = true;
     };
 
     script = ''

@@ -168,24 +168,29 @@ in {
 
       serviceConfig = {
         ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
-          # Remove old config to ensure we always use the Nix-generated one
-          ${pkgs.coreutils}/bin/rm -f /var/lib/sabnzbd/sabnzbd.ini
+          # Only create config if it doesn't exist
+          if [ ! -f /var/lib/sabnzbd/sabnzbd.ini ]; then
+            echo "Creating initial SABnzbd configuration..."
 
-          # Export API key
-          ${optionalString (cfg.apiKeyPath != null) ''
+            # Export API key
+            ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
           ''}
-          ${optionalString (cfg.apiKeyPath != null) ''
+            ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
           ''}
 
-          # Substitute environment variables in template
-          ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
+            # Substitute environment variables in template
+            ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
 
-          # Set proper ownership and permissions
-          ${pkgs.coreutils}/bin/chown sabnzbd:media /var/lib/sabnzbd/sabnzbd.ini
-          ${pkgs.coreutils}/bin/chmod 600 /var/lib/sabnzbd/sabnzbd.ini
+            # Set proper ownership and permissions
+            ${pkgs.coreutils}/bin/chown sabnzbd:media /var/lib/sabnzbd/sabnzbd.ini
+            ${pkgs.coreutils}/bin/chmod 600 /var/lib/sabnzbd/sabnzbd.ini
+          else
+            echo "SABnzbd configuration already exists, skipping creation"
+          fi
         '';
+        ExecStartPost = "${pkgs.systemd}/bin/systemctl --no-block restart sabnzbd-config.service";
       };
     };
 
