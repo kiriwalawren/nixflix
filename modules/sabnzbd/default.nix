@@ -29,6 +29,18 @@ in {
       description = "Whether to enable SABnzbd usenet downloader";
     };
 
+    group = mkOption {
+      type = types.str;
+      default = "sabnzbd";
+      description = "Group under which the service runs";
+    };
+
+    user = mkOption {
+      type = types.str;
+      default = "media";
+      description = "User under which the service runs";
+    };
+
     downloadsDir = mkOption {
       type = types.str;
       default = "${nixflix.downloadsDir}/usenet";
@@ -136,9 +148,8 @@ in {
 
     # Enable sabnzbd service
     services.sabnzbd = {
+      inherit (cfg) user group;
       enable = true;
-      user = "sabnzbd";
-      group = "media";
       configFile = "/var/lib/sabnzbd/sabnzbd.ini";
     };
 
@@ -157,12 +168,6 @@ in {
           ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
           ''}
-
-          # Export environment secrets
-          ${concatMapStringsSep "\n" (secret: ''
-              export ${secret.env}=$(${pkgs.coreutils}/bin/cat ${secret.path})
-            '')
-            cfg.environmentSecrets}
 
           # Substitute environment variables in template
           ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
