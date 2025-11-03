@@ -14,12 +14,8 @@ with lib; let
   mkArrHostConfigService = import ./hostConfigService.nix {inherit lib pkgs;};
   mkArrRootFoldersService = import ./rootFoldersService.nix {inherit lib pkgs;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
-  usesDynamicUser = elem serviceName ["prowlarr"];
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
-  effectiveUser =
-    if usesDynamicUser
-    then serviceName
-    else cfg.user;
+  serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
 in {
   options.nixflix.${serviceName} =
     {
@@ -35,6 +31,18 @@ in {
             When true, ${capitalizedName} routes through the VPN (requires nixflix.mullvad.enable = true).
           '';
         };
+      };
+
+      user = mkOption {
+        type = types.str;
+        default = serviceName;
+        description = "User under which the service runs";
+      };
+
+      group = mkOption {
+        type = types.str;
+        default = serviceName;
+        description = "Group under which the service runs";
       };
 
       config = mkOption {
@@ -58,19 +66,6 @@ in {
         description = "${capitalizedName} configuration options that will be set via the API.";
       };
     }
-    // optionalAttrs (!usesDynamicUser) {
-      group = mkOption {
-        type = types.str;
-        default = serviceName;
-        description = "Group under which the service runs";
-      };
-
-      user = mkOption {
-        type = types.str;
-        default = serviceName;
-        description = "User under which the service runs";
-      };
-    }
     // optionalAttrs usesMediaDirs {
       mediaDirs = mkOption {
         type = types.listOf (types.submodule {
@@ -92,7 +87,6 @@ in {
     };
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    # Assertion: VPN routing requires Mullvad to be enabled
     assertions = [
       {
         assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
@@ -100,7 +94,6 @@ in {
       }
     ];
 
-    # Set pattern-based defaults
     nixflix.${serviceName}.config = {
       apiKeyPath = mkDefault null;
       hostConfig = {
@@ -115,23 +108,13 @@ in {
       };
     };
 
-    # Register directories to be created
     nixflix.dirRegistrations =
       [
-        (
-          if usesDynamicUser
-          then {
-            dir = stateDir;
-            owner = "root";
-            group = "root";
-            mode = "0700";
-          }
-          else {
-            inherit (cfg) group;
-            dir = stateDir;
-            owner = cfg.user;
-          }
-        )
+        {
+          inherit (cfg) group;
+          dir = stateDir;
+          owner = cfg.user;
+        }
       ]
       ++ optionals usesMediaDirs (map (mediaDir: {
           inherit (cfg) group;
@@ -144,6 +127,11 @@ in {
         {
           inherit (cfg) enable;
           dataDir = stateDir;
+        }
+        // optionalAttrs serviceSupportsUserGroup {
+          inherit (cfg) user group;
+        }
+        // {
           settings =
             {
               auth = {
@@ -155,23 +143,20 @@ in {
             // optionalAttrs config.services.postgresql.enable {
               log.dbEnabled = true;
               postgres = {
-                user = effectiveUser;
+                user = cfg.user;
                 host = "/run/postgresql";
                 port = 5432;
-                mainDb = effectiveUser;
-                logDb = effectiveUser;
+                mainDb = cfg.user;
+                logDb = cfg.user;
               };
             };
-        }
-        // optionalAttrs (!usesDynamicUser) {
-          inherit (cfg) user group;
         };
 
       postgresql = mkIf config.services.postgresql.enable {
-        ensureDatabases = [effectiveUser];
+        ensureDatabases = [cfg.user];
         ensureUsers = [
           {
-            name = effectiveUser;
+            name = cfg.user;
             ensureDBOwnership = true;
           }
         ];
@@ -195,7 +180,7 @@ in {
       };
     };
 
-    users = mkIf (!usesDynamicUser) {
+    users = {
       groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
         gid = globals.gids.${cfg.group};
       };
@@ -218,30 +203,17 @@ in {
           before = ["postgresql-ready.target"];
           requiredBy = ["postgresql-ready.target"];
 
-          serviceConfig =
-            {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              TimeoutStartSec = "5min";
-            }
-            // optionalAttrs (!usesDynamicUser) {
-              User = cfg.user;
-              Group = cfg.group;
-            };
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            TimeoutStartSec = "5min";
+            User = cfg.user;
+            Group = cfg.group;
+          };
 
-          script = let
-            dbUser = effectiveUser;
-            psqlCmd =
-              if usesDynamicUser
-              then "${pkgs.sudo}/bin/sudo -u postgres ${pkgs.postgresql}/bin/psql"
-              else "${pkgs.postgresql}/bin/psql -h /run/postgresql";
-            checkCmd =
-              if usesDynamicUser
-              then "SELECT 1 FROM pg_database WHERE datname='${dbUser}'"
-              else "SELECT 1";
-          in ''
+          script = ''
             while true; do
-              if ${psqlCmd} -d ${dbUser} -c "${checkCmd}" > /dev/null 2>&1; then
+              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
                 echo "${capitalizedName} PostgreSQL database is ready"
                 exit 0
               fi
@@ -265,16 +237,29 @@ in {
               ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
               ++ (optional config.services.postgresql.enable "postgresql-ready.target");
             wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
-          }
-          // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
-            serviceConfig.EnvironmentFile = "/run/${serviceName}/env";
-          }
-          // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
-            # Bypass VPN by wrapping with mullvad-exclude
-            serviceConfig.ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
-              exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
-                -nobrowser -data='${stateDir}'
-            '');
+
+            # Always use static users and configure VPN bypass
+            serviceConfig =
+              {
+                # DynamicUser causes issues with VPN bypass and permissions
+                DynamicUser = mkForce false;
+                User = cfg.user;
+                Group = cfg.group;
+              }
+              // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
+                EnvironmentFile = "/run/${serviceName}/env";
+              }
+              // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
+                # Bypass VPN by wrapping with mullvad-exclude
+                ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
+                  exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
+                    -nobrowser -data='${stateDir}'
+                '');
+                # mullvad-exclude needs CAP_SYS_ADMIN to manipulate cgroups
+                AmbientCapabilities = "CAP_SYS_ADMIN";
+                # Delegate allows the service to manage its cgroup subtree
+                Delegate = mkForce true;
+              };
           };
       }
       # Only create config and rootfolders services if apiKeyPath is configured
@@ -295,12 +280,8 @@ in {
           in ''
             mkdir -p /run/${serviceName}
             echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env
-            ${optionalString (!usesDynamicUser) "chown ${cfg.user}:${cfg.group} /run/${serviceName}/env"}
-            chmod 0${
-              if usesDynamicUser
-              then "444"
-              else "400"
-            } /run/${serviceName}/env
+            chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
+            chmod 0400 /run/${serviceName}/env
           '';
         };
 

@@ -24,6 +24,60 @@ pkgs.testers.runNixOSTest {
         };
         dns = ["1.1.1.1" "1.0.0.1"];
       };
+
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            passwordPath = "${pkgs.writeText "prowlarr-password" "testpass"}";
+          };
+          apiKeyPath = "${pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111"}";
+        };
+      };
+
+      sonarr = {
+        enable = true;
+        user = "mediauser";
+        mediaDirs = [{dir = "/media/tv";}];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            passwordPath = "${pkgs.writeText "sonarr-password" "testpass"}";
+          };
+          apiKeyPath = "${pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222"}";
+        };
+      };
+
+      radarr = {
+        enable = true;
+        user = "mediauser";
+        mediaDirs = [{dir = "/media/movies";}];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            passwordPath = "${pkgs.writeText "radarr-password" "testpass"}";
+          };
+          apiKeyPath = "${pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333"}";
+        };
+      };
+
+      lidarr = {
+        enable = true;
+        user = "mediauser";
+        mediaDirs = [{dir = "/media/music";}];
+        config = {
+          hostConfig = {
+            port = 8686;
+            username = "admin";
+            passwordPath = "${pkgs.writeText "lidarr-password" "testpass"}";
+          };
+          apiKeyPath = "${pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444"}";
+        };
+      };
     };
   };
 
@@ -65,6 +119,42 @@ pkgs.testers.runNixOSTest {
     # Test that we can disconnect (service should handle this gracefully even when not connected)
     print("Testing disconnect command...")
     machine.succeed("mullvad disconnect || true")
+
+    # Wait for all services to start
+    machine.wait_for_unit("prowlarr.service", timeout=30)
+    machine.wait_for_unit("sonarr.service", timeout=30)
+    machine.wait_for_unit("radarr.service", timeout=30)
+    machine.wait_for_unit("lidarr.service", timeout=30)
+
+    # Verify services are actually running and stable (not crash-looping)
+    print("Verifying services are stable and responding...")
+    import time
+    time.sleep(5)  # Wait for any crashes to happen
+
+    # Check that services are still active (not failed)
+    machine.succeed("systemctl is-active prowlarr.service")
+    machine.succeed("systemctl is-active sonarr.service")
+    machine.succeed("systemctl is-active radarr.service")
+    machine.succeed("systemctl is-active lidarr.service")
+
+    # Check that services haven't restarted (restart counter should be 0)
+    prowlarr_restarts = machine.succeed("systemctl show prowlarr.service -p NRestarts --value")
+    assert prowlarr_restarts.strip() == "0", f"Prowlarr has restarted {prowlarr_restarts.strip()} times"
+
+    sonarr_restarts = machine.succeed("systemctl show sonarr.service -p NRestarts --value")
+    assert sonarr_restarts.strip() == "0", f"Sonarr has restarted {sonarr_restarts.strip()} times"
+
+    radarr_restarts = machine.succeed("systemctl show radarr.service -p NRestarts --value")
+    assert radarr_restarts.strip() == "0", f"Radarr has restarted {radarr_restarts.strip()} times"
+
+    lidarr_restarts = machine.succeed("systemctl show lidarr.service -p NRestarts --value")
+    assert lidarr_restarts.strip() == "0", f"Lidarr has restarted {lidarr_restarts.strip()} times"
+
+    # Verify HTTP endpoints are responding
+    machine.wait_for_open_port(9696, timeout=60)  # Prowlarr
+    machine.wait_for_open_port(8989, timeout=60)  # Sonarr
+    machine.wait_for_open_port(7878, timeout=60)  # Radarr
+    machine.wait_for_open_port(8686, timeout=60)  # Lidarr
 
     print("Mullvad integration test successful! Kill switch configured correctly.")
   '';
