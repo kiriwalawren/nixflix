@@ -143,7 +143,7 @@ in {
             // optionalAttrs config.services.postgresql.enable {
               log.dbEnabled = true;
               postgres = {
-                user = cfg.user;
+                inherit (cfg) user;
                 host = "/run/postgresql";
                 port = 5432;
                 mainDb = cfg.user;
@@ -225,42 +225,41 @@ in {
 
         # Ensure main service (radarr.service, etc.) starts after
         # directories are created and configured dependencies
-        ${serviceName} =
-          {
-            after =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
-              ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-              ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-            requires =
-              ["nixflix-setup-dirs.service"]
-              ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
-              ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-            wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+        ${serviceName} = {
+          after =
+            ["nixflix-setup-dirs.service"]
+            ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+          requires =
+            ["nixflix-setup-dirs.service"]
+            ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+            ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
 
-            # Always use static users and configure VPN bypass
-            serviceConfig =
-              {
-                # DynamicUser causes issues with VPN bypass and permissions
-                DynamicUser = mkForce false;
-                User = cfg.user;
-                Group = cfg.group;
-              }
-              // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
-                EnvironmentFile = "/run/${serviceName}/env";
-              }
-              // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
-                # Bypass VPN by wrapping with mullvad-exclude
-                ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
-                  exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
-                    -nobrowser -data='${stateDir}'
-                '');
-                # mullvad-exclude needs CAP_SYS_ADMIN to manipulate cgroups
-                AmbientCapabilities = "CAP_SYS_ADMIN";
-                # Delegate allows the service to manage its cgroup subtree
-                Delegate = mkForce true;
-              };
-          };
+          # Always use static users and configure VPN bypass
+          serviceConfig =
+            {
+              # DynamicUser causes issues with VPN bypass and permissions
+              DynamicUser = mkForce false;
+              User = cfg.user;
+              Group = cfg.group;
+            }
+            // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
+              EnvironmentFile = "/run/${serviceName}/env";
+            }
+            // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
+              # Bypass VPN by wrapping with mullvad-exclude
+              ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
+                exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
+                  -nobrowser -data='${stateDir}'
+              '');
+              # mullvad-exclude needs CAP_SYS_ADMIN to manipulate cgroups
+              AmbientCapabilities = "CAP_SYS_ADMIN";
+              # Delegate allows the service to manage its cgroup subtree
+              Delegate = mkForce true;
+            };
+        };
       }
       # Only create config and rootfolders services if apiKeyPath is configured
       // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
