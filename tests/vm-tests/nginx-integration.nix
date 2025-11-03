@@ -81,6 +81,7 @@ in
           enable = true;
           downloadsDir = "/downloads/usenet";
           apiKeyPath = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+          nzbKeyPath = pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666";
           settings = {
             port = 8080;
             host = "127.0.0.1";
