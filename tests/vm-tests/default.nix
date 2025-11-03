@@ -4,7 +4,8 @@
   nixosModules,
 }: let
   # Get all .nix files in the current directory except default.nix
-  testFiles = builtins.filter
+  testFiles =
+    builtins.filter
     (name: name != "default.nix" && pkgs.lib.hasSuffix ".nix" name)
     (builtins.attrNames (builtins.readDir ./.));
 
@@ -19,5 +20,6 @@ in
     map (file: {
       name = testNameFromFile file;
       value = importTest file;
-    }) testFiles
+    })
+    testFiles
   )
