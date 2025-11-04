@@ -146,9 +146,11 @@ in {
     description = "Configure SABnzbd via API";
     after = ["sabnzbd.service"];
     bindsTo = ["sabnzbd.service"];
+    wantedBy = ["sabnzbd.service"];
 
     serviceConfig = {
       Type = "oneshot";
+      RemainAfterExit = true;
     };
 
     script = ''
