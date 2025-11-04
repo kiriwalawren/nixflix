@@ -87,40 +87,75 @@ in {
         CLIENT_API_KEY=$(cat ${apiKeyPath})
         FIELD_OVERRIDES='${fieldOverridesJson}'
 
+        echo "DEBUG: Field overrides:"
+        echo "$FIELD_OVERRIDES" | ${pkgs.jq}/bin/jq '.'
+
         EXISTING_CLIENT=$(echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${clientName}") | @json' || echo "")
 
         if [ -n "$EXISTING_CLIENT" ]; then
           echo "Download client ${clientName} already exists, updating..."
           CLIENT_ID=$(echo "$EXISTING_CLIENT" | ${pkgs.jq}/bin/jq -r '.id')
 
+          echo "DEBUG: Existing client JSON:"
+          echo "$EXISTING_CLIENT" | ${pkgs.jq}/bin/jq '.'
+
           UPDATED_CLIENT=$(apply_field_overrides "$EXISTING_CLIENT" "$CLIENT_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X PUT \
+          echo "DEBUG: Updated client JSON to send:"
+          echo "$UPDATED_CLIENT" | ${pkgs.jq}/bin/jq '.'
+
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X PUT \
             -H "X-Api-Key: $API_KEY" \
             -H "Content-Type: application/json" \
             -d "$UPDATED_CLIENT" \
-            "$BASE_URL/downloadclient/$CLIENT_ID" >/dev/null
+            "$BASE_URL/downloadclient/$CLIENT_ID")
 
-          echo "Download client ${clientName} updated"
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" != "202" ] && [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: API returned HTTP $HTTP_CODE"
+            echo "Response body: $BODY"
+            exit 1
+          fi
+
+          echo "Download client ${clientName} updated (HTTP $HTTP_CODE)"
         else
           echo "Download client ${clientName} does not exist, creating..."
 
           SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.implementationName == "${implementationName}") | @json' || echo "")
 
           if [ -z "$SCHEMA" ]; then
-            echo "Error: No schema found for download client implementationName ${implementationName}"
+            echo "ERROR: No schema found for download client implementationName ${implementationName}"
+            echo "Available schemas:"
+            echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[].implementationName'
             exit 1
           fi
 
+          echo "DEBUG: Schema JSON:"
+          echo "$SCHEMA" | ${pkgs.jq}/bin/jq '.'
+
           NEW_CLIENT=$(apply_field_overrides "$SCHEMA" "$CLIENT_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X POST \
+          echo "DEBUG: New client JSON to send:"
+          echo "$NEW_CLIENT" | ${pkgs.jq}/bin/jq '.'
+
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
             -H "X-Api-Key: $API_KEY" \
             -H "Content-Type: application/json" \
             -d "$NEW_CLIENT" \
-            "$BASE_URL/downloadclient" >/dev/null
+            "$BASE_URL/downloadclient")
 
-          echo "Download client ${clientName} created"
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: API returned HTTP $HTTP_CODE"
+            echo "Response body: $BODY"
+            exit 1
+          fi
+
+          echo "Download client ${clientName} created (HTTP $HTTP_CODE)"
         fi
       '')
       serviceConfig.downloadClients}
