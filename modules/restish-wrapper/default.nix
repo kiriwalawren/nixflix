@@ -34,8 +34,13 @@
         fi
       }
 
-      # Build JSON config using jq
+      # Build JSON config using jq with file locking to prevent concurrent writes
       CONFIG_FILE="$RESTISH_CONFIG_DIR/apis.json"
+      LOCK_FILE="$RESTISH_CONFIG_DIR/apis.json.lock"
+
+      # Acquire exclusive lock (will wait if another process has it)
+      exec 200>"$LOCK_FILE"
+      ${pkgs.util-linux}/bin/flock 200
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: svc: ''
           ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
               export HEADER_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
@@ -73,6 +78,9 @@
       TEMP_CONFIG=$(mktemp)
       ${pkgs.envsubst}/bin/envsubst < "$CONFIG_FILE" > "$TEMP_CONFIG"
       mv "$TEMP_CONFIG" "$CONFIG_FILE"
+
+      # Release lock
+      exec 200>&-
     ''}
 
     exec ${pkgs.restish}/bin/restish "$@"
