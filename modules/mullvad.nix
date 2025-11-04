@@ -104,6 +104,10 @@ in {
 
           ${mullvadPkg}/bin/mullvad dns set custom ${concatStringsSep " " cfg.dns}
 
+          ${optionalString (cfg.location != []) ''
+            ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}
+          ''}
+
           ${optionalString cfg.killSwitch.enable ''
             ${mullvadPkg}/bin/mullvad lockdown-mode set on
             ${mullvadPkg}/bin/mullvad lan set ${
@@ -112,12 +116,9 @@ in {
               else "block"
             }
           ''}
+
           ${optionalString (!cfg.killSwitch.enable) ''
             ${mullvadPkg}/bin/mullvad lockdown-mode set off
-          ''}
-
-          ${optionalString (cfg.location != []) ''
-            ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}
           ''}
 
           ${optionalString cfg.autoConnect ''
