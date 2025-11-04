@@ -421,6 +421,13 @@ in
             script = "None";
           }
           {
+            name = "prowlarr";
+            dir = "prowlarr";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
+          {
             name = "*";
             priority = 0;
             pp = 3;
