@@ -20,13 +20,15 @@
         ++ modules;
     };
 
-  # Test helper to assert conditions
   assertTest = name: cond:
     pkgs.runCommand "unit-test-${name}" {} ''
       ${lib.optionalString (!cond) "echo 'FAIL: ${name}' && exit 1"}
       echo 'PASS: ${name}' > $out
     '';
+
+  restishConfigTest = import ./restish-config.nix {inherit pkgs lib;};
 in {
+  restish-config-generation = assertTest "restish-config-generation" restishConfigTest.allPass;
   # Test that nixflix.sonarr options generate correct systemd units
   sonarr-service-generation = let
     config = evalConfig [

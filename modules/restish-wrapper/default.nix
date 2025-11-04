@@ -9,9 +9,8 @@
 
   enabledServices = lib.attrValues cfg.services;
 
-  # Helper to convert header/query names to valid bash variable names
-  # Converts to uppercase and replaces hyphens with underscores
-  sanitizeVarName = name: lib.replaceStrings ["-"] ["_"] (lib.toUpper name);
+  configGenerator = import ./configGenerator.nix {inherit lib;};
+  inherit (configGenerator) sanitizeVarName generateConfig;
 
   restishWrapper = pkgs.writeShellScriptBin "restish" ''
     set -euo pipefail
@@ -24,7 +23,6 @@
     mkdir -p "$RESTISH_CONFIG_DIR"
 
     ${lib.optionalString ((lib.length enabledServices) > 0) ''
-      # Helper function to read value from file if it exists, otherwise use as-is
       read_value() {
         local value="$1"
         if [ -f "$value" ]; then
@@ -34,53 +32,34 @@
         fi
       }
 
-      # Build JSON config using jq with file locking to prevent concurrent writes
       CONFIG_FILE="$RESTISH_CONFIG_DIR/apis.json"
       LOCK_FILE="$RESTISH_CONFIG_DIR/apis.json.lock"
 
-      # Acquire exclusive lock (will wait if another process has it)
-      exec 200>"$LOCK_FILE"
-      ${pkgs.util-linux}/bin/flock 200
+      (
+      ${pkgs.util-linux}/bin/flock -x 200
+
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: svc: ''
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
-              export HEADER_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
-            '')
-            svc.headers)}
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
-              export QUERY_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
-            '')
-            svc.query)}
-        '')
-        cfg.services)}
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
+      export HEADER_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
+      '')
+      (svc.headers or {}))}
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
+      export QUERY_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
+      '')
+      (svc.query or {}))}
+      '')
+      cfg.services)}
 
       cat > "$CONFIG_FILE" <<'EOF'
       {
-        ${lib.concatStringsSep ",\n" (lib.mapAttrsToList (name: svc: let
-        headerPairs = lib.mapAttrsToList (k: v: ''"${k}": "$HEADER_${sanitizeVarName name}_${sanitizeVarName k}"'') svc.headers;
-        queryPairs = lib.mapAttrsToList (k: v: ''"${k}": "$QUERY_${sanitizeVarName name}_${sanitizeVarName k}"'') svc.query;
-        profileParts =
-          (lib.optionals (svc.headers != {}) [''"headers": { ${lib.concatStringsSep ", " headerPairs} }''])
-          ++ (lib.optionals (svc.query != {}) [''"query": { ${lib.concatStringsSep ", " queryPairs} }'']);
-      in ''
-          "${name}": {
-            "base": "${svc.baseUrl}",
-            "profiles": {
-              "default": {
-        ${lib.concatStringsSep ",\n" profileParts}
-              }
-            }
-          }'')
-      cfg.services)}
+        ${generateConfig cfg.services}
       }
-      EOF
+EOF
 
-      # Substitute environment variables
       TEMP_CONFIG=$(mktemp)
       ${pkgs.envsubst}/bin/envsubst < "$CONFIG_FILE" > "$TEMP_CONFIG"
       mv "$TEMP_CONFIG" "$CONFIG_FILE"
-
-      # Release lock
-      exec 200>&-
+      ) 200>"$LOCK_FILE"
     ''}
 
     exec ${pkgs.restish}/bin/restish "$@"
