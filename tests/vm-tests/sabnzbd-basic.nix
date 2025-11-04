@@ -25,8 +25,8 @@ in
         sabnzbd = {
           enable = true;
           downloadsDir = "/downloads/usenet";
-          apiKeyPath = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-          nzbKeyPath = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+          apiKeyPath = "${pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef"}";
+          nzbKeyPath = "${pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef"}";
           environmentSecrets = [
             {
               env = "EWEKA_USERNAME";

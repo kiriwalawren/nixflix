@@ -196,7 +196,7 @@ in {
             else "";
         in {
           baseUrl = "http://${host}:${toString cfg.config.hostConfig.port}${urlBase}/api/${cfg.config.apiVersion}";
-          inherit (cfg.config) apiKeyPath;
+          headers."X-Api-Key" = cfg.config.apiKeyPath;
         };
       };
     };

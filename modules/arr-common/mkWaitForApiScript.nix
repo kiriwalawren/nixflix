@@ -12,7 +12,7 @@ in ''
 
   echo "Waiting for ${capitalizedName} API to be available..."
   for i in {1..90}; do
-    if restish -o json ${serviceName}/system/status >/dev/null 2>&1; then
+    if restish -o json ${serviceName}/system/status >/dev/null; then
       echo "${capitalizedName} API is available"
       exit 0
     fi

@@ -9,6 +9,10 @@
 
   enabledServices = lib.attrValues cfg.services;
 
+  # Helper to convert header/query names to valid bash variable names
+  # Converts to uppercase and replaces hyphens with underscores
+  sanitizeVarName = name: lib.replaceStrings ["-"] ["_"] (lib.toUpper name);
+
   restishWrapper = pkgs.writeShellScriptBin "restish" ''
     set -euo pipefail
 
@@ -20,33 +24,52 @@
     mkdir -p "$RESTISH_CONFIG_DIR"
 
     ${lib.optionalString ((lib.length enabledServices) > 0) ''
+      # Helper function to read value from file if it exists, otherwise use as-is
+      read_value() {
+        local value="$1"
+        if [ -f "$value" ]; then
+          cat "$value"
+        else
+          echo "$value"
+        fi
+      }
+
+      # Build JSON config using jq
+      CONFIG_FILE="$RESTISH_CONFIG_DIR/apis.json"
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: svc: ''
-          if [ -f "${svc.apiKeyPath}" ]; then
-            export ${lib.toUpper name}_API_KEY=$(cat "${svc.apiKeyPath}")
-          else
-            echo "Warning: API key file not found: ${svc.apiKeyPath}" >&2
-          fi
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
+              export HEADER_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
+            '')
+            svc.headers)}
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: ''
+              export QUERY_${sanitizeVarName name}_${sanitizeVarName k}=$(read_value "${v}")
+            '')
+            svc.query)}
         '')
         cfg.services)}
 
-      CONFIG_FILE="$RESTISH_CONFIG_DIR/apis.json"
       cat > "$CONFIG_FILE" <<'EOF'
       {
-        ${lib.concatStringsSep ",\n  " (lib.mapAttrsToList (name: svc: ''
-        "${name}": {
-          "base": "${svc.baseUrl}",
-          "profiles": {
-            "default": {
-              "headers": {
-                "X-Api-Key": "''${${lib.toUpper name}_API_KEY}"
+        ${lib.concatStringsSep ",\n" (lib.mapAttrsToList (name: svc: let
+        headerPairs = lib.mapAttrsToList (k: v: ''"${k}": "$HEADER_${sanitizeVarName name}_${sanitizeVarName k}"'') svc.headers;
+        queryPairs = lib.mapAttrsToList (k: v: ''"${k}": "$QUERY_${sanitizeVarName name}_${sanitizeVarName k}"'') svc.query;
+        profileParts =
+          (lib.optionals (svc.headers != {}) [''"headers": { ${lib.concatStringsSep ", " headerPairs} }''])
+          ++ (lib.optionals (svc.query != {}) [''"query": { ${lib.concatStringsSep ", " queryPairs} }'']);
+      in ''
+          "${name}": {
+            "base": "${svc.baseUrl}",
+            "profiles": {
+              "default": {
+        ${lib.concatStringsSep ",\n" profileParts}
               }
             }
-          }
-        }'')
+          }'')
       cfg.services)}
       }
       EOF
 
+      # Substitute environment variables
       TEMP_CONFIG=$(mktemp)
       ${pkgs.envsubst}/bin/envsubst < "$CONFIG_FILE" > "$TEMP_CONFIG"
       mv "$TEMP_CONFIG" "$CONFIG_FILE"
@@ -65,9 +88,32 @@ in {
             example = "http://127.0.0.1:8989/api/v3";
           };
 
-          apiKeyPath = mkOption {
-            type = types.path;
-            description = "Path to the API key file";
+          headers = mkOption {
+            type = types.attrsOf types.str;
+            default = {};
+            description = ''
+              HTTP headers to send with requests.
+              Values can be either plain strings or file paths.
+              If a value is a valid file path, it will be read at runtime.
+            '';
+            example = {
+              "X-Api-Key" = "/run/secrets/sonarr/api_key";
+              "User-Agent" = "nixflix";
+            };
+          };
+
+          query = mkOption {
+            type = types.attrsOf types.str;
+            default = {};
+            description = ''
+              Query parameters to include in requests.
+              Values can be either plain strings or file paths.
+              If a value is a valid file path, it will be read at runtime.
+            '';
+            example = {
+              "apikey" = "/run/secrets/sabnzbd/api_key";
+              "output" = "json";
+            };
           };
         };
       });
