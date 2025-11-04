@@ -13,6 +13,7 @@ with lib; let
   arrConfigModule = import ./configModule.nix {inherit lib;};
   mkArrHostConfigService = import ./hostConfigService.nix {inherit lib pkgs;};
   mkArrRootFoldersService = import ./rootFoldersService.nix {inherit lib pkgs;};
+  mkArrDownloadClientsService = import ./downloadClientsService.nix {inherit lib pkgs;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
   serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
@@ -48,7 +49,37 @@ in {
       config = mkOption {
         type =
           arrConfigModule
-          (extraConfigOptions
+          (
+            extraConfigOptions
+            // {
+              downloadClients = mkOption {
+                type = types.listOf (types.submodule {
+                  freeformType = types.attrsOf types.anything;
+                  options = {
+                    name = mkOption {
+                      type = types.str;
+                      description = "User-defined name for the download client instance";
+                    };
+                    implementationName = mkOption {
+                      type = types.str;
+                      description = "Type of download client to configure (matches schema implementationName)";
+                      example = "SABnzbd";
+                    };
+                    apiKeyPath = mkOption {
+                      type = types.str;
+                      description = "Path to file containing the API key for the download client";
+                    };
+                  };
+                });
+                default = [];
+                description = ''
+                  List of download clients to configure via the API /downloadclient endpoint.
+                  Any additional attributes beyond name, implementationName, and apiKeyPath
+                  will be applied as field values to the download client schema.
+                  The useSsl field defaults to true if not specified.
+                '';
+              };
+            }
             // optionalAttrs usesMediaDirs {
               rootFolders = mkOption {
                 type = types.listOf types.attrs;
@@ -61,7 +92,8 @@ in {
                   For Lidarr, additional fields are required like defaultQualityProfileId, etc.
                 '';
               };
-            });
+            }
+          );
         default = {};
         description = "${capitalizedName} configuration options that will be set via the API.";
       };
@@ -106,6 +138,16 @@ in {
           else ""
         );
       };
+      downloadClients = mkDefault (
+        optionals (config.nixflix.sabnzbd.enable or false) [
+          {
+            name = "SABnzbd";
+            implementationName = "SABnzbd";
+            inherit (config.nixflix.sabnzbd) apiKeyPath;
+            urlBase = config.nixflix.sabnzbd.settings.url_base;
+          }
+        ]
+      );
     };
 
     nixflix.dirRegistrations =
@@ -290,6 +332,10 @@ in {
       # Only create root folders service if rootFolders is not empty
       // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
         "${serviceName}-rootfolders" = mkArrRootFoldersService serviceName cfg.config;
+      }
+      # Only create download clients service if downloadClients is not empty
+      // optionalAttrs (cfg.config.apiKeyPath != null) {
+        "${serviceName}-downloadclients" = mkArrDownloadClientsService serviceName cfg.config;
       };
   };
 }
