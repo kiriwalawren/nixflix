@@ -56,6 +56,11 @@ in {
                 type = types.listOf (types.submodule {
                   freeformType = types.attrsOf types.anything;
                   options = {
+                    enable = mkOption {
+                      type = types.bool;
+                      default = true;
+                      description = "Whether or not this download client is enabled.";
+                    };
                     name = mkOption {
                       type = types.str;
                       description = "User-defined name for the download client instance";
