@@ -149,6 +149,8 @@ in {
             name = "SABnzbd";
             implementationName = "SABnzbd";
             inherit (config.nixflix.sabnzbd) apiKeyPath;
+            inherit (config.nixflix.sabnzbd.settings) host;
+            inherit (config.nixflix.sabnzbd.settings) port;
             urlBase = config.nixflix.sabnzbd.settings.url_base;
           }
         ]
