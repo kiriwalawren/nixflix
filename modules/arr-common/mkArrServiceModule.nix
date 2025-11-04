@@ -334,7 +334,7 @@ in {
         "${serviceName}-rootfolders" = mkArrRootFoldersService serviceName cfg.config;
       }
       # Only create download clients service if downloadClients is not empty
-      // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.downloadClients != []) {
+      // optionalAttrs (cfg.config.apiKeyPath != null) {
         "${serviceName}-downloadclients" = mkArrDownloadClientsService serviceName cfg.config;
       };
   };

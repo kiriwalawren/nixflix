@@ -176,7 +176,7 @@ in {
             ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
           ''}
-            ${optionalString (cfg.apiKeyPath != null) ''
+            ${optionalString (cfg.nzbKeyPath != null) ''
             export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
           ''}
 
