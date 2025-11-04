@@ -2,7 +2,6 @@
 with lib;
   types.submodule {
     options = {
-      # Connection settings
       bindAddress = mkOption {
         type = types.str;
         default = "*";
@@ -26,7 +25,6 @@ with lib;
         description = "Enable SSL";
       };
 
-      # Authentication settings
       authenticationMethod = mkOption {
         type = types.enum ["none" "basic" "forms" "external"];
         default = "forms";
@@ -51,7 +49,6 @@ with lib;
         description = "Path to password secret file";
       };
 
-      # URL settings
       urlBase = mkOption {
         type = types.str;
         default = "";
@@ -69,7 +66,6 @@ with lib;
         description = "Instance name";
       };
 
-      # Logging settings
       logLevel = mkOption {
         type = types.enum ["info" "debug" "trace"];
         default = "info";
@@ -88,7 +84,6 @@ with lib;
         description = "Console log level";
       };
 
-      # Update settings
       branch = mkOption {
         type = types.str;
         description = "Update branch";
@@ -112,7 +107,6 @@ with lib;
         description = "Update script path";
       };
 
-      # Proxy settings
       proxyEnabled = mkOption {
         type = types.bool;
         default = false;
@@ -161,7 +155,6 @@ with lib;
         description = "Proxy bypass local addresses";
       };
 
-      # SSL settings
       sslCertPath = mkOption {
         type = types.str;
         default = "";
@@ -180,7 +173,6 @@ with lib;
         description = "Certificate validation";
       };
 
-      # Backup settings
       backupFolder = mkOption {
         type = types.str;
         default = "Backups";
@@ -199,7 +191,6 @@ with lib;
         description = "Backup retention in days";
       };
 
-      # Other settings
       launchBrowser = mkOption {
         type = types.bool;
         default = false;

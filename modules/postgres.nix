@@ -19,7 +19,6 @@ in {
   };
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    # Register directories to be created
     nixflix.dirRegistrations = [
       {
         dir = stateDir;

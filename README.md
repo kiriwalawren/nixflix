@@ -11,6 +11,7 @@ Generic NixOS Jellyfin media server configuration with the Arr stack (Sonarr, Ra
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
 - **Optional Nginx Reverse Proxy**: Configurable nginx integration for all services
+- [**TRaSH Guides**](trash-guides.info): Default configuration follows TRaSH guidelines
 
 ## Usage
 

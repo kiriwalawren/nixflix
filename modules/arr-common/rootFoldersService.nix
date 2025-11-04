@@ -1,9 +1,7 @@
 {
   lib,
   pkgs,
-}:
-# Helper function to create a systemd service that configures *arr root folders via API
-serviceName: serviceConfig:
+}: serviceName: serviceConfig:
 with lib; let
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
@@ -51,9 +49,7 @@ in {
     done
 
     ${concatMapStringsSep "\n" (folderConfig: let
-        # Convert the Nix attr set to a JSON string
         folderJson = builtins.toJSON folderConfig;
-        # Extract the path for checking existence
         folderPath = folderConfig.path;
       in ''
         if ! echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -e '.[] | select(.path == "${folderPath}")' >/dev/null 2>&1; then

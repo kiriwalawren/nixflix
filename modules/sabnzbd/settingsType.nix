@@ -98,7 +98,6 @@
 in
   types.submodule {
     options = {
-      # General settings
       host = mkOption {
         type = types.str;
         default = "127.0.0.1";
@@ -156,7 +155,6 @@ in
         description = "File permissions for downloaded files";
       };
 
-      # Download behavior
       download_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/incomplete";
@@ -295,7 +293,6 @@ in
         description = "Article cache limit";
       };
 
-      # Queue behavior
       pause_on_post_processing = mkOption {
         type = types.bool;
         default = false;
@@ -338,7 +335,6 @@ in
         description = "Keep system awake during downloads";
       };
 
-      # Security
       require_modern_tls = mkOption {
         type = types.bool;
         default = true;
@@ -363,7 +359,6 @@ in
         description = "Anonymous redirect";
       };
 
-      # Logging
       enable_log_rotate = mkOption {
         type = types.bool;
         default = true;
@@ -388,14 +383,12 @@ in
         description = "Enable debug logging";
       };
 
-      # Servers
       servers = mkOption {
         type = types.listOf serverType;
         default = [];
         description = "List of usenet servers";
       };
 
-      # Categories
       categories = mkOption {
         type = types.listOf categoryType;
         default = [

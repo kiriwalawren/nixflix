@@ -245,7 +245,6 @@ in {
 
     systemd.services =
       {
-        # Service that waits for PostgreSQL database role to be ready
         "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
           description = "Wait for ${capitalizedName} PostgreSQL database role to be ready";
           after = ["postgresql.service" "postgresql-setup.service"];
@@ -272,8 +271,6 @@ in {
           '';
         };
 
-        # Ensure main service (radarr.service, etc.) starts after
-        # directories are created and configured dependencies
         ${serviceName} = {
           after =
             ["nixflix-setup-dirs.service"]
@@ -286,10 +283,8 @@ in {
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
           wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
 
-          # Always use static users and configure VPN bypass
           serviceConfig =
             {
-              # DynamicUser causes issues with VPN bypass and permissions
               DynamicUser = mkForce false;
               User = cfg.user;
               Group = cfg.group;
@@ -298,21 +293,16 @@ in {
               EnvironmentFile = "/run/${serviceName}/env";
             }
             // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
-              # Bypass VPN by wrapping with mullvad-exclude
               ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
                 exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
                   -nobrowser -data='${stateDir}'
               '');
-              # mullvad-exclude needs CAP_SYS_ADMIN to manipulate cgroups
               AmbientCapabilities = "CAP_SYS_ADMIN";
-              # Delegate allows the service to manage its cgroup subtree
               Delegate = mkForce true;
             };
         };
       }
-      # Only create config and rootfolders services if apiKeyPath is configured
       // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
-        # Create environment file setup service
         "${serviceName}-env" = {
           description = "Setup ${capitalizedName} environment file";
           wantedBy = ["${serviceName}.service"];
@@ -333,14 +323,11 @@ in {
           '';
         };
 
-        # Configure service via API
         "${serviceName}-config" = mkArrHostConfigService serviceName cfg.config;
       }
-      # Only create root folders service if rootFolders is not empty
       // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
         "${serviceName}-rootfolders" = mkArrRootFoldersService serviceName cfg.config;
       }
-      # Only create download clients service if downloadClients is not empty
       // optionalAttrs (cfg.config.apiKeyPath != null) {
         "${serviceName}-downloadclients" = mkArrDownloadClientsService serviceName cfg.config;
       };

@@ -1,9 +1,7 @@
 {
   lib,
   pkgs,
-}:
-# Helper function to create a systemd service that configures *arr basic settings via API
-serviceName: serviceConfig:
+}: serviceName: serviceConfig:
 with lib; let
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;

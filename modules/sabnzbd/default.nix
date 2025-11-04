@@ -11,8 +11,6 @@ with lib; let
 
   settingsType = import ./settingsType.nix {inherit lib config;};
 
-  # Generate minimal INI with only essential startup config
-  # Everything else will be configured via API
   generateMinimalIni = settings: ''
     [misc]
     api_key = $SABNZBD_API_KEY
@@ -20,7 +18,6 @@ with lib; let
     url_base = ${settings.url_base}
   '';
 
-  # API configuration script and service
   apiConfig = import ./configureApiService.nix {inherit pkgs lib cfg;};
 in {
   options.nixflix.sabnzbd = {
@@ -99,12 +96,10 @@ in {
   };
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    # Override sabnzbd user configuration (user is created by services.sabnzbd)
     users.users.sabnzbd = {
       uid = mkForce globals.uids.sabnzbd;
     };
 
-    # Register directories to be created
     nixflix.dirRegistrations = [
       {
         dir = cfg.downloadsDir;
@@ -150,17 +145,14 @@ in {
       }
     ];
 
-    # Create minimal template file (API key and URL base only)
     environment.etc."sabnzbd/sabnzbd.ini.template".text = generateMinimalIni cfg.settings;
 
-    # Enable sabnzbd service
     services.sabnzbd = {
       inherit (cfg) user group;
       enable = true;
       configFile = "/var/lib/sabnzbd/sabnzbd.ini";
     };
 
-    # Override systemd service configuration
     systemd.services.sabnzbd = {
       after = ["nixflix-setup-dirs.service" "network-online.target"];
       requires = ["nixflix-setup-dirs.service"];
@@ -168,11 +160,9 @@ in {
 
       serviceConfig = {
         ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
-          # Only create config if it doesn't exist
           if [ ! -f /var/lib/sabnzbd/sabnzbd.ini ]; then
             echo "Creating initial SABnzbd configuration..."
 
-            # Export API key
             ${optionalString (cfg.apiKeyPath != null) ''
             export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
           ''}
@@ -180,10 +170,8 @@ in {
             export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
           ''}
 
-            # Substitute environment variables in template
             ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
 
-            # Set proper ownership and permissions
             ${pkgs.coreutils}/bin/chown sabnzbd:media /var/lib/sabnzbd/sabnzbd.ini
             ${pkgs.coreutils}/bin/chmod 600 /var/lib/sabnzbd/sabnzbd.ini
           else
@@ -193,10 +181,8 @@ in {
       };
     };
 
-    # Service to configure SABnzbd via API after it starts
     systemd.services.sabnzbd-config = apiConfig.serviceConfig;
 
-    # Nginx reverse proxy configuration
     services.nginx = mkIf nixflix.nginx.enable {
       virtualHosts.localhost.locations."${cfg.settings.url_base}" = {
         proxyPass = "http://127.0.0.1:${toString cfg.settings.port}";

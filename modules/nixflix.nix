@@ -141,7 +141,6 @@ in {
   config = mkIf cfg.enable {
     users.groups.media.members = cfg.mediaUsers;
 
-    # Create directories for all enabled services after dependencies are met
     systemd.services.nixflix-setup-dirs = {
       description = "Create directories for nixflix media server services";
       wantedBy = ["multi-user.target"];
@@ -154,7 +153,6 @@ in {
       };
 
       script = ''
-        # Base directories
         ${pkgs.coreutils}/bin/mkdir -p ${cfg.stateDir}
         ${pkgs.coreutils}/bin/chown root:root ${cfg.stateDir}
         ${pkgs.coreutils}/bin/chmod 0755 ${cfg.stateDir}
@@ -167,7 +165,6 @@ in {
         ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.downloadsDir}
         ${pkgs.coreutils}/bin/chmod 0775 ${cfg.downloadsDir}
 
-        # Service-registered directories
         ${concatMapStringsSep "\n" (reg: ''
             ${pkgs.coreutils}/bin/mkdir -p ${reg.dir}
             ${pkgs.coreutils}/bin/chown ${reg.owner}:${reg.group} ${reg.dir}

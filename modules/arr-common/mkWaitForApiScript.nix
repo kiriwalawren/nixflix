@@ -1,9 +1,7 @@
 {
   lib,
   pkgs,
-}:
-# Helper function to create a script that waits for an *arr service API to be ready
-serviceName: serviceConfig:
+}: serviceName: serviceConfig:
 pkgs.writeShellScript "${serviceName}-wait-for-api" (let
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in ''

@@ -11,10 +11,8 @@ with lib; let
     inherit config lib pkgs;
   };
 
-  # List of arr services that can be auto-configured as applications
   arrServices = ["lidarr" "radarr" "sonarr"];
 
-  # Helper to create default application config for an enabled service
   mkDefaultApplication = serviceName: let
     serviceConfig = config.nixflix.${serviceName}.config;
     capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
@@ -36,7 +34,6 @@ with lib; let
       prowlarrUrl = mkDefault prowlarrUrl;
     };
 
-  # Generate default applications list from enabled services
   defaultApplications = filter (app: app != {}) (map mkDefaultApplication arrServices);
 
   extraConfigOptions = {
