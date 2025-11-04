@@ -5,8 +5,14 @@
   ...
 }:
 with lib; let
-  mkProwlarrIndexersService = import ./indexersService.nix {inherit lib pkgs;};
-  mkProwlarrApplicationsService = import ./applicationsService.nix {inherit lib pkgs;};
+  mkProwlarrIndexersService = import ./indexersService.nix {
+    inherit lib pkgs;
+    restishPackage = config.nixflix.restish.package;
+  };
+  mkProwlarrApplicationsService = import ./applicationsService.nix {
+    inherit lib pkgs;
+    restishPackage = config.nixflix.restish.package;
+  };
   arrCommon = import ../arr-common {
     inherit config lib pkgs;
   };

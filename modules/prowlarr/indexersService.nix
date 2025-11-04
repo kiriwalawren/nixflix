@@ -1,17 +1,22 @@
 {
   lib,
   pkgs,
+  restishPackage,
 }:
 # Helper function to create a systemd service that configures Prowlarr indexers via API
 serviceName: serviceConfig:
 with lib; let
-  mkWaitForApiScript = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;};
+  mkWaitForApiScript = import ../arr-common/mkWaitForApiScript.nix {
+    inherit lib pkgs restishPackage;
+  };
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   description = "Configure ${serviceName} indexers via API";
   after = ["${serviceName}-config.service"];
   requires = ["${serviceName}-config.service"];
   wantedBy = ["multi-user.target"];
+
+  path = [restishPackage pkgs.jq];
 
   serviceConfig = {
     Type = "oneshot";
@@ -22,18 +27,13 @@ in {
   script = ''
     set -eu
 
-    # Read API key secret
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
-
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
-
     # Fetch all indexer schemas
     echo "Fetching indexer schemas..."
-    SCHEMAS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/indexer/schema")
+    SCHEMAS=$(restish -o json ${serviceName}/indexer/schema)
 
     # Fetch existing indexers
     echo "Fetching existing indexers..."
-    INDEXERS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/indexer")
+    INDEXERS=$(restish -o json ${serviceName}/indexer)
 
     # Build list of configured indexer names
     CONFIGURED_NAMES=$(cat <<'EOF'
@@ -49,9 +49,8 @@ in {
 
       if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
         echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-        ${pkgs.curl}/bin/curl -sSf -X DELETE \
-          -H "X-Api-Key: $API_KEY" \
-          "$BASE_URL/indexer/$INDEXER_ID" >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
+        restish delete ${serviceName}/indexer/$INDEXER_ID > /dev/null \
+          || echo "Warning: Failed to delete indexer $INDEXER_NAME"
       fi
     done
 
@@ -96,11 +95,7 @@ in {
 
           UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X PUT \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$UPDATED_INDEXER" \
-            "$BASE_URL/indexer/$INDEXER_ID" >/dev/null
+          echo "$UPDATED_INDEXER" | restish put ${serviceName}/indexer/$INDEXER_ID > /dev/null
 
           echo "Indexer ${indexerName} updated"
         else
@@ -115,11 +110,7 @@ in {
 
           NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X POST \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$NEW_INDEXER" \
-            "$BASE_URL/indexer" >/dev/null
+          echo "$NEW_INDEXER" | restish post ${serviceName}/indexer > /dev/null
 
           echo "Indexer ${indexerName} created"
         fi

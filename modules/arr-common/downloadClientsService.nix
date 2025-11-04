@@ -1,15 +1,20 @@
 {
   lib,
   pkgs,
+  restishPackage,
 }: serviceName: serviceConfig:
 with lib; let
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
+  mkWaitForApiScript = import ./mkWaitForApiScript.nix {
+    inherit lib pkgs restishPackage;
+  };
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   description = "Configure ${serviceName} download clients via API";
   after = ["${serviceName}-config.service"];
   requires = ["${serviceName}-config.service"];
   wantedBy = ["multi-user.target"];
+
+  path = [restishPackage pkgs.jq];
 
   serviceConfig = {
     Type = "oneshot";
@@ -20,18 +25,13 @@ in {
   script = ''
     set -eu
 
-    # Read API key secret
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
-
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
-
     # Fetch all download client schemas
     echo "Fetching download client schemas..."
-    SCHEMAS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/downloadclient/schema")
+    SCHEMAS=$(restish -o json ${serviceName}/downloadclient/schema)
 
     # Fetch existing download clients
     echo "Fetching existing download clients..."
-    DOWNLOAD_CLIENTS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/downloadclient")
+    DOWNLOAD_CLIENTS=$(restish -o json ${serviceName}/downloadclient)
 
     # Build list of configured download client names
     CONFIGURED_NAMES=$(cat <<'EOF'
@@ -47,9 +47,8 @@ in {
 
       if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$CLIENT_NAME" 'index($name)' >/dev/null 2>&1; then
         echo "Deleting download client not in config: $CLIENT_NAME (ID: $CLIENT_ID)"
-        ${pkgs.curl}/bin/curl -sSf -X DELETE \
-          -H "X-Api-Key: $API_KEY" \
-          "$BASE_URL/downloadclient/$CLIENT_ID" >/dev/null || echo "Warning: Failed to delete download client $CLIENT_NAME"
+        restish delete ${serviceName}/downloadclient/$CLIENT_ID > /dev/null \
+          || echo "Warning: Failed to delete download client $CLIENT_NAME"
       fi
     done
 
@@ -95,11 +94,7 @@ in {
 
           UPDATED_CLIENT=$(apply_field_overrides "$EXISTING_CLIENT" "$CLIENT_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X PUT \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$UPDATED_CLIENT" \
-            "$BASE_URL/downloadclient/$CLIENT_ID" >/dev/null
+          echo "$UPDATED_CLIENT" | restish put ${serviceName}/downloadclient/$CLIENT_ID > /dev/null
 
           echo "Download client ${clientName} updated"
         else
@@ -114,11 +109,7 @@ in {
 
           NEW_CLIENT=$(apply_field_overrides "$SCHEMA" "$CLIENT_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X POST \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$NEW_CLIENT" \
-            "$BASE_URL/downloadclient" >/dev/null
+          echo "$NEW_CLIENT" | restish post ${serviceName}/downloadclient > /dev/null
 
           echo "Download client ${clientName} created"
         fi

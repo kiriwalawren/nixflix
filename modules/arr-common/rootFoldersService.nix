@@ -1,16 +1,21 @@
 {
   lib,
   pkgs,
+  restishPackage,
 }:
 # Helper function to create a systemd service that configures *arr root folders via API
 serviceName: serviceConfig:
 with lib; let
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
+  mkWaitForApiScript = import ./mkWaitForApiScript.nix {
+    inherit lib pkgs restishPackage;
+  };
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   description = "Configure ${serviceName} root folders via API";
   after = ["${serviceName}-config.service"];
   wantedBy = ["multi-user.target"];
+
+  path = [restishPackage pkgs.jq];
 
   serviceConfig = {
     Type = "oneshot";
@@ -21,14 +26,8 @@ in {
   script = ''
     set -eu
 
-    # Read API key secret
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
-
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
-
-    # Create root folders if they don't exist
     echo "Checking for root folders..."
-    ROOT_FOLDERS=$(${pkgs.curl}/bin/curl -sSf -H "X-Api-Key: $API_KEY" "$BASE_URL/rootfolder" 2>/dev/null)
+    ROOT_FOLDERS=$(restish -o json ${serviceName}/rootfolder)
 
     # Build list of configured paths
     CONFIGURED_PATHS=$(cat <<'EOF'
@@ -44,25 +43,18 @@ in {
 
       if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$FOLDER_PATH" 'index($path)' >/dev/null 2>&1; then
         echo "Deleting root folder not in config: $FOLDER_PATH (ID: $FOLDER_ID)"
-        ${pkgs.curl}/bin/curl -sSf -X DELETE \
-          -H "X-Api-Key: $API_KEY" \
-          "$BASE_URL/rootfolder/$FOLDER_ID" >/dev/null 2>&1 || echo "Warning: Failed to delete root folder $FOLDER_PATH"
+        restish delete ${serviceName}/rootfolder/$FOLDER_ID > /dev/null \
+          || echo "Warning: Failed to delete root folder $FOLDER_PATH"
       fi
     done
 
     ${concatMapStringsSep "\n" (folderConfig: let
-        # Convert the Nix attr set to a JSON string
         folderJson = builtins.toJSON folderConfig;
-        # Extract the path for checking existence
         folderPath = folderConfig.path;
       in ''
         if ! echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -e '.[] | select(.path == "${folderPath}")' >/dev/null 2>&1; then
           echo "Creating root folder: ${folderPath}"
-          ${pkgs.curl}/bin/curl -sSf -X POST \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '${folderJson}' \
-            "$BASE_URL/rootfolder" > /dev/null
+          echo '${folderJson}' | restish post ${serviceName}/rootfolder > /dev/null
           echo "Root folder created: ${folderPath}"
         else
           echo "Root folder already exists: ${folderPath}"

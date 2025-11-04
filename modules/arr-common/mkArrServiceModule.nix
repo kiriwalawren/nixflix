@@ -11,9 +11,18 @@ with lib; let
   stateDir = "${nixflix.stateDir}/${serviceName}";
 
   arrConfigModule = import ./configModule.nix {inherit lib;};
-  mkArrHostConfigService = import ./hostConfigService.nix {inherit lib pkgs;};
-  mkArrRootFoldersService = import ./rootFoldersService.nix {inherit lib pkgs;};
-  mkArrDownloadClientsService = import ./downloadClientsService.nix {inherit lib pkgs;};
+  mkArrHostConfigService = import ./hostConfigService.nix {
+    inherit lib pkgs;
+    restishPackage = nixflix.restish.package;
+  };
+  mkArrRootFoldersService = import ./rootFoldersService.nix {
+    inherit lib pkgs;
+    restishPackage = nixflix.restish.package;
+  };
+  mkArrDownloadClientsService = import ./downloadClientsService.nix {
+    inherit lib pkgs;
+    restishPackage = nixflix.restish.package;
+  };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
   serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
@@ -131,45 +140,66 @@ in {
       }
     ];
 
-    nixflix.${serviceName}.config = {
-      apiKeyPath = mkDefault null;
-      hostConfig = {
-        username = mkDefault serviceName;
-        passwordPath = mkDefault null;
-        instanceName = mkDefault capitalizedName;
-        urlBase = mkDefault (
-          if nixflix.serviceNameIsUrlBase
-          then "/${serviceName}"
-          else ""
+    nixflix = {
+      ${serviceName}.config = {
+        apiKeyPath = mkDefault null;
+        hostConfig = {
+          username = mkDefault serviceName;
+          passwordPath = mkDefault null;
+          instanceName = mkDefault capitalizedName;
+          urlBase = mkDefault (
+            if nixflix.serviceNameIsUrlBase
+            then "/${serviceName}"
+            else ""
+          );
+        };
+        downloadClients = mkDefault (
+          optionals (config.nixflix.sabnzbd.enable or false) [
+            {
+              name = "SABnzbd";
+              implementationName = "SABnzbd";
+              inherit (config.nixflix.sabnzbd) apiKeyPath;
+              inherit (config.nixflix.sabnzbd.settings) host;
+              inherit (config.nixflix.sabnzbd.settings) port;
+              urlBase = config.nixflix.sabnzbd.settings.url_base;
+            }
+          ]
         );
       };
-      downloadClients = mkDefault (
-        optionals (config.nixflix.sabnzbd.enable or false) [
+
+      dirRegistrations =
+        [
           {
-            name = "SABnzbd";
-            implementationName = "SABnzbd";
-            inherit (config.nixflix.sabnzbd) apiKeyPath;
-            inherit (config.nixflix.sabnzbd.settings) host;
-            inherit (config.nixflix.sabnzbd.settings) port;
-            urlBase = config.nixflix.sabnzbd.settings.url_base;
+            inherit (cfg) group;
+            dir = stateDir;
+            owner = cfg.user;
           }
         ]
-      );
-    };
+        ++ optionals usesMediaDirs (map (mediaDir: {
+            inherit (cfg) group;
+            inherit (mediaDir) dir owner;
+          })
+          cfg.mediaDirs);
 
-    nixflix.dirRegistrations =
-      [
-        {
-          inherit (cfg) group;
-          dir = stateDir;
-          owner = cfg.user;
-        }
-      ]
-      ++ optionals usesMediaDirs (map (mediaDir: {
-          inherit (cfg) group;
-          inherit (mediaDir) dir owner;
-        })
-        cfg.mediaDirs);
+      restish.services = mkIf (cfg.config.apiKeyPath != null) {
+        ${serviceName} = let
+          host =
+            if cfg.config.hostConfig ? bindAddress && cfg.config.hostConfig.bindAddress != null
+            then
+              if cfg.config.hostConfig.bindAddress == "*"
+              then "127.0.0.1"
+              else cfg.config.hostConfig.bindAddress
+            else "127.0.0.1";
+          urlBase =
+            if cfg.config.hostConfig ? urlBase && cfg.config.hostConfig.urlBase != null
+            then cfg.config.hostConfig.urlBase
+            else "";
+        in {
+          baseUrl = "http://${host}:${toString cfg.config.hostConfig.port}${urlBase}/api/${cfg.config.apiVersion}";
+          inherit (cfg.config) apiKeyPath;
+        };
+      };
+    };
 
     services = {
       ${serviceName} =

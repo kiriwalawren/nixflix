@@ -1,16 +1,21 @@
 {
   lib,
   pkgs,
+  restishPackage,
 }:
 # Helper function to create a systemd service that configures *arr basic settings via API
 serviceName: serviceConfig:
 with lib; let
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
+  mkWaitForApiScript = import ./mkWaitForApiScript.nix {
+    inherit lib pkgs restishPackage;
+  };
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   description = "Configure ${serviceName} via API";
   after = ["${serviceName}.service"];
   wantedBy = ["multi-user.target"];
+
+  path = [restishPackage pkgs.jq];
 
   serviceConfig = {
     Type = "oneshot";
@@ -21,15 +26,12 @@ in {
   script = ''
     set -eu
 
-    # Read secrets
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
+    # Read password secret
     AUTH_PASSWORD=$(cat ${serviceConfig.hostConfig.passwordPath})
-
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
     # Get current host configuration
     echo "Fetching current host configuration..."
-    HOST_CONFIG=$(${pkgs.curl}/bin/curl -s -f -H "X-Api-Key: $API_KEY" "$BASE_URL/config/host" 2>/dev/null)
+    HOST_CONFIG=$(restish -o json ${serviceName}/config/host)
 
     if [ -z "$HOST_CONFIG" ]; then
       echo "Failed to fetch host configuration"
@@ -38,6 +40,9 @@ in {
 
     # Extract the ID from the host config (needed for PUT request)
     CONFIG_ID=$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.id')
+
+    # Read API key for config JSON
+    API_KEY=$(cat ${serviceConfig.apiKeyPath})
 
     # Build the complete configuration JSON
     echo "Building configuration..."
@@ -88,11 +93,7 @@ in {
 
     # Update host configuration
     echo "Updating ${capitalizedName} configuration via API..."
-    ${pkgs.curl}/bin/curl -s -f -X PUT \
-      -H "X-Api-Key: $API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "$NEW_CONFIG" \
-      "$BASE_URL/config/host/$CONFIG_ID" > /dev/null
+    echo "$NEW_CONFIG" | restish put ${serviceName}/config/host/$CONFIG_ID > /dev/null
 
     echo "Configuration updated successfully"
 

@@ -1,17 +1,22 @@
 {
   lib,
   pkgs,
+  restishPackage,
 }:
 # Helper function to create a systemd service that configures Prowlarr applications via API
 serviceName: serviceConfig:
 with lib; let
-  mkWaitForApiScript = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;};
+  mkWaitForApiScript = import ../arr-common/mkWaitForApiScript.nix {
+    inherit lib pkgs restishPackage;
+  };
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   description = "Configure ${serviceName} applications via API";
   after = ["${serviceName}-config.service"];
   requires = ["${serviceName}-config.service"];
   wantedBy = ["multi-user.target"];
+
+  path = [restishPackage pkgs.jq];
 
   serviceConfig = {
     Type = "oneshot";
@@ -22,18 +27,13 @@ in {
   script = ''
     set -eu
 
-    # Read API key secret
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
-
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
-
     # Fetch all application schemas
     echo "Fetching application schemas..."
-    SCHEMAS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/applications/schema")
+    SCHEMAS=$(restish -o json ${serviceName}/applications/schema)
 
     # Fetch existing applications
     echo "Fetching existing applications..."
-    APPLICATIONS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/applications")
+    APPLICATIONS=$(restish -o json ${serviceName}/applications)
 
     # Build list of configured application names
     CONFIGURED_NAMES=$(cat <<'EOF'
@@ -49,9 +49,8 @@ in {
 
       if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null 2>&1; then
         echo "Deleting application not in config: $APPLICATION_NAME (ID: $APPLICATION_ID)"
-        ${pkgs.curl}/bin/curl -sSf -X DELETE \
-          -H "X-Api-Key: $API_KEY" \
-          "$BASE_URL/applications/$APPLICATION_ID" >/dev/null || echo "Warning: Failed to delete application $APPLICATION_NAME"
+        restish delete ${serviceName}/applications/$APPLICATION_ID > /dev/null \
+          || echo "Warning: Failed to delete application $APPLICATION_NAME"
       fi
     done
 
@@ -97,11 +96,7 @@ in {
 
           UPDATED_APPLICATION=$(apply_field_overrides "$EXISTING_APPLICATION" "$APPLICATION_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X PUT \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$UPDATED_APPLICATION" \
-            "$BASE_URL/applications/$APPLICATION_ID" >/dev/null
+          echo "$UPDATED_APPLICATION" | restish put ${serviceName}/applications/$APPLICATION_ID > /dev/null
 
           echo "Application ${applicationName} updated"
         else
@@ -116,11 +111,7 @@ in {
 
           NEW_APPLICATION=$(apply_field_overrides "$SCHEMA" "$APPLICATION_API_KEY" "$FIELD_OVERRIDES")
 
-          ${pkgs.curl}/bin/curl -sSf -X POST \
-            -H "X-Api-Key: $API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$NEW_APPLICATION" \
-            "$BASE_URL/applications" >/dev/null
+          echo "$NEW_APPLICATION" | restish post ${serviceName}/applications > /dev/null
 
           echo "Application ${applicationName} created"
         fi
