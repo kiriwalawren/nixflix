@@ -10,10 +10,9 @@ with lib; let
   cfg = config.nixflix.${serviceName};
   stateDir = "${nixflix.stateDir}/${serviceName}";
 
-  arrConfigModule = import ./configModule.nix {inherit lib;};
-  mkArrHostConfigService = import ./hostConfigService.nix {inherit lib pkgs;};
-  mkArrRootFoldersService = import ./rootFoldersService.nix {inherit lib pkgs;};
-  mkArrDownloadClientsService = import ./downloadClientsService.nix {inherit lib pkgs;};
+  hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
+  rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
+  downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
   serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
@@ -47,58 +46,30 @@ in {
       };
 
       config = mkOption {
-        type =
-          arrConfigModule
-          (
-            extraConfigOptions
-            // {
-              downloadClients = mkOption {
-                type = types.listOf (types.submodule {
-                  freeformType = types.attrsOf types.anything;
-                  options = {
-                    enable = mkOption {
-                      type = types.bool;
-                      default = true;
-                      description = "Whether or not this download client is enabled.";
-                    };
-                    name = mkOption {
-                      type = types.str;
-                      description = "User-defined name for the download client instance";
-                    };
-                    implementationName = mkOption {
-                      type = types.str;
-                      description = "Type of download client to configure (matches schema implementationName)";
-                      example = "SABnzbd";
-                    };
-                    apiKeyPath = mkOption {
-                      type = types.str;
-                      description = "Path to file containing the API key for the download client";
-                    };
-                  };
-                });
-                default = [];
-                description = ''
-                  List of download clients to configure via the API /downloadclient endpoint.
-                  Any additional attributes beyond name, implementationName, and apiKeyPath
-                  will be applied as field values to the download client schema.
-                  The useSsl field defaults to true if not specified.
-                '';
+        type = types.submodule {
+          options =
+            {
+              apiVersion = mkOption {
+                type = types.str;
+                default = "v3";
+                description = "Current version of the API of the service";
               };
+
+              apiKeyPath = mkOption {
+                type = types.nullOr types.path;
+                default = null;
+                description = "Path to API key secret file";
+              };
+            }
+            // extraConfigOptions
+            // {
+              downloadClients = downloadClients.options;
+              hostConfig = hostConfig.options;
             }
             // optionalAttrs usesMediaDirs {
-              rootFolders = mkOption {
-                type = types.listOf types.attrs;
-                default = [];
-                description = ''
-                  List of root folders to create via the API /rootfolder endpoint.
-                  Each folder is an attribute set that will be converted to JSON and sent to the API.
-
-                  For Sonarr/Radarr, a simple path is sufficient: {path = "/path/to/folder";}
-                  For Lidarr, additional fields are required like defaultQualityProfileId, etc.
-                '';
-              };
-            }
-          );
+              rootFolders = rootFolders.options;
+            };
+        };
         default = {};
         description = "${capitalizedName} configuration options that will be set via the API.";
       };
@@ -323,13 +294,13 @@ in {
           '';
         };
 
-        "${serviceName}-config" = mkArrHostConfigService serviceName cfg.config;
+        "${serviceName}-config" = hostConfig.mkService cfg.config;
       }
       // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
-        "${serviceName}-rootfolders" = mkArrRootFoldersService serviceName cfg.config;
+        "${serviceName}-rootfolders" = rootFolders.mkService cfg.config;
       }
       // optionalAttrs (cfg.config.apiKeyPath != null) {
-        "${serviceName}-downloadclients" = mkArrDownloadClientsService serviceName cfg.config;
+        "${serviceName}-downloadclients" = downloadClients.mkService cfg.config;
       };
   };
 }

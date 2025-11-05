@@ -5,10 +5,13 @@
   ...
 }:
 with lib; let
-  mkProwlarrIndexersService = import ./indexersService.nix {inherit lib pkgs;};
-  mkProwlarrApplicationsService = import ./applicationsService.nix {inherit lib pkgs;};
-  arrCommon = import ../arr-common {
-    inherit config lib pkgs;
+  indexers = import ./indexers.nix {
+    inherit lib pkgs;
+    serviceName = "prowlarr";
+  };
+  applications = import ./applications.nix {
+    inherit lib pkgs;
+    serviceName = "prowlarr";
   };
 
   arrServices = ["lidarr" "radarr" "sonarr"];
@@ -37,60 +40,12 @@ with lib; let
   defaultApplications = filter (app: app != {}) (map mkDefaultApplication arrServices);
 
   extraConfigOptions = {
-    indexers = mkOption {
-      type = types.listOf (types.submodule {
-        options = {
-          name = mkOption {
-            type = types.str;
-            description = "Name of the Prowlarr Indexer Schema";
-          };
-          apiKeyPath = mkOption {
-            type = types.str;
-            description = "Path to file containing the API key for the indexer";
-          };
-          appProfileId = mkOption {
-            type = types.int;
-            default = 1;
-            description = "Application profile ID for the indexer (default: 1)";
-          };
-        };
-      });
-      default = [];
-      description = ''
-        List of indexers to configure in Prowlarr.
-        Any additional attributes beyond name, apiKeyPath, and appProfileId
-        will be applied as field values to the indexer schema.
-      '';
-    };
+    indexers = indexers.type;
 
-    applications = mkOption {
-      type = types.listOf (types.submodule {
-        freeformType = types.attrsOf types.anything;
-        options = {
-          name = mkOption {
-            type = types.str;
-            description = "User-defined name for the application instance";
-          };
-          implementationName = mkOption {
-            type = types.enum ["LazyLibrarian" "Lidarr" "Mylar" "Readarr" "Radarr" "Sonarr" "Whisper"];
-            description = "Type of application to configure (matches schema implementationName)";
-          };
-          apiKeyPath = mkOption {
-            type = types.str;
-            description = "Path to file containing the API key for the application";
-          };
-        };
-      });
-      default = [];
-      description = ''
-        List of applications to configure in Prowlarr.
-        Any additional attributes beyond name, implementationName, and apiKeyPath
-        will be applied as field values to the application schema.
-      '';
-    };
+    applications = applications.type;
   };
 in {
-  imports = [(arrCommon.mkArrServiceModule "prowlarr" extraConfigOptions)];
+  imports = [(import ../arr-common/mkArrServiceModule.nix {inherit config lib pkgs;} "prowlarr" extraConfigOptions)];
 
   config = {
     nixflix.prowlarr = {
@@ -105,11 +60,11 @@ in {
     };
 
     systemd.services."prowlarr-indexers" = mkIf (config.nixflix.enable && config.nixflix.prowlarr.enable && config.nixflix.prowlarr.config.apiKeyPath != null) (
-      mkProwlarrIndexersService "prowlarr" config.nixflix.prowlarr.config
+      indexers.mkService config.nixflix.prowlarr.config
     );
 
     systemd.services."prowlarr-applications" = mkIf (config.nixflix.enable && config.nixflix.prowlarr.enable && config.nixflix.prowlarr.config.apiKeyPath != null) (
-      mkProwlarrApplicationsService "prowlarr" config.nixflix.prowlarr.config
+      applications.mkService config.nixflix.prowlarr.config
     );
   };
 }
