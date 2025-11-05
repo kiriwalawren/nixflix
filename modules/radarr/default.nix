@@ -6,9 +6,8 @@
 }: let
   inherit (config) nixflix;
   cfg = config.nixflix.radarr;
-  arrCommon = import ../arr-common {inherit config lib pkgs;};
 in {
-  imports = [(arrCommon.mkArrServiceModule "radarr" {})];
+  imports = [(import ../arr-common/mkArrServiceModule.nix {inherit config lib pkgs;} "radarr" {})];
 
   config.nixflix.radarr = {
     group = lib.mkDefault "media";
