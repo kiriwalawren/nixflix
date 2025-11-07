@@ -11,7 +11,7 @@ with lib; let
   sonarrConfig = optionalAttrs cfg.sonarr.enable {
     sonarr = {
       sonarr_main = {
-        base_url = "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}";
+        base_url = "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
         api_key._secret = "/run/credentials/recyclarr.service/sonarr-api_key";
 
         quality_profiles = [
@@ -48,7 +48,7 @@ with lib; let
   radarrConfig = optionalAttrs cfg.radarr.enable {
     radarr = {
       radarr_main = {
-        base_url = "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}";
+        base_url = "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
         api_key._secret = "/run/credentials/recyclarr.service/radarr-api_key";
 
         quality_profiles = [
