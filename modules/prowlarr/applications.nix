@@ -73,7 +73,7 @@ in {
         APPLICATION_NAME=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.name')
         APPLICATION_ID=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.id')
 
-        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null 2>&1; then
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null; then
           echo "Deleting application not in config: $APPLICATION_NAME (ID: $APPLICATION_ID)"
           ${pkgs.curl}/bin/curl -sSf -X DELETE \
             -H "X-Api-Key: $API_KEY" \

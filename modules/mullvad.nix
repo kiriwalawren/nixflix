@@ -81,14 +81,16 @@ in {
     systemd.services.mullvad-config = {
       description = "Configure Mullvad VPN settings";
       wantedBy = ["multi-user.target"];
-      wants = ["mullvad-daemon.service" "network-online.target"];
       after = ["mullvad-daemon.service" "network-online.target"];
+      requires = ["mullvad-daemon.service" "network-online.target"];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = pkgs.writeShellScript "configure-mullvad" ''
           for i in {1..30}; do
             if ${mullvadPkg}/bin/mullvad status &>/dev/null; then
+              echo "Mullvad daemon is ready with relay list available"
+              sleep 2
               break
             fi
             sleep 1
@@ -99,6 +101,17 @@ in {
               echo "Logging in to Mullvad account..."
               ACCOUNT_NUMBER=$(cat ${cfg.accountNumberPath})
               ${mullvadPkg}/bin/mullvad account login "$ACCOUNT_NUMBER"
+
+              echo "Waiting for relay list to download..."
+              for i in {1..30}; do
+                RELAY_COUNT=$(${mullvadPkg}/bin/mullvad relay list 2>/dev/null | wc -l)
+                if [ "$RELAY_COUNT" -gt 10 ]; then
+                  echo "Relay list populated ($RELAY_COUNT lines)"
+                  sleep 1
+                  break
+                fi
+                sleep 1
+              done
             fi
           ''}
 
@@ -125,6 +138,7 @@ in {
             ${mullvadPkg}/bin/mullvad auto-connect set on
             ${mullvadPkg}/bin/mullvad connect
           ''}
+
           ${optionalString (!cfg.autoConnect) ''
             ${mullvadPkg}/bin/mullvad auto-connect set off
           ''}
