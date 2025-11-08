@@ -175,7 +175,7 @@ in {
             ];
           }
         ]
-        + optionals cfg.radarr.anime.enable [
+        ++ optionals cfg.radarr.anime.enable [
           {
             # Scores from TRaSH json
             trash_ids = [

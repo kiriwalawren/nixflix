@@ -189,16 +189,15 @@ in {
       ExecStart = cleanupScript;
       User = cfg.user;
       Group = cfg.group;
-
-      LoadCredential =
-        optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
-
       PrivateTmp = true;
       NoNewPrivileges = true;
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateDevices = true;
+
+      LoadCredential =
+        optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
+        ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
     };
   };
 }

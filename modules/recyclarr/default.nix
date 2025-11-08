@@ -11,8 +11,14 @@ with lib; let
 
   configOption = import ./config-option.nix {inherit lib;};
 
-  radarrApiWait = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "radarr" nixflix.radarr;
-  sonarrApiWait = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "sonarr" nixflix.sonarr;
+  radarrApiWait =
+    if cfg.radarr.enable
+    then import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "radarr" nixflix.radarr.config
+    else "";
+  sonarrApiWait =
+    if cfg.sonarr.enable
+    then import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "sonarr" nixflix.sonarr.config
+    else "";
 
   sonarrConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-default.nix {inherit config lib;});
   radarrConfig = optionalAttrs cfg.radarr.enable (import ./radarr-default.nix {inherit config lib;});
@@ -108,10 +114,6 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = [
       {
-        assertion = cfg.sonarr.enable || cfg.radarr.enable;
-        message = "Recyclarr requires at least one of nixflix.recyclarr.sonarr.enable or nixflix.recyclarr.radarr.enable to be true";
-      }
-      {
         assertion = cfg.sonarr.enable -> config.nixflix.sonarr.config.apiKeyPath != null;
         message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKeyPath to be set";
       }
@@ -153,6 +155,7 @@ in {
             LoadCredential =
               optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
               ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
+
             ExecStartPre = ''
               ${radarrApiWait}
               ${sonarrApiWait}
