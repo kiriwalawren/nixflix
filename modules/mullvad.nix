@@ -45,6 +45,7 @@ in {
         "8.8.8.8"
         "8.8.4.4"
       ];
+      defaultText = literalExpression ''["1.1.1.1" "1.0.0.1" "8.8.8.8" "8.8.4.4"]'';
       example = ["194.242.2.4" "194.242.2.3"];
       description = ''
         DNS servers to use with the VPN.

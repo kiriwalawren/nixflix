@@ -26,6 +26,11 @@ in {
       };
     });
     default = [];
+    defaultText = literalExpression ''
+      # Automatically configured for enabled arr services (Sonarr, Radarr, Lidarr)
+      # Each enabled service gets an application entry with computed baseUrl and prowlarrUrl
+      # based on nginx configuration
+    '';
     description = ''
       List of applications to configure in Prowlarr.
       Any additional attributes beyond name, implementationName, and apiKeyPath

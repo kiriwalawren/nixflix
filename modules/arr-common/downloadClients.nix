@@ -32,6 +32,18 @@ in {
       };
     });
     default = [];
+    defaultText = literalExpression ''
+      lib.optionals (config.nixflix.sabnzbd.enable or false) [
+        {
+          name = "SABnzbd";
+          implementationName = "SABnzbd";
+          apiKeyPath = config.nixflix.sabnzbd.apiKeyPath;
+          host = config.nixflix.sabnzbd.settings.host;
+          port = config.nixflix.sabnzbd.settings.port;
+          urlBase = config.nixflix.sabnzbd.settings.url_base;
+        }
+      ]
+    '';
     description = ''
       List of download clients to configure via the API /downloadclient endpoint.
       Any additional attributes beyond name, implementationName, and apiKeyPath

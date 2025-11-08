@@ -36,12 +36,14 @@ in {
     group = mkOption {
       type = types.str;
       default = globals.libraryOwner.group;
+      defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
       description = "Group under which the service runs";
     };
 
     downloadsDir = mkOption {
       type = types.str;
       default = "${nixflix.downloadsDir}/usenet";
+      defaultText = literalExpression ''config.nixflix.downloadsDir + "/usenet"'';
       description = "Base directory for SABnzbd downloads";
     };
 
