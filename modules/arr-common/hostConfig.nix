@@ -22,6 +22,7 @@ in {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStartPre = mkWaitForApiScript serviceName serviceConfig;
+      ExecStartPost = mkWaitForApiScript serviceName serviceConfig;
     };
 
     script = ''

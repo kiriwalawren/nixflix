@@ -152,8 +152,17 @@ in
 
       permissions = mkOption {
         type = types.str;
-        default = "755";
+        default = "775";
         description = "File permissions for downloaded files";
+      };
+
+      propagation_delay = mkOption {
+        type = types.int;
+        default = 0;
+        description = ''
+          Posts will be pause until they are at least this age.
+          Setting job priority to Force will skip the delay.
+        '';
       };
 
       download_dir = mkOption {
@@ -206,7 +215,7 @@ in
 
       ignore_samples = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = "Ignore sample files";
       };
 
@@ -248,14 +257,80 @@ in
 
       enable_all_par = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = "Download all par2 files";
       };
 
       action_on_unwanted_extensions = mkOption {
         type = types.int;
-        default = 2;
+        default = 1;
         description = "Action on unwanted extensions (0=None, 1=Abort, 2=Delete)";
+      };
+
+      no_smart_dupes = mkOption {
+        type = types.int;
+        default = 4;
+        description = "Smart duplicate detection";
+      };
+
+      auto_sort = mkOption {
+        type = types.str;
+        default = "";
+        description = "Automatically sort queue";
+      };
+
+      fail_hopeless_jobs = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Abort jobs that cannot be completed";
+      };
+
+      pause_on_pwrar = mkOption {
+        type = types.int;
+        default = 1;
+        description = "Action when encrypted RAR is downloaded";
+      };
+
+      unwanted_extensions = mkOption {
+        type = types.str;
+        default = "";
+        description = "Unwanted extensions";
+      };
+
+      unwanted_extensions_mode = mkOption {
+        type = types.int;
+        default = 0;
+        description = "Unwanted extension mode (0=Blacklist, 1=Whitelist";
+      };
+
+      safe_postproc = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Post process only verified jobs";
+      };
+
+      sfv_check = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable SFV-based checks";
+      };
+
+      enable_recursive = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable recursive unpacking";
+      };
+
+      deobfuscate_final_filenames = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Deobfuscate final filenames";
+      };
+
+      flat_unpack = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Ignore any folders inside archives";
       };
 
       check_new_rel = mkOption {

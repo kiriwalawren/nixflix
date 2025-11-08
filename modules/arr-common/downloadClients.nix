@@ -4,7 +4,6 @@
   serviceName,
 }:
 with lib; let
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   options = mkOption {
@@ -61,7 +60,6 @@ in {
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStartPre = mkWaitForApiScript serviceName serviceConfig;
     };
 
     script = ''
