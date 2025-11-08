@@ -32,6 +32,21 @@ in
               passwordPath = "${pkgs.writeText "radarr-password" "testpassword123"}";
             };
             apiKeyPath = "${pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234"}";
+            delayProfiles = [
+              {
+                enableUsenet = true;
+                enableTorrent = true;
+                preferredProtocol = "torrent";
+                usenetDelay = 0;
+                torrentDelay = 360;
+                bypassIfHighestQuality = true;
+                bypassIfAboveCustomFormatScore = false;
+                minimumCustomFormatScore = 0;
+                order = 2147483647;
+                tags = [];
+                id = 1;
+              }
+            ];
           };
         };
 
@@ -110,7 +125,7 @@ in
       assert profiles_list[0]['id'] == 1, "Expected default delay profile with id=1"
       assert profiles_list[0]['enableUsenet'] == True, "Expected enableUsenet=true"
       assert profiles_list[0]['enableTorrent'] == True, "Expected enableTorrent=true"
-      assert profiles_list[0]['preferredProtocol'] == 'usenet', "Expected preferredProtocol=usenet"
+      assert profiles_list[0]['preferredProtocol'] == 'torrent', "Expected preferredProtocol=torrent"
       assert profiles_list[0]['usenetDelay'] == 0, "Expected usenetDelay=0"
       assert profiles_list[0]['torrentDelay'] == 360, "Expected torrentDelay=360"
       assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
