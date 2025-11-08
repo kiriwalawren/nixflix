@@ -32,6 +32,21 @@ in
               passwordPath = "${pkgs.writeText "radarr-password" "testpassword123"}";
             };
             apiKeyPath = "${pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234"}";
+            delayProfiles = [
+              {
+                enableUsenet = true;
+                enableTorrent = true;
+                preferredProtocol = "torrent";
+                usenetDelay = 0;
+                torrentDelay = 360;
+                bypassIfHighestQuality = true;
+                bypassIfAboveCustomFormatScore = false;
+                minimumCustomFormatScore = 0;
+                order = 2147483647;
+                tags = [];
+                id = 1;
+              }
+            ];
           };
         };
 
@@ -71,8 +86,9 @@ in
           "http://127.0.0.1:7878/api/v3/system/status"
       )
 
-      # Wait for root folders and download clients services
+      # Wait for root folders, delay profiles, and download clients services
       machine.wait_for_unit("radarr-rootfolders.service", timeout=60)
+      machine.wait_for_unit("radarr-delayprofiles.service", timeout=60)
       machine.wait_for_unit("radarr-downloadclients.service", timeout=60)
 
       # Check root folder
@@ -97,6 +113,23 @@ in
       assert clients_list[0]['implementationName'] == 'SABnzbd', \
           "Expected SABnzbd implementation"
       print("SABnzbd download client configured successfully!")
+
+      # Check that default delay profile was created
+      delay_profiles = machine.succeed(
+          "curl -s -H 'X-Api-Key: abcd1234abcd1234abcd1234abcd1234' "
+          "http://127.0.0.1:7878/api/v3/delayprofile"
+      )
+      profiles_list = json.loads(delay_profiles)
+      print(f"Delay profiles: {delay_profiles}")
+      assert len(profiles_list) == 1, f"Expected 1 delay profile, found {len(profiles_list)}"
+      assert profiles_list[0]['id'] == 1, "Expected default delay profile with id=1"
+      assert profiles_list[0]['enableUsenet'] == True, "Expected enableUsenet=true"
+      assert profiles_list[0]['enableTorrent'] == True, "Expected enableTorrent=true"
+      assert profiles_list[0]['preferredProtocol'] == 'torrent', "Expected preferredProtocol=torrent"
+      assert profiles_list[0]['usenetDelay'] == 0, "Expected usenetDelay=0"
+      assert profiles_list[0]['torrentDelay'] == 360, "Expected torrentDelay=360"
+      assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
+      print("Default delay profile configured successfully!")
 
       machine.succeed("pgrep -u testuser Radarr")
     '';
