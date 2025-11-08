@@ -15,7 +15,6 @@ with lib; let
   downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
-  serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
 in {
   options.nixflix.${serviceName} =
     {
@@ -146,10 +145,8 @@ in {
       ${serviceName} =
         {
           inherit (cfg) enable;
-          dataDir = stateDir;
-        }
-        // optionalAttrs serviceSupportsUserGroup {
           inherit (cfg) user group;
+          dataDir = stateDir;
         }
         // {
           settings =

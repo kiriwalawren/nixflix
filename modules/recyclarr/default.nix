@@ -13,31 +13,25 @@ with lib; let
       sonarr_main = {
         base_url = "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
         api_key._secret = "/run/credentials/recyclarr.service/sonarr-api_key";
-
-        quality_profiles = [
-          {
-            name = cfg.sonarr.qualityProfile;
-            upgrade = {
-              allowed = true;
-              until_quality = cfg.sonarr.upgradeUntilQuality;
-            };
-            qualities =
-              [
-                {name = cfg.sonarr.qualityProfile;}
-              ]
-              ++ optional (cfg.sonarr.qualityProfile != cfg.sonarr.upgradeUntilQuality) {
-                name = cfg.sonarr.upgradeUntilQuality;
-              };
-          }
-        ];
+        media_naming = {
+          series = "default";
+          season = "default";
+          episodes = {
+            rename = true;
+            standard = "default";
+            daily = "default";
+            anime = "default";
+          };
+        };
 
         include =
           [
             {template = "sonarr-quality-definition-series";}
-            {template = "sonarr-v4-quality-profile-web-1080p";}
-            {template = "sonarr-v4-custom-formats-web-1080p";}
+            {template = "sonarr-v4-quality-profile-web-2160p-alternative";}
+            {template = "sonarr-v4-custom-formats-web-2160p";}
           ]
           ++ optionals cfg.sonarr.anime.enable [
+            {template = "sonarr-v4-quality-definition-anime";}
             {template = "sonarr-v4-quality-profile-anime";}
             {template = "sonarr-v4-custom-formats-anime";}
           ];
@@ -50,31 +44,46 @@ with lib; let
       radarr_main = {
         base_url = "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
         api_key._secret = "/run/credentials/recyclarr.service/radarr-api_key";
+        media_naming = {
+          rename = true;
+          standard = "default";
+        };
 
         quality_profiles = [
           {
-            name = cfg.radarr.qualityProfile;
+            name = "UHD Bluray + WEB";
+            reset_unmatched_scores.enabled = true;
             upgrade = {
               allowed = true;
-              until_quality = cfg.radarr.upgradeUntilQuality;
+              until_quality = "Bluray-2160p";
+              until_score = 10000;
             };
-            qualities =
-              [
-                {name = cfg.radarr.qualityProfile;}
-              ]
-              ++ optional (cfg.radarr.qualityProfile != cfg.radarr.upgradeUntilQuality) {
-                name = cfg.radarr.upgradeUntilQuality;
-              };
+            min_format_score = 0;
+            quality_sort = "top";
+            qualities = [
+              {name = "Bluray-2160p";}
+              {
+                name = "WEB-2160p";
+                qualities = ["WEBDL-2160p" "WEBRip-2160p"];
+              }
+              {name = "Bluray-1080p";}
+              {
+                name = "WEB-1080p";
+                qualities = ["WEBDL-1080p" "WEBRip-1080p"];
+              }
+              {name = "Bluray-720p";}
+            ];
           }
         ];
 
         include =
           [
             {template = "radarr-quality-definition-movie";}
-            {template = "radarr-quality-profile-uhd-bluray-web";}
+            {template = "radarr-quality-profile-sqp-1-2160p-default";}
             {template = "radarr-custom-formats-uhd-bluray-web";}
           ]
           ++ optionals cfg.radarr.anime.enable [
+            {template = "radarr-quality-definition-anime";}
             {template = "radarr-quality-profile-anime";}
             {template = "radarr-custom-formats-anime";}
           ];
@@ -121,18 +130,6 @@ in {
         description = "Whether to sync Sonarr configuration via Recyclarr";
       };
 
-      qualityProfile = mkOption {
-        type = types.str;
-        default = "UHD-4K";
-        description = "Quality profile to use for Sonarr";
-      };
-
-      upgradeUntilQuality = mkOption {
-        type = types.str;
-        default = "HD-1080p";
-        description = "Quality level to stop upgrading at for Sonarr";
-      };
-
       anime = {
         enable = mkOption {
           type = types.bool;
@@ -152,18 +149,6 @@ in {
         default = config.nixflix.radarr.enable;
         defaultText = literalExpression "config.nixflix.radarr.enable";
         description = "Whether to sync Radarr configuration via Recyclarr";
-      };
-
-      qualityProfile = mkOption {
-        type = types.str;
-        default = "UHD-4K";
-        description = "Quality profile to use for Radarr";
-      };
-
-      upgradeUntilQuality = mkOption {
-        type = types.str;
-        default = "UHD-4K";
-        description = "Quality level to stop upgrading at for Radarr";
       };
 
       anime = {
