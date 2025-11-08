@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib; let
@@ -10,12 +11,20 @@ with lib; let
 
   configOption = import ./config-option.nix {inherit lib;};
 
+  radarrApiWait = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "radarr" nixflix.radarr;
+  sonarrApiWait = import ../arr-common/mkWaitForApiScript.nix {inherit lib pkgs;} "sonarr" nixflix.sonarr;
+
   sonarrConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-default.nix {inherit config lib;});
   radarrConfig = optionalAttrs cfg.radarr.enable (import ./radarr-default.nix {inherit config lib;});
   effectiveConfiguration =
     if cfg.config == null
     then sonarrConfig // radarrConfig
     else cfg.config;
+
+  cleanupProfilesServices = import ./cleanup-profiles.nix {
+    inherit config lib pkgs;
+    recyclarrConfig = effectiveConfiguration;
+  };
 in {
   options.nixflix.recyclarr = {
     enable = mkOption {
@@ -78,6 +87,21 @@ in {
       };
     };
 
+    cleanupUnmanagedProfiles = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to automatically remove quality profiles from Sonarr and Radarr
+        that are not managed by Recyclarr.
+
+        Only removes profiles from instances matching nixflix.sonarr and nixflix.radarr
+        base URLs, and only when quality_profiles is defined in the Recyclarr configuration.
+
+        Any series/movies using unmanaged profiles will be reassigned to the first
+        managed profile before deletion.
+      '';
+    };
+
     config = configOption;
   };
 
@@ -112,20 +136,30 @@ in {
       schedule = "daily";
     };
 
-    systemd.services.recyclarr = {
-      after =
-        ["nixflix-setup-dirs.service" "network-online.target"]
-        ++ optional cfg.radarr.enable "radarr-config.service"
-        ++ optional cfg.sonarr.enable "sonarr-config.service";
-      requires =
-        optional cfg.radarr.enable "radarr-config.service"
-        ++ optional cfg.sonarr.enable "sonarr-config.service";
-      wants = ["network-online.target"];
-      wantedBy = mkForce ["multi-user.target"]; # Run on startup
+    systemd.services =
+      {
+        recyclarr = {
+          after =
+            ["nixflix-setup-dirs.service" "network-online.target"]
+            ++ optional cfg.radarr.enable "radarr-config.service"
+            ++ optional cfg.sonarr.enable "sonarr-config.service";
+          requires =
+            optional cfg.radarr.enable "radarr-config.service"
+            ++ optional cfg.sonarr.enable "sonarr-config.service";
+          wants = ["network-online.target"];
+          wantedBy = mkForce ["multi-user.target"];
 
-      serviceConfig.LoadCredential =
-        optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
-    };
+          serviceConfig = {
+            LoadCredential =
+              optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
+              ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
+            ExecStartPre = ''
+              ${radarrApiWait}
+              ${sonarrApiWait}
+            '';
+          };
+        };
+      }
+      // cleanupProfilesServices;
   };
 }
