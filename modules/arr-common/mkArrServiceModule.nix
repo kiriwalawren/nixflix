@@ -315,7 +315,6 @@ in {
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
-            ExecStartPost = mkWaitForApiScript serviceName cfg.config;
           };
 
           script = ''
@@ -351,6 +350,7 @@ in {
               User = cfg.user;
               Group = cfg.group;
               ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
+              ExecStartPost = mkWaitForApiScript serviceName cfg.config;
               Restart = "on-failure";
             }
             // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
