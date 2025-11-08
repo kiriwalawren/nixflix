@@ -25,21 +25,23 @@ in {
       dataDir = stateDir;
     };
 
-    systemd.tmpfiles.settings."10-postgresql".${stateDir}.d = {
-      user = "postgres";
-      group = "postgres";
-      mode = "0700";
-    };
+    systemd = {
+      tmpfiles.settings."10-postgresql".${stateDir}.d = {
+        user = "postgres";
+        group = "postgres";
+        mode = "0700";
+      };
 
-    systemd.services.postgresql = {
-      after = ["nixflix-setup-dirs.service"];
-      requires = ["nixflix-setup-dirs.service"];
-    };
+      services.postgresql = {
+        after = ["nixflix-setup-dirs.service"];
+        requires = ["nixflix-setup-dirs.service"];
+      };
 
-    systemd.targets.postgresql-ready = {
-      after = ["postgresql.service" "postgresql-setup.service"];
-      requires = ["postgresql.service" "postgresql-setup.service"];
-      wantedBy = ["multi-user.target"];
+      targets.postgresql-ready = {
+        after = ["postgresql.service" "postgresql-setup.service"];
+        requires = ["postgresql.service" "postgresql-setup.service"];
+        wantedBy = ["multi-user.target"];
+      };
     };
   };
 }
