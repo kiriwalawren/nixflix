@@ -6,10 +6,7 @@
 pkgs.testers.runNixOSTest {
   name = "full-stack-test";
 
-  nodes.machine = {
-    pkgs,
-    ...
-  }: {
+  nodes.machine = {pkgs, ...}: {
     imports = [nixosModules];
 
     nixflix = {

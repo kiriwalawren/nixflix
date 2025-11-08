@@ -11,10 +11,7 @@ in
   pkgsUnfree.testers.runNixOSTest {
     name = "lidarr-basic-test";
 
-    nodes.machine = {
-      pkgs,
-      ...
-    }: {
+    nodes.machine = {pkgs, ...}: {
       imports = [nixosModules];
 
       nixflix = {

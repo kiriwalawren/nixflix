@@ -19,9 +19,9 @@
       pkgs = nixpkgs.legacyPackages.${system};
     in
       pkgs.writeShellScriptBin "formatter" ''
-        ${pkgs.alejandra}/bin/alejandra ./.
-        ${pkgs.statix}/bin/statix fix ./.
         ${pkgs.deadnix}/bin/deadnix --edit
+        ${pkgs.statix}/bin/statix fix ./.
+        ${pkgs.alejandra}/bin/alejandra ./.
       '');
 
     checks = forAllSystems (system: let
