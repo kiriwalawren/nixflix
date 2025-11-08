@@ -315,7 +315,7 @@ in {
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
-            ExecStartPost = mkWaitForApiScript serviceName cfg;
+            ExecStartPost = mkWaitForApiScript serviceName cfg.config;
           };
 
           script = ''
