@@ -10,6 +10,7 @@ in {
   options = mkOption {
     type = types.listOf types.attrs;
     default = [];
+    defaultText = literalExpression ''map (mediaDir: {path = mediaDir;}) config.nixflix.<serviceName>.mediaDirs'';
     description = ''
       List of root folders to create via the API /rootfolder endpoint.
       Each folder is an attribute set that will be converted to JSON and sent to the API.

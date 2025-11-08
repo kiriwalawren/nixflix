@@ -53,6 +53,26 @@ with lib; let
           };
         };
       };
+      defaultText = lib.literalExpression ''
+        {
+          auth = {
+            required = "Enabled";
+            method = "Forms";
+          };
+          server = {
+            inherit (config.nixflix.${serviceName}.config.hostConfig) port urlBase;
+          };
+        } // lib.optionalAttrs config.services.postgresql.enable {
+          log.dbEnabled = true;
+          postgres = {
+            user = config.nixflix.${serviceName}.user;
+            host = "/run/postgresql";
+            port = 5432;
+            mainDb = config.nixflix.${serviceName}.user;
+            logDb = config.nixflix.${serviceName}.user;
+          };
+        }
+      '';
       example = lib.options.literalExpression ''
         {
           update.mechanism = "internal";
@@ -160,6 +180,7 @@ in {
       mediaDirs = mkOption {
         type = types.listOf types.path;
         default = [];
+        defaultText = literalExpression ''[config.nixflix.mediaDir + "/<media-type>"]'';
         description = "List of media directories to create and manage";
       };
     };

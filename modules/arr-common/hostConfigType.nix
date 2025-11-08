@@ -52,6 +52,7 @@ with lib;
       urlBase = mkOption {
         type = types.str;
         default = "";
+        defaultText = literalExpression ''if config.nixflix.serviceNameIsUrlBase then "/<serviceName>" else ""'';
         description = "URL base path";
       };
 
