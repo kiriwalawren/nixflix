@@ -14,12 +14,86 @@ with lib; let
   rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
   downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
+  screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
-  serviceSupportsUserGroup = !(elem serviceName ["prowlarr"]);
+  mkServarrSettingsOptions = name:
+    lib.mkOption {
+      type = lib.types.submodule {
+        freeformType = (pkgs.formats.ini {}).type;
+        options = {
+          update = {
+            mechanism = lib.mkOption {
+              type = with lib.types;
+                nullOr (enum [
+                  "external"
+                  "builtIn"
+                  "script"
+                ]);
+              description = "which update mechanism to use";
+              default = "external";
+            };
+            automatically = lib.mkOption {
+              type = lib.types.bool;
+              description = "Automatically download and install updates.";
+              default = false;
+            };
+          };
+          server = {
+            port = lib.mkOption {
+              type = lib.types.port;
+              description = "Port Number";
+            };
+          };
+          log = {
+            analyticsEnabled = lib.mkOption {
+              type = lib.types.bool;
+              description = "Send Anonymous Usage Data";
+              default = false;
+            };
+          };
+        };
+      };
+      example = lib.options.literalExpression ''
+        {
+          update.mechanism = "internal";
+          server = {
+            urlbase = "localhost";
+            port = ${toString port};
+            bindaddress = "*";
+          };
+        }
+      '';
+      default = {};
+      description = ''
+        Attribute set of arbitrary config options.
+        Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
+
+        WARNING: this configuration is stored in the world-readable Nix store!
+        Don't put secrets here!
+      '';
+    };
+
+  mkServarrSettingsEnvVars = name: settings:
+    lib.pipe settings [
+      (lib.mapAttrsRecursive (
+        path: value:
+          lib.optionalAttrs (value != null) {
+            name = lib.toUpper "${name}__${lib.concatStringsSep "__" path}";
+            value = toString (
+              if lib.isBool value
+              then lib.boolToString value
+              else value
+            );
+          }
+      ))
+      (lib.collect (x: lib.isString x.name or false && lib.isString x.value or false))
+      lib.listToAttrs
+    ];
 in {
   options.nixflix.${serviceName} =
     {
       enable = mkEnableOption "${capitalizedName}";
+      package = lib.mkPackageOption pkgs serviceName {};
 
       vpn = {
         enable = mkOption {
@@ -44,6 +118,14 @@ in {
         default = serviceName;
         description = "Group under which the service runs";
       };
+
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Open ports in the firewall for the Radarr web interface.";
+      };
+
+      settings = mkServarrSettingsOptions serviceName;
 
       config = mkOption {
         type = types.submodule {
@@ -76,19 +158,7 @@ in {
     }
     // optionalAttrs usesMediaDirs {
       mediaDirs = mkOption {
-        type = types.listOf (types.submodule {
-          options = {
-            dir = mkOption {
-              type = types.str;
-              description = "Directory path";
-            };
-            owner = mkOption {
-              type = types.str;
-              default = "root";
-              description = "Directory owner";
-            };
-          };
-        });
+        type = types.listOf types.path;
         default = [];
         description = "List of media directories to create and manage";
       };
@@ -102,76 +172,52 @@ in {
       }
     ];
 
-    nixflix.${serviceName}.config = {
-      apiKeyPath = mkDefault null;
-      hostConfig = {
-        username = mkDefault serviceName;
-        passwordPath = mkDefault null;
-        instanceName = mkDefault capitalizedName;
-        urlBase = mkDefault (
-          if nixflix.serviceNameIsUrlBase
-          then "/${serviceName}"
-          else ""
+    nixflix.${serviceName} = {
+      settings = mkDefault ({
+          auth = {
+            required = "Enabled";
+            method = "Forms";
+          };
+          server = {inherit (cfg.config.hostConfig) port urlBase;};
+        }
+        // optionalAttrs config.services.postgresql.enable {
+          log.dbEnabled = true;
+          postgres = {
+            inherit (cfg) user;
+            host = "/run/postgresql";
+            port = 5432;
+            mainDb = cfg.user;
+            logDb = cfg.user;
+          };
+        });
+      config = {
+        apiKeyPath = mkDefault null;
+        hostConfig = {
+          username = mkDefault serviceName;
+          passwordPath = mkDefault null;
+          instanceName = mkDefault capitalizedName;
+          urlBase = mkDefault (
+            if nixflix.serviceNameIsUrlBase
+            then "/${serviceName}"
+            else ""
+          );
+        };
+        downloadClients = mkDefault (
+          optionals (config.nixflix.sabnzbd.enable or false) [
+            {
+              name = "SABnzbd";
+              implementationName = "SABnzbd";
+              inherit (config.nixflix.sabnzbd) apiKeyPath;
+              inherit (config.nixflix.sabnzbd.settings) host;
+              inherit (config.nixflix.sabnzbd.settings) port;
+              urlBase = config.nixflix.sabnzbd.settings.url_base;
+            }
+          ]
         );
       };
-      downloadClients = mkDefault (
-        optionals (config.nixflix.sabnzbd.enable or false) [
-          {
-            name = "SABnzbd";
-            implementationName = "SABnzbd";
-            inherit (config.nixflix.sabnzbd) apiKeyPath;
-            inherit (config.nixflix.sabnzbd.settings) host;
-            inherit (config.nixflix.sabnzbd.settings) port;
-            urlBase = config.nixflix.sabnzbd.settings.url_base;
-          }
-        ]
-      );
     };
 
-    nixflix.dirRegistrations =
-      [
-        {
-          inherit (cfg) group;
-          dir = stateDir;
-          owner = cfg.user;
-        }
-      ]
-      ++ optionals usesMediaDirs (map (mediaDir: {
-          inherit (cfg) group;
-          inherit (mediaDir) dir owner;
-        })
-        cfg.mediaDirs);
-
     services = {
-      ${serviceName} =
-        {
-          inherit (cfg) enable;
-          dataDir = stateDir;
-        }
-        // optionalAttrs serviceSupportsUserGroup {
-          inherit (cfg) user group;
-        }
-        // {
-          settings =
-            {
-              auth = {
-                required = "Enabled";
-                method = "Forms";
-              };
-              server = {inherit (cfg.config.hostConfig) port urlBase;};
-            }
-            // optionalAttrs config.services.postgresql.enable {
-              log.dbEnabled = true;
-              postgres = {
-                inherit (cfg) user;
-                host = "/run/postgresql";
-                port = 5432;
-                mainDb = cfg.user;
-                logDb = cfg.user;
-              };
-            };
-        };
-
       postgresql = mkIf config.services.postgresql.enable {
         ensureDatabases = [cfg.user];
         ensureUsers = [
@@ -207,11 +253,27 @@ in {
       users.${cfg.user} =
         {
           inherit (cfg) group;
+          home = stateDir;
           isSystemUser = true;
         }
         // optionalAttrs (globals.uids ? ${cfg.user}) {
           uid = globals.uids.${cfg.user};
         };
+    };
+
+    networking.firewall = lib.mkIf cfg.openFirewall {
+      allowedTCPPorts = [cfg.config.hostConfig.port];
+    };
+
+    systemd.tmpfiles = {
+      settings."10-${serviceName}".${stateDir}.d = {
+        inherit (cfg) user group;
+        mode = "0700";
+      };
+
+      rules =
+        optionals usesMediaDirs (map (mediaDir: "d '${mediaDir}' 0770 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -")
+          cfg.mediaDirs);
     };
 
     systemd.services =
@@ -243,8 +305,11 @@ in {
         };
 
         ${serviceName} = {
+          description = capitalizedName;
+          environment = mkServarrSettingsEnvVars screamingName cfg.settings;
+
           after =
-            ["nixflix-setup-dirs.service"]
+            ["network.target" "nixflix-setup-dirs.service"]
             ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
             ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
@@ -253,19 +318,22 @@ in {
             ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
           wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+          wantedBy = ["multi-user.target"];
 
           serviceConfig =
             {
-              DynamicUser = mkForce false;
+              Type = "simple";
               User = cfg.user;
               Group = cfg.group;
+              ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
+              Restart = "on-failure";
             }
             // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
               EnvironmentFile = "/run/${serviceName}/env";
             }
             // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
               ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
-                exec /run/wrappers/bin/mullvad-exclude ${getExe config.services.${serviceName}.package} \
+                exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package} \
                   -nobrowser -data='${stateDir}'
               '');
               AmbientCapabilities = "CAP_SYS_ADMIN";

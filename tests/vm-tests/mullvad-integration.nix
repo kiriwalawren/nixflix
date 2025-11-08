@@ -39,8 +39,8 @@ pkgs.testers.runNixOSTest {
 
       sonarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/tv";}];
+        user = "sonarr";
+        mediaDirs = ["/media/tv"];
         config = {
           hostConfig = {
             port = 8989;
@@ -53,8 +53,8 @@ pkgs.testers.runNixOSTest {
 
       radarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/movies";}];
+        user = "radarr";
+        mediaDirs = ["/media/movies"];
         config = {
           hostConfig = {
             port = 7878;
@@ -67,8 +67,8 @@ pkgs.testers.runNixOSTest {
 
       lidarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/music";}];
+        user = "lidarr";
+        mediaDirs = ["/media/music"];
         config = {
           hostConfig = {
             port = 8686;

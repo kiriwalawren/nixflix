@@ -24,9 +24,7 @@ in
         lidarr = {
           enable = true;
           user = "testuser";
-          mediaDirs = [
-            {dir = "/media/music";}
-          ];
+          mediaDirs = ["/media/music"];
           config = {
             hostConfig = {
               port = 8686;

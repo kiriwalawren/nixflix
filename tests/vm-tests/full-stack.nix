@@ -30,8 +30,8 @@ pkgs.testers.runNixOSTest {
 
       sonarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/tv";}];
+        user = "sonarr";
+        mediaDirs = ["/media/tv"];
         config = {
           hostConfig = {
             port = 8989;
@@ -44,8 +44,8 @@ pkgs.testers.runNixOSTest {
 
       radarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/movies";}];
+        user = "radarr";
+        mediaDirs = ["/media/movies"];
         config = {
           hostConfig = {
             port = 7878;
@@ -58,8 +58,8 @@ pkgs.testers.runNixOSTest {
 
       lidarr = {
         enable = true;
-        user = "mediauser";
-        mediaDirs = [{dir = "/media/music";}];
+        user = "lidarr";
+        mediaDirs = ["/media/music"];
         config = {
           hostConfig = {
             port = 8686;
@@ -130,9 +130,9 @@ pkgs.testers.runNixOSTest {
 
     # Verify all processes running under correct user
     machine.succeed("pgrep Prowlarr")
-    machine.succeed("pgrep -u mediauser Sonarr")
-    machine.succeed("pgrep -u mediauser Radarr")
-    machine.succeed("pgrep -u mediauser dotnet")
+    machine.succeed("pgrep -u sonarr Sonarr")
+    machine.succeed("pgrep -u radarr Radarr")
+    machine.succeed("pgrep -u lidarr dotnet")
 
     # Test Prowlarr applications were configured
     print("Testing Prowlarr applications configuration...")

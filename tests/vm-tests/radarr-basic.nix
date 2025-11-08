@@ -24,9 +24,7 @@ in
         radarr = {
           enable = true;
           user = "testuser";
-          mediaDirs = [
-            {dir = "/media/movies";}
-          ];
+          mediaDirs = ["/media/movies"];
           config = {
             hostConfig = {
               port = 7878;

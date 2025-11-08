@@ -106,36 +106,6 @@ in {
         > Is not supported, because `/home/user` is owned by `user`.
       '';
     };
-
-    dirRegistrations = mkOption {
-      type = with types;
-        listOf (submodule {
-          options = {
-            dir = mkOption {
-              type = path;
-              description = "Directory path to create";
-            };
-            owner = mkOption {
-              type = str;
-              description = "Owner of the directory";
-            };
-            group = mkOption {
-              type = str;
-              description = "Group of the directory";
-            };
-            mode = mkOption {
-              type = str;
-              default = "0775";
-              description = "Permission mode for the directory";
-            };
-          };
-        });
-      default = [];
-      description = ''
-        Directory registrations from services. Each service can register
-        directories it needs to be created.
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
@@ -164,13 +134,6 @@ in {
         ${pkgs.coreutils}/bin/mkdir -p ${cfg.downloadsDir}
         ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.downloadsDir}
         ${pkgs.coreutils}/bin/chmod 0775 ${cfg.downloadsDir}
-
-        ${concatMapStringsSep "\n" (reg: ''
-            ${pkgs.coreutils}/bin/mkdir -p ${reg.dir}
-            ${pkgs.coreutils}/bin/chown ${reg.owner}:${reg.group} ${reg.dir}
-            ${pkgs.coreutils}/bin/chmod ${reg.mode} ${reg.dir}
-          '')
-          cfg.dirRegistrations}
       '';
     };
 

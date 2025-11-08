@@ -100,50 +100,17 @@ in {
       uid = mkForce globals.uids.sabnzbd;
     };
 
-    nixflix.dirRegistrations = [
-      {
-        dir = cfg.downloadsDir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.download_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.complete_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.dirscan_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.nzb_backup_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.admin_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-      {
-        dir = cfg.settings.log_dir;
-        owner = "sabnzbd";
-        group = "media";
-        mode = "0775";
-      }
-    ];
+    systemd.tmpfiles.rules =
+      map (dir: "d '${dir}' 0775 ${cfg.user} ${globals.libraryOwner.group} - -")
+      [
+        cfg.downloadsDir
+        cfg.settings.download_dir
+        cfg.settings.complete_dir
+        cfg.settings.dirscan_dir
+        cfg.settings.nzb_backup_dir
+        cfg.settings.admin_dir
+        cfg.settings.log_dir
+      ];
 
     environment.etc."sabnzbd/sabnzbd.ini.template".text = generateMinimalIni cfg.settings;
 
@@ -153,35 +120,37 @@ in {
       configFile = "/var/lib/sabnzbd/sabnzbd.ini";
     };
 
-    systemd.services.sabnzbd = {
-      after = ["nixflix-setup-dirs.service" "network-online.target"];
-      requires = ["nixflix-setup-dirs.service"];
-      wants = ["network-online.target"];
+    systemd.services = {
+      sabnzbd = {
+        after = ["nixflix-setup-dirs.service" "network-online.target"];
+        requires = ["nixflix-setup-dirs.service"];
+        wants = ["network-online.target"];
 
-      serviceConfig = {
-        ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
-          if [ ! -f /var/lib/sabnzbd/sabnzbd.ini ]; then
-            echo "Creating initial SABnzbd configuration..."
+        serviceConfig = {
+          ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
+            if [ ! -f /var/lib/sabnzbd/sabnzbd.ini ]; then
+              echo "Creating initial SABnzbd configuration..."
 
-            ${optionalString (cfg.apiKeyPath != null) ''
-            export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
-          ''}
-            ${optionalString (cfg.nzbKeyPath != null) ''
-            export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
-          ''}
+              ${optionalString (cfg.apiKeyPath != null) ''
+              export SABNZBD_API_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.apiKeyPath})
+            ''}
+              ${optionalString (cfg.nzbKeyPath != null) ''
+              export SABNZBD_NZB_KEY=$(${pkgs.coreutils}/bin/cat ${cfg.nzbKeyPath})
+            ''}
 
-            ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
+              ${pkgs.envsubst}/bin/envsubst < /etc/sabnzbd/sabnzbd.ini.template > /var/lib/sabnzbd/sabnzbd.ini
 
-            ${pkgs.coreutils}/bin/chown sabnzbd:media /var/lib/sabnzbd/sabnzbd.ini
-            ${pkgs.coreutils}/bin/chmod 600 /var/lib/sabnzbd/sabnzbd.ini
-          else
-            echo "SABnzbd configuration already exists, skipping creation"
-          fi
-        '';
+              ${pkgs.coreutils}/bin/chown sabnzbd:media /var/lib/sabnzbd/sabnzbd.ini
+              ${pkgs.coreutils}/bin/chmod 600 /var/lib/sabnzbd/sabnzbd.ini
+            else
+              echo "SABnzbd configuration already exists, skipping creation"
+            fi
+          '';
+        };
       };
-    };
 
-    systemd.services.sabnzbd-config = apiConfig.serviceConfig;
+      sabnzbd-config = apiConfig.serviceConfig;
+    };
 
     services.nginx = mkIf nixflix.nginx.enable {
       virtualHosts.localhost.locations."${cfg.settings.url_base}" = {

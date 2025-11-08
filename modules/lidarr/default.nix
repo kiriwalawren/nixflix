@@ -11,9 +11,7 @@ in {
 
   config.nixflix.lidarr = {
     group = lib.mkDefault "media";
-    mediaDirs = lib.mkDefault [
-      {dir = "${nixflix.mediaDir}/music";}
-    ];
+    mediaDirs = lib.mkDefault ["${nixflix.mediaDir}/music"];
     config = {
       apiVersion = lib.mkDefault "v1";
       hostConfig = {
@@ -21,7 +19,7 @@ in {
         branch = lib.mkDefault "master";
       };
       rootFolders = lib.mkDefault (map (mediaDir: {
-          path = mediaDir.dir;
+          path = mediaDir;
           defaultQualityProfileId = 2;
           defaultMetadataProfileId = 1;
           defaultMonitorOption = "all";

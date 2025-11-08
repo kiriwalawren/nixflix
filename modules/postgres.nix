@@ -19,30 +19,29 @@ in {
   };
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    nixflix.dirRegistrations = [
-      {
-        dir = stateDir;
-        owner = "postgres";
-        group = "postgres";
-        mode = "0700";
-      }
-    ];
-
     services.postgresql = {
       enable = true;
       package = pkgs.postgresql_16;
       dataDir = stateDir;
     };
 
-    systemd.services.postgresql = {
-      after = ["nixflix-setup-dirs.service"];
-      requires = ["nixflix-setup-dirs.service"];
-    };
+    systemd = {
+      tmpfiles.settings."10-postgresql".${stateDir}.d = {
+        user = "postgres";
+        group = "postgres";
+        mode = "0700";
+      };
 
-    systemd.targets.postgresql-ready = {
-      after = ["postgresql.service" "postgresql-setup.service"];
-      requires = ["postgresql.service" "postgresql-setup.service"];
-      wantedBy = ["multi-user.target"];
+      services.postgresql = {
+        after = ["nixflix-setup-dirs.service"];
+        requires = ["nixflix-setup-dirs.service"];
+      };
+
+      targets.postgresql-ready = {
+        after = ["postgresql.service" "postgresql-setup.service"];
+        requires = ["postgresql.service" "postgresql-setup.service"];
+        wantedBy = ["multi-user.target"];
+      };
     };
   };
 }
