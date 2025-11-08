@@ -17,7 +17,7 @@ with lib; let
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
-  mkServarrSettingsOptions = name:
+  mkServarrSettingsOptions = _name:
     lib.mkOption {
       type = lib.types.submodule {
         freeformType = (pkgs.formats.ini {}).type;
@@ -332,13 +332,12 @@ in {
           environment = mkServarrSettingsEnvVars screamingName cfg.settings;
 
           after =
-            ["network.target" "nixflix-setup-dirs.service"]
+            ["network.target"]
             ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
             ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
           requires =
-            ["nixflix-setup-dirs.service"]
-            ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+            (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
           wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
           wantedBy = ["multi-user.target"];

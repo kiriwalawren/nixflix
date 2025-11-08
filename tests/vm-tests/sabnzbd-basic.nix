@@ -12,9 +12,7 @@ in
     name = "sabnzbd-basic-test";
 
     nodes.machine = {
-      config,
       pkgs,
-      lib,
       ...
     }: {
       imports = [nixosModules];
@@ -79,9 +77,6 @@ in
 
     testScript = ''
       start_all()
-
-      # Wait for directories to be created
-      machine.wait_for_unit("nixflix-setup-dirs.service", timeout=60)
 
       # Wait for SABnzbd to start
       machine.wait_for_unit("sabnzbd.service", timeout=60)

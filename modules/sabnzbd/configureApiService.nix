@@ -68,7 +68,7 @@ with lib; {
 
       # Configure misc settings
       echo "Configuring misc settings..."
-      SETTINGS_JSON='${builtins.toJSON (filterAttrs (n: v: n != "servers" && n != "categories") cfg.settings)}'
+      SETTINGS_JSON='${builtins.toJSON (filterAttrs (n: _v: n != "servers" && n != "categories") cfg.settings)}'
 
       echo "$SETTINGS_JSON" | ${pkgs.jq}/bin/jq -r 'to_entries[] | "\(.key)=\(.value)"' | while IFS='=' read -r key value; do
         # Convert booleans to 0/1

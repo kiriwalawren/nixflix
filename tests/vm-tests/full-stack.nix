@@ -7,7 +7,6 @@ pkgs.testers.runNixOSTest {
   name = "full-stack-test";
 
   nodes.machine = {
-    config,
     pkgs,
     ...
   }: {

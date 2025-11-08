@@ -124,8 +124,7 @@ in {
 
     systemd.services = {
       sabnzbd = {
-        after = ["nixflix-setup-dirs.service" "network-online.target"];
-        requires = ["nixflix-setup-dirs.service"];
+        after = ["network-online.target"];
         wants = ["network-online.target"];
 
         serviceConfig = {

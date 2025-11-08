@@ -12,7 +12,6 @@ in
     name = "sonarr-basic-test";
 
     nodes.machine = {
-      config,
       pkgs,
       ...
     }: {

@@ -133,7 +133,7 @@ in {
       {
         recyclarr = {
           after =
-            ["nixflix-setup-dirs.service" "network-online.target"]
+            ["network-online.target"]
             ++ optional cfg.radarr.enable "radarr-config.service"
             ++ optional cfg.sonarr.enable "sonarr-config.service";
           requires =

@@ -7,7 +7,6 @@ pkgs.testers.runNixOSTest {
   name = "mullvad-integration-test";
 
   nodes.machine = {
-    config,
     pkgs,
     ...
   }: {

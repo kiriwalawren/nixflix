@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib; let
@@ -122,32 +121,11 @@ in {
 
   config = mkIf cfg.enable {
     users.groups.media.members = cfg.mediaUsers;
-
-    systemd.services.nixflix-setup-dirs = {
-      description = "Create directories for nixflix media server services";
-      wantedBy = ["multi-user.target"];
-      after = cfg.serviceDependencies;
-      requires = cfg.serviceDependencies;
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-
-      script = ''
-        ${pkgs.coreutils}/bin/mkdir -p ${cfg.stateDir}
-        ${pkgs.coreutils}/bin/chown root:root ${cfg.stateDir}
-        ${pkgs.coreutils}/bin/chmod 0755 ${cfg.stateDir}
-
-        ${pkgs.coreutils}/bin/mkdir -p ${cfg.mediaDir}
-        ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.mediaDir}
-        ${pkgs.coreutils}/bin/chmod 0775 ${cfg.mediaDir}
-
-        ${pkgs.coreutils}/bin/mkdir -p ${cfg.downloadsDir}
-        ${pkgs.coreutils}/bin/chown ${globals.libraryOwner.user}:${globals.libraryOwner.group} ${cfg.downloadsDir}
-        ${pkgs.coreutils}/bin/chmod 0775 ${cfg.downloadsDir}
-      '';
-    };
+    systemd.tmpfiles.rules = [
+      "d '${cfg.stateDir}' 0755 root:root} - -"
+      "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user}:${globals.libraryOwner.group} - -"
+      "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user}:${globals.libraryOwner.group} - -"
+    ];
 
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;

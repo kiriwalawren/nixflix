@@ -7,7 +7,6 @@ pkgs.testers.runNixOSTest {
   name = "postgresql-integration-test";
 
   nodes.machine = {
-    config,
     pkgs,
     ...
   }: {

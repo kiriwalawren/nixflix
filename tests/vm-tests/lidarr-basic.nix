@@ -12,7 +12,6 @@ in
     name = "lidarr-basic-test";
 
     nodes.machine = {
-      config,
       pkgs,
       ...
     }: {

@@ -12,7 +12,6 @@ in
     name = "prowlarr-basic-test";
 
     nodes.machine = {
-      config,
       pkgs,
       ...
     }: {

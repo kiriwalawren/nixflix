@@ -21,6 +21,7 @@
       pkgs.writeShellScriptBin "formatter" ''
         ${pkgs.alejandra}/bin/alejandra ./.
         ${pkgs.statix}/bin/statix fix ./.
+        ${pkgs.deadnix}/bin/deadnix --edit
       '');
 
     checks = forAllSystems (system: let
@@ -31,13 +32,10 @@
       };
     in
       {
-        format = pkgs.runCommand "check-format" {} ''
+        format-lint = pkgs.runCommand "check-format-lint" {} ''
           ${pkgs.alejandra}/bin/alejandra --check ${./.}
-          touch $out
-        '';
-
-        statix = pkgs.runCommand "check-statix" {} ''
           ${pkgs.statix}/bin/statix check ${./.}
+          ${pkgs.deadnix}/bin/deadnix --fail ${./.}
           touch $out
         '';
       }

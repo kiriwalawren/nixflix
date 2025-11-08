@@ -12,7 +12,6 @@ in
     name = "radarr-basic-test";
 
     nodes.machine = {
-      config,
       pkgs,
       ...
     }: {

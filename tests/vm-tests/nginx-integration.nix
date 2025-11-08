@@ -12,7 +12,6 @@ in
     name = "nginx-integration-test";
 
     nodes.machine = {
-      config,
       pkgs,
       ...
     }: {
