@@ -31,7 +31,7 @@ with lib; let
             {template = "sonarr-v4-custom-formats-web-2160p";}
           ]
           ++ optionals cfg.sonarr.anime.enable [
-            {template = "sonarr-v4-quality-definition-anime";}
+            {template = "sonarr-quality-definition-anime";}
             {template = "sonarr-v4-quality-profile-anime";}
             {template = "sonarr-v4-custom-formats-anime";}
           ];
