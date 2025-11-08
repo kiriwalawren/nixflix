@@ -78,13 +78,12 @@ Add nixflix to your flake inputs:
     sonarr = {
       enable = true;
       mediaDirs = [
-        { dir = "/data/media/tv"; }
-        { dir = "/data/media/anime"; }
+        "/data/media/tv"
+        "/data/media/anime"
       ];
       config = {
         apiKeyPath = "/run/secrets/sonarr/api_key";
         hostConfig = {
-          port = 8989;
           username = "admin";
           passwordPath = "/run/secrets/sonarr/password";
         };
@@ -114,6 +113,13 @@ Add nixflix to your flake inputs:
       accountNumberPath = "/run/secrets/mullvad-account";
       location = "us nyc";
       killSwitch.enable = true;
+    };
+
+    recyclarr = {
+      enable = true;
+      cleanupUnmanagedProfiles = false;
+      radarr.anime.enable = true;
+      sonarr.anime.enable = true;
     };
   };
 }
