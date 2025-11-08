@@ -182,8 +182,6 @@ in {
     wants = ["recyclarr.service"];
     wantedBy = ["multi-user.target"];
 
-    requisite = ["recyclarr.service"];
-
     serviceConfig = {
       Type = "oneshot";
       ExecStart = cleanupScript;
