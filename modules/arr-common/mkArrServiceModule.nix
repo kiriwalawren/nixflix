@@ -13,6 +13,7 @@ with lib; let
   hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
   rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
   downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
+  delayProfiles = import ./delayProfiles.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
@@ -170,6 +171,7 @@ in {
             }
             // optionalAttrs usesMediaDirs {
               rootFolders = rootFolders.options;
+              delayProfiles = delayProfiles.options;
             };
         };
         default = {};
@@ -387,6 +389,9 @@ in {
       }
       // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
         "${serviceName}-rootfolders" = rootFolders.mkService cfg.config;
+      }
+      // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null) {
+        "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
       }
       // optionalAttrs (cfg.config.apiKeyPath != null) {
         "${serviceName}-downloadclients" = downloadClients.mkService cfg.config;
