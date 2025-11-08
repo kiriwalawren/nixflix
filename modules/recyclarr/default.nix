@@ -82,7 +82,6 @@ with lib; let
         include =
           [
             {template = "radarr-quality-definition-movie";}
-            {template = "radarr-quality-profile-sqp-1-2160p-default";}
             {template = "radarr-custom-formats-uhd-bluray-web";}
           ]
           ++ optionals cfg.radarr.anime.enable [
