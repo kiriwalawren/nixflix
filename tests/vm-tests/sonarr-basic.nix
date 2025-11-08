@@ -24,9 +24,7 @@ in
         sonarr = {
           enable = true;
           user = "testuser";
-          mediaDirs = [
-            {dir = "/media/tv";}
-          ];
+          mediaDirs = ["/media/tv"];
           config = {
             hostConfig = {
               port = 8989;

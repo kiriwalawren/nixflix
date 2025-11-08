@@ -11,16 +11,14 @@ in {
 
   config.nixflix.sonarr = {
     group = lib.mkDefault "media";
-    mediaDirs = lib.mkDefault [
-      {dir = "${nixflix.mediaDir}/tv";}
-    ];
+    mediaDirs = lib.mkDefault ["${nixflix.mediaDir}/tv"];
     config = {
       apiVersion = lib.mkDefault "v3";
       hostConfig = {
         port = lib.mkDefault 8989;
         branch = lib.mkDefault "main";
       };
-      rootFolders = lib.mkDefault (map (mediaDir: {path = mediaDir.dir;}) cfg.mediaDirs);
+      rootFolders = lib.mkDefault (map (mediaDir: {path = mediaDir;}) cfg.mediaDirs);
     };
   };
 }

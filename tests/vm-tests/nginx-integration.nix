@@ -38,7 +38,7 @@ in
         sonarr = {
           enable = true;
           user = "sonarr";
-          mediaDirs = [{dir = "/media/tv";}];
+          mediaDirs = ["/media/tv"];
           config = {
             hostConfig = {
               port = 8989;
@@ -52,7 +52,7 @@ in
         radarr = {
           enable = true;
           user = "radarr";
-          mediaDirs = [{dir = "/media/movies";}];
+          mediaDirs = ["/media/movies"];
           config = {
             hostConfig = {
               port = 7878;
@@ -66,7 +66,7 @@ in
         lidarr = {
           enable = true;
           user = "lidarr";
-          mediaDirs = [{dir = "/media/music";}];
+          mediaDirs = ["/media/music"];
           config = {
             hostConfig = {
               port = 8686;

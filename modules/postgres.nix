@@ -19,15 +19,6 @@ in {
   };
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    nixflix.dirRegistrations = [
-      {
-        dir = stateDir;
-        owner = "postgres";
-        group = "postgres";
-        mode = "0700";
-      }
-    ];
-
     services.postgresql = {
       enable = true;
       package = pkgs.postgresql_16;
