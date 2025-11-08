@@ -10,6 +10,7 @@ with lib; let
   cfg = config.nixflix.${serviceName};
   stateDir = "${nixflix.stateDir}/${serviceName}";
 
+  mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
   rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
   downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
@@ -17,6 +18,7 @@ with lib; let
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
+
   mkServarrSettingsOptions = _name:
     lib.mkOption {
       type = lib.types.submodule {
@@ -313,6 +315,7 @@ in {
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
+            ExecStartPost = mkWaitForApiScript serviceName cfg;
           };
 
           script = ''
