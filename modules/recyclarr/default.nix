@@ -45,8 +45,11 @@ with lib; let
         base_url = "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
         api_key._secret = "/run/credentials/recyclarr.service/radarr-api_key";
         media_naming = {
-          rename = true;
-          standard = "default";
+          folder = "default";
+          movie = {
+            rename = true;
+            standard = "standard";
+          };
         };
 
         quality_profiles = [
