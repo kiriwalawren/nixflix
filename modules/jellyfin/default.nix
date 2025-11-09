@@ -391,6 +391,9 @@ in {
         // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
           AmbientCapabilities = "CAP_SYS_ADMIN";
           Delegate = mkForce true;
+          SystemCallFilter = mkForce [];
+          NoNewPrivileges = mkForce false;
+          ProtectControlGroups = mkForce false;
         };
     };
 
