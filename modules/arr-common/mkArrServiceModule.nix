@@ -7,7 +7,7 @@
 with lib; let
   inherit (config) nixflix;
   inherit (nixflix) globals;
-  cfg = config.nixflix.${serviceName};
+  cfg = nixflix.${serviceName};
   stateDir = "${nixflix.stateDir}/${serviceName}";
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
@@ -63,16 +63,16 @@ with lib; let
             method = "Forms";
           };
           server = {
-            inherit (config.nixflix.${serviceName}.config.hostConfig) port urlBase;
+            inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
           };
         } // lib.optionalAttrs config.services.postgresql.enable {
           log.dbEnabled = true;
           postgres = {
-            user = config.nixflix.${serviceName}.user;
+            user = nixflix.${serviceName}.user;
             host = "/run/postgresql";
             port = 5432;
-            mainDb = config.nixflix.${serviceName}.user;
-            logDb = config.nixflix.${serviceName}.user;
+            mainDb = nixflix.${serviceName}.user;
+            logDb = nixflix.${serviceName}.user;
           };
         }
       '';
@@ -184,7 +184,7 @@ in {
       mediaDirs = mkOption {
         type = types.listOf types.path;
         default = [];
-        defaultText = literalExpression ''[config.nixflix.mediaDir + "/<media-type>"]'';
+        defaultText = literalExpression ''[nixflix.mediaDir + "/<media-type>"]'';
         description = "List of media directories to create and manage";
       };
     };
@@ -192,7 +192,7 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = [
       {
-        assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
+        assertion = cfg.vpn.enable -> nixflix.mullvad.enable;
         message = "Cannot enable VPN routing for ${capitalizedName} (nixflix.${serviceName}.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
       }
     ];
@@ -228,14 +228,14 @@ in {
           );
         };
         downloadClients = mkDefault (
-          optionals (config.nixflix.sabnzbd.enable or false) [
+          optionals (nixflix.sabnzbd.enable or false) [
             {
               name = "SABnzbd";
               implementationName = "SABnzbd";
-              inherit (config.nixflix.sabnzbd) apiKeyPath;
-              inherit (config.nixflix.sabnzbd.settings) host;
-              inherit (config.nixflix.sabnzbd.settings) port;
-              urlBase = config.nixflix.sabnzbd.settings.url_base;
+              inherit (nixflix.sabnzbd) apiKeyPath;
+              inherit (nixflix.sabnzbd.settings) host;
+              inherit (nixflix.sabnzbd.settings) port;
+              urlBase = nixflix.sabnzbd.settings.url_base;
             }
           ]
         );
@@ -337,11 +337,11 @@ in {
             ["network.target"]
             ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+            ++ (optional nixflix.mullvad.enable "mullvad-config.service");
           requires =
             (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+          wants = optional nixflix.mullvad.enable "mullvad-config.service";
           wantedBy = ["multi-user.target"];
 
           serviceConfig =
@@ -356,7 +356,7 @@ in {
             // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
               EnvironmentFile = "/run/${serviceName}/env";
             }
-            // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
+            // optionalAttrs (nixflix.mullvad.enable && !cfg.vpn.enable) {
               ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
                 exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package} \
                   -nobrowser -data='${stateDir}'
