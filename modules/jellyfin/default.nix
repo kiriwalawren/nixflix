@@ -334,10 +334,7 @@ in {
           TimeoutSec = 15;
           SuccessExitStatus = "0 143";
 
-          ExecStartPre = pkgs.writeShellScript "jellyfin-prestart" ''
-            ${pkgs.coreutils}/bin/install -m 640 -o ${cfg.user} -g ${cfg.group} \
-              /etc/jellyfin/network.xml.template "${cfg.configDir}/network.xml"
-          '';
+          ExecStartPre = "${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'";
 
           ExecStart =
             if (config.nixflix.mullvad.enable && !cfg.vpn.enable)
