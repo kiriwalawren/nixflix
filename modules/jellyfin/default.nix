@@ -365,8 +365,7 @@ in {
 
           # Needed for hardware acceleration
           PrivateDevices = false;
-          # PrivateUsers is incompatible with mullvad-exclude's cgroup operations
-          PrivateUsers = !nixflix.mullvad.enable || cfg.vpn.enable;
+          PrivateUsers = true;
           RemoveIPC = true;
 
           SystemCallArchitectures = "native";
@@ -391,6 +390,7 @@ in {
         }
         // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
           AmbientCapabilities = "CAP_SYS_ADMIN";
+          Delegate = mkForce true;
         };
     };
 
