@@ -4,11 +4,12 @@
   ...
 }:
 with lib; let
-  cfg = config.nixflix.recyclarr;
+  inherit (config) nixflix;
+  cfg = nixflix.recyclarr;
 in {
   sonarr = {
     sonarr_main = {
-      base_url = "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
+      base_url = "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
       api_key._secret = "/run/credentials/recyclarr.service/sonarr-api_key";
       delete_old_custom_formats = true;
       replace_existing_custom_formats = true;

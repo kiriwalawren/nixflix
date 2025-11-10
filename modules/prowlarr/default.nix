@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  inherit (config) nixflix;
   indexers = import ./indexers.nix {
     inherit lib pkgs;
     serviceName = "prowlarr";
@@ -17,19 +18,19 @@ with lib; let
   arrServices = ["lidarr" "radarr" "sonarr"];
 
   mkDefaultApplication = serviceName: let
-    serviceConfig = config.nixflix.${serviceName}.config;
+    serviceConfig = nixflix.${serviceName}.config;
     capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
-    useNginx = config.nixflix.nginx.enable or false;
+    useNginx = nixflix.nginx.enable or false;
     baseUrl =
       if useNginx
       then "http://127.0.0.1${serviceConfig.hostConfig.urlBase}"
       else "http://127.0.0.1:${toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}";
     prowlarrUrl =
       if useNginx
-      then "http://127.0.0.1${config.nixflix.prowlarr.config.hostConfig.urlBase}"
-      else "http://127.0.0.1:${toString config.nixflix.prowlarr.config.hostConfig.port}${config.nixflix.prowlarr.config.hostConfig.urlBase}";
+      then "http://127.0.0.1${nixflix.prowlarr.config.hostConfig.urlBase}"
+      else "http://127.0.0.1:${toString nixflix.prowlarr.config.hostConfig.port}${nixflix.prowlarr.config.hostConfig.urlBase}";
   in
-    mkIf (config.nixflix.${serviceName}.enable or false) {
+    mkIf (nixflix.${serviceName}.enable or false) {
       name = capitalizedName;
       implementationName = capitalizedName;
       apiKeyPath = mkDefault serviceConfig.apiKeyPath;
@@ -59,12 +60,12 @@ in {
       };
     };
 
-    systemd.services."prowlarr-indexers" = mkIf (config.nixflix.enable && config.nixflix.prowlarr.enable && config.nixflix.prowlarr.config.apiKeyPath != null) (
-      indexers.mkService config.nixflix.prowlarr.config
+    systemd.services."prowlarr-indexers" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKeyPath != null) (
+      indexers.mkService nixflix.prowlarr.config
     );
 
-    systemd.services."prowlarr-applications" = mkIf (config.nixflix.enable && config.nixflix.prowlarr.enable && config.nixflix.prowlarr.config.apiKeyPath != null) (
-      applications.mkService config.nixflix.prowlarr.config
+    systemd.services."prowlarr-applications" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKeyPath != null) (
+      applications.mkService nixflix.prowlarr.config
     );
   };
 }

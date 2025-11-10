@@ -32,14 +32,14 @@ in {
     });
     default = [];
     defaultText = literalExpression ''
-      lib.optionals (config.nixflix.sabnzbd.enable or false) [
+      lib.optionals (nixflix.sabnzbd.enable or false) [
         {
           name = "SABnzbd";
           implementationName = "SABnzbd";
-          apiKeyPath = config.nixflix.sabnzbd.apiKeyPath;
-          host = config.nixflix.sabnzbd.settings.host;
-          port = config.nixflix.sabnzbd.settings.port;
-          urlBase = config.nixflix.sabnzbd.settings.url_base;
+          apiKeyPath = nixflix.sabnzbd.apiKeyPath;
+          host = nixflix.sabnzbd.settings.host;
+          port = nixflix.sabnzbd.settings.port;
+          urlBase = nixflix.sabnzbd.settings.url_base;
         }
       ]
     '';

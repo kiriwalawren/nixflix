@@ -52,7 +52,7 @@ with lib;
       urlBase = mkOption {
         type = types.str;
         default = "";
-        defaultText = literalExpression ''if config.nixflix.nginx.enable then "/<serviceName>" else ""'';
+        defaultText = literalExpression ''if nixflix.nginx.enable then "/<serviceName>" else ""'';
         description = "URL base path";
       };
 

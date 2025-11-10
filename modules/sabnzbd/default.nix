@@ -6,8 +6,8 @@
 }:
 with lib; let
   inherit (config) nixflix;
-  inherit (config.nixflix) globals;
-  cfg = config.nixflix.sabnzbd;
+  inherit (nixflix) globals;
+  cfg = nixflix.sabnzbd;
 
   settingsType = import ./settingsType.nix {inherit lib config;};
 
@@ -36,14 +36,14 @@ in {
     group = mkOption {
       type = types.str;
       default = globals.libraryOwner.group;
-      defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
+      defaultText = literalExpression "nixflix.globals.libraryOwner.group";
       description = "Group under which the service runs";
     };
 
     downloadsDir = mkOption {
       type = types.str;
       default = "${nixflix.downloadsDir}/usenet";
-      defaultText = literalExpression ''config.nixflix.downloadsDir + "/usenet"'';
+      defaultText = literalExpression ''nixflix.downloadsDir + "/usenet"'';
       description = "Base directory for SABnzbd downloads";
     };
 
