@@ -221,11 +221,13 @@ in {
           username = mkDefault serviceName;
           passwordPath = mkDefault null;
           instanceName = mkDefault capitalizedName;
-          urlBase = mkDefault (
-            if nixflix.serviceNameIsUrlBase
-            then "/${serviceName}"
-            else ""
-          );
+          urlBase =
+            mkDefault
+            (
+              if nixflix.nginx.enable
+              then "/${serviceName}"
+              else "/"
+            );
         };
         downloadClients = mkDefault (
           optionals (nixflix.sabnzbd.enable or false) [
@@ -258,14 +260,23 @@ in {
           if cfg.config.hostConfig.urlBase == ""
           then "/"
           else cfg.config.hostConfig.urlBase
-        }" = {
+        }" = let
+          themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${nixflix.theme.name}.css";
+        in {
           proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
           recommendedProxySettings = true;
           extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Server $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_redirect off;
+
+            ${
+              if nixflix.theme.enable
+              then ''
+                proxy_set_header Accept-Encoding "";
+                sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                sub_filter_once on;
+              ''
+              else ""
+            }
           '';
         };
       };

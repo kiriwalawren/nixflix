@@ -65,9 +65,6 @@ Add nixflix to your flake inputs:
     # Add service dependencies (e.g., wait for encrypted drive to mount)
     serviceDependencies = ["unlock-raid.service"];
 
-    # Configure URL base for all services (affects service internal config)
-    serviceNameIsUrlBase = true; # Services use /sonarr, /radarr, etc. as urlBase
-
     # Enable nginx reverse proxy
     nginx.enable = true;
 

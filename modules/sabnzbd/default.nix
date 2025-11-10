@@ -158,10 +158,17 @@ in {
         proxyPass = "http://127.0.0.1:${toString cfg.settings.port}";
         recommendedProxySettings = true;
         extraConfig = ''
-          proxy_set_header X-Forwarded-Host $host;
-          proxy_set_header X-Forwarded-Server $host;
-          proxy_set_header X-Forwarded-Proto $scheme;
           proxy_redirect off;
+
+          ${
+            if nixflix.theme.enable
+            then ''
+              proxy_set_header Accept-Encoding "";
+              sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${nixflix.theme.name}.css"></head>';
+              sub_filter_once on;
+            ''
+            else ""
+          }
         '';
       };
     };
