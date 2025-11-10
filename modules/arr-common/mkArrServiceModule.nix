@@ -221,13 +221,11 @@ in {
           username = mkDefault serviceName;
           passwordPath = mkDefault null;
           instanceName = mkDefault capitalizedName;
-          urlBase =
-            mkDefault
-            (
-              if nixflix.nginx.enable
-              then "/${serviceName}"
-              else "/"
-            );
+          urlBase = mkDefault (
+            if nixflix.nginx.enable
+            then "/${serviceName}"
+            else ""
+          );
         };
         downloadClients = mkDefault (
           optionals (nixflix.sabnzbd.enable or false) [
