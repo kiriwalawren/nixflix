@@ -6,7 +6,7 @@
 }:
 with lib; let
   inherit (config) nixflix;
-  cfg = config.nixflix.postgres;
+  cfg = nixflix.postgres;
   stateDir = "${nixflix.stateDir}/postgres";
 in {
   options.nixflix.postgres = {

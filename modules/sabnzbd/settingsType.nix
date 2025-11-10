@@ -116,7 +116,7 @@ in
           if nixflix.nginx.enable
           then "/sabnzbd"
           else "/";
-        defaultText = lib.literalExpression ''if config.nixflix.nginx.enable then "/sabnzbd" else "/"'';
+        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "/sabnzbd" else "/"'';
         description = "URL base path for the web interface";
       };
 
@@ -168,21 +168,21 @@ in
       download_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/incomplete";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/incomplete"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/incomplete"'';
         description = "Incomplete downloads directory";
       };
 
       complete_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/complete";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/complete"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/complete"'';
         description = "Complete downloads directory";
       };
 
       dirscan_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/watch";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/watch"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/watch"'';
         description = "Directory to watch for NZB files";
       };
 
@@ -195,21 +195,21 @@ in
       nzb_backup_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/nzb-backup";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/nzb-backup"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/nzb-backup"'';
         description = "NZB backup directory";
       };
 
       admin_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/admin";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/admin"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/admin"'';
         description = "Admin directory";
       };
 
       log_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/logs";
-        defaultText = lib.literalExpression ''config.nixflix.sabnzbd.downloadsDir + "/logs"'';
+        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/logs"'';
         description = "Log directory";
       };
 

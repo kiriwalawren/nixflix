@@ -17,7 +17,6 @@ in
       nixflix = {
         enable = true;
         nginx.enable = true;
-        serviceNameIsUrlBase = true;
 
         prowlarr = {
           enable = true;

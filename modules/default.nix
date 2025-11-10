@@ -20,12 +20,7 @@ in {
   ];
 
   options.nixflix = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      example = true;
-      description = "Whether or not to enable the nixflix module for Jellyfin media server stack";
-    };
+    enable = mkEnableOption "Nixflix";
 
     serviceDependencies = mkOption {
       type = with types; listOf str;
@@ -37,22 +32,28 @@ in {
       '';
     };
 
+    theme = {
+      enable = mkEnableOption "Theme";
+      name = mkOption {
+        type = types.str;
+        default = "plex";
+        description = ''
+          This is powered theme.park
+              https://docs.theme-park.dev/
+
+          The name of any official theme or community theme supported by theme.park.
+              https://docs.theme-park.dev/theme-options/
+              https://docs.theme-park.dev/community-themes/
+        '';
+      };
+    };
+
     nginx = {
       enable = mkOption {
         type = types.bool;
         default = false;
         description = "Whether to enable nginx reverse proxy for all services";
       };
-    };
-
-    serviceNameIsUrlBase = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Whether to use the service name as the URL base (e.g., /sonarr, /radarr).
-        When false, services will use "/" as the default URL base.
-        When true, services will use "/{serviceName}" as the default URL base.
-      '';
     };
 
     mediaUsers = mkOption {
