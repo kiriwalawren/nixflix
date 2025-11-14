@@ -6,8 +6,8 @@
 }:
 with lib; let
   inherit (config) nixflix;
-  inherit (config.nixflix) globals;
-  cfg = config.nixflix.recyclarr;
+  inherit (nixflix) globals;
+  cfg = nixflix.recyclarr;
 
   configOption = import ./config-option.nix {inherit lib;};
 
@@ -45,8 +45,8 @@ in {
     sonarr = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.sonarr.enable;
-        defaultText = literalExpression "config.nixflix.sonarr.enable";
+        default = nixflix.sonarr.enable;
+        defaultText = literalExpression "nixflix.sonarr.enable";
         description = "Whether to sync Sonarr configuration via Recyclarr";
       };
 
@@ -66,8 +66,8 @@ in {
     radarr = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.radarr.enable;
-        defaultText = literalExpression "config.nixflix.radarr.enable";
+        default = nixflix.radarr.enable;
+        defaultText = literalExpression "nixflix.radarr.enable";
         description = "Whether to sync Radarr configuration via Recyclarr";
       };
 
@@ -105,11 +105,11 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = [
       {
-        assertion = cfg.sonarr.enable -> config.nixflix.sonarr.config.apiKeyPath != null;
+        assertion = cfg.sonarr.enable -> nixflix.sonarr.config.apiKeyPath != null;
         message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKeyPath to be set";
       }
       {
-        assertion = cfg.radarr.enable -> config.nixflix.radarr.config.apiKeyPath != null;
+        assertion = cfg.radarr.enable -> nixflix.radarr.config.apiKeyPath != null;
         message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKeyPath to be set";
       }
     ];
@@ -144,8 +144,8 @@ in {
 
           serviceConfig = {
             LoadCredential =
-              optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
-              ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
+              optional cfg.radarr.enable "radarr-api_key:${nixflix.radarr.config.apiKeyPath}"
+              ++ optional cfg.sonarr.enable "sonarr-api_key:${nixflix.sonarr.config.apiKeyPath}";
           };
         };
       }

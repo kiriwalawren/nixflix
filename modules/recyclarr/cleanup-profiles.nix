@@ -6,23 +6,24 @@
   ...
 }:
 with lib; let
-  cfg = config.nixflix.recyclarr;
+  inherit (config) nixflix;
+  cfg = nixflix.recyclarr;
 
   sonarrBaseUrl =
     optionalString cfg.sonarr.enable
-    "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
+    "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
 
   radarrBaseUrl =
     optionalString cfg.radarr.enable
-    "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
+    "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
 
   sonarrApiVersion =
     if cfg.sonarr.enable
-    then config.nixflix.sonarr.config.apiVersion
+    then nixflix.sonarr.config.apiVersion
     else "v3";
   radarrApiVersion =
     if cfg.radarr.enable
-    then config.nixflix.radarr.config.apiVersion
+    then nixflix.radarr.config.apiVersion
     else "v3";
 
   buildInstanceConfigs = serviceType: baseUrl: apiVersion: instances:
@@ -194,8 +195,8 @@ in {
       PrivateDevices = true;
 
       LoadCredential =
-        optional cfg.radarr.enable "radarr-api_key:${config.nixflix.radarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr.enable "sonarr-api_key:${config.nixflix.sonarr.config.apiKeyPath}";
+        optional cfg.radarr.enable "radarr-api_key:${nixflix.radarr.config.apiKeyPath}"
+        ++ optional cfg.sonarr.enable "sonarr-api_key:${nixflix.sonarr.config.apiKeyPath}";
     };
   };
 }

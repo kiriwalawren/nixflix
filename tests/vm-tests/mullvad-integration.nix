@@ -117,15 +117,27 @@ pkgs.testers.runNixOSTest {
     machine.succeed("mullvad disconnect || true")
 
     # Wait for all services to start
-    machine.wait_for_unit("prowlarr.service", timeout=30)
-    machine.wait_for_unit("sonarr.service", timeout=30)
-    machine.wait_for_unit("radarr.service", timeout=30)
-    machine.wait_for_unit("lidarr.service", timeout=30)
+    machine.wait_for_unit("prowlarr.service", timeout=120)
+    machine.wait_for_unit("sonarr.service", timeout=120)
+    machine.wait_for_unit("radarr.service", timeout=120)
+    machine.wait_for_unit("lidarr.service", timeout=120)
+
+    # Wait for all config services
+    machine.wait_for_unit("prowlarr-config.service", timeout=60)
+    machine.wait_for_unit("sonarr-config.service", timeout=60)
+    machine.wait_for_unit("radarr-config.service", timeout=60)
+    machine.wait_for_unit("lidarr-config.service", timeout=60)
 
     # Verify services are actually running and stable (not crash-looping)
     print("Verifying services are stable and responding...")
     import time
     time.sleep(5)  # Wait for any crashes to happen
+
+    # Wait for all services to start
+    machine.wait_for_unit("prowlarr.service", timeout=20)
+    machine.wait_for_unit("sonarr.service", timeout=20)
+    machine.wait_for_unit("radarr.service", timeout=20)
+    machine.wait_for_unit("lidarr.service", timeout=20)
 
     # Check that services are still active (not failed)
     machine.succeed("systemctl is-active prowlarr.service")

@@ -6,8 +6,8 @@
 }:
 with lib; let
   inherit (config) nixflix;
-  inherit (config.nixflix) globals;
-  cfg = config.nixflix.sabnzbd;
+  inherit (nixflix) globals;
+  cfg = nixflix.sabnzbd;
 
   settingsType = import ./settingsType.nix {inherit lib config;};
 
@@ -36,14 +36,14 @@ in {
     group = mkOption {
       type = types.str;
       default = globals.libraryOwner.group;
-      defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
+      defaultText = literalExpression "nixflix.globals.libraryOwner.group";
       description = "Group under which the service runs";
     };
 
     downloadsDir = mkOption {
       type = types.str;
       default = "${nixflix.downloadsDir}/usenet";
-      defaultText = literalExpression ''config.nixflix.downloadsDir + "/usenet"'';
+      defaultText = literalExpression ''nixflix.downloadsDir + "/usenet"'';
       description = "Base directory for SABnzbd downloads";
     };
 
@@ -158,10 +158,17 @@ in {
         proxyPass = "http://127.0.0.1:${toString cfg.settings.port}";
         recommendedProxySettings = true;
         extraConfig = ''
-          proxy_set_header X-Forwarded-Host $host;
-          proxy_set_header X-Forwarded-Server $host;
-          proxy_set_header X-Forwarded-Proto $scheme;
           proxy_redirect off;
+
+          ${
+            if nixflix.theme.enable
+            then ''
+              proxy_set_header Accept-Encoding "";
+              sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${nixflix.theme.name}.css"></head>';
+              sub_filter_once on;
+            ''
+            else ""
+          }
         '';
       };
     };
