@@ -403,25 +403,36 @@ in {
     };
 
     services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations."${cfg.network.baseUrl}" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_redirect off;
+      virtualHosts.localhost.locations = {
+        "${cfg.network.baseUrl}" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_redirect off;
 
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_buffering off;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_buffering off;
 
-          ${
-            if nixflix.theme.enable
-            then ''
-              proxy_set_header Accept-Encoding "";
-              sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/jellyfin/${nixflix.theme.name}.css"></head>';
-              sub_filter_once on;
-            ''
-            else ""
-          }
-        '';
+            ${
+              if nixflix.theme.enable
+              then ''
+                proxy_set_header Accept-Encoding "";
+                sub_filter '</body>' '<style>@import url("https://theme-park.dev/css/base/jellyfin/${nixflix.theme.name}.css");</style></body>';
+                sub_filter_once on;
+              ''
+              else ""
+            }
+          '';
+        };
+        "${cfg.network.baseUrl}/socket" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+          '';
+        };
       };
     };
   };
