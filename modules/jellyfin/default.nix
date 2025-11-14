@@ -155,7 +155,7 @@ in {
       baseUrl = mkOption {
         type = types.str;
         default =
-          if nixflix.serviceNameIsUrlBase
+          if nixflix.nginx.enable
           then "/jellyfin"
           else "";
         defaultText = literalExpression ''if config.nixflix.serviceNameIsUrlBase then "/jellyfin" else ""'';
