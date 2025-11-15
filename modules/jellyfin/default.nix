@@ -141,11 +141,36 @@ in {
           TimeoutSec = 15;
           SuccessExitStatus = "0 143";
 
-          ExecStartPre = "+" + pkgs.writeShellScript "jellyfin-setup-config" ''
-            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
-            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
-            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
-            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/system.xml.template '${cfg.configDir}/system.xml'
+          ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
+            set -eu
+
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/system.xml.template '${cfg.configDir}/system.xml'
+
+            ${optionalString cfg.system.isStartupWizardCompleted ''
+              if [ ! -f "${cfg.configDir}/migrations.xml" ]; then
+                echo "First run detected - generating migrations.xml"
+                ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u "//IsStartupWizardCompleted" -v "false" '${cfg.configDir}/system.xml'
+
+                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' &
+                JELLYFIN_PID=$!
+
+                echo "Waiting for migrations.xml to be generated..."
+                until [ -f "${cfg.configDir}/migrations.xml" ]; do
+                  sleep 1
+                done
+                sleep 3
+
+                echo "Stopping temporary Jellyfin instance..."
+                kill -15 $JELLYFIN_PID || true
+                wait $JELLYFIN_PID || true
+
+                echo "Restoring IsStartupWizardCompleted to true"
+                ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u "//IsStartupWizardCompleted" -v "true" '${cfg.configDir}/system.xml'
+              fi
+            ''}
           '';
 
           ExecStart =
