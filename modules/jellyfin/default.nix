@@ -141,11 +141,11 @@ in {
           TimeoutSec = 15;
           SuccessExitStatus = "0 143";
 
-          ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/system.xml.template '${cfg.configDir}/system.xml'
+          ExecStartPre = "+" + pkgs.writeShellScript "jellyfin-setup-config" ''
+            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
+            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
+            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
+            ${pkgs.coreutils}/bin/install -m 440 -o root -g ${cfg.group} /etc/jellyfin/system.xml.template '${cfg.configDir}/system.xml'
           '';
 
           ExecStart =
