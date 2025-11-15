@@ -15,6 +15,12 @@ with lib; let
   in
     (toUpper firstChar) + rest;
 
+  escapeXml = str:
+    builtins.replaceStrings
+    ["&" "<" ">" "'" "\""]
+    ["&amp;" "&lt;" "&gt;" "&apos;" "&quot;"]
+    (toString str);
+
   isTaggedStruct = attrs: attrs ? tag && attrs ? content;
 
   attrsToXml = indent: attrs:
@@ -24,7 +30,7 @@ with lib; let
       contentStr =
         if isAttrs content
         then "\n${attrsToXml (indent + "  ") content}${indent}"
-        else toString content;
+        else escapeXml content;
     in "${indent}<${attrs.tag}>${contentStr}</${attrs.tag}>"
     else if isList attrs
     then
@@ -33,7 +39,7 @@ with lib; let
         then attrsToXml indent item
         else if isAttrs item
         then attrsToXml indent item
-        else "${indent}<string>${toString item}</string>")
+        else "${indent}<string>${escapeXml item}</string>")
       attrs)
     else
       concatStringsSep "\n" (
@@ -59,7 +65,7 @@ with lib; let
               if isTaggedStruct value
               then "\n${attrsToXml (indent + "  ") value}${indent}"
               else "\n${attrsToXml (indent + "  ") value}${indent}"
-            else toString value;
+            else escapeXml value;
         in
           if isAttrs value || (isList value && value != [])
           then "${indent}<${tagName}>${valueStr}</${tagName}>"
@@ -109,6 +115,7 @@ in {
       "d '${cfg.configDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.cacheDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.logDir}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.system.metadataPath}' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
     environment.etc = {
