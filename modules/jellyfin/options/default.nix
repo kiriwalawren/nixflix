@@ -14,6 +14,7 @@ in {
     ./branding.nix
     ./encoding.nix
     ./system.nix
+    ./users.nix
   ];
   options.nixflix.jellyfin = {
     enable = mkOption {
@@ -75,16 +76,6 @@ in {
       description = ''
         Directory where the Jellyfin logs will be stored,
         passed with `--logdir` see [#log-directory](https://jellyfin.org/docs/general/administration/configuration/#log-directory)
-      '';
-    };
-
-    apiKeyPath = mkOption {
-      type = types.nullOr types.path;
-      default = null;
-      description = ''
-        Path to file containing the Jellyfin API key.
-        This is optional and currently not used for configuration,
-        but available for future API-based configuration enhancements.
       '';
     };
 

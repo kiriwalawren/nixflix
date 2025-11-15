@@ -8,84 +8,156 @@ with lib; let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
+  xml = import ./xml.nix {inherit lib;};
 
-  toPascalCase = str: let
-    firstChar = substring 0 1 str;
-    rest = substring 1 (-1) str;
-  in
-    (toUpper firstChar) + rest;
+  networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
+  brandingXmlContent = xml.mkXmlContent "BrandingOptions" cfg.branding;
+  encodingXmlContent = xml.mkXmlContent "EncodingOptions" cfg.encoding;
+  systemXmlContent = xml.mkXmlContent "ServerConfiguration" cfg.system;
 
-  escapeXml = str:
-    builtins.replaceStrings
-    ["&" "<" ">" "'" "\""]
-    ["&amp;" "&lt;" "&gt;" "&apos;" "&quot;"]
-    (toString str);
+  dbname = "jellyfin.db";
+  dbPath = "${cfg.dataDir}/data/${dbname}";
+  sq = "${pkgs.sqlite}/bin/sqlite3 \"${dbPath}\"";
 
-  isTaggedStruct = attrs: attrs ? tag && attrs ? content;
+  permissionKindToDBInteger = {
+    isAdministrator = 0;
+    isHidden = 1;
+    isDisabled = 2;
+    enableSharedDeviceControl = 3;
+    enableRemoteAccess = 4;
+    enableLiveTvManagement = 5;
+    enableLiveTvAccess = 6;
+    enableMediaPlayback = 7;
+    enableAudioPlaybackTranscoding = 8;
+    enableVideoPlaybackTranscoding = 9;
+    enableContentDeletion = 10;
+    enableContentDownloading = 11;
+    enableSyncTranscoding = 12;
+    enableMediaConversion = 13;
+    enableAllDevices = 14;
+    enableAllChannels = 15;
+    enableAllFolders = 16;
+    enablePublicSharing = 17;
+    enableRemoteControlOfOtherUsers = 18;
+    enablePlaybackRemuxing = 19;
+    forceRemoteSourceTranscoding = 20;
+    enableCollectionManagement = 21;
+    enableSubtitleManagement = 22;
+    enableLyricManagement = 23;
+  };
 
-  attrsToXml = indent: attrs:
-    if isTaggedStruct attrs
-    then let
-      inherit (attrs) content;
-      contentStr =
-        if isAttrs content
-        then "\n${attrsToXml (indent + "  ") content}${indent}"
-        else escapeXml content;
-    in "${indent}<${attrs.tag}>${contentStr}</${attrs.tag}>"
-    else if isList attrs
+  subtitleModes = {
+    default = 0;
+    always = 1;
+    onlyForced = 2;
+    none = 3;
+    smart = 4;
+  };
+
+  nonDBOptions = [
+    "hashedPasswordFile"
+    "hashedPassword"
+    "mutable"
+    "permissions"
+    "preferences"
+    "_module"
+  ];
+
+  sqliteFormat = key: value:
+    if (isBool value)
     then
-      concatStringsSep "\n" (map (item:
-        if isTaggedStruct item
-        then attrsToXml indent item
-        else if isAttrs item
-        then attrsToXml indent item
-        else "${indent}<string>${escapeXml item}</string>")
-      attrs)
-    else
-      concatStringsSep "\n" (
-        mapAttrsToList (name: value: let
-          tagName = toPascalCase name;
-          valueStr =
-            if isBool value
-            then
-              (
-                if value
-                then "true"
-                else "false"
-              )
-            else if isInt value
-            then toString value
-            else if isList value
-            then
-              if value == []
-              then ""
-              else "\n${attrsToXml (indent + "  ") value}${indent}"
-            else if isAttrs value
-            then
-              if isTaggedStruct value
-              then "\n${attrsToXml (indent + "  ") value}${indent}"
-              else "\n${attrsToXml (indent + "  ") value}${indent}"
-            else escapeXml value;
-        in
-          if isAttrs value || (isList value && value != [])
-          then "${indent}<${tagName}>${valueStr}</${tagName}>"
-          else if isList value && value == []
-          then "${indent}<${tagName} />"
-          else "${indent}<${tagName}>${valueStr}</${tagName}>")
-        attrs
-      );
+      (
+        if value
+        then "1"
+        else "0"
+      )
+    else if (value == null)
+    then "NULL"
+    else if (key == "subtitleMode")
+    then toString subtitleModes.${value}
+    else if (isString value)
+    then "'${value}'"
+    else toString value;
 
-  mkXmlContent = tagName: attrs: ''
-    <?xml version="1.0" encoding="utf-8"?>
-    <${tagName} xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-    ${attrsToXml "  " attrs}
-    </${tagName}>
+  genUser = index: username: userOpts: let
+    userId =
+      if userOpts.id != null
+      then userOpts.id
+      else "$(${pkgs.libuuid}/bin/uuidgen | ${pkgs.coreutils}/bin/tr '[:lower:]' '[:upper:]')";
+
+    internalId =
+      if userOpts.internalId != null
+      then toString userOpts.internalId
+      else "$(($maxIndex + ${toString (index + 1)}))";
+
+    password =
+      if userOpts.hashedPasswordFile != null
+      then "$(${pkgs.coreutils}/bin/cat '${userOpts.hashedPasswordFile}')"
+      else if userOpts.hashedPassword != null
+      then userOpts.hashedPassword
+      else null;
+
+    userAttrs =
+      builtins.removeAttrs
+      (userOpts
+        // {
+          inherit username password;
+        })
+      (nonDBOptions ++ ["id" "internalId"]);
+
+    dbColumns = map (name: xml.toPascalCase name) (attrNames userAttrs);
+    dbValues = map (name: sqliteFormat name userAttrs.${name}) (attrNames userAttrs);
+  in ''
+    userExists=$(${sq} "SELECT 1 FROM Users WHERE Username = '${username}'" 2>/dev/null || echo "")
+    userId="${userId}"
+
+    if [ -n "$userExists" ]; then
+      userId=$(${sq} "SELECT Id FROM Users WHERE Username = '${username}'")
+      echo "User ${username} already exists with ID: $userId"
+    fi
+
+    if [ ${
+      if userOpts.mutable
+      then "-z \"$userExists\""
+      else "-n \"true\""
+    } ]; then
+      if [ -z "$userExists" ]; then
+        echo "INSERT INTO Users (${concatStringsSep ", " dbColumns}, InternalId, Id) VALUES(${concatStringsSep ", " dbValues}, ${internalId}, '$userId');" >> "$dbcmds"
+      else
+        echo "UPDATE Users SET ${
+      concatStringsSep ", " (
+        map (
+          name: "${xml.toPascalCase name} = ${sqliteFormat name userAttrs.${name}}"
+        ) (attrNames userAttrs)
+      )
+    } WHERE Username = '${username}';" >> "$dbcmds"
+      fi
+
+      ${concatStringsSep "\n" (
+      mapAttrsToList (
+        permission: enabled: ''
+          echo "REPLACE INTO Permissions (Kind, Value, UserId, Permission_Permissions_Guid, RowVersion) VALUES(${
+            toString permissionKindToDBInteger.${permission}
+          }, ${
+            if enabled
+            then "1"
+            else "0"
+          }, '$userId', NULL, 0);" >> "$dbcmds"
+        ''
+      )
+      userOpts.permissions
+    )}
+    fi
   '';
 
-  networkXmlContent = mkXmlContent "NetworkConfiguration" cfg.network;
-  brandingXmlContent = mkXmlContent "BrandingOptions" cfg.branding;
-  encodingXmlContent = mkXmlContent "EncodingOptions" cfg.encoding;
-  systemXmlContent = mkXmlContent "ServerConfiguration" cfg.system;
+  usersSetupScript =
+    if (cfg.users == {})
+    then ""
+    else let
+      usernames = attrNames cfg.users;
+      userList = map (index: genUser index (elemAt usernames index) cfg.users.${elemAt usernames index}) (range 0 ((length usernames) - 1));
+    in
+      concatStringsSep "\n" userList;
 in {
   imports = [
     ./options
@@ -116,6 +188,7 @@ in {
       "d '${cfg.cacheDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.logDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.system.metadataPath}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.dataDir}/data' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
     environment.etc = {
@@ -177,6 +250,40 @@ in {
                 echo "Restoring IsStartupWizardCompleted to true"
                 ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u "//IsStartupWizardCompleted" -v "true" '${cfg.configDir}/system.xml'
               fi
+            ''}
+
+            ${optionalString (cfg.users != {}) ''
+              if [ ! -e "${dbPath}" ]; then
+                echo "Database does not exist, starting Jellyfin to create it..."
+                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' &
+                JELLYFIN_PID=$!
+
+                echo "Waiting for database to be created..."
+                until [ -f "${dbPath}" ]; do
+                  sleep 1
+                done
+                sleep 3
+
+                echo "Stopping Jellyfin..."
+                kill -15 $JELLYFIN_PID || true
+                wait $JELLYFIN_PID || true
+              fi
+
+              dbcmds=$(${pkgs.coreutils}/bin/mktemp)
+              trap "${pkgs.coreutils}/bin/rm -f $dbcmds" EXIT
+
+              echo "BEGIN TRANSACTION;" > "$dbcmds"
+
+              maxIndex=$(${sq} 'SELECT InternalId FROM Users ORDER BY InternalId DESC LIMIT 1' 2>/dev/null || echo "0")
+              if [ -z "$maxIndex" ]; then
+                maxIndex="0"
+              fi
+
+              ${usersSetupScript}
+
+              echo "COMMIT TRANSACTION;" >> "$dbcmds"
+              echo "Executing user setup SQL..."
+              ${pkgs.sqlite}/bin/sqlite3 "${dbPath}" < "$dbcmds"
             ''}
           '';
 
