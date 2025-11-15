@@ -236,8 +236,7 @@ in {
                 echo "First run detected - generating migrations.xml"
                 ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u "//IsStartupWizardCompleted" -v "false" '${cfg.configDir}/system.xml'
 
-                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' &
-                JELLYFIN_PID=$!
+                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' & disown
 
                 echo "Waiting for migrations.xml to be generated..."
                 until [ -f "${cfg.configDir}/migrations.xml" ]; do
@@ -246,8 +245,10 @@ in {
                 sleep 3
 
                 echo "Stopping temporary Jellyfin instance..."
-                kill -15 $JELLYFIN_PID || true
-                wait $JELLYFIN_PID || true
+                ${pkgs.procps}/bin/pkill -15 -f ${cfg.package}
+                while ${pkgs.procps}/bin/ps ax | ${pkgs.gnugrep}/bin/grep -v grep | ${pkgs.gnugrep}/bin/grep -q ${cfg.package}; do
+                  sleep 1
+                done
 
                 echo "Restoring IsStartupWizardCompleted to true"
                 ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L -u "//IsStartupWizardCompleted" -v "true" '${cfg.configDir}/system.xml'
@@ -257,8 +258,7 @@ in {
             ${optionalString (cfg.users != {}) ''
               if [ ! -e "${dbPath}" ]; then
                 echo "Database does not exist, starting Jellyfin to create it..."
-                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' &
-                JELLYFIN_PID=$!
+                ${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}' & disown
 
                 echo "Waiting for database to be created..."
                 until [ -f "${dbPath}" ]; do
@@ -267,8 +267,10 @@ in {
                 sleep 3
 
                 echo "Stopping Jellyfin..."
-                kill -15 $JELLYFIN_PID || true
-                wait $JELLYFIN_PID || true
+                ${pkgs.procps}/bin/pkill -15 -f ${cfg.package}
+                while ${pkgs.procps}/bin/ps ax | ${pkgs.gnugrep}/bin/grep -v grep | ${pkgs.gnugrep}/bin/grep -q ${cfg.package}; do
+                  sleep 1
+                done
               fi
 
               dbcmds=$(${pkgs.coreutils}/bin/mktemp)
