@@ -219,7 +219,8 @@ in {
           Group = cfg.group;
           WorkingDirectory = cfg.dataDir;
           Restart = "on-failure";
-          TimeoutSec = 15;
+          TimeoutStartSec = 120;
+          TimeoutStopSec = 15;
           SuccessExitStatus = "0 143";
 
           ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
