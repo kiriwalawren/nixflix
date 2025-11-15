@@ -8,16 +8,13 @@ with lib; let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
-  stateDir = "${nixflix.stateDir}/jellyfin";
 
-  # Convert camelCase to PascalCase
   toPascalCase = str: let
     firstChar = substring 0 1 str;
     rest = substring 1 (-1) str;
   in
     (toUpper firstChar) + rest;
 
-  # Recursive function to convert Nix attrs to XML
   attrsToXml = indent: attrs:
     concatStringsSep "\n" (
       mapAttrsToList (name: value: let
@@ -44,251 +41,21 @@ with lib; let
       attrs
     );
 
-  networkXmlContent = ''
+  mkXmlContent = tagName: attrs: ''
     <?xml version="1.0" encoding="utf-8"?>
-    <NetworkConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-    ${attrsToXml "  " cfg.network}
-    </NetworkConfiguration>
+    <${tagName} xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    ${attrsToXml "  " attrs}
+    </${tagName}>
   '';
+
+  networkXmlContent = mkXmlContent "NetworkConfiguration" cfg.network;
+  brandingXmlContent = mkXmlContent "BrandingOptions" cfg.branding;
+  encodingXmlContent = mkXmlContent "EncodingOptions" cfg.encoding;
+  systemXmlContent = mkXmlContent "ServerConfiguration" cfg.system;
 in {
-  options.nixflix.jellyfin = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Whether to enable Jellyfin media server";
-    };
-
-    package = mkOption {
-      type = types.package;
-      default = pkgs.jellyfin;
-      defaultText = literalExpression "pkgs.jellyfin";
-      description = "Jellyfin package to use";
-    };
-
-    user = mkOption {
-      type = types.str;
-      default = "jellyfin";
-      description = "User under which the service runs";
-    };
-
-    group = mkOption {
-      type = types.str;
-      default = globals.libraryOwner.group;
-      defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
-      description = "Group under which the service runs";
-    };
-
-    dataDir = mkOption {
-      type = types.path;
-      default = stateDir;
-      defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin"'';
-      description = "Directory containing the Jellyfin data files";
-    };
-
-    configDir = mkOption {
-      type = types.path;
-      default = "${stateDir}/config";
-      defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin/config"'';
-      description = ''
-        Directory containing the server configuration files,
-        passed with `--configdir` see [configuration-directory](https://jellyfin.org/docs/general/administration/configuration/#configuration-directory)
-      '';
-    };
-
-    cacheDir = mkOption {
-      type = types.path;
-      default = "/var/cache/jellyfin";
-      description = ''
-        Directory containing the jellyfin server cache,
-        passed with `--cachedir` see [#cache-directory](https://jellyfin.org/docs/general/administration/configuration/#cache-directory)
-      '';
-    };
-
-    logDir = mkOption {
-      type = types.path;
-      default = "${stateDir}/log";
-      defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin/log"'';
-      description = ''
-        Directory where the Jellyfin logs will be stored,
-        passed with `--logdir` see [#log-directory](https://jellyfin.org/docs/general/administration/configuration/#log-directory)
-      '';
-    };
-
-    apiKeyPath = mkOption {
-      type = types.nullOr types.path;
-      default = null;
-      description = ''
-        Path to file containing the Jellyfin API key.
-        This is optional and currently not used for configuration,
-        but available for future API-based configuration enhancements.
-      '';
-    };
-
-    openFirewall = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Open ports in the firewall for Jellyfin.
-        TCP ports 8096 and 8920, UDP ports 1900 and 7359.
-      '';
-    };
-
-    vpn = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Whether to route Jellyfin traffic through the VPN.
-          When false (default), Jellyfin bypasses the VPN.
-          When true, Jellyfin routes through the VPN (requires nixflix.mullvad.enable = true).
-        '';
-      };
-    };
-
-    network = {
-      autoDiscovery = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Enable auto-discovery";
-      };
-
-      baseUrl = mkOption {
-        type = types.str;
-        default =
-          if nixflix.nginx.enable
-          then "/jellyfin"
-          else "";
-        defaultText = literalExpression ''if config.nixflix.serviceNameIsUrlBase then "/jellyfin" else ""'';
-        description = "Base URL for Jellyfin (URL prefix)";
-      };
-
-      certificatePassword = mkOption {
-        type = types.str;
-        default = "";
-        description = "Certificate password";
-      };
-
-      certificatePath = mkOption {
-        type = types.str;
-        default = "";
-        description = "Path to certificate file";
-      };
-
-      enableHttps = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable HTTPS";
-      };
-
-      enableIPv4 = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Enable IPv4";
-      };
-
-      enableIPv6 = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable IPv6";
-      };
-
-      enablePublishedServerUriByRequest = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable published server URI by request";
-      };
-
-      enableRemoteAccess = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Enable remote access";
-      };
-
-      enableUPnP = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Enable UPnP";
-      };
-
-      ignoreVirtualInterfaces = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Ignore virtual interfaces";
-      };
-
-      internalHttpPort = mkOption {
-        type = types.ints.between 0 65535;
-        default = 8096;
-        description = "Internal HTTP port";
-      };
-
-      internalHttpsPort = mkOption {
-        type = types.ints.between 0 65535;
-        default = 8920;
-        description = "Internal HTTPS port";
-      };
-
-      isRemoteIPFilterBlacklist = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Is remote IP filter a blacklist";
-      };
-
-      knownProxies = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of known proxies";
-      };
-
-      localNetworkAddresses = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Local network addresses";
-      };
-
-      localNetworkSubnets = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of local network subnets";
-      };
-
-      publicHttpPort = mkOption {
-        type = types.ints.between 0 65535;
-        default = 8096;
-        description = "Public HTTP port";
-      };
-
-      publicHttpsPort = mkOption {
-        type = types.ints.between 0 65535;
-        default = 8920;
-        description = "Public HTTPS port";
-      };
-
-      publishedServerUriBySubnet = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of published server URIs by subnet";
-      };
-
-      remoteIpFilter = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "Remote IP filter list";
-      };
-
-      requireHttps = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Require HTTPS";
-      };
-
-      virtualInterfaceNames = mkOption {
-        type = types.listOf types.str;
-        default = ["veth"];
-        description = "List of virtual interface names";
-      };
-    };
-  };
+  imports = [
+    ./options
+  ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = [
@@ -316,7 +83,12 @@ in {
       "d '${cfg.logDir}' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
-    environment.etc."jellyfin/network.xml.template".text = networkXmlContent;
+    environment.etc = {
+      "jellyfin/network.xml.template".text = networkXmlContent;
+      "jellyfin/branding.xml.template".text = brandingXmlContent;
+      "jellyfin/encoding.xml.template".text = encodingXmlContent;
+      "jellyfin/system.xml.template".text = systemXmlContent;
+    };
 
     systemd.services.jellyfin = {
       description = "Jellyfin Media Server";
@@ -334,7 +106,12 @@ in {
           TimeoutSec = 15;
           SuccessExitStatus = "0 143";
 
-          ExecStartPre = "${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'";
+          ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/system.xml.template '${cfg.configDir}/system.xml'
+          '';
 
           ExecStart =
             if (config.nixflix.mullvad.enable && !cfg.vpn.enable)
@@ -412,16 +189,6 @@ in {
 
             proxy_set_header X-Real-IP $remote_addr;
             proxy_buffering off;
-
-            ${
-              if nixflix.theme.enable
-              then ''
-                proxy_set_header Accept-Encoding "";
-                sub_filter '</body>' '<style>@import url("https://theme-park.dev/css/base/jellyfin/${nixflix.theme.name}.css");</style></body>';
-                sub_filter_once on;
-              ''
-              else ""
-            }
           '';
         };
         "${cfg.network.baseUrl}/socket" = {
