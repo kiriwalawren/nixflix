@@ -9,6 +9,7 @@ with lib; let
 in {
   imports = [
     ./globals.nix
+    ./jellyfin
     ./lidarr
     ./mullvad
     ./postgres

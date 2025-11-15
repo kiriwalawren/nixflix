@@ -27,6 +27,7 @@ with lib; {
     gids = {
       autobrr = 188;
       cross-seed = 183;
+      jellyfin = 146;
       jellyseerr = 250;
       media = 169;
       prowlarr = 287;

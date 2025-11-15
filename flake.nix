@@ -15,6 +15,12 @@
     nixosModules.default = import ./modules;
     nixosModules.nixflix = import ./modules;
 
+    packages = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in {
+      genhash = pkgs.callPackage ./pkgs/genhash {};
+    });
+
     formatter = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
     in
