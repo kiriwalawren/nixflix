@@ -124,6 +124,13 @@ in {
       wants = ["network-online.target"];
       wantedBy = ["multi-user.target"];
 
+      restartTriggers = [
+        networkXmlContent
+        brandingXmlContent
+        encodingXmlContent
+        systemXmlContent
+      ];
+
       serviceConfig =
         {
           Type = "simple";
