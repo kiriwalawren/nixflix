@@ -19,15 +19,13 @@ with lib; let
 
   attrsToXml = indent: attrs:
     if isTaggedStruct attrs
-    then
-      let
-        content = attrs.content;
-        contentStr =
-          if isAttrs content
-          then "\n${attrsToXml (indent + "  ") content}${indent}"
-          else toString content;
-      in
-        "${indent}<${attrs.tag}>${contentStr}</${attrs.tag}>"
+    then let
+      inherit (attrs) content;
+      contentStr =
+        if isAttrs content
+        then "\n${attrsToXml (indent + "  ") content}${indent}"
+        else toString content;
+    in "${indent}<${attrs.tag}>${contentStr}</${attrs.tag}>"
     else if isList attrs
     then
       concatStringsSep "\n" (map (item:

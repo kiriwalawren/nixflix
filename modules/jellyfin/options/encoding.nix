@@ -128,7 +128,7 @@ with lib; {
       type = types.str;
       description = "The path to the FFmpeg application file or folder containing FFmpeg.";
       default = "${pkgs.jellyfin-ffmpeg}";
-      defaultText = literalExpression ''"''${pkgs.jellyfin-ffmpeg}"'';
+      defaultText = literalExpression ''"$${pkgs.jellyfin-ffmpeg}"'';
     };
 
     vaapiDevice = mkOption {
