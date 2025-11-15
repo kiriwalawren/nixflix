@@ -1,10 +1,6 @@
 {lib, ...}:
 with lib; let
-  toPascalCase = str: let
-    firstChar = substring 0 1 str;
-    rest = substring 1 (-1) str;
-  in
-    (toUpper firstChar) + rest;
+  util = import ./util.nix {inherit lib;};
 
   escapeXml = str:
     builtins.replaceStrings
@@ -35,7 +31,7 @@ with lib; let
     else
       concatStringsSep "\n" (
         mapAttrsToList (name: value: let
-          tagName = toPascalCase name;
+          tagName = util.toPascalCase name;
           valueStr =
             if isBool value
             then

@@ -9,6 +9,7 @@ with lib; let
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
   xml = import ./xml.nix {inherit lib;};
+  util = import ./util.nix {inherit lib;};
 
   networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
   brandingXmlContent = xml.mkXmlContent "BrandingOptions" cfg.branding;
@@ -105,7 +106,7 @@ with lib; let
         })
       (nonDBOptions ++ ["id" "internalId"]);
 
-    dbColumns = map (name: xml.toPascalCase name) (attrNames userAttrs);
+    dbColumns = map (name: util.toPascalCase name) (attrNames userAttrs);
     dbValues = map (name: sqliteFormat name userAttrs.${name}) (attrNames userAttrs);
   in ''
     userExists=$(${sq} "SELECT 1 FROM Users WHERE Username = '${username}'" 2>/dev/null || echo "")
@@ -127,7 +128,7 @@ with lib; let
         echo "UPDATE Users SET ${
       concatStringsSep ", " (
         map (
-          name: "${xml.toPascalCase name} = ${sqliteFormat name userAttrs.${name}}"
+          name: "${util.toPascalCase name} = ${sqliteFormat name userAttrs.${name}}"
         ) (attrNames userAttrs)
       )
     } WHERE Username = '${username}';" >> "$dbcmds"
