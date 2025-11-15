@@ -15,31 +15,61 @@ with lib; let
   in
     (toUpper firstChar) + rest;
 
+  isTaggedStruct = attrs: attrs ? tag && attrs ? content;
+
   attrsToXml = indent: attrs:
-    concatStringsSep "\n" (
-      mapAttrsToList (name: value: let
-        tagName = toPascalCase name;
-        valueStr =
-          if isBool value
-          then
-            (
-              if value
-              then "true"
-              else "false"
-            )
-          else if isInt value
-          then toString value
-          else if isList value
-          then concatStringsSep "," value
-          else if isAttrs value
-          then "\n${attrsToXml (indent + "  ") value}${indent}"
-          else toString value;
+    if isTaggedStruct attrs
+    then
+      let
+        content = attrs.content;
+        contentStr =
+          if isAttrs content
+          then "\n${attrsToXml (indent + "  ") content}${indent}"
+          else toString content;
       in
-        if isAttrs value
-        then "${indent}<${tagName}>${valueStr}</${tagName}>"
-        else "${indent}<${tagName}>${valueStr}</${tagName}>")
-      attrs
-    );
+        "${indent}<${attrs.tag}>${contentStr}</${attrs.tag}>"
+    else if isList attrs
+    then
+      concatStringsSep "\n" (map (item:
+        if isTaggedStruct item
+        then attrsToXml indent item
+        else if isAttrs item
+        then attrsToXml indent item
+        else "${indent}<string>${toString item}</string>")
+      attrs)
+    else
+      concatStringsSep "\n" (
+        mapAttrsToList (name: value: let
+          tagName = toPascalCase name;
+          valueStr =
+            if isBool value
+            then
+              (
+                if value
+                then "true"
+                else "false"
+              )
+            else if isInt value
+            then toString value
+            else if isList value
+            then
+              if value == []
+              then ""
+              else "\n${attrsToXml (indent + "  ") value}${indent}"
+            else if isAttrs value
+            then
+              if isTaggedStruct value
+              then "\n${attrsToXml (indent + "  ") value}${indent}"
+              else "\n${attrsToXml (indent + "  ") value}${indent}"
+            else toString value;
+        in
+          if isAttrs value || (isList value && value != [])
+          then "${indent}<${tagName}>${valueStr}</${tagName}>"
+          else if isList value && value == []
+          then "${indent}<${tagName} />"
+          else "${indent}<${tagName}>${valueStr}</${tagName}>")
+        attrs
+      );
 
   mkXmlContent = tagName: attrs: ''
     <?xml version="1.0" encoding="utf-8"?>
