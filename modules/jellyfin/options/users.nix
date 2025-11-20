@@ -39,40 +39,30 @@ with lib; let
         default = false;
         description = "Whether the user is disabled";
       };
-      enableSharedDeviceControl = mkOption {
+      enableAllChannels = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether the user can control shared devices";
+        description = "Whether the user has access to all channels";
       };
-      enableRemoteAccess = mkOption {
+      enableAllDevices = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether the user can access the server remotely";
+        description = "Whether the user has access to all devices";
       };
-      enableLiveTvManagement = mkOption {
+      enableAllFolders = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether the user can manage live tv";
-      };
-      enableLiveTvAccess = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether the user can access live tv";
-      };
-      enableMediaPlayback = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether the user can play media";
+        description = "Whether the user has access to all folders";
       };
       enableAudioPlaybackTranscoding = mkOption {
         type = types.bool;
         default = true;
         description = "Whether the server should transcode audio for the user if requested";
       };
-      enableVideoPlaybackTranscoding = mkOption {
+      enableCollectionManagement = mkOption {
         type = types.bool;
-        default = true;
-        description = "Whether the server should transcode video for the user if requested";
+        default = false;
+        description = "Whether the user can create, modify and delete collections";
       };
       enableContentDeletion = mkOption {
         type = types.bool;
@@ -84,65 +74,75 @@ with lib; let
         default = true;
         description = "Whether the user can download content";
       };
-      enableSyncTranscoding = mkOption {
+      enableLiveTvAccess = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether to enable sync transcoding for the user";
+        description = "Whether the user can access live tv";
+      };
+      enableLiveTvManagement = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether the user can manage live tv";
+      };
+      enableLyricManagement = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Whether the user can edit lyrics";
       };
       enableMediaConversion = mkOption {
         type = types.bool;
         default = true;
         description = "Whether the user can do media conversion";
       };
-      enableAllDevices = mkOption {
+      enableMediaPlayback = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether the user has access to all devices";
-      };
-      enableAllChannels = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether the user has access to all channels";
-      };
-      enableAllFolders = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether the user has access to all folders";
-      };
-      enablePublicSharing = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether to enable public sharing for the user";
-      };
-      enableRemoteControlOfOtherUsers = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Whether the user can remotely control other users";
+        description = "Whether the user can play media";
       };
       enablePlaybackRemuxing = mkOption {
         type = types.bool;
         default = true;
         description = "Whether the user is permitted to do playback remuxing";
       };
-      forceRemoteSourceTranscoding = mkOption {
+      enablePublicSharing = mkOption {
         type = types.bool;
-        default = false;
-        description = "Whether the server should force transcoding on remote connections for the user";
+        default = true;
+        description = "Whether to enable public sharing for the user";
       };
-      enableCollectionManagement = mkOption {
+      enableRemoteAccess = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether the user can access the server remotely";
+      };
+      enableRemoteControlOfOtherUsers = mkOption {
         type = types.bool;
         default = false;
-        description = "Whether the user can create, modify and delete collections";
+        description = "Whether the user can remotely control other users";
+      };
+      enableSharedDeviceControl = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether the user can control shared devices";
       };
       enableSubtitleManagement = mkOption {
         type = types.bool;
         default = false;
         description = "Whether the user can edit subtitles";
       };
-      enableLyricManagement = mkOption {
+      enableSyncTranscoding = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to enable sync transcoding for the user";
+      };
+      enableVideoPlaybackTranscoding = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether the server should transcode video for the user if requested";
+      };
+      forceRemoteSourceTranscoding = mkOption {
         type = types.bool;
         default = false;
-        description = "Whether the user can edit lyrics";
+        description = "Whether the server should force transcoding on remote connections for the user";
       };
     };
   };
