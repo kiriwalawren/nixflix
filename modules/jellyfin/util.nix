@@ -7,13 +7,12 @@ with lib; rec {
     (toUpper firstChar) + rest;
 
   recursiveTransform = value:
-    if isAttrs value then
-      if value ? tag && value ? content then
-        recursiveTransform value.content
-      else
-        mapAttrs' (k: v: nameValuePair (toPascalCase k) (recursiveTransform v)) value
-    else if isList value then
-      map recursiveTransform value
-    else
-      value;
+    if isAttrs value
+    then
+      if value ? tag && value ? content
+      then recursiveTransform value.content
+      else mapAttrs' (k: v: nameValuePair (toPascalCase k) (recursiveTransform v)) value
+    else if isList value
+    then map recursiveTransform value
+    else value;
 }

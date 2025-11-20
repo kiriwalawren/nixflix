@@ -17,8 +17,9 @@ with lib; let
 in {
   imports = [
     ./options
-    ./initializationService.nix
+
     ./apiKeysService.nix
+    ./initializationService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix

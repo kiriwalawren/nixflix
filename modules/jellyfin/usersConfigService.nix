@@ -22,7 +22,7 @@ with lib; let
 
   buildUserPayload = userName: userCfg: {
     name = userName;
-    enableAutoLogin = userCfg.enableAutoLogin;
+    inherit (userCfg) enableAutoLogin;
     configuration = util.recursiveTransform userCfg.preferences;
     policy = util.recursiveTransform (userCfg.policy
       // {

@@ -299,18 +299,19 @@ in {
     saveMetadataHidden = mkEnableOption "";
 
     contentTypes = mkOption {
-      type = with types; listOf (submodule {
-        options = {
-          name = mkOption {
-            type = str;
-            description = "Content type name";
+      type = with types;
+        listOf (submodule {
+          options = {
+            name = mkOption {
+              type = str;
+              description = "Content type name";
+            };
+            value = mkOption {
+              type = str;
+              description = "Content type value";
+            };
           };
-          value = mkOption {
-            type = str;
-            description = "Content type value";
-          };
-        };
-      });
+        });
       default = [];
     };
 
@@ -362,18 +363,19 @@ in {
     };
 
     pathSubstitutions = mkOption {
-      type = with types; listOf (submodule {
-        options = {
-          from = mkOption {
-            type = str;
-            description = "Path to substitute from";
+      type = with types;
+        listOf (submodule {
+          options = {
+            from = mkOption {
+              type = str;
+              description = "Path to substitute from";
+            };
+            to = mkOption {
+              type = str;
+              description = "Path to substitute to";
+            };
           };
-          to = mkOption {
-            type = str;
-            description = "Path to substitute to";
-          };
-        };
-      });
+        });
       default = [];
     };
 
