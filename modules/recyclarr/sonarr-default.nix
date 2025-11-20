@@ -10,7 +10,7 @@ in {
   sonarr = {
     sonarr_main = {
       base_url = "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
-      api_key._secret = "/run/credentials/recyclarr.service/sonarr-api_key";
+      api_key._secret = nixflix.sonarr.config.apiKeyPath;
       delete_old_custom_formats = true;
       replace_existing_custom_formats = true;
 
