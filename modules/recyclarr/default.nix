@@ -141,12 +141,6 @@ in {
             ++ optional cfg.sonarr.enable "sonarr-config.service";
           wants = ["network-online.target"];
           wantedBy = mkForce ["multi-user.target"];
-
-          serviceConfig = {
-            LoadCredential =
-              optional cfg.radarr.enable "radarr-api_key:${nixflix.radarr.config.apiKeyPath}"
-              ++ optional cfg.sonarr.enable "sonarr-api_key:${nixflix.sonarr.config.apiKeyPath}";
-          };
         };
       }
       // cleanupProfilesServices;

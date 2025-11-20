@@ -37,7 +37,7 @@ in
             host = "127.0.0.1";
             url_base = "/sabnzbd";
             ignore_samples = true;
-            direct_unpack = false;
+            direct_unpack = true;
             article_tries = 5;
             servers = [
               {
@@ -131,5 +131,6 @@ in
       assert "dir = tv" in config_content or "dir=tv" in config_content, "TV category dir not set"
       assert "priority = 1" in config_content or "priority=1" in config_content, "Movies priority not set"
       assert "pp = 2" in config_content or "pp=2" in config_content, "Movies post-processing not set"
+      assert "direct_unpack = 1" in config_content or "direct_unpack=1" in config_content, "Direct Unpack not set"
     '';
   }
