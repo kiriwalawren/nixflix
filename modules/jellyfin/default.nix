@@ -8,6 +8,10 @@ with lib; let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
+
+  xml = import ./xml.nix {inherit lib;};
+
+  networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
 in {
   imports = [
     ./options
@@ -41,11 +45,19 @@ in {
       "d '${cfg.dataDir}/data' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
+    environment.etc = {
+      "jellyfin/network.xml.template".text = networkXmlContent;
+    };
+
     systemd.services.jellyfin = {
       description = "Jellyfin Media Server";
       after = ["network-online.target"];
       wants = ["network-online.target"];
       wantedBy = ["multi-user.target"];
+
+      restartTriggers = [
+        networkXmlContent
+      ];
 
       serviceConfig =
         {
@@ -57,6 +69,11 @@ in {
           TimeoutStartSec = 120;
           TimeoutStopSec = 15;
           SuccessExitStatus = "0 143";
+
+          ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
+            set -eu
+            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
+          '';
 
           ExecStart =
             if (config.nixflix.mullvad.enable && !cfg.vpn.enable)
