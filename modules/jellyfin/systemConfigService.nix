@@ -9,11 +9,7 @@ with lib; let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix {inherit lib;};
-
-  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
+  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
   systemConfig = util.recursiveTransform (removeAttrs cfg.system ["removeOldPlugins"]);
 
@@ -25,7 +21,7 @@ in {
     systemd.services.jellyfin-system-config = {
       description = "Configure Jellyfin System Settings via API";
       after = ["jellyfin-setup-wizard.service"];
-      wants = ["jellyfin-setup-wizard.service"];
+      requires = ["jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
@@ -40,30 +36,7 @@ in {
 
         echo "Configuring Jellyfin system settings..."
 
-        echo "Authenticating as ${firstAdminName}..."
-        ${
-          if firstAdminUser.passwordFile != null
-          then ''ADMIN_PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
-          else ''ADMIN_PASSWORD=""''
-        }
-
-        AUTH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -H 'Authorization: MediaBrowser Client="nixflix", Device="NixOS", DeviceId="nixflix-system-config", Version="1.0.0"' \
-          -d "{\"Username\": \"${firstAdminName}\", \"Pw\": \"$ADMIN_PASSWORD\"}" \
-          "$BASE_URL/Users/AuthenticateByName")
-
-        echo "Auth response: $AUTH_RESPONSE"
-
-        ACCESS_TOKEN=$(echo "$AUTH_RESPONSE" | ${pkgs.jq}/bin/jq -r '.AccessToken // empty' 2>/dev/null || echo "")
-
-        if [ -z "$ACCESS_TOKEN" ]; then
-          echo "Failed to authenticate as ${firstAdminName}" >&2
-          echo "Auth response was not valid JSON or missing AccessToken" >&2
-          exit 1
-        fi
-
-        echo "Successfully authenticated"
+        source ${authUtil.authScript}
 
         RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
           -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-system-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \

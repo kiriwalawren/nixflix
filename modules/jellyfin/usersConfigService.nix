@@ -9,11 +9,7 @@ with lib; let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix {inherit lib;};
-
-  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
+  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
   transformSyncPlayAccess = hasAccess:
     if hasAccess
@@ -41,8 +37,8 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";
-      after = ["jellyfin-setup-wizard.service"];
-      wants = ["jellyfin-setup-wizard.service"];
+      after = ["jellyfin-setup-wizard.service" "jellyfin-system-config.service"];
+      requires = ["jellyfin-setup-wizard.service" "jellyfin-system-config.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
@@ -57,30 +53,7 @@ in {
 
         echo "Configuring Jellyfin users..."
 
-        echo "Authenticating as ${firstAdminName}..."
-        ${
-          if firstAdminUser.passwordFile != null
-          then ''ADMIN_PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
-          else ''ADMIN_PASSWORD=""''
-        }
-
-        AUTH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -H 'Authorization: MediaBrowser Client="nixflix", Device="NixOS", DeviceId="nixflix-users-config", Version="1.0.0"' \
-          -d "{\"Username\": \"${firstAdminName}\", \"Pw\": \"$ADMIN_PASSWORD\"}" \
-          "$BASE_URL/Users/AuthenticateByName")
-
-        echo "Auth response: $AUTH_RESPONSE"
-
-        ACCESS_TOKEN=$(echo "$AUTH_RESPONSE" | ${pkgs.jq}/bin/jq -r '.AccessToken // empty' 2>/dev/null || echo "")
-
-        if [ -z "$ACCESS_TOKEN" ]; then
-          echo "Failed to authenticate as ${firstAdminName}" >&2
-          echo "Auth response was not valid JSON or missing AccessToken" >&2
-          exit 1
-        fi
-
-        echo "Successfully authenticated"
+        source ${authUtil.authScript}
 
         echo "Fetching users from $BASE_URL/Users..."
         USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users")

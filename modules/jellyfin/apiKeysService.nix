@@ -12,7 +12,7 @@ in {
     systemd.services.jellyfin-api-keys = {
       description = "Jellyfin API Keys Initialization";
       after = ["jellyfin-initialization.service"];
-      wants = ["jellyfin-initialization.service"];
+      requires = ["jellyfin-initialization.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

@@ -23,32 +23,22 @@ in {
       script = ''
         set -eu
 
-        LOG_FILE="${cfg.logDir}/log_$(${pkgs.coreutils}/bin/date +%Y%m%d).log"
         BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}${cfg.network.baseUrl}"
 
-        echo "Waiting for Jellyfin to complete startup..."
-        for i in {1..60}; do
-          if [ -f "$LOG_FILE" ]; then
-            if ${pkgs.gnugrep}/bin/grep -q "Startup complete" "$LOG_FILE"; then
-              echo "Jellyfin startup complete"
-              break
-            fi
-          fi
-          if [[ $i -eq 60 ]]; then
-            echo "Jellyfin did not complete startup after 120 seconds" >&2
-            exit 1
-          fi
-          sleep 2
-        done
+        echo "Waiting for Jellyfin to finish loading..."
+        for i in {1..180}; do
+          # Check if API responds with 200 (not 503 "server is loading")
+          HTTP_CODE=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/System/Info/Public" 2>/dev/null || echo "000")
 
-        echo "Waiting for Jellyfin API to be available..."
-        for i in {1..90}; do
-          if ${pkgs.curl}/bin/curl -s -f "$BASE_URL/System/Ping" >/dev/null 2>&1; then
-            echo "Jellyfin API is available"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "Jellyfin is ready (HTTP $HTTP_CODE)"
             exit 0
+          elif [ "$HTTP_CODE" = "503" ]; then
+            echo "Jellyfin is still loading (HTTP 503)... attempt $i/180"
           fi
-          if [[ $i -eq 90 ]]; then
-            echo "Jellyfin API not available after 90 seconds" >&2
+
+          if [[ $i -eq 180 ]]; then
+            echo "Jellyfin did not finish loading after 180 seconds (last HTTP code: $HTTP_CODE)" >&2
             exit 1
           fi
           sleep 1

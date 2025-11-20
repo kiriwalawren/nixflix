@@ -8,6 +8,8 @@ with lib; let
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
+  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
+
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
@@ -17,7 +19,7 @@ in {
     systemd.services.jellyfin-setup-wizard = {
       description = "Complete Jellyfin Setup Wizard";
       after = ["jellyfin-initialization.service"];
-      wants = ["jellyfin-initialization.service"];
+      requires = ["jellyfin-initialization.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
@@ -32,14 +34,9 @@ in {
 
         echo "Checking if first admin user needs to be created..."
 
-        SYSTEM_XML="${cfg.configDir}/system.xml"
-
-        if [ ! -f "$SYSTEM_XML" ]; then
-          echo "system.xml not found, assuming wizard not completed"
-          STARTUP_WIZARD_COMPLETED="false"
-        else
-          STARTUP_WIZARD_COMPLETED=$(${pkgs.gnugrep}/bin/grep -oP '<IsStartupWizardCompleted>\K[^<]+' "$SYSTEM_XML" || echo "false")
-        fi
+        # Check if startup wizard is already completed via API
+        SYSTEM_INFO=$(${pkgs.curl}/bin/curl -s "$BASE_URL/System/Info/Public")
+        STARTUP_WIZARD_COMPLETED=$(echo "$SYSTEM_INFO" | ${pkgs.jq}/bin/jq -r '.StartupWizardCompleted // false')
 
         echo "IsStartupWizardCompleted: $STARTUP_WIZARD_COMPLETED"
 
@@ -138,6 +135,11 @@ in {
         else
           echo "Setup wizard already completed, skipping"
         fi
+
+        echo "Waiting for Jellyfin to be ready for authenticated requests..."
+        source ${authUtil.authScript}
+        echo "Waiting 2 seconds for Jellyfin to fully stabilize..."
+        sleep 2
       '';
     };
   };
