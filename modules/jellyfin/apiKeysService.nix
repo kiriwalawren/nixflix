@@ -23,7 +23,7 @@ in {
       };
 
       script = let
-        dbPath = "${cfg.dataDir}/data/library.db";
+        dbPath = "${cfg.dataDir}/data/jellyfin.db";
       in ''
         set -eu
 
