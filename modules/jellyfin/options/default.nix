@@ -99,5 +99,24 @@ in {
         '';
       };
     };
+
+    apikeys = mkOption {
+      description = ''
+        API keys for Jellyfin.
+        Each attribute name is the API key name, and the value is a path to a file containing the API key.
+        The key must be a random GUID without dashes. To generate one, run:
+        ```uuidgen -r | sed 's/-//g'```
+
+        Note: At least the 'default' API key must be configured.
+      '';
+      default = {};
+      type = attrsOf path;
+      example = literalExpression ''
+        {
+          default = config.sops.secrets.jellyfin-default-key.path;
+          Jellyseerr = config.sops.secrets.jellyfin-jellyseerr-key.path;
+        }
+      '';
+    };
   };
 }

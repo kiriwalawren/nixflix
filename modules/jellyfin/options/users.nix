@@ -258,7 +258,7 @@ with lib; let
         example = 5;
         default = 0;
       };
-      maxParentalAgeRating = mkOption {
+      maxParentalRatingSubScore = mkOption {
         type = with types; nullOr int;
         default = null;
       };
@@ -371,7 +371,7 @@ in {
     example = {
       Admin = {
         password = "123";
-        maxParentalAgeRating = 12;
+        maxParentalRatingSubScore = 12;
         permissions = {
           isAdministrator = true;
         };
