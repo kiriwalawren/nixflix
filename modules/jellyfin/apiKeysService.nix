@@ -11,8 +11,8 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-api-keys = {
       description = "Jellyfin API Keys Initialization";
-      after = ["jellyfin.service"];
-      wants = ["jellyfin.service"];
+      after = ["jellyfin-initialization.service"];
+      wants = ["jellyfin-initialization.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

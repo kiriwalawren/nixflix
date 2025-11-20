@@ -2,11 +2,9 @@
 with lib; let
   preferenceOpts = _: {
     options = {
-      # NOTE: renamed from internal EnabledFolders, since
-      # it makes more sense to call it library not folder
       enabledLibraries = mkOption {
         type = types.listOf types.str;
-        default = []; # empty means all are enabled
+        default = [];
         description = ''
           A list of libraries this user as access to.
           If it is empty, it means that the user has access to all libraries.
@@ -17,6 +15,26 @@ with lib; let
           "Movies"
           "Family Photos"
         ];
+      };
+
+      groupedFolders = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      orderedViews = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      latestItemsExcludes = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      myMediaExcludes = mkOption {
+        type = types.listOf types.str;
+        default = [];
       };
     };
   };
@@ -144,6 +162,95 @@ with lib; let
         default = false;
         description = "Whether the server should force transcoding on remote connections for the user";
       };
+
+      maxParentalRating = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+      };
+
+      blockedTags = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      allowedTags = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      blockUnratedItems = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      enabledDevices = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      enabledChannels = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      blockedMediaFolders = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      blockedChannels = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      enableContentDeletionFromFolders = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
+      accessSchedules = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            dayOfWeek = mkOption {
+              type = types.enum [
+                "Sunday"
+                "Monday"
+                "Tuesday"
+                "Wednesday"
+                "Thursday"
+                "Friday"
+                "Saturday"
+              ];
+            };
+            startHour = mkOption {
+              type = types.ints.between 0 23;
+            };
+            endHour = mkOption {
+              type = types.ints.between 0 23;
+            };
+          };
+        });
+        default = [];
+      };
+
+      syncPlayAccess = mkOption {
+        type = types.bool;
+        description = "Whether or not this user has access to SyncPlay";
+        example = true;
+        default = false;
+      };
+
+      authenticationProviderId = mkOption {
+        type = types.str;
+        default = "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider";
+        description = "Authentication provider ID";
+      };
+
+      passwordResetProviderId = mkOption {
+        type = types.str;
+        default = "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider";
+        description = "Password reset provider ID";
+      };
     };
   };
   userOpts = _: {
@@ -160,8 +267,8 @@ with lib; let
           ];
         };
       };
-      permissions = mkOption {
-        description = "Permissions for this user";
+      policy = mkOption {
+        description = "Policy for this user";
         default = {};
         type = with types; submodule permissionOpts;
         example = {
@@ -181,6 +288,10 @@ with lib; let
           and no nix configuration changes will have any effect.
           If false however, all options are overwritten as specified in the nix configuration,
           which means any change through the Jellyfin GUI will have no effect after a rebuild.
+
+          Note: Passwords are only set during user creation and are never updated
+          declaratively, regardless of the mutable setting. To change a user's password,
+          use the Jellyfin web interface.
         '';
         default = true;
       };
@@ -262,24 +373,10 @@ with lib; let
         type = with types; nullOr int;
         default = null;
       };
-      hashedPassword = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = ''
-          A pbkdf2-sha512 hash of the user password.
-          Generate using: nix run github:kiriwalawren/nixflix#genhash -- -k <password> -i 210000 -l 128 -u
-        '';
-        example = "$PBKDF2-SHA512$iterations=210000$D12C02D1DD15949D867BCA9971BE9987$67E75CDCD14E7F6FDDF96BAACBE9E84E5197FB9FE454FB039F5CD773D7DF558B57DC81DB42B6F7CF0E6B8207A771E5C0EE0DBFD91CE5BAF804FE53F70E61CD2E";
-      };
-      hashedPasswordFile = mkOption {
+      passwordFile = mkOption {
         type = types.nullOr types.path;
         description = ''
-          Path to a file containing a pbkdf2-sha512 hash in PHC string format.
-          Generate using: nix run github:kiriwalawren/nixflix#genhash -- -k <password> -i 210000 -l 128 -u > /path/to/hash
-        '';
-        example = ''
-          # the format is: $<id>[$<param>=<value>(,<param>=<value>)*][$<salt>[$<hash>]]
-          $PBKDF2-SHA512$iterations=210000$D12C02D1DD15949D867BCA9971BE9987$67E75CDCD14E7F6FDDF96BAACBE9E84E5197FB9FE454FB039F5CD773D7DF558B57DC81DB42B6F7CF0E6B8207A771E5C0EE0DBFD91CE5BAF804FE53F70E61CD2E
+          Path to a file containing the user's password in plain text.
         '';
         default = null;
       };
@@ -329,13 +426,6 @@ with lib; let
         '';
         default = "default";
       };
-      syncPlayAccess = mkOption {
-        type = types.bool;
-        description = "Whether or not this user has access to SyncPlay";
-        example = true;
-        default = false;
-      };
-      # Something to do with chromecast, don't know tbh
       castReceiverId = mkOption {
         type = types.str;
         default = "F007D354";

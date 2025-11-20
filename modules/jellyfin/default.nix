@@ -17,7 +17,11 @@ with lib; let
 in {
   imports = [
     ./options
+    ./initializationService.nix
     ./apiKeysService.nix
+    ./setupWizardService.nix
+    ./systemConfigService.nix
+    ./usersConfigService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
@@ -27,8 +31,8 @@ in {
         message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
       }
       {
-        assertion = cfg.apikeys ? default;
-        message = "Jellyfin requires at least a 'default' API key. Please configure nixflix.jellyfin.apikeys.default.";
+        assertion = any (user: user.policy.isAdministrator) (attrValues cfg.users);
+        message = "At least one Jellyfin user must have policy.isAdministrator = true.";
       }
     ];
 

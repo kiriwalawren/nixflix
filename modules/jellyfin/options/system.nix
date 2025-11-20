@@ -155,7 +155,7 @@ in {
       '';
     };
 
-    inactiveSessionThreshhold = mkOption {
+    inactiveSessionThreshold = mkOption {
       type = types.int;
       default = 0;
     };
@@ -168,6 +168,14 @@ in {
     libraryUpdateDuration = mkOption {
       type = types.int;
       default = 30;
+    };
+
+    cacheSize = mkOption {
+      type = types.int;
+      default = 0;
+      description = ''
+        Cache size in MB. 0 means no limit.
+      '';
     };
 
     imageSavingConvention = mkOption {
@@ -291,7 +299,18 @@ in {
     saveMetadataHidden = mkEnableOption "";
 
     contentTypes = mkOption {
-      type = with types; listOf str;
+      type = with types; listOf (submodule {
+        options = {
+          name = mkOption {
+            type = str;
+            description = "Content type name";
+          };
+          value = mkOption {
+            type = str;
+            description = "Content type value";
+          };
+        };
+      });
       default = [];
     };
 
@@ -302,7 +321,9 @@ in {
 
     enableFolderView = mkEnableOption "";
 
-    enableGroupingIntoCollections = mkEnableOption "";
+    enableGroupingMoviesIntoCollections = mkEnableOption "";
+
+    enableGroupingShowsIntoCollections = mkEnableOption "";
 
     displaySpecialsWithinSeasons = mkOption {
       type = types.bool;
@@ -341,7 +362,18 @@ in {
     };
 
     pathSubstitutions = mkOption {
-      type = with types; listOf str;
+      type = with types; listOf (submodule {
+        options = {
+          from = mkOption {
+            type = str;
+            description = "Path to substitute from";
+          };
+          to = mkOption {
+            type = str;
+            description = "Path to substitute to";
+          };
+        };
+      });
       default = [];
     };
 
@@ -548,6 +580,14 @@ in {
           The number of threads to pass to the '-threads' argument of ffmpeg.
         '';
       };
+    };
+
+    enableLegacyAuthorization = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Enable legacy authorization mode for backwards compatibility.
+      '';
     };
   };
 }
