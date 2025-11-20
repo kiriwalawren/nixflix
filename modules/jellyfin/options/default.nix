@@ -110,7 +110,7 @@ in {
         Note: At least the 'default' API key must be configured.
       '';
       default = {};
-      type = attrsOf path;
+      type = types.attrsOf types.path;
       example = literalExpression ''
         {
           default = config.sops.secrets.jellyfin-default-key.path;
