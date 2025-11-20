@@ -455,14 +455,19 @@ with lib; let
 in {
   # Based on: https://github.com/jellyfin/jellyfin/blob/master/MediaBrowser.Model/Configuration/UserConfiguration.cs
   options.nixflix.jellyfin.users = mkOption {
-    description = "User configuration";
+    description = ''
+      User configuration.
+
+      **Important**: At least one user must have `policy.isAdministrator = true`.
+      This user will be created during the initial setup wizard and used for
+      subsequent API operations.
+    '';
     default = {};
     type = with types; attrsOf (submodule userOpts);
     example = {
-      Admin = {
-        password = "123";
-        maxParentalRatingSubScore = 12;
-        permissions = {
+      admin = {
+        passwordFile = "/run/secrets/jellyfin-admin-password";
+        policy = {
           isAdministrator = true;
         };
       };
