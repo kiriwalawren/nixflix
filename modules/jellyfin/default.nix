@@ -55,6 +55,7 @@ in {
       "d '${cfg.logDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.system.metadataPath}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.dataDir}/data' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '/run/jellyfin' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
     environment.etc = {

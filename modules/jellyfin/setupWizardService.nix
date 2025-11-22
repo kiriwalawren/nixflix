@@ -136,6 +136,8 @@ in {
           echo "Setup wizard already completed, skipping"
         fi
 
+        echo "Waiting 3 seconds for database to stabilize after wizard completion..."
+        sleep 3
         echo "Waiting for Jellyfin to be ready for authenticated requests..."
         source ${authUtil.authScript}
         echo "Waiting 2 seconds for Jellyfin to fully stabilize..."

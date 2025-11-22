@@ -37,8 +37,8 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";
-      after = ["jellyfin-setup-wizard.service" "jellyfin-system-config.service"];
-      requires = ["jellyfin-setup-wizard.service" "jellyfin-system-config.service"];
+      after = ["jellyfin-setup-wizard.service"];
+      requires = ["jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
