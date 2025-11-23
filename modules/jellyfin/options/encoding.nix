@@ -43,6 +43,12 @@ with lib; {
 
     enableFallbackFont = mkEnableOption "Enable fallback font";
 
+    fallbackFontPath = mkOption {
+      type = types.str;
+      default = "";
+      description = "Path to fallback font file for subtitle burning";
+    };
+
     enableAudioVbr = mkEnableOption "Enable VBR Audio";
 
     downMixAudioBoost = mkOption {
@@ -127,8 +133,8 @@ with lib; {
     encoderAppPathDisplay = mkOption {
       type = types.str;
       description = "The path to the FFmpeg application file or folder containing FFmpeg.";
-      default = "${pkgs.jellyfin-ffmpeg}";
-      defaultText = literalExpression ''"$${pkgs.jellyfin-ffmpeg}"'';
+      default = "${pkgs.jellyfin-ffmpeg}/bin/ffmpeg";
+      defaultText = literalExpression ''"$${pkgs.jellyfin-ffmpeg}/bin/ffmpeg"'';
     };
 
     vaapiDevice = mkOption {
@@ -225,7 +231,7 @@ with lib; {
       default = 100;
     };
 
-    tonemapingParam = mkOption {
+    tonemappingParam = mkOption {
       type = types.number;
       description = ''
         Tune the tone mapping algorithm.
@@ -238,6 +244,10 @@ with lib; {
 
     enableVppTonemapping = mkEnableOption ''
       Full Intel driver based tone-mapping. Currently works only on certain hardware with HDR10 videos. This has a higher priority compared to another OpenCL implementation.
+    '';
+
+    enableVideoToolboxTonemapping = mkEnableOption ''
+      Apple VideoToolbox based tone-mapping. Works only on macOS with supported hardware.
     '';
 
     vppTonemappingBrightness = mkOption {
@@ -260,7 +270,7 @@ with lib; {
       default = 1;
     };
 
-    h254Crf = mkOption {
+    h264Crf = mkOption {
       type = types.int;
       description = ''
         The 'Constant Rate Factor' (CRF) is the default quality setting for the x264 and x265 software encoders.
@@ -272,7 +282,7 @@ with lib; {
       default = 23;
     };
 
-    h256Crf = mkOption {
+    h265Crf = mkOption {
       type = types.int;
       description = ''
         The 'Constant Rate Factor' (CRF) is the default quality setting for the x264 and x265 software encoders.
@@ -319,13 +329,33 @@ with lib; {
       '';
     };
 
-    enableDecodingColorDepth10Hevc = mkEnableOption "Enable hardware decoding for HEVC 10bit";
+    enableDecodingColorDepth10Hevc = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable hardware decoding for HEVC 10bit";
+    };
 
-    enableDecodingColorDepth10Vp9 = mkEnableOption "Enable hardware decoding for VP9 10bit";
+    enableDecodingColorDepth10Vp9 = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable hardware decoding for VP9 10bit";
+    };
 
     enableDecodingColorDepth10HevcRext = mkEnableOption "Enable hardware decoding for HEVC RExt 8/10bit";
 
     enableDecodingColorDepth12HevcRext = mkEnableOption "Enable hardware decoding for HEVC RExt 12bit";
+
+    enableEnhancedNvdecDecoder = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable enhanced NVDEC decoder. Requires Nvidia GPU with enhanced NVDEC support.";
+    };
+
+    preferSystemNativeHwDecoder = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Prefer system native hardware decoder over FFmpeg implementations.";
+    };
 
     hardwareDecodingCodecs = mkOption {
       type = types.listOf (
