@@ -15,25 +15,24 @@ with lib; {
         if config.nixflix.theme.enable
         then '''@import url("https://theme-park.dev/css/base/jellyfin/${config.nixflix.theme.name}.css");'''
         else "";'';
-      description = "Custom CSS to be injected into the web client";
+      description = "Custom CSS to be injected into the web client.";
     };
 
     loginDisclaimer = mkOption {
       type = types.lines;
       default = "";
-      description = "Sets the text shown during login underneath the form";
+      description = "Sets the text shown during login underneath the form.";
     };
 
     splashscreenEnabled = mkOption {
       type = types.bool;
       default = false;
-      description = "Enables a splashscreen to be shown during loading";
+      description = "Enables a splashscreen to be shown during loading.";
     };
 
     splashscreenLocation = mkOption {
       type = with types; either path str;
-      default = "";
-      description = "Location of the splashscreen image";
+      description = "Location of the splashscreen image. Custom images should be in a 16x9 aspect ratio at a minimum size of 1920x1080.";
     };
   };
 }

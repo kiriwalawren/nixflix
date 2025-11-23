@@ -12,12 +12,12 @@ with lib; let
   xml = import ./xml.nix {inherit lib;};
 
   networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
-  brandingXmlContent = xml.mkXmlContent "BrandingOptions" cfg.branding;
   encodingXmlContent = xml.mkXmlContent "EncodingOptions" cfg.encoding;
 in {
   imports = [
     ./options
 
+    ./brandingService.nix
     ./initializationService.nix
     ./librariesService.nix
     ./setupWizardService.nix
@@ -85,7 +85,6 @@ in {
 
     environment.etc = {
       "jellyfin/network.xml.template".text = networkXmlContent;
-      "jellyfin/branding.xml.template".text = brandingXmlContent;
       "jellyfin/encoding.xml.template".text = encodingXmlContent;
     };
 
@@ -97,7 +96,6 @@ in {
 
       restartTriggers = [
         networkXmlContent
-        brandingXmlContent
         encodingXmlContent
       ];
 
@@ -116,7 +114,6 @@ in {
             set -eu
 
             ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/branding.xml.template '${cfg.configDir}/branding.xml'
             ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/encoding.xml.template '${cfg.configDir}/encoding.xml'
           '';
 
