@@ -172,9 +172,10 @@ in {
 
     cacheSize = mkOption {
       type = types.int;
-      default = 0;
+      default = 1800;
       description = ''
-        Cache size in MB. 0 means no limit.
+        Cache size in MB. Must be at least 3 due to Jellyfin's internal caching implementation.
+        The default of 1800 matches Jellyfin's built-in default.
       '';
     };
 

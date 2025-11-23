@@ -18,14 +18,35 @@ in {
   imports = [
     ./options
 
-    ./apiKeysService.nix
     ./initializationService.nix
+    ./librariesService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
+    nixflix.jellyfin.libraries = mkMerge [
+      (mkIf (nixflix.sonarr.enable or false) {
+        Shows = {
+          collectionType = "tvshows";
+          paths = nixflix.sonarr.mediaDirs;
+        };
+      })
+      (mkIf (nixflix.radarr.enable or false) {
+        Movies = {
+          collectionType = "movies";
+          paths = nixflix.radarr.mediaDirs;
+        };
+      })
+      (mkIf (nixflix.lidarr.enable or false) {
+        Music = {
+          collectionType = "music";
+          paths = nixflix.lidarr.mediaDirs;
+        };
+      })
+    ];
+
     assertions = [
       {
         assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
@@ -34,6 +55,10 @@ in {
       {
         assertion = any (user: user.policy.isAdministrator) (attrValues cfg.users);
         message = "At least one Jellyfin user must have policy.isAdministrator = true.";
+      }
+      {
+        assertion = cfg.system.cacheSize >= 3;
+        message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
       }
     ];
 
@@ -124,6 +149,7 @@ in {
 
           # Needed for hardware acceleration
           PrivateDevices = false;
+
           PrivateUsers = true;
           RemoveIPC = true;
 
@@ -168,8 +194,8 @@ in {
           recommendedProxySettings = true;
           extraConfig = ''
             proxy_redirect off;
-
             proxy_set_header X-Real-IP $remote_addr;
+
             proxy_buffering off;
           '';
         };
@@ -180,6 +206,7 @@ in {
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
+            proxy_set_header X-Real-IP $remote_addr;
           '';
         };
       };

@@ -61,10 +61,10 @@ in {
       echo "Authenticating as ${firstAdminName}..."
 
       ${
-        if firstAdminUser.passwordFile != null
-        then ''ADMIN_PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
-        else ''ADMIN_PASSWORD=""''
-      }
+      if firstAdminUser.passwordFile != null
+      then ''ADMIN_PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
+      else ''ADMIN_PASSWORD=""''
+    }
 
       ACCESS_TOKEN=""
       BACKOFF=1
