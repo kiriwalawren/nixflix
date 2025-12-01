@@ -53,6 +53,7 @@ in {
       anime = {
         enable = mkOption {
           type = types.bool;
+          # TODO: should default to `nixflix.sonarr-anime.enable` when ready
           default = false;
           description = ''
             Whether to enable anime-specific profiles for Sonarr.
@@ -74,6 +75,7 @@ in {
       anime = {
         enable = mkOption {
           type = types.bool;
+          # TODO: should default to `nixflix.radarr-anime.enable` when ready
           default = false;
           description = ''
             Whether to enable anime-specific profiles for Radarr.
