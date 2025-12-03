@@ -13,7 +13,7 @@ Nixflix makes it so you never have to again!
 Managing media server configuration can be very painful:
 
 - **No version control** for settings
-- **Tedius navigation** through UI systems
+- **Tedious navigation** through UI systems
 - **And annoying interservice** Configuration
 
 All of these services have APIs, surely we can use this to automate the whole thing.
