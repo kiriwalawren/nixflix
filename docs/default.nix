@@ -35,6 +35,10 @@ in {
 
       echo "Building mkdocs site..."
       ${pythonEnv}/bin/mkdocs build -d $out
+
+      rm -rf $out/generator
+      rm $out/mkdocs.base.yml
+      rm $out/default.nix
     '';
 
     installPhase = ''
