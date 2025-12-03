@@ -75,9 +75,15 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
             categorized["core"]["index"].append((name, opt))
             continue
 
-        if len(parts) == 3:
-            categorized[service]["index"].append((name, opt))
-        elif len(parts) >= 4:
+        # Get the option path without the "nixflix.{service}." prefix
+        # Filter out '*' and '<name>' parts to match how complex_groups are built
+        option_path_parts = [p for p in parts[2:] if p not in ('*', '<name>')]
+        option_path = '.'.join(option_path_parts) if option_path_parts else None
+
+        # Check if this exact option path is a complex group (parent option)
+        if option_path and option_path in complex_groups[service]:
+            categorized[service][option_path].append((name, opt))
+        else:
             # Find the deepest complex group this option belongs to
             page_key = "index"
             for i in range(3, len(parts)):
@@ -92,8 +98,6 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
                 categorized[service]["index"].append((name, opt))
             else:
                 categorized[service][page_key].append((name, opt))
-        else:
-            categorized[service]["index"].append((name, opt))
 
     return categorized
 
@@ -131,26 +135,39 @@ def render_option_markdown(name: str, opt: Dict[str, Any]) -> str:
     md += "---\n\n"
     return md
 
+def get_service_title(service: str) -> str:
+    """Get the display title for a service. Only special cases need to be listed."""
+    special_titles = {
+        "sabnzbd": "SABnzbd",
+        "mullvad": "Mullvad VPN",
+        "postgres": "PostgreSQL",
+    }
+    return special_titles.get(service, camel_case_to_title(service))
+
 def get_page_title(service: str, page_key: str) -> tuple[str, str]:
-    service_info = {
-        "core": ("Core Options", "Top-level nixflix configuration options that apply to the entire system."),
-        "sonarr": ("Sonarr", "Sonarr is a PVR for Usenet and BitTorrent users for TV shows."),
-        "radarr": ("Radarr", "Radarr is a PVR for Usenet and BitTorrent users for movies."),
-        "lidarr": ("Lidarr", "Lidarr is a PVR for Usenet and BitTorrent users for music."),
-        "prowlarr": ("Prowlarr", "Prowlarr is an indexer manager/proxy for Arr applications."),
-        "jellyfin": ("Jellyfin", "Jellyfin is a free media server for managing and streaming media."),
-        "sabnzbd": ("SABnzbd", "SABnzbd is a binary newsreader for Usenet."),
-        "mullvad": ("Mullvad VPN", "Mullvad VPN configuration for routing traffic through a VPN tunnel."),
-        "postgres": ("PostgreSQL", "PostgreSQL database backend for Arr services."),
-        "recyclarr": ("Recyclarr", "Recyclarr automatically syncs TRaSH guides to Arr services."),
+    # Service descriptions for index pages
+    service_descriptions = {
+        "core": "Top-level nixflix configuration options that apply to the entire system.",
+        "sonarr": "Sonarr is a PVR for Usenet and BitTorrent users for TV shows.",
+        "radarr": "Radarr is a PVR for Usenet and BitTorrent users for movies.",
+        "lidarr": "Lidarr is a PVR for Usenet and BitTorrent users for music.",
+        "prowlarr": "Prowlarr is an indexer manager/proxy for Arr applications.",
+        "jellyfin": "Jellyfin is a free media server for managing and streaming media.",
+        "sabnzbd": "SABnzbd is a binary newsreader for Usenet.",
+        "mullvad": "Mullvad VPN configuration for routing traffic through a VPN tunnel.",
+        "postgres": "PostgreSQL database backend for Arr services.",
+        "recyclarr": "Recyclarr automatically syncs TRaSH guides to Arr services.",
     }
 
+    base_title = get_service_title(service)
+    if service == "core":
+        base_title = "Core Options"
+
     if page_key == "index":
-        base_title, intro = service_info.get(service, (service.capitalize(), f"Configuration options for {service}."))
+        intro = service_descriptions.get(service, f"Configuration options for {service}.")
         return (base_title, intro)
 
     page_nav_title = get_page_nav_title(page_key)
-    base_title, _ = service_info.get(service, (service.capitalize(), ""))
     return (f"{base_title} - {page_nav_title}", f"Configuration options for {service} {page_key.replace('.', ' ')}.")
 
 def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[tuple]]]):
@@ -202,35 +219,19 @@ def camel_case_to_title(s: str) -> str:
 
 def get_page_nav_title(page_key: str) -> str:
     """Get human-readable title for navigation"""
-    page_titles = {
-        "config": "Config",
-        "settings": "Settings",
-        "vpn": "VPN",
-        "branding": "Branding",
-        "encoding": "Encoding",
-        "libraries": "Libraries",
-        "network": "Network",
-        "system": "System",
-        "users": "Users",
-        "environmentSecrets": "Environment Secrets",
+    # Only special cases that need custom handling (mainly acronyms)
+    special_cases = {
         "gui": "GUI",
-        "killSwitch": "Kill Switch",
-        "delayProfiles": "Delay Profiles",
-        "downloadClients": "Download Clients",
-        "hostConfig": "Host Config",
-        "rootFolders": "Root Folders",
-        "indexers": "Indexers",
-        "apps": "Apps",
-        "applications": "Applications",
+        "vpn": "VPN",
     }
 
     # Handle nested paths like "config.delayProfiles"
     parts = page_key.split('.')
     if len(parts) > 1:
-        titles = [page_titles.get(p, camel_case_to_title(p)) for p in parts]
+        titles = [special_cases.get(p, camel_case_to_title(p)) for p in parts]
         return ' - '.join(titles)
 
-    return page_titles.get(page_key, camel_case_to_title(page_key))
+    return special_cases.get(page_key, camel_case_to_title(page_key))
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
     """Build a hierarchical tree structure for navigation"""
@@ -282,19 +283,6 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
 
 def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir: Path):
     """Generate navigation with explicit parent pages"""
-    service_titles = {
-        "core": "Core",
-        "sonarr": "Sonarr",
-        "radarr": "Radarr",
-        "lidarr": "Lidarr",
-        "prowlarr": "Prowlarr",
-        "jellyfin": "Jellyfin",
-        "sabnzbd": "SABnzbd",
-        "mullvad": "Mullvad VPN",
-        "postgres": "PostgreSQL",
-        "recyclarr": "Recyclarr",
-    }
-
     nav_file = output_dir / "nav.yml"
     with open(nav_file, 'w') as f:
         f.write("- Reference:\n")
@@ -304,7 +292,7 @@ def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir
             if service not in categorized or not categorized[service]:
                 continue
 
-            title = service_titles.get(service, service.capitalize())
+            title = get_service_title(service)
             pages = categorized[service]
 
             tree = build_hierarchical_nav(pages)
