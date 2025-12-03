@@ -259,6 +259,7 @@ This example shows a working media server configuration based on a real producti
 ### Automatic Integration
 
 **Jellyfin Libraries**: Automatically created based on enabled services:
+
 - "Shows" library pointing to Sonarr's media directories
 - "Movies" library pointing to Radarr's media directory
 - "Music" library pointing to Lidarr's media directory
@@ -276,6 +277,7 @@ This example shows a working media server configuration based on a real producti
 **Jellyfin Users**: Single admin user with immutable configuration
 
 **VPN Setup**:
+
 - Download services route through Mullvad (NYC location)
 - Custom DNS for ad-blocking (AdGuard and Control D)
 - Kill switch prevents leaks if VPN disconnects
@@ -310,6 +312,7 @@ This example shows a working media server configuration based on a real producti
 ## Service Access
 
 Via nginx reverse proxy:
+
 - http://localhost/sonarr
 - http://localhost/radarr
 - http://localhost/lidarr
@@ -318,6 +321,7 @@ Via nginx reverse proxy:
 - http://localhost/jellyfin
 
 Direct access:
+
 - Sonarr: http://localhost:8989
 - Radarr: http://localhost:7878
 - Lidarr: http://localhost:8686
