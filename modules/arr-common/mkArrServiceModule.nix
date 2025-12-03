@@ -81,7 +81,7 @@ with lib; let
           update.mechanism = "internal";
           server = {
             urlbase = "localhost";
-            port = ${toString port};
+            port = 8989;
             bindaddress = "*";
           };
         }

@@ -39,12 +39,12 @@ in {
         type = types.str;
         default = "plex";
         description = ''
-          This is powered theme.park
-              https://docs.theme-park.dev/
+          This is powered [theme.park](https://docs.theme-park.dev/).
 
           The name of any official theme or community theme supported by theme.park.
-              https://docs.theme-park.dev/theme-options/
-              https://docs.theme-park.dev/community-themes/
+
+          - [Official Themes](https://docs.theme-park.dev/theme-options/)
+          - [Community Themes](https://docs.theme-park.dev/community-themes/)
         '';
       };
     };
@@ -77,7 +77,7 @@ in {
         > owned by root, will fail! For example:
         >
         > ```nix
-        >   mediaDir = /home/user/data
+        > mediaDir = /home/user/data
         > ```
         >
         > Is not supported, because `/home/user` is owned by `user`.
@@ -95,7 +95,7 @@ in {
         > owned by root, will fail! For example:
         >
         > ```nix
-        >   downloadsDir = /home/user/downloads
+        > downloadsDir = /home/user/downloads
         > ```
         >
         > Is not supported, because `/home/user` is owned by `user`.
@@ -113,7 +113,7 @@ in {
         > owned by root, will fail! For example:
         >
         > ```nix
-        >   stateDir = /home/user/data/.state
+        > stateDir = /home/user/data/.state
         > ```
         >
         > Is not supported, because `/home/user` is owned by `user`.

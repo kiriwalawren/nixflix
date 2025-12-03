@@ -1,0 +1,122 @@
+site_name: Nixflix
+site_description: Declarative NixOS media server stack with Jellyfin and Arr services
+site_author: Kiriwa Lawrence
+site_url: https://kiriwalawren.github.io/nixflix
+repo_url: https://github.com/kiriwalawren/nixflix
+repo_name: kiriwalawren/nixflix
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+
+  icon:
+    repo: fontawesome/brands/github
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+      lang: en
+
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+      fallback_to_build_date: true
+      enabled: !ENV [ENABLE_GIT_REVISION, false]
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: [docs]
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - abbr
+
+nav:
+  - Home: index.md
+
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+
+  - Examples:
+      - Basic Setup: examples/basic-setup.md
+
+# REFERENCE_NAV_PLACEHOLDER
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kiriwalawren/nixflix
+
+extra_css:
+  - stylesheets/extra.css
+
+copyright: Copyright &copy; 2024 Kiriwa Lawrence. Licensed under GPLv3.
