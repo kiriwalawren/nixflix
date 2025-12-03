@@ -44,6 +44,8 @@ in {
           };
         }
         ```
+
+        This ensures Tailscale traffic (100.64.0.0/10) bypasses the Mullvad VPN tunnel.
       '';
       type = types.bool;
     };

@@ -71,8 +71,6 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Location selection
 - Auto-connect on startup
 
-This ensures Tailscale traffic (100.64.0.0/10) bypasses the Mullvad VPN tunnel.
-
 ## Development
 
 ```bash
