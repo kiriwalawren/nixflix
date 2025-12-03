@@ -13,7 +13,7 @@ with lib; {
         else "";
       defaultText = literalExpression ''
         if config.nixflix.theme.enable
-        then '''@import url("https://theme-park.dev/css/base/jellyfin/${config.nixflix.theme.name}.css");'''
+        then '''@import url("https://theme-park.dev/css/base/jellyfin/$${config.nixflix.theme.name}.css");'''
         else "";'';
       description = "Custom CSS to be injected into the web client.";
     };
