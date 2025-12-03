@@ -1,3 +1,7 @@
 /result
 .direnv/
 .envrc
+
+docs/reference/*/
+!docs/reference/index.md
+mkdocs.yml
