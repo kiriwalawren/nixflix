@@ -17,53 +17,11 @@
 
     packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-
-      docsGenerator = import ./docs-generator {
-        inherit pkgs;
-        inherit (pkgs) lib;
-      };
-
-      pythonEnv = pkgs.python3.withPackages (ps:
-        with ps; [
-          mkdocs-material
-          mkdocs-minify-plugin
-          mkdocs-git-revision-date-localized-plugin
-          pymdown-extensions
-          pygments
-        ]);
-    in {
-      docs = pkgs.stdenv.mkDerivation {
-        name = "nixflix-docs";
-        src = ./.;
-
-        nativeBuildInputs = [pythonEnv];
-
-        buildPhase = ''
-          echo "Generating option documentation..."
-          cp -r ${docsGenerator.optionsDocs}/reference/* docs/reference/
-
-          echo "Replacing README placeholder..."
-          sed -i '/# README_PLACEHOLDER/r README.md' docs/index.md
-          sed -i '/# README_PLACEHOLDER/d' docs/index.md
-
-          echo "Merging navigation..."
-          ${pkgs.python3}/bin/python3 ${./docs-generator/merge-nav.py} \
-            mkdocs.base.yml \
-            ${docsGenerator.optionsDocs}/reference/nav.yml \
-            mkdocs.yml
-
-          echo "Building mkdocs site..."
-          ${pythonEnv}/bin/mkdocs build -d $out
-        '';
-
-        installPhase = ''
-          echo "Documentation built at $out"
-        '';
-      };
-
-      docs-options = docsGenerator.optionsDocs;
-      default = self.packages.${system}.docs;
-    });
+    in
+      (import ./docs {inherit pkgs;})
+      // {
+        default = self.packages.${system}.docs;
+      });
 
     apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
@@ -122,6 +80,7 @@
           echo "Documentation Commands:"
           echo "  nix build .#docs        - Build documentation"
           echo "  nix run .#docs-serve    - Serve docs"
+          echo "  nix fmt                 - Format code"
           echo ""
         '';
       };

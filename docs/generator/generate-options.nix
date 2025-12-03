@@ -2,7 +2,7 @@
   pkgs,
   lib,
 }: let
-  nixflixModule = import ../modules;
+  nixflixModule = import ../../modules;
 
   baseNixOS = _: {
     options = {
@@ -66,7 +66,7 @@
       // {
         declarations = map (decl: let
           declStr = toString decl;
-          rootStr = toString ../.;
+          rootStr = toString ../../.;
         in
           if lib.hasPrefix rootStr declStr
           then lib.removePrefix (rootStr + "/") declStr
