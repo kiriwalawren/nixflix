@@ -71,33 +71,6 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Location selection
 - Auto-connect on startup
 
-#### Using Tailscale with Mullvad
-
-If you want to use Tailscale alongside Mullvad VPN, you'll need to configure nftables rules to route Tailscale traffic around the VPN. Add this to your NixOS configuration:
-
-```nix
-{
-  networking.nftables = {
-    enable = true;
-    tables."mullvad-tailscale" = {
-      family = "inet";
-      content = ''
-        chain prerouting {
-          type filter hook prerouting priority -100; policy accept;
-          ip saddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-        }
-
-        chain outgoing {
-          type route hook output priority -100; policy accept;
-          meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-          ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-        }
-      '';
-    };
-  };
-}
-```
-
 This ensures Tailscale traffic (100.64.0.0/10) bypasses the Mullvad VPN tunnel.
 
 ## Development

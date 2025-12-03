@@ -204,7 +204,30 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                 f.write(f"!!! info \"Available Options\"\n")
                 f.write(f"    This page documents {len(options)} configuration options.\n\n")
 
-                for name, opt in sorted(options, key=lambda x: x[0]):
+                def get_sort_key(name: str) -> tuple:
+                    has_star = '.*.' in name or name.endswith('.*')
+                    has_name = '.<name>.' in name or name.endswith('.<name>')
+
+                    if page_key == "index":
+                        service_enable = f"nixflix.{service}.enable"
+                        is_service_enable = name == service_enable
+                    else:
+                        page_enable = f"nixflix.{service}.{page_key}.enable"
+                        is_service_enable = name == page_enable
+
+                    is_star_or_name_enable = (has_star or has_name) and name.endswith('.enable')
+
+                    if is_service_enable:
+                        return (0, name)
+                    elif is_star_or_name_enable:
+                        return (1, name)
+                    elif has_star or has_name:
+                        return (2, name)
+                    else:
+                        return (3, name)
+
+                sorted_options = sorted(options, key=lambda x: get_sort_key(x[0]))
+                for name, opt in sorted_options:
                     f.write(render_option_markdown(name, opt))
 
 def special_case_to_title(s: str) -> str:
