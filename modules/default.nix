@@ -37,7 +37,7 @@ in {
       enable = mkEnableOption "Theme";
       name = mkOption {
         type = types.str;
-        default = "plex";
+        default = "overseerr";
         description = ''
           This is powered [theme.park](https://docs.theme-park.dev/).
 
