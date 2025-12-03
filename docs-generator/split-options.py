@@ -142,7 +142,7 @@ def get_service_title(service: str) -> str:
         "mullvad": "Mullvad VPN",
         "postgres": "PostgreSQL",
     }
-    return special_titles.get(service, camel_case_to_title(service))
+    return special_titles.get(service, special_case_to_title(service))
 
 def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     # Service descriptions for index pages
@@ -207,11 +207,13 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                 for name, opt in sorted(options, key=lambda x: x[0]):
                     f.write(render_option_markdown(name, opt))
 
-def camel_case_to_title(s: str) -> str:
+def special_case_to_title(s: str) -> str:
     """Convert camelCase or snake_case to Title Case"""
     import re
-    # First handle snake_case
+    # Handle snake_case
     s = s.replace('_', ' ')
+    # Handle kebab case
+    s = s.replace('-', ' ')
     # Insert space before capital letters
     s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
     # Capitalize each word
@@ -228,10 +230,10 @@ def get_page_nav_title(page_key: str) -> str:
     # Handle nested paths like "config.delayProfiles"
     parts = page_key.split('.')
     if len(parts) > 1:
-        titles = [special_cases.get(p, camel_case_to_title(p)) for p in parts]
+        titles = [special_cases.get(p, special_case_to_title(p)) for p in parts]
         return ' - '.join(titles)
 
-    return special_cases.get(page_key, camel_case_to_title(page_key))
+    return special_cases.get(page_key, special_case_to_title(page_key))
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
     """Build a hierarchical tree structure for navigation"""
