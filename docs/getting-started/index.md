@@ -4,31 +4,114 @@ title: Getting Started
 
 # Getting Started
 
-nixflix is a comprehensive NixOS module for managing a complete media server stack. It provides declarative configuration for the popular *arr services, download clients, media servers, and VPN integration.
+This guide shows how to add Nixflix to your NixOS configuration using flakes.
 
-## What's Included
+## Prerequisites
 
-nixflix integrates and configures:
+- NixOS with flakes enabled
+- Git for version control
+- Basic familiarity with NixOS modules
+- (Optional, but highly recommended) Some form of secrets management, like [sops-nix](https://github.com/Mic92/sops-nix)
 
-- **Media Management**: Sonarr, Radarr, Lidarr for TV shows, movies, and music
-- **Indexer Management**: Prowlarr with automatic app sync
-- **Download Clients**: SABnzbd for Usenet downloads
-- **Media Streaming**: Jellyfin with automatic library configuration
-- **VPN Protection**: Mullvad VPN with kill switch and selective routing
-- **Quality Management**: Recyclarr for TRaSH guides automation
-- **Infrastructure**: PostgreSQL, Nginx reverse proxy, theme.park theming
+## Enable Flakes
 
-## Key Features
+If you haven't already enabled flakes, add this to your configuration:
 
-- **Automatic Integration**: Services are automatically connected to each other
-- **Declarative Secrets**: Full sops-nix integration for API keys and passwords
-- **Smart VPN Routing**: Download services through VPN, media services bypass it
-- **Persistent IDs**: Optional fixed UIDs/GIDs for consistent permissions
-- **PostgreSQL Support**: Better performance than SQLite for all services
-- **Unified Theming**: theme.park integration for consistent UI
+```nix
+{
+  nix.settings.experimental-features = ["nix-command" "flakes"];
+}
+```
 
-## Quick Start
+## Adding Nixflix to Your Flake
 
-1. Follow the [Installation Guide](installation.md) to add nixflix to your NixOS configuration
-2. See the [Basic Setup Example](../examples/basic-setup.md) for a complete production-ready configuration
-3. Browse the [Options Reference](../reference/index.md) for all available settings
+Add Nixflix as an input to your `flake.nix`:
+
+```nix
+{
+  description = "My NixOS Configuration";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    nixflix = {
+      url = "github:kiriwalawren/nixflix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = {
+    self,
+    nixpkgs,
+    nixflix,
+    ...
+  }: {
+    nixosConfigurations.yourhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        nixflix.nixosModules.default
+      ];
+    };
+  };
+}
+```
+
+## Minimal Configuration Example
+
+Here's a minimal configuration to get started:
+
+```nix
+{
+  nixflix = {
+    enable = true;
+    mediaDir = "/data/media";
+    stateDir = "/data/.state";
+
+    nginx.enable = true;
+    postgres.enable = true;
+
+    sonarr = {
+      enable = true;
+      config = {
+        apiKeyPath = config.sops.secrets."sonarr/api_key".path;
+        hostConfig.passwordPath = config.sops.secrets."sonarr/password".path;
+      };
+    };
+
+    radarr = {
+      enable = true;
+      config = {
+        apiKeyPath = config.sops.secrets."radarr/api_key".path;
+        hostConfig.passwordPath = config.sops.secrets."radarr/password".path;
+      };
+    };
+
+    prowlarr = {
+      enable = true;
+      config = {
+        apiKeyPath = config.sops.secrets."prowlarr/api_key".path;
+        hostConfig.passwordPath = config.sops.secrets."prowlarr/password".path;
+      };
+    };
+
+    sabnzbd = {
+      enable = true;
+      apiKeyPath = config.sops.secrets."sabnzbd/api_key".path;
+    };
+
+    jellyfin = {
+      enable = true;
+      users.admin = {
+        policy.isAdministrator = true;
+        passwordFile = config.sops.secrets."jellyfin/admin_password".path;
+      };
+    };
+  };
+}
+```
+
+## Next Steps
+
+- Review the [Basic Setup Example](../examples/basic-setup.md) for a complete configuration
+- See the [Options Reference](../reference/index.md) for all available settings

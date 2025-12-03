@@ -42,6 +42,10 @@
           echo "Generating option documentation..."
           cp -r ${docsGenerator.optionsDocs}/reference/* docs/reference/
 
+          echo "Replacing README placeholder..."
+          sed -i '/# README_PLACEHOLDER/r README.md' docs/index.md
+          sed -i '/# README_PLACEHOLDER/d' docs/index.md
+
           echo "Merging navigation..."
           ${pkgs.python3}/bin/python3 ${./docs-generator/merge-nav.py} \
             mkdocs.base.yml \

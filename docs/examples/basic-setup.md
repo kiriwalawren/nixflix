@@ -28,26 +28,10 @@ This example shows a working media server configuration based on a real producti
       enable = true;
       mediaDirs = [
         "${config.nixflix.mediaDir}/tv"
-        "${config.nixflix.mediaDir}/anime"
       ];
       config = {
         apiKeyPath = config.sops.secrets."sonarr/api_key".path;
         hostConfig.passwordPath = config.sops.secrets."sonarr/password".path;
-        delayProfiles = [
-          {
-            enableUsenet = true;
-            enableTorrent = true;
-            preferredProtocol = "usenet";
-            usenetDelay = 0;
-            torrentDelay = 360;
-            bypassIfHighestQuality = true;
-            bypassIfAboveCustomFormatScore = false;
-            minimumCustomFormatScore = 0;
-            order = 2147483647;
-            tags = [];
-            id = 1;
-          }
-        ];
       };
     };
 
@@ -56,21 +40,6 @@ This example shows a working media server configuration based on a real producti
       config = {
         apiKeyPath = config.sops.secrets."radarr/api_key".path;
         hostConfig.passwordPath = config.sops.secrets."radarr/password".path;
-        delayProfiles = [
-          {
-            enableUsenet = true;
-            enableTorrent = true;
-            preferredProtocol = "usenet";
-            usenetDelay = 0;
-            torrentDelay = 360;
-            bypassIfHighestQuality = true;
-            bypassIfAboveCustomFormatScore = false;
-            minimumCustomFormatScore = 0;
-            order = 2147483647;
-            tags = [];
-            id = 1;
-          }
-        ];
       };
     };
 
@@ -79,21 +48,6 @@ This example shows a working media server configuration based on a real producti
       config = {
         apiKeyPath = config.sops.secrets."lidarr/api_key".path;
         hostConfig.passwordPath = config.sops.secrets."lidarr/password".path;
-        delayProfiles = [
-          {
-            enableUsenet = true;
-            enableTorrent = true;
-            preferredProtocol = "usenet";
-            usenetDelay = 0;
-            torrentDelay = 360;
-            bypassIfHighestQuality = true;
-            bypassIfAboveCustomFormatScore = false;
-            minimumCustomFormatScore = 0;
-            order = 2147483647;
-            tags = [];
-            id = 1;
-          }
-        ];
       };
     };
 
@@ -202,8 +156,6 @@ This example shows a working media server configuration based on a real producti
     recyclarr = {
       enable = true;
       cleanupUnmanagedProfiles = true;
-      radarr.anime.enable = true;
-      sonarr.anime.enable = true;
     };
   };
 
@@ -241,7 +193,7 @@ This example shows a working media server configuration based on a real producti
 
 ### All Services
 
-- **Sonarr** - TV shows (including anime directory)
+- **Sonarr** - TV shows
 - **Radarr** - Movies
 - **Lidarr** - Music
 - **Prowlarr** - Indexer management with 3 pre-configured indexers

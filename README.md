@@ -1,6 +1,29 @@
-# nixflix
+# Nixflix
 
-Generic NixOS Jellyfin media server configuration with the Arr stack (Sonarr, Radarr, Lidarr, Prowlarr).
+Nixflix is a declarative media server configuration manager for NixOS. The aim of the project is to automate
+all of the connective tissue required to get get Starr services (Sonarr, Radarr, Lidarr, Prowlarr) working
+together. I want users to be able to configure this module and it just works.
+
+## Why Nixflix?
+
+Dreading the thought of configuring a media server from scratch. Again...
+
+Nixflix makes it so you never have to again!
+
+Managing media server configuration can be very painful:
+
+- **No version control** for settings
+- **Tedius navigation** through UI systems
+- **And annoying interservice** Configuration
+
+All of these services have APIs, surely we can use this to automate the whole thing.
+
+Nixflix is:
+
+- ✅ **Opionated** — Don't you hate having to think for yourself?
+- ✅ **API-based** — Nixflix uses official REST APIs of each service (with a couple minor exceptions)
+- ✅ **Idempotent** — All services safely execute repeatedly
+- ✅ **Commanding** — Your code is _the_ source of truth, no need to fear drift
 
 ## Features
 
@@ -11,120 +34,16 @@ Generic NixOS Jellyfin media server configuration with the Arr stack (Sonarr, Ra
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
 - **Optional Nginx Reverse Proxy**: Configurable nginx integration for all services
-- [**TRaSH Guides**](trash-guides.info): Default configuration follows TRaSH guidelines
+- **Unified Theming**: All supported services can be themed to look the same
+- [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines
 
-## Usage
+## Documentation
 
-### As a Flake Input
-
-Add nixflix to your flake inputs:
-
-```nix
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixflix.url = "github:kiriwalawren/nixflix";
-  };
-
-  outputs = { nixpkgs, nixflix, ... }: {
-    nixosConfigurations.yourhost = nixpkgs.lib.nixosSystem {
-      modules = [
-        nixflix.nixosModules.default
-        {
-          nixflix = {
-            enable = true;
-            mediaDir = "/data/media";
-            stateDir = "/data/.state/services";
-
-            # Enable services
-            postgres.enable = true;
-            sonarr.enable = true;
-            radarr.enable = true;
-            lidarr.enable = true;
-            prowlarr.enable = true;
-          };
-        }
-      ];
-    };
-  };
-}
-```
-
-### Configuration Example
-
-```nix
-{
-  nixflix = {
-    enable = true;
-
-    # Configure directories
-    mediaDir = "/data/media";
-    stateDir = "/data/.state/services";
-    mediaUsers = ["youruser"];
-
-    # Add service dependencies (e.g., wait for encrypted drive to mount)
-    serviceDependencies = ["unlock-raid.service"];
-
-    # Enable nginx reverse proxy
-    nginx.enable = true;
-
-    # Enable PostgreSQL for all services
-    postgres.enable = true;
-
-    # Configure Sonarr
-    sonarr = {
-      enable = true;
-      mediaDirs = [
-        "/data/media/tv"
-        "/data/media/anime"
-      ];
-      config = {
-        apiKeyPath = "/run/secrets/sonarr/api_key";
-        hostConfig = {
-          username = "admin";
-          passwordPath = "/run/secrets/sonarr/password";
-        };
-      };
-    };
-
-    # Configure Prowlarr with indexers
-    prowlarr = {
-      enable = true;
-      config = {
-        apiKeyPath = "/run/secrets/prowlarr/api_key";
-        hostConfig = {
-          passwordPath = "/run/secrets/prowlarr/password";
-        };
-        indexers = [
-          {
-            name = "YourIndexer";
-            apiKeyPath = "/run/secrets/indexers/yourindexer";
-          }
-        ];
-      };
-    };
-
-    # Configure Mullvad VPN
-    mullvad = {
-      enable = true;
-      accountNumberPath = "/run/secrets/mullvad-account";
-      location = "us nyc";
-      killSwitch.enable = true;
-    };
-
-    recyclarr = {
-      enable = true;
-      cleanupUnmanagedProfiles = false;
-      radarr.anime.enable = true;
-      sonarr.anime.enable = true;
-    };
-  };
-}
-```
+Checkout the [documentation](https://kiriwalawren.github.io/nixflix/) to get started.
 
 ## Services
 
-### Arr Stack
+### Starr Stack
 
 All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
@@ -134,6 +53,15 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Automatic directory creation
 - Root folder management
 - Custom media directories
+
+### Jellyfin
+
+- Basic server management
+- Libraries are automatically configure based on elected media managers
+
+### SABnzbd
+
+- Automatic integration with Starr services
 
 ### Mullvad VPN
 

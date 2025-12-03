@@ -104,7 +104,6 @@ nav:
 
   - Getting Started:
       - getting-started/index.md
-      - Installation: getting-started/installation.md
 
   - Examples:
       - Basic Setup: examples/basic-setup.md
