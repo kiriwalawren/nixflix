@@ -34,7 +34,7 @@ Nixflix is:
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
 - **Optional Nginx Reverse Proxy**: Configurable nginx integration for all services
-- **Unified Theming**: All supported services can be themed to look the same
+- **Unified Theming**: All supported services can be themed to look the same, powered by [theme.park](https://docs.theme-park.dev/)
 - [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines
 
 ## Documentation
