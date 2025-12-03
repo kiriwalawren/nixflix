@@ -63,18 +63,6 @@
 
     apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      docsGenerator = import ./docs-generator {
-        inherit pkgs;
-        inherit (pkgs) lib;
-      };
-      pythonEnv = pkgs.python3.withPackages (ps:
-        with ps; [
-          mkdocs-material
-          mkdocs-minify-plugin
-          mkdocs-git-revision-date-localized-plugin
-          pymdown-extensions
-          pygments
-        ]);
     in {
       docs-serve = {
         type = "app";
@@ -116,21 +104,12 @@
 
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      pythonEnv = pkgs.python3.withPackages (ps:
-        with ps; [
-          mkdocs-material
-          mkdocs-minify-plugin
-          mkdocs-git-revision-date-localized-plugin
-          pymdown-extensions
-          pygments
-        ]);
     in {
       default = pkgs.mkShell {
         packages = with pkgs; [
           alejandra
           statix
           deadnix
-          pythonEnv
         ];
 
         shellHook = ''

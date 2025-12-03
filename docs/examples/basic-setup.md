@@ -1,3 +1,7 @@
+---
+title: Basic Setup Example
+---
+
 # Basic Setup Example
 
 This example shows a working media server configuration based on a real production setup.

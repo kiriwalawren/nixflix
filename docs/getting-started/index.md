@@ -1,3 +1,7 @@
+---
+title: Getting Started
+---
+
 # Getting Started
 
 nixflix is a comprehensive NixOS module for managing a complete media server stack. It provides declarative configuration for the popular *arr services, download clients, media servers, and VPN integration.

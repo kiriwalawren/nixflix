@@ -35,14 +35,17 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         service = parts[1]
         # Count how many options exist under each path prefix
         for i in range(3, len(parts)):
-            prefix = '.'.join(parts[2:i])
-            service_paths[service][prefix] += 1
+            # Skip '*' and '<name>' parts when building the prefix
+            prefix_parts = [p for p in parts[2:i] if p not in ('*', '<name>')]
+            if prefix_parts:
+                prefix = '.'.join(prefix_parts)
+                service_paths[service][prefix] += 1
 
     # Paths with multiple children become pages
     complex_groups = defaultdict(set)
     for service, paths in service_paths.items():
         for path, count in paths.items():
-            if count > 5:  # Threshold: groups with more than 5 sub-options get their own page
+            if count >= 3:  # Threshold: groups with 3+ sub-options get their own page
                 complex_groups[service].add(path)
 
     return complex_groups
@@ -78,9 +81,12 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
             # Find the deepest complex group this option belongs to
             page_key = "index"
             for i in range(3, len(parts)):
-                prefix = '.'.join(parts[2:i])
-                if prefix in complex_groups[service]:
-                    page_key = prefix
+                # Skip '*' and '<name>' parts when building the prefix
+                prefix_parts = [p for p in parts[2:i] if p not in ('*', '<name>')]
+                if prefix_parts:
+                    prefix = '.'.join(prefix_parts)
+                    if prefix in complex_groups[service]:
+                        page_key = prefix
 
             if page_key == "index":
                 categorized[service]["index"].append((name, opt))
@@ -108,7 +114,7 @@ def render_option_markdown(name: str, opt: Dict[str, Any]) -> str:
     if default and "_type" in default:
         default_text = default.get("text", "")
         if default_text:
-            md += f"**Default:** `{default_text}`\n\n"
+            md += f"**Default:**\n\n```nix\n{default_text}\n```\n\n"
 
     if example and "_type" in example:
         example_text = example.get("text", "")
@@ -164,10 +170,18 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
             if page_key == "index":
                 filepath = service_dir / "index.md"
             else:
-                # Simple flat structure: service/page.md
-                filepath = service_dir / f"{page_key.replace('.', '-')}.md"
+                # Create nested directory structure with index.md files
+                parts = page_key.split('.')
+                current_dir = service_dir
+                for part in parts:
+                    current_dir = current_dir / part
+                current_dir.mkdir(parents=True, exist_ok=True)
+                filepath = current_dir / "index.md"
 
             with open(filepath, 'w') as f:
+                f.write(f"---\n")
+                f.write(f"title: {title}\n")
+                f.write(f"---\n\n")
                 f.write(f"# {title}\n\n")
                 f.write(f"{intro}\n\n")
                 f.write(f"!!! info \"Available Options\"\n")
@@ -175,6 +189,16 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
 
                 for name, opt in sorted(options, key=lambda x: x[0]):
                     f.write(render_option_markdown(name, opt))
+
+def camel_case_to_title(s: str) -> str:
+    """Convert camelCase or snake_case to Title Case"""
+    import re
+    # First handle snake_case
+    s = s.replace('_', ' ')
+    # Insert space before capital letters
+    s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
+    # Capitalize each word
+    return s.title()
 
 def get_page_nav_title(page_key: str) -> str:
     """Get human-readable title for navigation"""
@@ -203,10 +227,10 @@ def get_page_nav_title(page_key: str) -> str:
     # Handle nested paths like "config.delayProfiles"
     parts = page_key.split('.')
     if len(parts) > 1:
-        titles = [page_titles.get(p, p.replace('_', ' ').title()) for p in parts]
+        titles = [page_titles.get(p, camel_case_to_title(p)) for p in parts]
         return ' - '.join(titles)
 
-    return page_titles.get(page_key, page_key.replace('_', ' ').title())
+    return page_titles.get(page_key, camel_case_to_title(page_key))
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
     """Build a hierarchical tree structure for navigation"""
@@ -231,7 +255,7 @@ def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
     return tree
 
 def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
-    """Write navigation tree recursively"""
+    """Write navigation tree recursively with explicit file paths"""
     indent_str = "    " * indent
 
     for key in sorted(tree.keys()):
@@ -240,19 +264,24 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
         current_path = path + [key]
 
         if '_page_key' in node:
-            page_file = node['_page_key'].replace('.', '-')
+            # Build file path
+            file_path = '/'.join(['reference', service] + current_path + ['index.md'])
 
             if node['_children']:
-                # Has children - create a section
+                # Has children - create expandable section with parent page first
                 f.write(f"{indent_str}- {title}:\n")
-                child_indent_str = "    " * (indent + 1)
-                f.write(f"{child_indent_str}- reference/{service}/{page_file}.md\n")
+                child_indent = "    " * (indent + 1)
+                f.write(f"{child_indent}- {title}: {file_path}\n")
                 write_nav_tree(f, node['_children'], service, current_path, indent + 1)
             else:
-                # No children - just a link
-                f.write(f"{indent_str}- {title}: reference/{service}/{page_file}.md\n")
+                # No children - just a simple page
+                f.write(f"{indent_str}- {title}: {file_path}\n")
+        elif node['_children']:
+            # Intermediate node without its own page - just recurse into children
+            write_nav_tree(f, node['_children'], service, current_path, indent)
 
 def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir: Path):
+    """Generate navigation with explicit parent pages"""
     service_titles = {
         "core": "Core",
         "sonarr": "Sonarr",
@@ -275,15 +304,19 @@ def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir
             if service not in categorized or not categorized[service]:
                 continue
 
-            pages = categorized[service]
             title = service_titles.get(service, service.capitalize())
+            pages = categorized[service]
 
-            f.write(f"    - {title}:\n")
-            f.write(f"        - reference/{service}/index.md\n")
-
-            # Build and write hierarchical tree
             tree = build_hierarchical_nav(pages)
-            write_nav_tree(f, tree, service, [], 2)
+
+            if len(pages) == 1 and "index" in pages and not tree:
+                # Only index page, no children - still make it a section for consistent styling
+                f.write(f"    - {title}:\n")
+                f.write(f"        - {title}: reference/{service}/index.md\n")
+            else:
+                f.write(f"    - {title}:\n")
+                f.write(f"        - {title}: reference/{service}/index.md\n")
+                write_nav_tree(f, tree, service, [], 2)
 
 def main():
     if len(sys.argv) != 3:

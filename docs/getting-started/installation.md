@@ -1,3 +1,7 @@
+---
+title: Installation
+---
+
 # Installation
 
 This guide shows how to add nixflix to your NixOS configuration using flakes.
@@ -7,6 +11,7 @@ This guide shows how to add nixflix to your NixOS configuration using flakes.
 - NixOS with flakes enabled
 - Git for version control
 - Basic familiarity with NixOS modules
+- (Optional, but highly recommended) Some form of secrets management, like [sops-nix](https://github.com/Mic92/sops-nix)
 
 ## Enable Flakes
 
@@ -104,68 +109,6 @@ Here's a minimal configuration to get started:
     };
   };
 }
-```
-
-## Complete Flake Example
-
-Here's a complete `flake.nix` for a system with nixflix:
-
-```nix
-{
-  description = "NixOS configuration with nixflix media server";
-
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    nixflix = {
-      url = "github:kiriwalawren/nixflix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
-
-  outputs = {
-    self,
-    nixpkgs,
-    nixflix,
-    sops-nix,
-    ...
-  }: {
-    nixosConfigurations.mediaserver = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-        ./hardware-configuration.nix
-        ./configuration.nix
-        nixflix.nixosModules.default
-        sops-nix.nixosModules.sops
-      ];
-    };
-  };
-}
-```
-
-## Update and Build
-
-After adding nixflix to your flake:
-
-```bash
-nix flake lock
-
-nix flake show
-
-sudo nixos-rebuild switch --flake .#yourhost
-```
-
-## Verify Installation
-
-Check that nixflix is available:
-
-```bash
-nixos-option nixflix.enable
 ```
 
 ## Next Steps

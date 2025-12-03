@@ -1,9 +1,14 @@
+---
+title: Nixflix
+---
+
 # Nixflix
 
 **Declarative NixOS media server stack with Jellyfin and Arr services**
 
 !!! tip "Quick Start"
-New to Nixflix? Start with the [Installation Guide](getting-started/installation.md) or explore the [Basic Setup Example](examples/basic-setup.md).
+
+    New to Nixflix? Start with the [Installation Guide](getting-started/installation.md) or explore the [Basic Setup Example](examples/basic-setup.md).
 
 ## What is Nixflix?
 
@@ -52,4 +57,4 @@ Nixflix is a comprehensive NixOS module that provides a complete media server st
 
 - [Installation](getting-started/installation.md) - Add nixflix to your NixOS configuration
 - [Examples](examples/basic-setup.md) - Copy-paste ready configurations
-- [Reference](reference/core-options.md) - Complete documentation of all options
+- [Reference](reference/index.md) - Complete documentation of all options
