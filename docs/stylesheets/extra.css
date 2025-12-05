@@ -44,3 +44,41 @@ nav.md-nav--primary > ul > li > a.md-nav__link {
   font-size: 1.15em;
   font-weight: 700;
 }
+
+.option-content {
+  margin-left: 2em;
+}
+
+.option-table {
+  border: none;
+  font-size: 1em;
+  width: 100%;
+}
+
+.option-content ~ h2 {
+  margin-top: 0 !important;
+}
+
+.option-value pre {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.option-table:hover {
+  background-color: transparent !important;
+}
+
+.option-table td {
+  border: none;
+  vertical-align: top;
+}
+
+.option-label {
+  padding: 0.5em 1em 0.5em 0;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.option-value {
+  padding: 0.5em 0;
+}

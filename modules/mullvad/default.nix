@@ -67,9 +67,9 @@ in {
       description = ''
         Mullvad server location as a list of strings.
 
-        Format: ["country"] | ["country" "city"] | ["country" "city" "full-server-name"] | ["full-server-name"]
+        Format: `["country"]` | `["country" "city"]` | `["country" "city" "full-server-name"]` | `["full-server-name"]`
 
-        Examples: ["us"], ["us" "nyc"], ["se" "got" "se-got-wg-001"], ["se-got-wg-001"]
+        Examples: `["us"]`, `["us" "nyc"]`, `["se" "got" "se-got-wg-001"]`, `["se-got-wg-001"]`
 
         Use "mullvad relay list" to see available locations.
         Leave empty to use automatic location selection.

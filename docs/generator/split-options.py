@@ -101,38 +101,46 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
 
     return categorized
 
-def render_option_markdown(name: str, opt: Dict[str, Any]) -> str:
+def render_option_markdown(name: str, opt: Dict[str, Any], is_last: bool = False) -> str:
     type_str = opt.get("type", "unspecified")
     default = opt.get("default", {})
     example = opt.get("example", {})
     description = opt.get("description", "")
     declarations = opt.get("declarations", [])
 
-    md = f"### `{name}`\n\n"
+    option_id = name.replace('.', '-').lower()
+    md = f'## `{name}` {{#{option_id}}}\n\n'
 
     if description:
         md += f"{description}\n\n"
 
-    md += f"**Type:** `{type_str}`\n\n"
+    md += '<div class="option-content">\n'
+    md += '<table class="option-table">\n'
+    md += f'<tr><td class="option-label"><strong>Type</strong></td><td class="option-value">{type_str}</td></tr>\n'
 
     if default and "_type" in default:
         default_text = default.get("text", "")
         if default_text:
-            md += f"**Default:**\n\n```nix\n{default_text}\n```\n\n"
+            md += f'<tr><td class="option-label"><strong>Default</strong></td><td class="option-value">\n\n```nix\n{default_text}\n```\n\n</td></tr>\n'
 
     if example and "_type" in example:
         example_text = example.get("text", "")
         if example_text:
-            md += f"**Example:**\n\n```nix\n{example_text}\n```\n\n"
+            md += f'<tr><td class="option-label"><strong>Example</strong></td><td class="option-value">\n\n```nix\n{example_text}\n```\n\n</td></tr>\n'
 
     if declarations:
-        md += f"**Declared in:**\n\n"
+        decl_links = []
         for decl in declarations:
             github_url = f"https://github.com/kiriwalawren/nixflix/blob/main/{decl}"
-            md += f"- [{decl}]({github_url})\n"
-        md += "\n"
+            decl_links.append(f"<a href='{github_url}'>{decl}</a>")
+        md += f'<tr><td class="option-label"><strong>Declared in</strong></td><td class="option-value">{", ".join(decl_links)}</td></tr>\n'
 
-    md += "---\n\n"
+    md += "</table>\n"
+    md += "</div>\n"
+
+    if not is_last:
+        md += '<hr class="option-divider"/>\n'
+
     return md
 
 def get_service_title(service: str) -> str:
@@ -227,8 +235,9 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                         return (3, name)
 
                 sorted_options = sorted(options, key=lambda x: get_sort_key(x[0]))
-                for name, opt in sorted_options:
-                    f.write(render_option_markdown(name, opt))
+                for i, (name, opt) in enumerate(sorted_options):
+                    is_last = (i == len(sorted_options) - 1)
+                    f.write(render_option_markdown(name, opt, is_last))
 
 def special_case_to_title(s: str) -> str:
     """Convert camelCase or snake_case to Title Case"""
