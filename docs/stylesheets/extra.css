@@ -5,7 +5,7 @@
   --md-accent-fg-color: #673ab7;
 }
 
-.language-nix {
+.highlight {
   border-left: 3px solid var(--md-accent-fg-color);
 }
 
@@ -81,4 +81,12 @@ nav.md-nav--primary > ul > li > a.md-nav__link {
 
 .option-value {
   padding: 0.5em 0;
+}
+
+.language-nix.highlight .ss {
+  color: var(--md-primary-bg-color);
+}
+
+.language-nix.highlight .si {
+  color: var(--md-code-hl-special-color);
 }

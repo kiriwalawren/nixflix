@@ -1,0 +1,1039 @@
+/* Catppuccin Theme for MkDocs Material - All 4 Flavors */
+/* Documentation: https://github.com/catppuccin/catppuccin */
+
+/* ========================================
+   Catppuccin Latte (Light Theme)
+   ======================================== */
+:root {
+  /* Catppuccin Latte Color Palette */
+  --ctp-latte-base: #eff1f5;
+  --ctp-latte-mantle: #e6e9ef;
+  --ctp-latte-crust: #dce0e8;
+  --ctp-latte-surface0: #ccd0da;
+  --ctp-latte-surface1: #bcc0cc;
+  --ctp-latte-surface2: #acb0be;
+  --ctp-latte-overlay0: #9ca0b0;
+  --ctp-latte-overlay1: #8c8fa1;
+  --ctp-latte-overlay2: #7c7f93;
+  --ctp-latte-subtext0: #6c6f85;
+  --ctp-latte-subtext1: #5c5f77;
+  --ctp-latte-text: #4c4f69;
+
+  --ctp-latte-lavender: #7287fd;
+  --ctp-latte-blue: #1e66f5;
+  --ctp-latte-sapphire: #209fb5;
+  --ctp-latte-sky: #04a5e5;
+  --ctp-latte-teal: #179299;
+  --ctp-latte-green: #40a02b;
+  --ctp-latte-yellow: #df8e1d;
+  --ctp-latte-peach: #fe640b;
+  --ctp-latte-maroon: #e64553;
+  --ctp-latte-red: #d20f39;
+  --ctp-latte-mauve: #8839ef;
+  --ctp-latte-pink: #ea76cb;
+  --ctp-latte-flamingo: #dd7878;
+  --ctp-latte-rosewater: #dc8a78;
+}
+
+/* ========================================
+   Catppuccin Frappé (Dark Theme)
+   ======================================== */
+:root {
+  /* Catppuccin Frappé Color Palette */
+  --ctp-frappe-base: #303446;
+  --ctp-frappe-mantle: #292c3c;
+  --ctp-frappe-crust: #232634;
+  --ctp-frappe-surface0: #414559;
+  --ctp-frappe-surface1: #51576d;
+  --ctp-frappe-surface2: #626880;
+  --ctp-frappe-overlay0: #737994;
+  --ctp-frappe-overlay1: #838ba7;
+  --ctp-frappe-overlay2: #949cbb;
+  --ctp-frappe-subtext0: #a5adce;
+  --ctp-frappe-subtext1: #b5bfe2;
+  --ctp-frappe-text: #c6d0f5;
+
+  --ctp-frappe-lavender: #babbf1;
+  --ctp-frappe-blue: #8caaee;
+  --ctp-frappe-sapphire: #85c1dc;
+  --ctp-frappe-sky: #99d1db;
+  --ctp-frappe-teal: #81c8be;
+  --ctp-frappe-green: #a6d189;
+  --ctp-frappe-yellow: #e5c890;
+  --ctp-frappe-peach: #ef9f76;
+  --ctp-frappe-maroon: #ea999c;
+  --ctp-frappe-red: #e78284;
+  --ctp-frappe-mauve: #ca9ee6;
+  --ctp-frappe-pink: #f4b8e4;
+  --ctp-frappe-flamingo: #eebebe;
+  --ctp-frappe-rosewater: #f2d5cf;
+}
+
+/* ========================================
+   Catppuccin Macchiato (Dark Theme)
+   ======================================== */
+:root {
+  /* Catppuccin Macchiato Color Palette */
+  --ctp-macchiato-base: #24273a;
+  --ctp-macchiato-mantle: #1e2030;
+  --ctp-macchiato-crust: #181926;
+  --ctp-macchiato-surface0: #363a4f;
+  --ctp-macchiato-surface1: #494d64;
+  --ctp-macchiato-surface2: #5b6078;
+  --ctp-macchiato-overlay0: #6e738d;
+  --ctp-macchiato-overlay1: #8087a2;
+  --ctp-macchiato-overlay2: #939ab7;
+  --ctp-macchiato-subtext0: #a5adcb;
+  --ctp-macchiato-subtext1: #b8c0e0;
+  --ctp-macchiato-text: #cad3f5;
+
+  --ctp-macchiato-lavender: #b7bdf8;
+  --ctp-macchiato-blue: #8aadf4;
+  --ctp-macchiato-sapphire: #7dc4e4;
+  --ctp-macchiato-sky: #91d7e3;
+  --ctp-macchiato-teal: #8bd5ca;
+  --ctp-macchiato-green: #a6da95;
+  --ctp-macchiato-yellow: #eed49f;
+  --ctp-macchiato-peach: #f5a97f;
+  --ctp-macchiato-maroon: #ee99a0;
+  --ctp-macchiato-red: #ed8796;
+  --ctp-macchiato-mauve: #c6a0f6;
+  --ctp-macchiato-pink: #f5bde6;
+  --ctp-macchiato-flamingo: #f0c6c6;
+  --ctp-macchiato-rosewater: #f4dbd6;
+}
+
+/* ========================================
+   Catppuccin Mocha (Dark Theme)
+   ======================================== */
+:root {
+  /* Catppuccin Mocha Color Palette */
+  --ctp-mocha-base: #1e1e2e;
+  --ctp-mocha-mantle: #181825;
+  --ctp-mocha-crust: #11111b;
+  --ctp-mocha-surface0: #313244;
+  --ctp-mocha-surface1: #45475a;
+  --ctp-mocha-surface2: #585b70;
+  --ctp-mocha-overlay0: #6c7086;
+  --ctp-mocha-overlay1: #7f849c;
+  --ctp-mocha-overlay2: #9399b2;
+  --ctp-mocha-subtext0: #a6adc8;
+  --ctp-mocha-subtext1: #bac2de;
+  --ctp-mocha-text: #cdd6f4;
+
+  --ctp-mocha-lavender: #b4befe;
+  --ctp-mocha-blue: #89b4fa;
+  --ctp-mocha-sapphire: #74c7ec;
+  --ctp-mocha-sky: #89dceb;
+  --ctp-mocha-teal: #94e2d5;
+  --ctp-mocha-green: #a6e3a1;
+  --ctp-mocha-yellow: #f9e2af;
+  --ctp-mocha-peach: #fab387;
+  --ctp-mocha-maroon: #eba0ac;
+  --ctp-mocha-red: #f38ba8;
+  --ctp-mocha-mauve: #cba6f7;
+  --ctp-mocha-pink: #f5c2e7;
+  --ctp-mocha-flamingo: #f2cdcd;
+  --ctp-mocha-rosewater: #f5e0dc;
+}
+
+/* ========================================
+   Light Mode - Catppuccin Latte
+   ======================================== */
+[data-md-color-scheme="latte"] {
+  /* Background colors */
+  --md-default-bg-color: var(--ctp-latte-base);
+  --md-default-fg-color: var(--ctp-latte-text);
+  --md-code-bg-color: var(--ctp-latte-mantle);
+  --md-code-fg-color: var(--ctp-latte-text);
+
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-latte-mauve);
+  --md-primary-fg-color--light: var(--ctp-latte-lavender);
+  --md-primary-fg-color--dark: var(--ctp-latte-surface0);
+  --md-primary-bg-color: var(--ctp-latte-text);
+  --md-primary-bg-color--light: var(--ctp-latte-subtext1);
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-latte-green);
+  --md-accent-fg-color--transparent: rgba(64, 160, 43, 0.1);
+  --md-accent-bg-color: var(--ctp-latte-text);
+  --md-accent-bg-color--light: var(--ctp-latte-subtext1);
+
+  /* Typography */
+  --md-typeset-color: var(--ctp-latte-text);
+  --md-typeset-a-color: var(--ctp-latte-green);
+
+  /* Code blocks */
+  --md-code-hl-color: var(--ctp-latte-surface0);
+  --md-code-hl-number-color: var(--ctp-latte-peach);
+  --md-code-hl-special-color: var(--ctp-latte-pink);
+  --md-code-hl-function-color: var(--ctp-latte-blue);
+  --md-code-hl-constant-color: var(--ctp-latte-peach);
+  --md-code-hl-keyword-color: var(--ctp-latte-mauve);
+  --md-code-hl-string-color: var(--ctp-latte-green);
+  --md-code-hl-name-color: var(--ctp-latte-text);
+  --md-code-hl-operator-color: var(--ctp-latte-sky);
+  --md-code-hl-punctuation-color: var(--ctp-latte-overlay2);
+  --md-code-hl-comment-color: var(--ctp-latte-overlay0);
+  --md-code-hl-generic-color: var(--ctp-latte-pink);
+  --md-code-hl-variable-color: var(--ctp-latte-text);
+
+  /* Admonitions */
+  --md-admonition-bg-color: var(--ctp-latte-mantle);
+
+  /* Footer */
+  --md-footer-bg-color: var(--ctp-latte-mantle);
+  --md-footer-bg-color--dark: var(--ctp-latte-crust);
+  --md-footer-fg-color: var(--ctp-latte-text);
+  --md-footer-fg-color--light: var(--ctp-latte-subtext1);
+  --md-footer-fg-color--lighter: var(--ctp-latte-subtext0);
+
+  /* Tables */
+  --md-typeset-table-color: var(--ctp-latte-text);
+  --md-typeset-table-color--light: var(--ctp-latte-surface0);
+
+  /* Shadows */
+  --md-shadow-z1: 0 0.2rem 0.5rem rgba(76, 79, 105, 0.05);
+  --md-shadow-z2: 0 0.2rem 0.5rem rgba(76, 79, 105, 0.1);
+  --md-shadow-z3: 0 0.2rem 0.5rem rgba(76, 79, 105, 0.15);
+}
+
+/* ========================================
+   Dark Mode - Catppuccin Frappé
+   ======================================== */
+[data-md-color-scheme="frappe"] {
+  /* Background colors */
+  --md-default-bg-color: var(--ctp-frappe-base);
+  --md-default-fg-color: var(--ctp-frappe-text);
+  --md-code-bg-color: var(--ctp-frappe-mantle);
+  --md-code-fg-color: var(--ctp-frappe-text);
+
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-frappe-mauve);
+  --md-primary-fg-color--light: var(--ctp-frappe-lavender);
+  --md-primary-fg-color--dark: var(--ctp-frappe-surface0);
+  --md-primary-bg-color: var(--ctp-frappe-text);
+  --md-primary-bg-color--light: var(--ctp-frappe-subtext1);
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-frappe-green);
+  --md-accent-fg-color--transparent: rgba(166, 209, 137, 0.1);
+  --md-accent-bg-color: var(--ctp-frappe-text);
+  --md-accent-bg-color--light: var(--ctp-frappe-subtext1);
+
+  /* Typography */
+  --md-typeset-color: var(--ctp-frappe-text);
+  --md-typeset-a-color: var(--ctp-frappe-green);
+
+  /* Code blocks */
+  --md-code-hl-color: var(--ctp-frappe-surface0);
+  --md-code-hl-number-color: var(--ctp-frappe-peach);
+  --md-code-hl-special-color: var(--ctp-frappe-pink);
+  --md-code-hl-function-color: var(--ctp-frappe-blue);
+  --md-code-hl-constant-color: var(--ctp-frappe-peach);
+  --md-code-hl-keyword-color: var(--ctp-frappe-mauve);
+  --md-code-hl-string-color: var(--ctp-frappe-green);
+  --md-code-hl-name-color: var(--ctp-frappe-text);
+  --md-code-hl-operator-color: var(--ctp-frappe-sky);
+  --md-code-hl-punctuation-color: var(--ctp-frappe-overlay2);
+  --md-code-hl-comment-color: var(--ctp-frappe-overlay0);
+  --md-code-hl-generic-color: var(--ctp-frappe-pink);
+  --md-code-hl-variable-color: var(--ctp-frappe-text);
+
+  /* Admonitions */
+  --md-admonition-bg-color: var(--ctp-frappe-mantle);
+
+  /* Footer */
+  --md-footer-bg-color: var(--ctp-frappe-mantle);
+  --md-footer-bg-color--dark: var(--ctp-frappe-crust);
+  --md-footer-fg-color: var(--ctp-frappe-text);
+  --md-footer-fg-color--light: var(--ctp-frappe-subtext1);
+  --md-footer-fg-color--lighter: var(--ctp-frappe-subtext0);
+
+  /* Tables */
+  --md-typeset-table-color: var(--ctp-frappe-text);
+  --md-typeset-table-color--light: var(--ctp-frappe-surface0);
+
+  /* Shadows */
+  --md-shadow-z1: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.3);
+  --md-shadow-z2: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.4);
+  --md-shadow-z3: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Dark Mode - Catppuccin Macchiato
+   ======================================== */
+[data-md-color-scheme="macchiato"] {
+  /* Background colors */
+  --md-default-bg-color: var(--ctp-macchiato-base);
+  --md-default-fg-color: var(--ctp-macchiato-text);
+  --md-code-bg-color: var(--ctp-macchiato-mantle);
+  --md-code-fg-color: var(--ctp-macchiato-text);
+
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-macchiato-mauve);
+  --md-primary-fg-color--light: var(--ctp-macchiato-lavender);
+  --md-primary-fg-color--dark: var(--ctp-macchiato-surface0);
+  --md-primary-bg-color: var(--ctp-macchiato-text);
+  --md-primary-bg-color--light: var(--ctp-macchiato-subtext1);
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-macchiato-green);
+  --md-accent-fg-color--transparent: rgba(166, 218, 149, 0.1);
+  --md-accent-bg-color: var(--ctp-macchiato-text);
+  --md-accent-bg-color--light: var(--ctp-macchiato-subtext1);
+
+  /* Typography */
+  --md-typeset-color: var(--ctp-macchiato-text);
+  --md-typeset-a-color: var(--ctp-macchiato-green);
+
+  /* Code blocks */
+  --md-code-hl-color: var(--ctp-macchiato-surface0);
+  --md-code-hl-number-color: var(--ctp-macchiato-peach);
+  --md-code-hl-special-color: var(--ctp-macchiato-pink);
+  --md-code-hl-function-color: var(--ctp-macchiato-blue);
+  --md-code-hl-constant-color: var(--ctp-macchiato-peach);
+  --md-code-hl-keyword-color: var(--ctp-macchiato-mauve);
+  --md-code-hl-string-color: var(--ctp-macchiato-green);
+  --md-code-hl-name-color: var(--ctp-macchiato-text);
+  --md-code-hl-operator-color: var(--ctp-macchiato-sky);
+  --md-code-hl-punctuation-color: var(--ctp-macchiato-overlay2);
+  --md-code-hl-comment-color: var(--ctp-macchiato-overlay0);
+  --md-code-hl-generic-color: var(--ctp-macchiato-pink);
+  --md-code-hl-variable-color: var(--ctp-macchiato-text);
+
+  /* Admonitions */
+  --md-admonition-bg-color: var(--ctp-macchiato-mantle);
+
+  /* Footer */
+  --md-footer-bg-color: var(--ctp-macchiato-mantle);
+  --md-footer-bg-color--dark: var(--ctp-macchiato-crust);
+  --md-footer-fg-color: var(--ctp-macchiato-text);
+  --md-footer-fg-color--light: var(--ctp-macchiato-subtext1);
+  --md-footer-fg-color--lighter: var(--ctp-macchiato-subtext0);
+
+  /* Tables */
+  --md-typeset-table-color: var(--ctp-macchiato-text);
+  --md-typeset-table-color--light: var(--ctp-macchiato-surface0);
+
+  /* Shadows */
+  --md-shadow-z1: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.3);
+  --md-shadow-z2: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.4);
+  --md-shadow-z3: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Dark Mode - Catppuccin Mocha
+   ======================================== */
+[data-md-color-scheme="mocha"] {
+  /* Background colors */
+  --md-default-bg-color: var(--ctp-mocha-base);
+  --md-default-fg-color: var(--ctp-mocha-text);
+  --md-code-bg-color: var(--ctp-mocha-mantle);
+  --md-code-fg-color: var(--ctp-mocha-text);
+
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-mocha-mauve);
+  --md-primary-fg-color--light: var(--ctp-mocha-lavender);
+  --md-primary-fg-color--dark: var(--ctp-mocha-surface0);
+  --md-primary-bg-color: var(--ctp-mocha-text);
+  --md-primary-bg-color--light: var(--ctp-mocha-subtext1);
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-mocha-green);
+  --md-accent-fg-color--transparent: rgba(166, 227, 161, 0.1);
+  --md-accent-bg-color: var(--ctp-mocha-text);
+  --md-accent-bg-color--light: var(--ctp-mocha-subtext1);
+
+  /* Typography */
+  --md-typeset-color: var(--ctp-mocha-text);
+  --md-typeset-a-color: var(--ctp-mocha-green);
+
+  /* Code blocks */
+  --md-code-hl-color: var(--ctp-mocha-surface0);
+  --md-code-hl-number-color: var(--ctp-mocha-peach);
+  --md-code-hl-special-color: var(--ctp-mocha-pink);
+  --md-code-hl-function-color: var(--ctp-mocha-blue);
+  --md-code-hl-constant-color: var(--ctp-mocha-peach);
+  --md-code-hl-keyword-color: var(--ctp-mocha-mauve);
+  --md-code-hl-string-color: var(--ctp-mocha-green);
+  --md-code-hl-name-color: var(--ctp-mocha-text);
+  --md-code-hl-operator-color: var(--ctp-mocha-sky);
+  --md-code-hl-punctuation-color: var(--ctp-mocha-overlay2);
+  --md-code-hl-comment-color: var(--ctp-mocha-overlay0);
+  --md-code-hl-generic-color: var(--ctp-mocha-pink);
+  --md-code-hl-variable-color: var(--ctp-mocha-text);
+
+  /* Admonitions */
+  --md-admonition-bg-color: var(--ctp-mocha-mantle);
+
+  /* Footer */
+  --md-footer-bg-color: var(--ctp-mocha-mantle);
+  --md-footer-bg-color--dark: var(--ctp-mocha-crust);
+  --md-footer-fg-color: var(--ctp-mocha-text);
+  --md-footer-fg-color--light: var(--ctp-mocha-subtext1);
+  --md-footer-fg-color--lighter: var(--ctp-mocha-subtext0);
+
+  /* Tables */
+  --md-typeset-table-color: var(--ctp-mocha-text);
+  --md-typeset-table-color--light: var(--ctp-mocha-surface0);
+
+  /* Shadows */
+  --md-shadow-z1: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.3);
+  --md-shadow-z2: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.4);
+  --md-shadow-z3: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   Common Styling for All Flavors
+   ======================================== */
+
+/* Header */
+[data-md-color-scheme="latte"] .md-header {
+  background-color: var(--ctp-latte-mantle);
+  box-shadow: 0 0 0.2rem rgba(76, 79, 105, 0.1);
+}
+
+[data-md-color-scheme="frappe"] .md-header,
+[data-md-color-scheme="macchiato"] .md-header,
+[data-md-color-scheme="mocha"] .md-header {
+  background-color: var(--md-code-bg-color);
+}
+
+/* Tabs */
+[data-md-color-scheme="latte"] .md-tabs {
+  background-color: var(--ctp-latte-mantle);
+  border-bottom: 0.05rem solid var(--ctp-latte-surface0);
+}
+
+[data-md-color-scheme="frappe"] .md-tabs,
+[data-md-color-scheme="macchiato"] .md-tabs,
+[data-md-color-scheme="mocha"] .md-tabs {
+  background-color: var(--md-code-bg-color);
+  border-bottom: 0.05rem solid var(--md-code-hl-color);
+}
+
+/* Navigation */
+.md-nav__link--active {
+  color: var(--md-accent-fg-color);
+}
+
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* Search box - comprehensive styling */
+.md-search__input {
+  background-color: var(--md-code-bg-color) !important;
+  color: var(--md-default-fg-color) !important;
+  border: 0.05rem solid var(--md-code-hl-color);
+}
+
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color) !important;
+  opacity: 0.6 !important;
+}
+
+.md-search__input:hover,
+.md-search__input:focus {
+  background-color: var(--md-code-bg-color) !important;
+  border-color: var(--md-accent-fg-color);
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Search overlay */
+.md-search__form {
+  background-color: var(--md-code-bg-color);
+}
+
+/* Search output */
+.md-search__output {
+  background-color: var(--md-default-bg-color);
+}
+
+.md-search-result__meta {
+  background-color: var(--md-code-bg-color);
+  color: var(--md-default-fg-color);
+}
+
+/* Sidebar */
+.md-sidebar {
+  background-color: var(--md-default-bg-color);
+}
+
+/* Code blocks */
+.md-typeset pre {
+  background-color: var(--md-code-bg-color);
+  border: 0.05rem solid var(--md-code-hl-color);
+}
+
+.md-typeset code {
+  background-color: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+}
+
+/* Inline code */
+.md-typeset :not(pre) > code {
+}
+
+/* Code copy button - beautiful styling */
+.md-clipboard {
+  border-radius: 0.3rem;
+  opacity: 0.9;
+}
+
+.md-clipboard:hover {
+  background-color: var(--md-accent-fg-color) !important;
+}
+
+.md-clipboard:focus {
+}
+
+/* Copy button icon */
+.md-clipboard svg {
+  fill: currentColor;
+}
+
+/* Copy button success state */
+.md-clipboard--copied {
+}
+
+/* Links */
+.md-typeset a:hover {
+  color: var(--md-primary-fg-color--light);
+}
+
+/* Buttons */
+.md-button {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-default-bg-color);
+  border: none;
+}
+
+.md-button:hover {
+  background-color: var(--md-primary-fg-color--light);
+}
+
+.md-button--primary {
+  background-color: var(--md-accent-fg-color);
+  color: var(--md-default-bg-color);
+}
+
+.md-button--primary:hover {
+  background-color: var(--md-primary-fg-color--light);
+}
+
+/* Admonitions */
+.md-typeset .admonition {
+  border-left: 0.2rem solid var(--md-accent-fg-color);
+}
+
+/* Tables */
+.md-typeset table:not([class]) {
+  border: 0.05rem solid var(--md-typeset-table-color--light);
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-code-hl-color);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--md-default-bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-code-hl-color);
+  border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-accent-fg-color);
+}
+
+/* ========================================
+   UI Improvements
+   ======================================== */
+
+/* Hide permalink symbols (¶) */
+.md-typeset .headerlink {
+  display: none;
+}
+
+/* Make headings bolder and ensure visibility */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-weight: 700;
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Ensure h1 is very visible */
+.md-typeset h1 {
+  font-weight: 800;
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Improve header text visibility */
+.md-header__title,
+.md-header__button,
+.md-header__topic {
+  color: var(--md-default-fg-color) !important;
+  font-weight: 600;
+}
+
+/* Page title in header */
+.md-header__topic:first-child {
+  font-weight: 700;
+}
+
+/* Improve tabs text visibility */
+.md-tabs__link {
+  color: var(--md-default-fg-color);
+  opacity: 0.7;
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover {
+  color: var(--md-default-fg-color);
+  opacity: 1;
+}
+
+/* Improve navigation text visibility */
+.md-nav__link {
+  color: var(--md-default-fg-color);
+}
+
+.md-nav__title {
+  color: var(--md-default-fg-color);
+  font-weight: 600;
+}
+
+/* Better admonitions styling - Base */
+.md-typeset .admonition,
+.md-typeset details {
+  border-left-width: 0.2rem;
+  background-color: var(--md-code-bg-color);
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  border: none;
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+}
+
+/* Admonition text content */
+.md-typeset .admonition > p,
+.md-typeset .admonition > ul,
+.md-typeset .admonition > ol,
+.md-typeset details > p {
+  color: var(--md-default-fg-color);
+}
+
+/* Latte (Light Theme) Admonitions */
+[data-md-color-scheme="latte"] .md-typeset .note > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .note > summary {
+  background-color: rgba(30, 102, 245, 0.15);
+  color: var(--ctp-latte-blue);
+}
+
+[data-md-color-scheme="latte"] .md-typeset .tip > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .tip > summary {
+  background-color: rgba(23, 146, 153, 0.15);
+  color: var(--ctp-latte-teal);
+}
+
+[data-md-color-scheme="latte"] .md-typeset .warning > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .warning > summary {
+  background-color: rgba(254, 100, 11, 0.15);
+  color: var(--ctp-latte-peach);
+}
+
+[data-md-color-scheme="latte"] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .danger > summary {
+  background-color: rgba(210, 15, 57, 0.15);
+  color: var(--ctp-latte-red);
+}
+
+[data-md-color-scheme="latte"] .md-typeset .info > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .info > summary {
+  background-color: rgba(4, 165, 229, 0.15);
+  color: var(--ctp-latte-sky);
+}
+
+[data-md-color-scheme="latte"] .md-typeset .success > .admonition-title,
+[data-md-color-scheme="latte"] .md-typeset .success > summary {
+  background-color: rgba(64, 160, 43, 0.15);
+  color: var(--ctp-latte-green);
+}
+
+/* Frappé (Dark Theme) Admonitions */
+[data-md-color-scheme="frappe"] .md-typeset .note > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .note > summary {
+  background-color: rgba(140, 170, 238, 0.15);
+  color: var(--ctp-frappe-blue);
+}
+
+[data-md-color-scheme="frappe"] .md-typeset .tip > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .tip > summary {
+  background-color: rgba(129, 200, 190, 0.15);
+  color: var(--ctp-frappe-teal);
+}
+
+[data-md-color-scheme="frappe"] .md-typeset .warning > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .warning > summary {
+  background-color: rgba(239, 159, 118, 0.15);
+  color: var(--ctp-frappe-peach);
+}
+
+[data-md-color-scheme="frappe"] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .danger > summary {
+  background-color: rgba(231, 130, 132, 0.15);
+  color: var(--ctp-frappe-red);
+}
+
+[data-md-color-scheme="frappe"] .md-typeset .info > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .info > summary {
+  background-color: rgba(153, 209, 219, 0.15);
+  color: var(--ctp-frappe-sky);
+}
+
+[data-md-color-scheme="frappe"] .md-typeset .success > .admonition-title,
+[data-md-color-scheme="frappe"] .md-typeset .success > summary {
+  background-color: rgba(166, 209, 137, 0.15);
+  color: var(--ctp-frappe-green);
+}
+
+/* Macchiato (Dark Theme) Admonitions */
+[data-md-color-scheme="macchiato"] .md-typeset .note > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .note > summary {
+  background-color: rgba(138, 173, 244, 0.15);
+  color: var(--ctp-macchiato-blue);
+}
+
+[data-md-color-scheme="macchiato"] .md-typeset .tip > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .tip > summary {
+  background-color: rgba(139, 213, 202, 0.15);
+  color: var(--ctp-macchiato-teal);
+}
+
+[data-md-color-scheme="macchiato"] .md-typeset .warning > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .warning > summary {
+  background-color: rgba(245, 169, 127, 0.15);
+  color: var(--ctp-macchiato-peach);
+}
+
+[data-md-color-scheme="macchiato"] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .danger > summary {
+  background-color: rgba(237, 135, 150, 0.15);
+  color: var(--ctp-macchiato-red);
+}
+
+[data-md-color-scheme="macchiato"] .md-typeset .info > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .info > summary {
+  background-color: rgba(145, 215, 227, 0.15);
+  color: var(--ctp-macchiato-sky);
+}
+
+[data-md-color-scheme="macchiato"] .md-typeset .success > .admonition-title,
+[data-md-color-scheme="macchiato"] .md-typeset .success > summary {
+  background-color: rgba(166, 218, 149, 0.15);
+  color: var(--ctp-macchiato-green);
+}
+
+/* Mocha (Dark Theme) Admonitions */
+[data-md-color-scheme="mocha"] .md-typeset .note > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .note > summary {
+  background-color: rgba(137, 180, 250, 0.15);
+  color: var(--ctp-mocha-blue);
+}
+
+[data-md-color-scheme="mocha"] .md-typeset .tip > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .tip > summary {
+  background-color: rgba(148, 226, 213, 0.15);
+  color: var(--ctp-mocha-teal);
+}
+
+[data-md-color-scheme="mocha"] .md-typeset .warning > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .warning > summary {
+  background-color: rgba(250, 179, 135, 0.15);
+  color: var(--ctp-mocha-peach);
+}
+
+[data-md-color-scheme="mocha"] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .danger > summary {
+  background-color: rgba(243, 139, 168, 0.15);
+  color: var(--ctp-mocha-red);
+}
+
+[data-md-color-scheme="mocha"] .md-typeset .info > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .info > summary {
+  background-color: rgba(137, 220, 235, 0.15);
+  color: var(--ctp-mocha-sky);
+}
+
+[data-md-color-scheme="mocha"] .md-typeset .success > .admonition-title,
+[data-md-color-scheme="mocha"] .md-typeset .success > summary {
+  background-color: rgba(166, 227, 161, 0.15);
+  color: var(--ctp-mocha-green);
+}
+
+/* Improve code block contrast */
+.md-typeset pre > code {
+  background-color: var(--md-code-bg-color);
+}
+
+/* Better table header visibility */
+.md-typeset table:not([class]) th {
+  background-color: var(--md-code-hl-color);
+  color: var(--md-default-fg-color);
+  font-weight: 600;
+}
+
+/* Table of Contents improvements */
+.md-nav--secondary .md-nav__link {
+  color: var(--md-default-fg-color) !important;
+  opacity: 0.8;
+}
+
+.md-nav--secondary .md-nav__link--active {
+  color: var(--md-accent-fg-color) !important;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.md-nav--secondary .md-nav__link:hover {
+  color: var(--md-accent-fg-color) !important;
+  opacity: 1;
+}
+
+/* Table of Contents title */
+.md-nav--secondary .md-nav__title {
+  color: var(--md-default-fg-color) !important;
+  font-weight: 700;
+}
+
+/* Sidebar navigation */
+.md-sidebar--secondary {
+  color: var(--md-default-fg-color);
+}
+
+.md-sidebar--secondary .md-nav {
+  color: var(--md-default-fg-color);
+}
+
+/* Site title improvement */
+.md-header__title {
+  font-weight: 600;
+}
+
+/* Improve all text contrast */
+.md-typeset {
+  color: var(--md-default-fg-color);
+}
+
+/* Ensure proper contrast for all content */
+.md-content__inner {
+  color: var(--md-default-fg-color);
+}
+
+/* All paragraphs */
+.md-typeset p {
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Lists */
+.md-typeset li {
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Strong and emphasis */
+.md-typeset strong,
+.md-typeset em {
+  color: var(--md-default-fg-color);
+}
+
+/* Blockquotes */
+.md-typeset blockquote {
+  color: var(--md-default-fg-color);
+}
+
+/* Navigation items in primary sidebar */
+.md-nav--primary .md-nav__link {
+  color: var(--md-default-fg-color) !important;
+}
+
+.md-nav--primary .md-nav__title {
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Ensure all text elements use proper color */
+.md-typeset * {
+  color: inherit;
+}
+
+/* Code copy button - Catppuccin style */
+.md-clipboard {
+  background-color: var(--md-accent-fg-color) !important;
+  border-radius: 0.2rem;
+  opacity: 0.9;
+  transition:
+    opacity 0.2s,
+    background-color 0.2s;
+}
+
+.md-clipboard:hover {
+  opacity: 1;
+  background-color: var(--md-accent-fg-color) !important;
+  filter: brightness(1.1);
+}
+
+.md-clipboard:focus,
+.md-clipboard:active {
+  opacity: 1;
+  background-color: var(--md-accent-fg-color) !important;
+}
+
+/* Copy button icon - Light theme */
+[data-md-color-scheme="latte"] .md-clipboard svg {
+  fill: var(--ctp-latte-base) !important;
+}
+
+/* Copy button icon - Dark themes */
+[data-md-color-scheme="frappe"] .md-clipboard svg,
+[data-md-color-scheme="macchiato"] .md-clipboard svg,
+[data-md-color-scheme="mocha"] .md-clipboard svg {
+  fill: var(--md-default-bg-color) !important;
+}
+
+/* Success state after copying */
+.md-clipboard--inline:hover {
+  background-color: var(--md-accent-fg-color) !important;
+}
+
+/* Back to top button */
+.md-top {
+  background-color: var(--md-accent-fg-color) !important;
+  color: var(--md-default-bg-color) !important;
+}
+
+.md-top:hover {
+  background-color: var(--md-accent-fg-color) !important;
+  filter: brightness(1.1);
+}
+
+/* Back to top icon */
+.md-top svg {
+  fill: var(--md-default-bg-color) !important;
+}
+
+/* Search placeholder and input */
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color) !important;
+  opacity: 0.6;
+}
+
+.md-search__input {
+  color: var(--md-default-fg-color) !important;
+}
+
+/* Search icon */
+.md-search__icon {
+  color: var(--md-default-fg-color) !important;
+}
+
+.md-search__icon svg {
+  fill: var(--md-default-fg-color) !important;
+}
+
+/* Search form */
+.md-search__form {
+  background-color: var(--md-code-hl-color);
+}
+
+/* Search output */
+.md-search__output {
+  background-color: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+}
+
+/* Search result items */
+.md-search-result__item {
+  color: var(--md-default-fg-color);
+}
+
+.md-search-result__link {
+  color: var(--md-default-fg-color) !important;
+}
+
+.md-search-result__link:hover {
+  background-color: var(--md-code-hl-color);
+}
+
+/* ========================================
+   Content Tabs (pymdownx.tabbed) Styling
+   ======================================== */
+
+/* Inactive tabs */
+.md-typeset .tabbed-labels .tabbed-label {
+  color: var(--md-default-fg-color);
+  opacity: 0.6;
+  transition:
+    opacity 0.2s,
+    color 0.2s,
+    border-bottom-color 0.2s;
+}
+
+/* Hover state */
+.md-typeset .tabbed-labels .tabbed-label:hover {
+  color: var(--md-accent-fg-color);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+/* Active tab - The complex selector is needed to override Material's default */
+.md-typeset
+  .tabbed-set
+  > input:nth-child(1):checked
+  ~ .tabbed-labels
+  > :nth-child(1),
+.md-typeset
+  .tabbed-set
+  > input:nth-child(2):checked
+  ~ .tabbed-labels
+  > :nth-child(2),
+.md-typeset
+  .tabbed-set
+  > input:nth-child(3):checked
+  ~ .tabbed-labels
+  > :nth-child(3),
+.md-typeset
+  .tabbed-set
+  > input:nth-child(4):checked
+  ~ .tabbed-labels
+  > :nth-child(4),
+.md-typeset
+  .tabbed-set
+  > input:nth-child(5):checked
+  ~ .tabbed-labels
+  > :nth-child(5) {
+  color: var(--md-accent-fg-color) !important;
+  border-bottom-color: var(--md-accent-fg-color) !important;
+  opacity: 1;
+}
+
+/* Tab content container */
+.md-typeset .tabbed-content {
+  background-color: transparent;
+  border-radius: 0 0 0.2rem 0.2rem;
+}

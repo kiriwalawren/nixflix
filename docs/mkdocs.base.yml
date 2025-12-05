@@ -8,23 +8,34 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: deep purple
+    - scheme: latte
+      primary: custom
+      accent: custom
       toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
+        icon: material/weather-sunny
+        name: Switch to Frappé
 
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: deep purple
+    - scheme: frappe
+      primary: custom
+      accent: custom
       toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+        icon: material/weather-night
+        name: Switch to Macchiato
+
+    - scheme: macchiato
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-partly-cloudy
+        name: Switch to Mocha
+
+    - scheme: mocha
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-cloudy
+        name: Switch to Latte
 
   features:
     - navigation.instant
@@ -74,14 +85,19 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.highlight:
+      use_pygments: true
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       base_path: [docs]
       check_paths: true
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -116,6 +132,7 @@ extra:
       link: https://github.com/kiriwalawren/nixflix
 
 extra_css:
+  - stylesheets/catppuccin.css
   - stylesheets/extra.css
 
 copyright: Copyright &copy; 2024 Kiriwa Lawrence. Licensed under GPLv3.
