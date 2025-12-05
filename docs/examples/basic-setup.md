@@ -292,33 +292,6 @@ Replace these with your own values:
 - **DNS servers**: Use your preferred DNS providers
 - **Jellyfin user**: Change `alice` to your username
 
-## Using Tailscale with Mullvad
-
-If you use Tailscale for remote access, add this to route Tailscale around the VPN:
-
-```nix
-{
-  networking.nftables = {
-    enable = true;
-    tables."mullvad-tailscale" = {
-      family = "inet";
-      content = ''
-        chain prerouting {
-          type filter hook prerouting priority -100; policy accept;
-          ip saddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-        }
-
-        chain outgoing {
-          type route hook output priority -100; policy accept;
-          meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-          ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-        }
-      '';
-    };
-  };
-}
-```
-
 ## Next Steps
 
 - Access Prowlarr to verify indexer connections
