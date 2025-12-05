@@ -10,6 +10,7 @@ theme:
   name: material
   palette:
     - scheme: latte
+      media: "(prefers-color-scheme: light)"
       primary: custom
       accent: custom
       toggle:
@@ -31,6 +32,7 @@ theme:
         name: Switch to Mocha
 
     - scheme: mocha
+      media: "(prefers-color-scheme: dark)"
       primary: custom
       accent: custom
       toggle:
