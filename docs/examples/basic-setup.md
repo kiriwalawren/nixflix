@@ -281,42 +281,6 @@ Direct access:
 - SABnzbd: http://localhost:8080
 - Jellyfin: http://localhost:8096
 
-## Secrets Setup
-
-This example uses sops-nix. Your `secrets.yaml` would contain:
-
-```yaml
-sonarr:
-  api_key: ENC[...]
-  password: ENC[...]
-radarr:
-  api_key: ENC[...]
-  password: ENC[...]
-lidarr:
-  api_key: ENC[...]
-  password: ENC[...]
-prowlarr:
-  api_key: ENC[...]
-  password: ENC[...]
-indexer-api-keys:
-  DrunkenSlug: ENC[...]
-  NZBFinder: ENC[...]
-  NzbPlanet: ENC[...]
-sabnzbd:
-  api_key: ENC[...]
-  nzb_key: ENC[...]
-usenet:
-  eweka:
-    username: ENC[...]
-    password: ENC[...]
-  newsgroupdirect:
-    username: ENC[...]
-    password: ENC[...]
-jellyfin:
-  alice_password: ENC[...]
-mullvad-account-number: ENC[...]
-```
-
 ## Customization
 
 Replace these with your own values:
