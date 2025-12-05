@@ -108,8 +108,7 @@ def render_option_markdown(name: str, opt: Dict[str, Any], is_last: bool = False
     description = opt.get("description", "")
     declarations = opt.get("declarations", [])
 
-    option_id = name.replace('.', '-').lower()
-    md = f'## `{name}` {{#{option_id}}}\n\n'
+    md = f'## `{name}`\n\n'
 
     if description:
         md += f"{description}\n\n"
