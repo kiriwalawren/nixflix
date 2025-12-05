@@ -215,6 +215,7 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                 def get_sort_key(name: str) -> tuple:
                     has_star = '.*.' in name or name.endswith('.*')
                     has_name = '.<name>.' in name or name.endswith('.<name>')
+                    is_enable = name.endswith('.enable')
 
                     if page_key == "index":
                         service_enable = f"nixflix.{service}.enable"
@@ -223,16 +224,18 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                         page_enable = f"nixflix.{service}.{page_key}.enable"
                         is_service_enable = name == page_enable
 
-                    is_star_or_name_enable = (has_star or has_name) and name.endswith('.enable')
+                    is_star_or_name_enable = (has_star or has_name) and is_enable
 
                     if is_service_enable:
                         return (0, name)
-                    elif is_star_or_name_enable:
+                    elif not has_star and not has_name and not is_enable:
                         return (1, name)
-                    elif has_star or has_name:
+                    elif is_star_or_name_enable:
                         return (2, name)
-                    else:
+                    elif has_star or has_name:
                         return (3, name)
+                    else:
+                        return (4, name)
 
                 sorted_options = sorted(options, key=lambda x: get_sort_key(x[0]))
                 for i, (name, opt) in enumerate(sorted_options):
