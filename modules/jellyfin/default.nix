@@ -183,7 +183,7 @@ in {
 
     services.nginx = mkIf nixflix.nginx.enable {
       virtualHosts.localhost.locations = {
-        "${cfg.network.baseUrl}" = {
+        "/${cfg.network.baseUrl}" = {
           proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
           recommendedProxySettings = true;
           extraConfig = ''
@@ -193,7 +193,7 @@ in {
             proxy_buffering off;
           '';
         };
-        "${cfg.network.baseUrl}/socket" = {
+        "/${cfg.network.baseUrl}/socket" = {
           proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
           recommendedProxySettings = true;
           extraConfig = ''

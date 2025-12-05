@@ -15,10 +15,10 @@ with lib; {
       type = types.str;
       default =
         if config.nixflix.nginx.enable
-        then "/jellyfin"
+        then "jellyfin"
         else "";
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then "/jellyfin" else ""'';
-      description = "Base URL for Jellyfin (URL prefix)";
+      defaultText = literalExpression ''if config.nixflix.nginx.enable then "jellyfin" else ""'';
+      description = "Base URL for Jellyfin (URL prefix) http://localhost:8096/<baseUrl>";
     };
 
     certificatePassword = mkOption {
