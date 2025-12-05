@@ -90,7 +90,3 @@ nav.md-nav--primary > ul > li > a.md-nav__link {
 .language-nix.highlight .si {
   color: var(--md-code-hl-special-color);
 }
-
-.md-path__link {
-  color: var(--md-default-fg-color);
-}

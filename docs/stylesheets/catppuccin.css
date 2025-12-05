@@ -1037,3 +1037,12 @@
   background-color: transparent;
   border-radius: 0 0 0.2rem 0.2rem;
 }
+
+/* Paths */
+.md-path__item:not(:first-child)::before {
+  background-color: var(--md-default-fg-color);
+}
+
+.md-path__link {
+  color: var(--md-default-fg-color);
+}
