@@ -172,6 +172,7 @@
   --md-code-hl-constant-color: var(--ctp-latte-peach);
   --md-code-hl-keyword-color: var(--ctp-latte-mauve);
   --md-code-hl-string-color: var(--ctp-latte-green);
+  --md-code-hl-string-symbol-color: var(--ctp-latte-blue);
   --md-code-hl-name-color: var(--ctp-latte-text);
   --md-code-hl-operator-color: var(--ctp-latte-sky);
   --md-code-hl-punctuation-color: var(--ctp-latte-overlay2);
@@ -234,6 +235,7 @@
   --md-code-hl-constant-color: var(--ctp-frappe-peach);
   --md-code-hl-keyword-color: var(--ctp-frappe-mauve);
   --md-code-hl-string-color: var(--ctp-frappe-green);
+  --md-code-hl-string-symbol-color: var(--ctp-frappe-blue);
   --md-code-hl-name-color: var(--ctp-frappe-text);
   --md-code-hl-operator-color: var(--ctp-frappe-sky);
   --md-code-hl-punctuation-color: var(--ctp-frappe-overlay2);
@@ -296,6 +298,7 @@
   --md-code-hl-constant-color: var(--ctp-macchiato-peach);
   --md-code-hl-keyword-color: var(--ctp-macchiato-mauve);
   --md-code-hl-string-color: var(--ctp-macchiato-green);
+  --md-code-hl-string-symbol-color: var(--ctp-macchiato-blue);
   --md-code-hl-name-color: var(--ctp-macchiato-text);
   --md-code-hl-operator-color: var(--ctp-macchiato-sky);
   --md-code-hl-punctuation-color: var(--ctp-macchiato-overlay2);
@@ -358,6 +361,7 @@
   --md-code-hl-constant-color: var(--ctp-mocha-peach);
   --md-code-hl-keyword-color: var(--ctp-mocha-mauve);
   --md-code-hl-string-color: var(--ctp-mocha-green);
+  --md-code-hl-string-symbol-color: var(--ctp-mocha-blue);
   --md-code-hl-name-color: var(--ctp-mocha-text);
   --md-code-hl-operator-color: var(--ctp-mocha-sky);
   --md-code-hl-punctuation-color: var(--ctp-mocha-overlay2);

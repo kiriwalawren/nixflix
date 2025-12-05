@@ -84,7 +84,7 @@ nav.md-nav--primary > ul > li > a.md-nav__link {
 }
 
 .language-nix.highlight .ss {
-  color: var(--md-primary-bg-color);
+  color: var(--md-code-hl-string-symbol-color);
 }
 
 .language-nix.highlight .si {
