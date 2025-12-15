@@ -71,19 +71,6 @@ in {
         defaultText = literalExpression "nixflix.radarr.enable";
         description = "Whether to sync Radarr configuration via Recyclarr";
       };
-
-      anime = {
-        enable = mkOption {
-          type = types.bool;
-          # TODO: should default to `nixflix.radarr-anime.enable` when ready
-          default = false;
-          description = ''
-            Whether to enable anime-specific profiles for Radarr.
-            When enabled, BOTH normal and anime quality profiles will be configured,
-            following TRaSH Guides' recommendation for single-instance setups.
-          '';
-        };
-      };
     };
 
     cleanupUnmanagedProfiles = mkOption {
