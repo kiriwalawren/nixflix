@@ -11,11 +11,19 @@ with lib; let
 
   configOption = import ./config-option.nix {inherit lib;};
 
-  sonarrConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-default.nix {inherit config lib;});
-  radarrConfig = optionalAttrs cfg.radarr.enable (import ./radarr-default.nix {inherit config lib;});
+  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix {inherit config lib;});
+  sonarrAnimeConfig = optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) (import ./sonarr-anime.nix {inherit config lib;});
+  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix {inherit config lib;});
   effectiveConfiguration =
     if cfg.config == null
-    then sonarrConfig // radarrConfig
+    then
+      radarrMainConfig
+      {
+        radarr = radarrMainConfig;
+        sonarr =
+          sonarrMainConfig
+          // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) sonarrAnimeConfig;
+      }
     else cfg.config;
 
   cleanupProfilesServices = import ./cleanup-profiles.nix {
