@@ -15,7 +15,11 @@ with lib; let
     serviceName = "prowlarr";
   };
 
-  arrServices = ["lidarr" "radarr" "sonarr"];
+  arrServices =
+    optional nixflix.lidarr.enable "lidarr"
+    ++ optional nixflix.radarr.enable "radarr"
+    ++ optional nixflix.sonarr.enable "sonarr"
+    ++ optional nixflix.sonarr-anime.enable "sonarr-anime";
 
   mkDefaultApplication = serviceName: let
     serviceConfig = nixflix.${serviceName}.config;

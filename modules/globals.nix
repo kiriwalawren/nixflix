@@ -18,6 +18,7 @@ with lib; {
       prowlarr = 293;
       jellyseerr = 262;
       sonarr = 274;
+      sonarr-anime = 273;
       radarr = 275;
       recyclarr = 269;
       sabnzbd = 38;

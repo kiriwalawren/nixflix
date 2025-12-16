@@ -19,6 +19,8 @@ with lib; let
   screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
 
+  serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
+
   mkServarrSettingsOptions = _name:
     lib.mkOption {
       type = lib.types.submodule {
@@ -116,7 +118,7 @@ in {
   options.nixflix.${serviceName} =
     {
       enable = mkEnableOption "${capitalizedName}";
-      package = lib.mkPackageOption pkgs serviceName {};
+      package = lib.mkPackageOption pkgs serviceBase {};
 
       vpn = {
         enable = mkOption {
@@ -148,7 +150,7 @@ in {
         description = "Open ports in the firewall for the Radarr web interface.";
       };
 
-      settings = mkServarrSettingsOptions serviceName;
+      settings = mkServarrSettingsOptions serviceBase;
 
       config = mkOption {
         type = types.submodule {

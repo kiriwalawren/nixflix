@@ -12,7 +12,7 @@ with lib; let
   configOption = import ./config-option.nix {inherit lib;};
 
   sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix {inherit config lib;});
-  sonarrAnimeConfig = optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) (import ./sonarr-anime.nix {inherit config lib;});
+  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (import ./sonarr-anime.nix {inherit config lib;});
   radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix {inherit config lib;});
   effectiveConfiguration =
     if cfg.config == null
@@ -22,7 +22,7 @@ with lib; let
         radarr = radarrMainConfig;
         sonarr =
           sonarrMainConfig
-          // optionalAttrs (cfg.sonarr.enable && cfg.sonarr.anime.enable) sonarrAnimeConfig;
+          // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
       }
     else cfg.config;
 
@@ -57,18 +57,17 @@ in {
         defaultText = literalExpression "nixflix.sonarr.enable";
         description = "Whether to sync Sonarr configuration via Recyclarr";
       };
+    };
 
-      anime = {
-        enable = mkOption {
-          type = types.bool;
-          # TODO: should default to `nixflix.sonarr-anime.enable` when ready
-          default = false;
-          description = ''
-            Whether to enable anime-specific profiles for Sonarr.
-            When enabled, BOTH normal and anime quality profiles will be configured,
-            following TRaSH Guides' recommendation for single-instance setups.
-          '';
-        };
+    sonarr-anime = {
+      enable = mkOption {
+        type = types.bool;
+        default = nixflix.sonarr-anime.enable;
+        description = ''
+          Whether to enable anime-specific profiles for Sonarr.
+          When enabled, BOTH normal and anime quality profiles will be configured,
+          following TRaSH Guides' recommendation for single-instance setups.
+        '';
       };
     };
 
