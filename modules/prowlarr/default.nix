@@ -23,7 +23,18 @@ with lib; let
 
   mkDefaultApplication = serviceName: let
     serviceConfig = nixflix.${serviceName}.config;
-    capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+    # Convert service-name to "Service Name" format (e.g., "sonarr-anime" -> "Sonarr Anime")
+    displayName = lib.concatMapStringsSep " " (
+      word:
+        lib.toUpper (builtins.substring 0 1 word) + builtins.substring 1 (-1) word
+    ) (lib.splitString "-" serviceName);
+    # Map service names to their implementation names (for services with variants like sonarr-anime)
+    implementationName =
+      if lib.hasPrefix "sonarr" serviceName
+      then "Sonarr"
+      else if lib.hasPrefix "radarr" serviceName
+      then "Radarr"
+      else displayName;
     useNginx = nixflix.nginx.enable or false;
     baseUrl =
       if useNginx
@@ -35,8 +46,8 @@ with lib; let
       else "http://127.0.0.1:${toString nixflix.prowlarr.config.hostConfig.port}${nixflix.prowlarr.config.hostConfig.urlBase}";
   in
     mkIf (nixflix.${serviceName}.enable or false) {
-      name = capitalizedName;
-      implementationName = capitalizedName;
+      name = displayName;
+      inherit implementationName;
       apiKeyPath = mkDefault serviceConfig.apiKeyPath;
       baseUrl = mkDefault baseUrl;
       prowlarrUrl = mkDefault prowlarrUrl;
