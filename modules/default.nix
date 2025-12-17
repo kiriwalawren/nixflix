@@ -18,6 +18,7 @@ in {
     ./recyclarr
     ./sabnzbd
     ./sonarr
+    ./sonarr-anime
   ];
 
   options.nixflix = {

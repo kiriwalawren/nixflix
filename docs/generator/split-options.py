@@ -50,11 +50,22 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
 
     return complex_groups
 
+def discover_services(options: Dict[str, Any]) -> List[str]:
+    """Automatically discover all services from the options"""
+    services = set()
+    for name in options.keys():
+        if not name.startswith("nixflix."):
+            continue
+        parts = name.split('.')
+        if len(parts) >= 2:
+            service = parts[1]
+            services.add(service)
+
+    # Sort services alphabetically for consistent ordering
+    return sorted(services)
+
 def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[str, List[tuple]]]:
-    services = [
-        "sonarr", "radarr", "lidarr", "prowlarr",
-        "jellyfin", "sabnzbd", "mullvad", "postgres", "recyclarr"
-    ]
+    services = discover_services(options)
 
     complex_groups = find_common_parent_groups(options)
     categorized = defaultdict(lambda: defaultdict(list))
@@ -156,6 +167,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     service_descriptions = {
         "core": "Top-level nixflix configuration options that apply to the entire system.",
         "sonarr": "Sonarr is a PVR for Usenet and BitTorrent users for TV shows.",
+        "sonarr-anime": "Sonarr is a PVR for Usenet and BitTorrent users for anime TV shows.",
         "radarr": "Radarr is a PVR for Usenet and BitTorrent users for movies.",
         "lidarr": "Lidarr is a PVR for Usenet and BitTorrent users for music.",
         "prowlarr": "Prowlarr is an indexer manager/proxy for Arr applications.",
@@ -320,11 +332,18 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
 def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir: Path):
     """Generate navigation with explicit parent pages"""
     nav_file = output_dir / "nav.yml"
+
+    # Get all services from categorized data, ensure "core" comes first
+    all_services = sorted(categorized.keys())
+    if "core" in all_services:
+        all_services.remove("core")
+        all_services.insert(0, "core")
+
     with open(nav_file, 'w') as f:
         f.write("- Reference:\n")
         f.write("    - reference/index.md\n")
 
-        for service in ["core", "sonarr", "radarr", "lidarr", "prowlarr", "jellyfin", "sabnzbd", "mullvad", "postgres", "recyclarr"]:
+        for service in all_services:
             if service not in categorized or not categorized[service]:
                 continue
 
