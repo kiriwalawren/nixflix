@@ -33,6 +33,12 @@ in {
           paths = nixflix.sonarr.mediaDirs;
         };
       })
+      (mkIf (nixflix.sonarr-anime.enable or false) {
+        Anime = {
+          collectionType = "tvshows";
+          paths = nixflix.sonarr-anime.mediaDirs;
+        };
+      })
       (mkIf (nixflix.radarr.enable or false) {
         Movies = {
           collectionType = "movies";

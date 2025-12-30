@@ -62,10 +62,10 @@ in
     testScript = ''
       start_all()
 
-      # Wait for services to start
-      machine.wait_for_unit("sonarr.service", timeout=60)
+      # Wait for services to start (longer timeout for initial DB migrations)
+      machine.wait_for_unit("sonarr.service", timeout=180)
       machine.wait_for_unit("sabnzbd.service", timeout=60)
-      machine.wait_for_open_port(8989, timeout=60)
+      machine.wait_for_open_port(8989, timeout=180)
       machine.wait_for_open_port(8080, timeout=60)
 
       # Wait for configuration services to complete
@@ -118,7 +118,13 @@ in
           f"Expected SABnzbd download client, found {clients_list[0]['name']}"
       assert clients_list[0]['implementationName'] == 'SABnzbd', \
           "Expected SABnzbd implementation"
-      print("SABnzbd download client configured successfully!")
+
+      # Check that the tvCategory is set to 'sonarr'
+      category_field = next((field for field in clients_list[0]['fields'] if field['name'] == 'tvCategory'), None)
+      assert category_field is not None, "Expected tvCategory field in SABnzbd download client"
+      assert category_field['value'] == 'sonarr', \
+          f"Expected tvCategory 'sonarr', found '{category_field['value']}'"
+      print("SABnzbd download client configured successfully with sonarr category!")
 
       # Check that default delay profile was created
       delay_profiles = machine.succeed(

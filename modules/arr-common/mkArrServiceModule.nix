@@ -13,7 +13,7 @@ with lib; let
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
   rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
-  downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
+  downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName config;};
   delayProfiles = import ./delayProfiles.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
@@ -234,14 +234,26 @@ in {
         };
         downloadClients = mkDefault (
           optionals (nixflix.sabnzbd.enable or false) [
-            {
-              name = "SABnzbd";
-              implementationName = "SABnzbd";
-              inherit (nixflix.sabnzbd) apiKeyPath;
-              inherit (nixflix.sabnzbd.settings) host;
-              inherit (nixflix.sabnzbd.settings) port;
-              urlBase = nixflix.sabnzbd.settings.url_base;
-            }
+            ({
+                name = "SABnzbd";
+                implementationName = "SABnzbd";
+                inherit (nixflix.sabnzbd) apiKeyPath;
+                inherit (nixflix.sabnzbd.settings) host;
+                inherit (nixflix.sabnzbd.settings) port;
+                urlBase = nixflix.sabnzbd.settings.url_base;
+              }
+              // optionalAttrs (serviceName == "radarr") {
+                movieCategory = serviceName;
+              }
+              // optionalAttrs (elem serviceName ["sonarr" "sonarr-anime"]) {
+                tvCategory = serviceName;
+              }
+              // optionalAttrs (serviceName == "lidarr") {
+                musicCategory = serviceName;
+              }
+              // optionalAttrs (serviceName == "prowlarr") {
+                category = serviceName;
+              })
           ]
         );
       };

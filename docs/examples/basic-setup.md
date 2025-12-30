@@ -218,7 +218,9 @@ This example shows a working media server configuration based on a real producti
 
 **Prowlarr Apps**: Automatically configured connections to Sonarr, Radarr, and Lidarr
 
-**SABnzbd Download Client**: Automatically added to all Arr services
+**SABnzbd Download Client**: Automatically configured for each Arr service with service-specific categories
+
+**SABnzbd Categories**: Automatically created based on enabled services (radarr, sonarr, sonarr-anime, lidarr, prowlarr). See the [SABnzbd settings reference](../reference/sabnzbd/index.md#nixflixsabnzbdsettingscategories) for details.
 
 ### Key Features
 
@@ -242,23 +244,23 @@ This example shows a working media server configuration based on a real producti
 ```
 /data/
 ├── media/
-│   ├── tv/              # Standard TV shows → Jellyfin "Shows" library
+│   ├── music/           # Music → Jellyfin "Music" library
 │   ├── anime/           # Anime series → Jellyfin "Shows" library
 │   ├── movies/          # Movies → Jellyfin "Movies" library
-│   └── music/           # Music → Jellyfin "Music" library
+│   └── tv/              # Standard TV shows → Jellyfin "Shows" library
 ├── downloads/
 │   └── usenet/
 │       ├── complete/
 │       └── incomplete/
 └── .state/
-    ├── sonarr/
-    ├── radarr/
+    ├── postgresql/
+    ├── jellyfin/
     ├── lidarr/
     ├── prowlarr/
-    ├── sabnzbd/
-    ├── jellyfin/
+    ├── radarr/
     ├── recyclarr/
-    └── postgresql/
+    ├── sabnzbd/
+    └── sonarr/
 ```
 
 ## Service Access

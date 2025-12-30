@@ -10,15 +10,15 @@ in {
   imports = [
     ./globals.nix
     ./jellyfin
-    ./lidarr
-    ./mullvad
-    ./postgres
+    ./lidarr.nix
+    ./mullvad.nix
+    ./postgres.nix
     ./prowlarr
-    ./radarr
+    ./radarr.nix
     ./recyclarr
     ./sabnzbd
-    ./sonarr
-    ./sonarr-anime
+    ./sonarr.nix
+    ./sonarr-anime.nix
   ];
 
   options.nixflix = {

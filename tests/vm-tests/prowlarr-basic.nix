@@ -45,10 +45,10 @@ in
     testScript = ''
       start_all()
 
-      # Wait for services to start
-      machine.wait_for_unit("prowlarr.service", timeout=60)
+      # Wait for services to start (longer timeout for initial DB migrations)
+      machine.wait_for_unit("prowlarr.service", timeout=180)
       machine.wait_for_unit("sabnzbd.service", timeout=60)
-      machine.wait_for_open_port(9696, timeout=60)
+      machine.wait_for_open_port(9696, timeout=180)
       machine.wait_for_open_port(8080, timeout=60)
 
       # Wait for configuration services to complete

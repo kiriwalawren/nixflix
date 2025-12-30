@@ -2,6 +2,7 @@
   lib,
   pkgs,
   serviceName,
+  config,
 }:
 with lib; let
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
@@ -47,13 +48,26 @@ in {
       List of download clients to configure via the API /downloadclient endpoint.
       Any additional attributes beyond name, implementationName, and apiKeyPath
       will be applied as field values to the download client schema.
-      The useSsl field defaults to true if not specified.
+
+      When SABnzbd is enabled, each service is automatically configured with
+      the appropriate category field:
+      - Radarr uses movieCategory set to "radarr"
+      - Sonarr uses tvCategory set to "sonarr"
+      - Sonarr Anime uses tvCategory set to "sonarr-anime"
+      - Lidarr uses musicCategory set to "lidarr"
+      - Prowlarr uses category set to "prowlarr"
+
+      These categories are automatically created in SABnzbd when the
+      corresponding service is enabled.
     '';
   };
 
-  mkService = serviceConfig: {
+  mkService = serviceConfig: let
+    inherit (lib) optionals;
+    inherit (config) nixflix;
+  in {
     description = "Configure ${serviceName} download clients via API";
-    after = ["${serviceName}-config.service"];
+    after = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-config.service"];
     requires = ["${serviceName}-config.service"];
     wantedBy = ["multi-user.target"];
 

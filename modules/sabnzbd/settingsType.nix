@@ -473,42 +473,60 @@ in
 
       categories = mkOption {
         type = types.listOf categoryType;
-        default = [
-          {
-            name = "movies";
-            dir = "movies";
-            priority = 0;
-            pp = 3;
-            script = "None";
-          }
-          {
-            name = "tv";
-            dir = "tv";
-            priority = 0;
-            pp = 3;
-            script = "None";
-          }
-          {
-            name = "music";
-            dir = "music";
-            priority = 0;
-            pp = 3;
-            script = "None";
-          }
-          {
-            name = "prowlarr";
-            dir = "prowlarr";
-            priority = 0;
-            pp = 3;
-            script = "None";
-          }
-          {
-            name = "*";
-            priority = 0;
-            pp = 3;
-            script = "None";
-          }
-        ];
+        default =
+          lib.optionals (nixflix.radarr.enable or false) [
+            {
+              name = "radarr";
+              dir = "radarr";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ]
+          ++ lib.optionals (nixflix.sonarr.enable or false) [
+            {
+              name = "sonarr";
+              dir = "sonarr";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ]
+          ++ lib.optionals (nixflix.sonarr-anime.enable or false) [
+            {
+              name = "sonarr-anime";
+              dir = "sonarr-anime";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ]
+          ++ lib.optionals (nixflix.lidarr.enable or false) [
+            {
+              name = "lidarr";
+              dir = "lidarr";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ]
+          ++ lib.optionals (nixflix.prowlarr.enable or false) [
+            {
+              name = "prowlarr";
+              dir = "prowlarr";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ]
+          ++ [
+            {
+              name = "*";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+          ];
         example = lib.literalExpression ''
           [
             {
@@ -527,7 +545,12 @@ in
             }
           ]
         '';
-        description = "Download categories";
+        description = ''
+          Download categories. By default, categories are automatically created based on enabled services,
+          using the service name as the category name (radarr, sonarr, sonarr-anime, lidarr, prowlarr).
+
+          A catch-all "*" category is always included.
+        '';
       };
     };
   }

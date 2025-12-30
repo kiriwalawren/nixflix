@@ -7,7 +7,7 @@
   inherit (config) nixflix;
   cfg = config.nixflix.lidarr;
 in {
-  imports = [(import ../arr-common/mkArrServiceModule.nix {inherit config lib pkgs;} "lidarr" {})];
+  imports = [(import ./arr-common/mkArrServiceModule.nix {inherit config lib pkgs;} "lidarr" {})];
 
   config.nixflix.lidarr = {
     group = lib.mkDefault "media";
