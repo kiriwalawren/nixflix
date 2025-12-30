@@ -16,87 +16,9 @@ with lib; let
   downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
   delayProfiles = import ./delayProfiles.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
-  screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
 
   serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
-
-  mkServarrSettingsOptions = _name:
-    lib.mkOption {
-      type = lib.types.submodule {
-        freeformType = (pkgs.formats.ini {}).type;
-        options = {
-          update = {
-            mechanism = lib.mkOption {
-              type = with lib.types;
-                nullOr (enum [
-                  "external"
-                  "builtIn"
-                  "script"
-                ]);
-              description = "which update mechanism to use";
-              default = "external";
-            };
-            automatically = lib.mkOption {
-              type = lib.types.bool;
-              description = "Automatically download and install updates.";
-              default = false;
-            };
-          };
-          server = {
-            port = lib.mkOption {
-              type = lib.types.port;
-              description = "Port Number";
-            };
-          };
-          log = {
-            analyticsEnabled = lib.mkOption {
-              type = lib.types.bool;
-              description = "Send Anonymous Usage Data";
-              default = false;
-            };
-          };
-        };
-      };
-      defaultText = lib.literalExpression ''
-        {
-          auth = {
-            required = "Enabled";
-            method = "Forms";
-          };
-          server = {
-            inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
-          };
-        } // lib.optionalAttrs config.services.postgresql.enable {
-          log.dbEnabled = true;
-          postgres = {
-            user = nixflix.${serviceName}.user;
-            host = "/run/postgresql";
-            port = 5432;
-            mainDb = nixflix.${serviceName}.user;
-            logDb = nixflix.${serviceName}.user;
-          };
-        }
-      '';
-      example = lib.options.literalExpression ''
-        {
-          update.mechanism = "internal";
-          server = {
-            urlbase = "localhost";
-            port = 8989;
-            bindaddress = "*";
-          };
-        }
-      '';
-      default = {};
-      description = ''
-        Attribute set of arbitrary config options.
-        Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
-
-        WARNING: this configuration is stored in the world-readable Nix store!
-        Don't put secrets here!
-      '';
-    };
 
   mkServarrSettingsEnvVars = name: settings:
     lib.pipe settings [
@@ -150,7 +72,81 @@ in {
         description = "Open ports in the firewall for the Radarr web interface.";
       };
 
-      settings = mkServarrSettingsOptions serviceBase;
+      settings = lib.mkOption {
+        type = lib.types.submodule {
+          freeformType = (pkgs.formats.ini {}).type;
+          options = {
+            update = {
+              mechanism = lib.mkOption {
+                type = with lib.types;
+                  nullOr (enum [
+                    "external"
+                    "builtIn"
+                    "script"
+                  ]);
+                description = "which update mechanism to use";
+                default = "external";
+              };
+              automatically = lib.mkOption {
+                type = lib.types.bool;
+                description = "Automatically download and install updates.";
+                default = false;
+              };
+            };
+            server = {
+              port = lib.mkOption {
+                type = lib.types.port;
+                description = "Port Number";
+              };
+            };
+            log = {
+              analyticsEnabled = lib.mkOption {
+                type = lib.types.bool;
+                description = "Send Anonymous Usage Data";
+                default = false;
+              };
+            };
+          };
+        };
+        defaultText = lib.literalExpression ''
+          {
+            auth = {
+              required = "Enabled";
+              method = "Forms";
+            };
+            server = {
+              inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
+            };
+          } // lib.optionalAttrs config.services.postgresql.enable {
+            log.dbEnabled = true;
+            postgres = {
+              user = nixflix.${serviceName}.user;
+              host = "/run/postgresql";
+              port = 5432;
+              mainDb = nixflix.${serviceName}.user;
+              logDb = nixflix.${serviceName}.user;
+            };
+          }
+        '';
+        example = lib.options.literalExpression ''
+          {
+            update.mechanism = "internal";
+            server = {
+              urlbase = "localhost";
+              port = 8989;
+              bindaddress = "*";
+            };
+          }
+        '';
+        default = {};
+        description = ''
+          Attribute set of arbitrary config options.
+          Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
+
+          WARNING: this configuration is stored in the world-readable Nix store!
+          Don't put secrets here!
+        '';
+      };
 
       config = mkOption {
         type = types.submodule {
@@ -342,7 +338,7 @@ in {
 
         ${serviceName} = {
           description = capitalizedName;
-          environment = mkServarrSettingsEnvVars screamingName cfg.settings;
+          environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
           after =
             ["network.target"]

@@ -4,8 +4,8 @@
 }: serviceName: serviceConfig:
 pkgs.writeShellScript "${serviceName}-wait-for-api" (let
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
-  screamingName = lib.toUpper serviceName;
-  apiKeyEnvVar = screamingName + "__AUTH__APIKEY";
+  screamingServiceBase = lib.toUpper (builtins.elemAt (lib.splitString "-" serviceName) 0);
+  apiKeyEnvVar = screamingServiceBase + "__AUTH__APIKEY";
 in ''
   if [ -n "${"$"}{${apiKeyEnvVar}:-}" ]; then
     API_KEY="${"$"}${apiKeyEnvVar}"
