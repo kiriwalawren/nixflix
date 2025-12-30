@@ -565,9 +565,9 @@
    UI Improvements
    ======================================== */
 
-/* Hide permalink symbols (¶) */
+/* Permalink symbols (¶) */
 .md-typeset .headerlink {
-  display: none;
+  color: var(--md-default-fg-color);
 }
 
 /* Make headings bolder and ensure visibility */
