@@ -21,26 +21,26 @@ with lib; let
   serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
 
   mkServarrSettingsEnvVars = name: settings:
-    lib.pipe settings [
-      (lib.mapAttrsRecursive (
+    pipe settings [
+      (mapAttrsRecursive (
         path: value:
-          lib.optionalAttrs (value != null) {
-            name = lib.toUpper "${name}__${lib.concatStringsSep "__" path}";
+          optionalAttrs (value != null) {
+            name = toUpper "${name}__${concatStringsSep "__" path}";
             value = toString (
-              if lib.isBool value
-              then lib.boolToString value
+              if isBool value
+              then boolToString value
               else value
             );
           }
       ))
-      (lib.collect (x: lib.isString x.name or false && lib.isString x.value or false))
-      lib.listToAttrs
+      (collect (x: isString x.name or false && isString x.value or false))
+      listToAttrs
     ];
 in {
   options.nixflix.${serviceName} =
     {
       enable = mkEnableOption "${capitalizedName}";
-      package = lib.mkPackageOption pkgs serviceBase {};
+      package = mkPackageOption pkgs serviceBase {};
 
       vpn = {
         enable = mkOption {
@@ -66,19 +66,26 @@ in {
         description = "Group under which the service runs";
       };
 
-      openFirewall = lib.mkOption {
-        type = lib.types.bool;
+      openFirewall = mkOption {
+        type = types.bool;
         default = false;
         description = "Open ports in the firewall for the Radarr web interface.";
       };
 
-      settings = lib.mkOption {
-        type = lib.types.submodule {
+      settings = mkOption {
+        type = types.submodule {
           freeformType = (pkgs.formats.ini {}).type;
           options = {
+            app = {
+              instanceName = mkOption {
+                type = types.str;
+                description = "Name of the instance";
+                default = capitalizedName;
+              };
+            };
             update = {
-              mechanism = lib.mkOption {
-                type = with lib.types;
+              mechanism = mkOption {
+                type = with types;
                   nullOr (enum [
                     "external"
                     "builtIn"
@@ -87,28 +94,28 @@ in {
                 description = "which update mechanism to use";
                 default = "external";
               };
-              automatically = lib.mkOption {
-                type = lib.types.bool;
+              automatically = mkOption {
+                type = types.bool;
                 description = "Automatically download and install updates.";
                 default = false;
               };
             };
             server = {
-              port = lib.mkOption {
-                type = lib.types.port;
+              port = mkOption {
+                type = types.port;
                 description = "Port Number";
               };
             };
             log = {
-              analyticsEnabled = lib.mkOption {
-                type = lib.types.bool;
+              analyticsEnabled = mkOption {
+                type = types.bool;
                 description = "Send Anonymous Usage Data";
                 default = false;
               };
             };
           };
         };
-        defaultText = lib.literalExpression ''
+        defaultText = literalExpression ''
           {
             auth = {
               required = "Enabled";
@@ -117,7 +124,7 @@ in {
             server = {
               inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
             };
-          } // lib.optionalAttrs config.services.postgresql.enable {
+          } // optionalAttrs config.services.postgresql.enable {
             log.dbEnabled = true;
             postgres = {
               user = nixflix.${serviceName}.user;
@@ -128,7 +135,7 @@ in {
             };
           }
         '';
-        example = lib.options.literalExpression ''
+        example = options.literalExpression ''
           {
             update.mechanism = "internal";
             server = {
@@ -216,7 +223,7 @@ in {
       config = {
         apiKeyPath = mkDefault null;
         hostConfig = {
-          username = mkDefault serviceName;
+          username = mkDefault serviceBase;
           passwordPath = mkDefault null;
           instanceName = mkDefault capitalizedName;
           urlBase = mkDefault (
@@ -293,7 +300,7 @@ in {
         };
     };
 
-    networking.firewall = lib.mkIf cfg.openFirewall {
+    networking.firewall = mkIf cfg.openFirewall {
       allowedTCPPorts = [cfg.config.hostConfig.port];
     };
 
@@ -385,7 +392,7 @@ in {
           };
 
           script = let
-            envVar = toUpper serviceName + "__AUTH__APIKEY";
+            envVar = toUpper serviceBase + "__AUTH__APIKEY";
           in ''
             mkdir -p /run/${serviceName}
             echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env
