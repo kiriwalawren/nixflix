@@ -9,6 +9,7 @@ with lib; let
   inherit (config) nixflix;
   cfg = nixflix.recyclarr;
 
+  # TODO we also need to support `sonarr-anime`
   sonarrBaseUrl =
     optionalString cfg.sonarr.enable
     "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
