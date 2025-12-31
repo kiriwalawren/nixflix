@@ -224,8 +224,6 @@ This example shows a working media server configuration based on a real producti
 
 ### Key Features
 
-**Delay Profiles**: All Arr services prefer Usenet with immediate downloads, but wait 6 hours for torrents
-
 **SABnzbd Servers**: Primary server (Eweka) with backup server (NewsgroupDirect) that's marked as optional
 
 **Jellyfin Users**: Single admin user with immutable configuration
