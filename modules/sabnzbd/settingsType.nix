@@ -527,18 +527,38 @@ in
               script = "None";
             }
           ];
+        defaultText = lib.literalExpression ''
+          lib.optionals (nixflix.radarr.enable or false) [
+            { name = "radarr"; dir = "radarr"; priority = 0; pp = 3; script = "None"; }
+          ]
+          ++ lib.optionals (nixflix.sonarr.enable or false) [
+            { name = "sonarr"; dir = "sonarr"; priority = 0; pp = 3; script = "None"; }
+          ]
+          ++ lib.optionals (nixflix.sonarr-anime.enable or false) [
+            { name = "sonarr-anime"; dir = "sonarr-anime"; priority = 0; pp = 3; script = "None"; }
+          ]
+          ++ lib.optionals (nixflix.lidarr.enable or false) [
+            { name = "lidarr"; dir = "lidarr"; priority = 0; pp = 3; script = "None"; }
+          ]
+          ++ lib.optionals (nixflix.prowlarr.enable or false) [
+            { name = "prowlarr"; dir = "prowlarr"; priority = 0; pp = 3; script = "None"; }
+          ]
+          ++ [
+            { name = "*"; priority = 0; pp = 3; script = "None"; }
+          ]
+        '';
         example = lib.literalExpression ''
           [
             {
-              name = "movies";
-              dir = "movies";
+              name = "radarr";
+              dir = "radarr";
               priority = 0;
               pp = 3;
               script = "None";
             }
             {
-              name = "tv";
-              dir = "tv";
+              name = "sonarr";
+              dir = "sonarr";
               priority = 0;
               pp = 3;
               script = "None";

@@ -220,7 +220,7 @@ This example shows a working media server configuration based on a real producti
 
 **SABnzbd Download Client**: Automatically configured for each Arr service with service-specific categories
 
-**SABnzbd Categories**: Automatically created based on enabled services (radarr, sonarr, sonarr-anime, lidarr, prowlarr). See the [SABnzbd settings reference](../reference/sabnzbd/index.md#nixflixsabnzbdsettingscategories) for details.
+**SABnzbd Categories**: Automatically created based on enabled services (radarr, sonarr, sonarr-anime, lidarr, prowlarr).
 
 ### Key Features
 

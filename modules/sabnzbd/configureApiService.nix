@@ -130,6 +130,27 @@ with lib; {
       echo "Configuring categories..."
       CATEGORIES_JSON='${builtins.toJSON cfg.settings.categories}'
 
+      # Get current configuration to find existing categories
+      CURRENT_CONFIG=$(api_call "get_config")
+      EXISTING_CATEGORIES=$(echo "$CURRENT_CONFIG" | ${pkgs.jq}/bin/jq -r '.config.categories[].name')
+
+      # Build list of configured category names
+      CONFIGURED_NAMES=$(echo "$CATEGORIES_JSON" | ${pkgs.jq}/bin/jq -r '.[].name')
+
+      # Delete categories not in configuration
+      echo "Removing categories not in configuration..."
+      for existing_cat in $EXISTING_CATEGORIES; do
+        if ! echo "$CONFIGURED_NAMES" | grep -qx "$existing_cat"; then
+          echo "Deleting category not in config: $existing_cat"
+          if api_call "del_config" "section=categories" "keyword=$existing_cat" >/dev/null 2>&1; then
+            echo "Deleted category: $existing_cat"
+          else
+            echo "Warning: Failed to delete category: $existing_cat"
+          fi
+        fi
+      done
+
+      # Add/update configured categories
       echo "$CATEGORIES_JSON" | ${pkgs.jq}/bin/jq -c '.[]' | while IFS= read -r category; do
         name=$(echo "$category" | ${pkgs.jq}/bin/jq -r '.name')
 
