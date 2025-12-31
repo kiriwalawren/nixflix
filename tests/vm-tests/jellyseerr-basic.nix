@@ -11,7 +11,7 @@ in
   pkgsUnfree.testers.runNixOSTest {
     name = "jellyseerr-basic-test";
 
-    nodes.machine = {pkgs, ...}: {
+    nodes.machine = {...}: {
       imports = [nixosModules];
 
       nixflix = {
