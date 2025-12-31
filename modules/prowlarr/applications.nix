@@ -103,7 +103,7 @@ in {
               --arg apiKey "$api_key" \
               --argjson overrides "$overrides" '
                 .fields[] |= (if .name == "apiKey" then .value = $apiKey else . end)
-                | . + $overrides
+                | .name = $overrides.name
                 | .fields[] |= (
                     . as $field |
                     if $overrides[$field.name] != null then

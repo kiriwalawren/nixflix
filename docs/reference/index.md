@@ -25,6 +25,7 @@ Each option is documented with:
 ### Media Management
 
 - [Sonarr](sonarr/index.md) - TV show management
+- [Sonarr Anime](sonarr-anime/index.md) - Anime management
 - [Radarr](radarr/index.md) - Movie management
 - [Lidarr](lidarr/index.md) - Music management
 - [Prowlarr](prowlarr/index.md) - Indexer management

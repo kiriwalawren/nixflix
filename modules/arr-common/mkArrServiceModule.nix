@@ -13,110 +13,34 @@ with lib; let
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
   rootFolders = import ./rootFolders.nix {inherit lib pkgs serviceName;};
-  downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName;};
+  downloadClients = import ./downloadClients.nix {inherit lib pkgs serviceName config;};
   delayProfiles = import ./delayProfiles.nix {inherit lib pkgs serviceName;};
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
-  screamingName = toUpper serviceName;
   usesMediaDirs = !(elem serviceName ["prowlarr"]);
 
-  mkServarrSettingsOptions = _name:
-    lib.mkOption {
-      type = lib.types.submodule {
-        freeformType = (pkgs.formats.ini {}).type;
-        options = {
-          update = {
-            mechanism = lib.mkOption {
-              type = with lib.types;
-                nullOr (enum [
-                  "external"
-                  "builtIn"
-                  "script"
-                ]);
-              description = "which update mechanism to use";
-              default = "external";
-            };
-            automatically = lib.mkOption {
-              type = lib.types.bool;
-              description = "Automatically download and install updates.";
-              default = false;
-            };
-          };
-          server = {
-            port = lib.mkOption {
-              type = lib.types.port;
-              description = "Port Number";
-            };
-          };
-          log = {
-            analyticsEnabled = lib.mkOption {
-              type = lib.types.bool;
-              description = "Send Anonymous Usage Data";
-              default = false;
-            };
-          };
-        };
-      };
-      defaultText = lib.literalExpression ''
-        {
-          auth = {
-            required = "Enabled";
-            method = "Forms";
-          };
-          server = {
-            inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
-          };
-        } // lib.optionalAttrs config.services.postgresql.enable {
-          log.dbEnabled = true;
-          postgres = {
-            user = nixflix.${serviceName}.user;
-            host = "/run/postgresql";
-            port = 5432;
-            mainDb = nixflix.${serviceName}.user;
-            logDb = nixflix.${serviceName}.user;
-          };
-        }
-      '';
-      example = lib.options.literalExpression ''
-        {
-          update.mechanism = "internal";
-          server = {
-            urlbase = "localhost";
-            port = 8989;
-            bindaddress = "*";
-          };
-        }
-      '';
-      default = {};
-      description = ''
-        Attribute set of arbitrary config options.
-        Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
-
-        WARNING: this configuration is stored in the world-readable Nix store!
-        Don't put secrets here!
-      '';
-    };
+  serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
 
   mkServarrSettingsEnvVars = name: settings:
-    lib.pipe settings [
-      (lib.mapAttrsRecursive (
+    pipe settings [
+      (mapAttrsRecursive (
         path: value:
-          lib.optionalAttrs (value != null) {
-            name = lib.toUpper "${name}__${lib.concatStringsSep "__" path}";
+          optionalAttrs (value != null) {
+            name = toUpper "${name}__${concatStringsSep "__" path}";
             value = toString (
-              if lib.isBool value
-              then lib.boolToString value
+              if isBool value
+              then boolToString value
               else value
             );
           }
       ))
-      (lib.collect (x: lib.isString x.name or false && lib.isString x.value or false))
-      lib.listToAttrs
+      (collect (x: isString x.name or false && isString x.value or false))
+      listToAttrs
     ];
 in {
   options.nixflix.${serviceName} =
     {
       enable = mkEnableOption "${capitalizedName}";
-      package = lib.mkPackageOption pkgs serviceName {};
+      package = mkPackageOption pkgs serviceBase {};
 
       vpn = {
         enable = mkOption {
@@ -142,13 +66,94 @@ in {
         description = "Group under which the service runs";
       };
 
-      openFirewall = lib.mkOption {
-        type = lib.types.bool;
+      openFirewall = mkOption {
+        type = types.bool;
         default = false;
         description = "Open ports in the firewall for the Radarr web interface.";
       };
 
-      settings = mkServarrSettingsOptions serviceName;
+      settings = mkOption {
+        type = types.submodule {
+          freeformType = (pkgs.formats.ini {}).type;
+          options = {
+            app = {
+              instanceName = mkOption {
+                type = types.str;
+                description = "Name of the instance";
+                default = capitalizedName;
+              };
+            };
+            update = {
+              mechanism = mkOption {
+                type = with types;
+                  nullOr (enum [
+                    "external"
+                    "builtIn"
+                    "script"
+                  ]);
+                description = "which update mechanism to use";
+                default = "external";
+              };
+              automatically = mkOption {
+                type = types.bool;
+                description = "Automatically download and install updates.";
+                default = false;
+              };
+            };
+            server = {
+              port = mkOption {
+                type = types.port;
+                description = "Port Number";
+              };
+            };
+            log = {
+              analyticsEnabled = mkOption {
+                type = types.bool;
+                description = "Send Anonymous Usage Data";
+                default = false;
+              };
+            };
+          };
+        };
+        defaultText = literalExpression ''
+          {
+            auth = {
+              required = "Enabled";
+              method = "Forms";
+            };
+            server = {
+              inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
+            };
+          } // optionalAttrs config.services.postgresql.enable {
+            log.dbEnabled = true;
+            postgres = {
+              user = nixflix.${serviceName}.user;
+              host = "/run/postgresql";
+              port = 5432;
+              mainDb = nixflix.${serviceName}.user;
+              logDb = nixflix.${serviceName}.user;
+            };
+          }
+        '';
+        example = options.literalExpression ''
+          {
+            update.mechanism = "internal";
+            server = {
+              urlbase = "localhost";
+              port = 8989;
+              bindaddress = "*";
+            };
+          }
+        '';
+        default = {};
+        description = ''
+          Attribute set of arbitrary config options.
+          Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
+
+          WARNING: this configuration is stored in the world-readable Nix store!
+          Don't put secrets here!
+        '';
+      };
 
       config = mkOption {
         type = types.submodule {
@@ -218,7 +223,7 @@ in {
       config = {
         apiKeyPath = mkDefault null;
         hostConfig = {
-          username = mkDefault serviceName;
+          username = mkDefault serviceBase;
           passwordPath = mkDefault null;
           instanceName = mkDefault capitalizedName;
           urlBase = mkDefault (
@@ -229,14 +234,26 @@ in {
         };
         downloadClients = mkDefault (
           optionals (nixflix.sabnzbd.enable or false) [
-            {
-              name = "SABnzbd";
-              implementationName = "SABnzbd";
-              inherit (nixflix.sabnzbd) apiKeyPath;
-              inherit (nixflix.sabnzbd.settings) host;
-              inherit (nixflix.sabnzbd.settings) port;
-              urlBase = nixflix.sabnzbd.settings.url_base;
-            }
+            ({
+                name = "SABnzbd";
+                implementationName = "SABnzbd";
+                inherit (nixflix.sabnzbd) apiKeyPath;
+                inherit (nixflix.sabnzbd.settings) host;
+                inherit (nixflix.sabnzbd.settings) port;
+                urlBase = nixflix.sabnzbd.settings.url_base;
+              }
+              // optionalAttrs (serviceName == "radarr") {
+                movieCategory = serviceName;
+              }
+              // optionalAttrs (elem serviceName ["sonarr" "sonarr-anime"]) {
+                tvCategory = serviceName;
+              }
+              // optionalAttrs (serviceName == "lidarr") {
+                musicCategory = serviceName;
+              }
+              // optionalAttrs (serviceName == "prowlarr") {
+                category = serviceName;
+              })
           ]
         );
       };
@@ -295,7 +312,7 @@ in {
         };
     };
 
-    networking.firewall = lib.mkIf cfg.openFirewall {
+    networking.firewall = mkIf cfg.openFirewall {
       allowedTCPPorts = [cfg.config.hostConfig.port];
     };
 
@@ -340,7 +357,7 @@ in {
 
         ${serviceName} = {
           description = capitalizedName;
-          environment = mkServarrSettingsEnvVars screamingName cfg.settings;
+          environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
           after =
             ["network.target"]
@@ -387,7 +404,7 @@ in {
           };
 
           script = let
-            envVar = toUpper serviceName + "__AUTH__APIKEY";
+            envVar = toUpper serviceBase + "__AUTH__APIKEY";
           in ''
             mkdir -p /run/${serviceName}
             echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env

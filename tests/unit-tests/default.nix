@@ -54,6 +54,33 @@ in {
   in
     assertTest "sonarr-service-generation" hasAllServices;
 
+  # Test that nixflix.sonarr-anime options generate correct systemd units
+  sonarr-anime-service-generation = let
+    config = evalConfig [
+      {
+        nixflix = {
+          enable = true;
+          sonarr-anime = {
+            enable = true;
+            user = "testuser";
+            config = {
+              hostConfig = {
+                port = 8990;
+                username = "admin";
+                passwordPath = "/run/secrets/sonarr-pass";
+              };
+              apiKeyPath = "/run/secrets/sonarr-api";
+              rootFolders = [{path = "/media/anime";}];
+            };
+          };
+        };
+      }
+    ];
+    systemdUnits = config.config.systemd.services;
+    hasAllServices = systemdUnits ? sonarr-anime && systemdUnits ? sonarr-anime-config && systemdUnits ? sonarr-anime-rootfolders;
+  in
+    assertTest "sonarr-anime-service-generation" hasAllServices;
+
   # Test that radarr options generate correct systemd units
   radarr-service-generation = let
     config = evalConfig [

@@ -15,11 +15,24 @@ with lib; let
     serviceName = "prowlarr";
   };
 
-  arrServices = ["lidarr" "radarr" "sonarr"];
+  arrServices =
+    optional nixflix.lidarr.enable "lidarr"
+    ++ optional nixflix.radarr.enable "radarr"
+    ++ optional nixflix.sonarr.enable "sonarr"
+    ++ optional nixflix.sonarr-anime.enable "sonarr-anime";
 
   mkDefaultApplication = serviceName: let
     serviceConfig = nixflix.${serviceName}.config;
-    capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+    # Convert service-name to "Service Name" format (e.g., "sonarr-anime" -> "Sonarr Anime")
+    displayName = concatMapStringsSep " " (
+      word:
+        toUpper (builtins.substring 0 1 word) + builtins.substring 1 (-1) word
+    ) (splitString "-" serviceName);
+
+    # Map service names to their implementation names (for services with variants like sonarr-anime)
+    serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
+    implementationName = toUpper (substring 0 1 serviceBase) + substring 1 (-1) serviceBase;
+
     useNginx = nixflix.nginx.enable or false;
     baseUrl =
       if useNginx
@@ -31,8 +44,8 @@ with lib; let
       else "http://127.0.0.1:${toString nixflix.prowlarr.config.hostConfig.port}${nixflix.prowlarr.config.hostConfig.urlBase}";
   in
     mkIf (nixflix.${serviceName}.enable or false) {
-      name = capitalizedName;
-      implementationName = capitalizedName;
+      name = displayName;
+      inherit implementationName;
       apiKeyPath = mkDefault serviceConfig.apiKeyPath;
       baseUrl = mkDefault baseUrl;
       prowlarrUrl = mkDefault prowlarrUrl;

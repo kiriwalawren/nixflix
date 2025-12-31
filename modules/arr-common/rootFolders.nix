@@ -14,7 +14,8 @@ in {
       List of root folders to create via the API /rootfolder endpoint.
       Each folder is an attribute set that will be converted to JSON and sent to the API.
 
-      For Sonarr/Radarr, a simple path is sufficient: {path = "/path/to/folder";}
+      For Sonarr/Radarr, a simple path is sufficient: `{path = "/path/to/folder";}`
+
       For Lidarr, additional fields are required like defaultQualityProfileId, etc.
     '';
   };

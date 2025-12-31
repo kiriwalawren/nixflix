@@ -62,10 +62,10 @@ in
     testScript = ''
       start_all()
 
-      # Wait for services to start
-      machine.wait_for_unit("radarr.service", timeout=60)
+      # Wait for services to start (longer timeout for initial DB migrations)
+      machine.wait_for_unit("radarr.service", timeout=180)
       machine.wait_for_unit("sabnzbd.service", timeout=60)
-      machine.wait_for_open_port(7878, timeout=60)
+      machine.wait_for_open_port(7878, timeout=180)
       machine.wait_for_open_port(8080, timeout=60)
 
       # Wait for configuration services to complete
@@ -108,7 +108,13 @@ in
           f"Expected SABnzbd download client, found {clients_list[0]['name']}"
       assert clients_list[0]['implementationName'] == 'SABnzbd', \
           "Expected SABnzbd implementation"
-      print("SABnzbd download client configured successfully!")
+
+      # Check that the movieCategory is set to 'radarr'
+      category_field = next((field for field in clients_list[0]['fields'] if field['name'] == 'movieCategory'), None)
+      assert category_field is not None, "Expected movieCategory field in SABnzbd download client"
+      assert category_field['value'] == 'radarr', \
+          f"Expected movieCategory 'radarr', found '{category_field['value']}'"
+      print("SABnzbd download client configured successfully with radarr category!")
 
       # Check that default delay profile was created
       delay_profiles = machine.succeed(

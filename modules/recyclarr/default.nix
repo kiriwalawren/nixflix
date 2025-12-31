@@ -11,11 +11,17 @@ with lib; let
 
   configOption = import ./config-option.nix {inherit lib;};
 
-  sonarrConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-default.nix {inherit config lib;});
-  radarrConfig = optionalAttrs cfg.radarr.enable (import ./radarr-default.nix {inherit config lib;});
+  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix {inherit config;});
+  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (import ./sonarr-anime.nix {inherit config;});
+  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix {inherit config;});
   effectiveConfiguration =
     if cfg.config == null
-    then sonarrConfig // radarrConfig
+    then {
+      radarr = radarrMainConfig;
+      sonarr =
+        sonarrMainConfig
+        // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
+    }
     else cfg.config;
 
   cleanupProfilesServices = import ./cleanup-profiles.nix {
@@ -49,18 +55,17 @@ in {
         defaultText = literalExpression "nixflix.sonarr.enable";
         description = "Whether to sync Sonarr configuration via Recyclarr";
       };
+    };
 
-      anime = {
-        enable = mkOption {
-          type = types.bool;
-          # TODO: should default to `nixflix.sonarr-anime.enable` when ready
-          default = false;
-          description = ''
-            Whether to enable anime-specific profiles for Sonarr.
-            When enabled, BOTH normal and anime quality profiles will be configured,
-            following TRaSH Guides' recommendation for single-instance setups.
-          '';
-        };
+    sonarr-anime = {
+      enable = mkOption {
+        type = types.bool;
+        default = nixflix.sonarr-anime.enable;
+        description = ''
+          Whether to enable anime-specific profiles for Sonarr.
+          When enabled, BOTH normal and anime quality profiles will be configured,
+          following TRaSH Guides' recommendation for single-instance setups.
+        '';
       };
     };
 
@@ -70,19 +75,6 @@ in {
         default = nixflix.radarr.enable;
         defaultText = literalExpression "nixflix.radarr.enable";
         description = "Whether to sync Radarr configuration via Recyclarr";
-      };
-
-      anime = {
-        enable = mkOption {
-          type = types.bool;
-          # TODO: should default to `nixflix.radarr-anime.enable` when ready
-          default = false;
-          description = ''
-            Whether to enable anime-specific profiles for Radarr.
-            When enabled, BOTH normal and anime quality profiles will be configured,
-            following TRaSH Guides' recommendation for single-instance setups.
-          '';
-        };
       };
     };
 
