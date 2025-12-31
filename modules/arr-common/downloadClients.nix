@@ -68,7 +68,7 @@ in {
   in {
     description = "Configure ${serviceName} download clients via API";
     after = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-config.service"];
-    requires = ["${serviceName}-config.service"];
+    requires = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-config.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
