@@ -474,6 +474,7 @@ in
       categories = mkOption {
         type = types.listOf categoryType;
         default =
+          # TODO let's use lib.optional instead of lib.optionals
           lib.optionals (nixflix.radarr.enable or false) [
             {
               name = "radarr";
@@ -527,6 +528,7 @@ in
               script = "None";
             }
           ];
+        # TODO let's use lib.optional instead of lib.optionals
         defaultText = lib.literalExpression ''
           lib.optionals (nixflix.radarr.enable or false) [
             { name = "radarr"; dir = "radarr"; priority = 0; pp = 3; script = "None"; }

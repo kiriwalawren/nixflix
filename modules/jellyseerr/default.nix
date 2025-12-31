@@ -8,68 +8,47 @@ with lib; let
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
-  stateDir = "${nixflix.stateDir}/jellyseerr";
 in {
-  options.nixflix.jellyseerr = {
-    enable = mkEnableOption "Jellyseerr media request manager";
-
-    package = mkPackageOption pkgs "jellyseerr" {};
-
-    apiKeyPath = mkOption {
-      type = types.nullOr types.path;
-      default = null;
-      description = "Path to API key secret file";
-    };
-
-    user = mkOption {
-      type = types.str;
-      default = "jellyseerr";
-      description = "User under which the service runs";
-    };
-
-    group = mkOption {
-      type = types.str;
-      default = "jellyseerr";
-      description = "Group under which the service runs";
-    };
-
-    dataDir = mkOption {
-      type = types.path;
-      default = stateDir;
-      defaultText = literalExpression ''"''${nixflix.stateDir}/jellyseerr"'';
-      description = "Directory containing jellyseerr data and configuration";
-    };
-
-    port = mkOption {
-      type = types.port;
-      default = 5055;
-      description = "Port on which jellyseerr listens";
-    };
-
-    openFirewall = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Open port in firewall for jellyseerr";
-    };
-
-    vpn = {
-      enable = mkOption {
-        type = types.bool;
-        default = true;
-        description = ''
-          Whether to route Jellyseerr traffic through the VPN.
-          When true (default), Jellyseerr routes through the VPN (requires nixflix.mullvad.enable = true).
-          When false, Jellyseerr bypasses the VPN.
-        '';
-      };
-    };
-  };
+  imports = [
+    ./options
+    ./setupService.nix
+    ./userSettingsService.nix
+    ./librarySyncService.nix
+    ./radarrService.nix
+    ./sonarrService.nix
+  ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    assertions = [
+    assertions = let
+      radarrDefaults = filter (r: r.isDefault) cfg.radarr;
+      radarrDefaultCount = length radarrDefaults;
+      radarrDefault4k = filter (r: r.is4k) radarrDefaults;
+      radarrDefaultNon4k = filter (r: !r.is4k) radarrDefaults;
+
+      sonarrDefaults = filter (s: s.isDefault) cfg.sonarr;
+      sonarrDefaultCount = length sonarrDefaults;
+      sonarrDefault4k = filter (s: s.is4k) sonarrDefaults;
+      sonarrDefaultNon4k = filter (s: !s.is4k) sonarrDefaults;
+    in [
       {
         assertion = cfg.vpn.enable -> nixflix.mullvad.enable;
         message = "Cannot enable VPN routing for Jellyseerr (nixflix.jellyseerr.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
+      }
+      {
+        assertion = radarrDefaultCount <= 2;
+        message = "Cannot have more than 2 default Radarr instances in jellyseerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
+      }
+      {
+        assertion = radarrDefaultCount != 2 || (length radarrDefault4k == 1 && length radarrDefaultNon4k == 1);
+        message = "When there are 2 default Radarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
+      }
+      {
+        assertion = sonarrDefaultCount <= 2;
+        message = "Cannot have more than 2 default Sonarr instances in jellyseerr.sonarr. Found ${toString sonarrDefaultCount} instances with isDefault = true.";
+      }
+      {
+        assertion = sonarrDefaultCount != 2 || (length sonarrDefault4k == 1 && length sonarrDefaultNon4k == 1);
+        message = "When there are 2 default Sonarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
       }
     ];
 
@@ -166,18 +145,18 @@ in {
 
         wantedBy = ["multi-user.target"];
 
-        environment = {
-          PORT = toString cfg.port;
-          CONFIG_DIRECTORY = cfg.dataDir;
-        };
-        # TODO uncomment after done testing
-        # // optionalAttrs config.services.postgresql.enable {
-        #   DB_TYPE = "postgres";
-        #   DB_SOCKET_PATH = "/run/postgresql";
-        #   DB_USER = cfg.user;
-        #   DB_NAME = cfg.user;
-        #   DB_LOG_QUERIES = "false";
-        # };
+        environment =
+          {
+            PORT = toString cfg.port;
+            CONFIG_DIRECTORY = cfg.dataDir;
+          }
+          // optionalAttrs config.services.postgresql.enable {
+            DB_TYPE = "postgres";
+            DB_SOCKET_PATH = "/run/postgresql";
+            DB_USER = cfg.user;
+            DB_NAME = cfg.user;
+            DB_LOG_QUERIES = "false";
+          };
 
         serviceConfig =
           {

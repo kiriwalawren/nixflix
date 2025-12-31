@@ -10,7 +10,7 @@ in {
   imports = [
     ./globals.nix
     ./jellyfin
-    ./jellyseerr.nix
+    ./jellyseerr
     ./lidarr.nix
     ./mullvad.nix
     ./postgres.nix
