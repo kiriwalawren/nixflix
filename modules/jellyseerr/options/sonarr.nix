@@ -183,9 +183,10 @@ in {
   options.nixflix.jellyseerr.sonarr = mkOption {
     type = types.listOf sonarrServerModule;
     default = defaultInstances;
-    defaultText = "Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `[]`.";
     description = ''
       List of Sonarr instances to configure.
+
+      Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `[]`.
     '';
     example = [
       {

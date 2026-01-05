@@ -129,9 +129,10 @@ in {
   options.nixflix.jellyseerr.radarr = mkOption {
     type = types.listOf radarrServerModule;
     default = defaultInstance;
-    defaultText = "Automatically configured from `config.nixflix.radarr` when enabled, otherwise `[]`.";
     description = ''
       List of Radarr instances to configure.
+
+      Automatically configured from `config.nixflix.radarr` when enabled, otherwise `[]`.
     '';
     example = [
       {
