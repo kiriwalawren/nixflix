@@ -1,0 +1,69 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; {
+  imports = [
+    ./jellyfin.nix
+    ./radarr.nix
+    ./sonarr.nix
+    ./users.nix
+  ];
+
+  options.nixflix.jellyseerr = {
+    enable = mkEnableOption "Jellyseerr media request manager";
+
+    package = mkPackageOption pkgs "jellyseerr" {};
+
+    apiKeyPath = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Path to API key secret file";
+    };
+
+    user = mkOption {
+      type = types.str;
+      default = "jellyseerr";
+      description = "User under which the service runs";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "jellyseerr";
+      description = "Group under which the service runs";
+    };
+
+    dataDir = mkOption {
+      type = types.path;
+      default = "${config.nixflix.stateDir}/jellyseerr";
+      defaultText = literalExpression ''"''${nixflix.stateDir}/jellyseerr"'';
+      description = "Directory containing jellyseerr data and configuration";
+    };
+
+    port = mkOption {
+      type = types.port;
+      default = 5055;
+      description = "Port on which jellyseerr listens";
+    };
+
+    openFirewall = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Open port in firewall for jellyseerr";
+    };
+
+    vpn = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Whether to route Jellyseerr traffic through the VPN.
+          When true (default), Jellyseerr routes through the VPN (requires nixflix.mullvad.enable = true).
+          When false, Jellyseerr bypasses the VPN.
+        '';
+      };
+    };
+  };
+}

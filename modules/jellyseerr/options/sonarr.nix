@@ -1,0 +1,205 @@
+{
+  config,
+  lib,
+  ...
+}:
+with lib; let
+  sonarrRecyclarrConfig =
+    optionalAttrs (config.nixflix.recyclarr.sonarr.enable or false)
+    (import ../../recyclarr/sonarr-main.nix {inherit config;});
+  firstSonarrProfile = head (sonarrRecyclarrConfig.sonarr_main.quality_profiles or []);
+  defaultSonarrProfileName = firstSonarrProfile.name or null;
+
+  sonarrAnimeRecyclarrConfig =
+    optionalAttrs (config.nixflix.recyclarr.sonarr-anime.enable or false)
+    (import ../../recyclarr/sonarr-anime.nix {inherit config;});
+  firstSonarrAnimeProfile = head (sonarrAnimeRecyclarrConfig.sonarr_anime.quality_profiles or []);
+  defaultSonarrAnimeProfileName = firstSonarrAnimeProfile.name or null;
+
+  sonarrServerModule = types.submodule ({config, ...}: {
+    options = {
+      name = mkOption {
+        type = types.str;
+        default = "Sonarr";
+        description = "Display name for this Sonarr instance";
+      };
+
+      hostname = mkOption {
+        type = types.str;
+        default = "127.0.0.1";
+        description = "Sonarr hostname";
+      };
+
+      port = mkOption {
+        type = types.port;
+        default = config.nixflix.sonarr.config.hostConfig.port or 8989;
+        defaultText = literalExpression "config.nixflix.sonarr.config.hostConfig.port";
+        description = "Sonarr port";
+      };
+
+      apiKeyPath = mkOption {
+        type = types.path;
+        description = "Path to file containing Sonarr API key";
+      };
+
+      useSsl = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Use SSL to connect to Sonarr";
+      };
+
+      baseUrl = mkOption {
+        type = types.str;
+        default =
+          if config.nixflix.nginx.enable
+          then "/sonarr"
+          else "";
+        defaultText = literalExpression ''if config.nixflix.nginx.enable then "/sonarr" else ""'';
+        description = "Sonarr URL base";
+      };
+
+      activeProfileName = mkOption {
+        type = types.nullOr types.str;
+        default = defaultSonarrProfileName;
+        defaultText = literalExpression ''
+          if config.nixflix.recyclarr.sonarr.enable
+          then (head (import ../../recyclarr/sonarr-main.nix {inherit config;}).sonarr_main.quality_profiles).name
+          else null
+        '';
+        description = "Quality profile name. Defaults to first recyclarr quality profile if enabled.";
+      };
+
+      activeDirectory = mkOption {
+        type = types.str;
+        default = head (config.nixflix.sonarr.mediaDirs or ["/tv"]);
+        defaultText = literalExpression ''head (config.nixflix.sonarr.mediaDirs or ["/tv"])'';
+        description = "Root folder for TV shows";
+      };
+
+      activeAnimeProfileName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Anime quality profile name.";
+      };
+
+      activeAnimeDirectory = mkOption {
+        type = types.str;
+        default = "";
+        description = "Root folder for anime";
+      };
+
+      seriesType = mkOption {
+        type = types.enum ["standard" "daily"];
+        default = "standard";
+        description = "Series type for regular content";
+      };
+
+      animeSeriesType = mkOption {
+        type = types.enum ["standard" "anime"];
+        default = "standard";
+        description = "Series type for anime content";
+      };
+
+      enableSeasonFolders = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable season folders";
+      };
+
+      is4k = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Is this a 4K Sonarr instance";
+      };
+
+      isDefault = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Is this the default Sonarr instance";
+      };
+
+      externalUrl = mkOption {
+        type = types.str;
+        default = "";
+        description = "External URL for Sonarr";
+      };
+
+      syncEnabled = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable automatic sync with Sonarr";
+      };
+
+      preventSearch = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Prevent Jellyseerr from triggering searches";
+      };
+    };
+  });
+
+  defaultInstances = let
+    sonarrInstance = optionalAttrs (config.nixflix.sonarr.enable or false) {
+      sonarr = {
+        name = "Sonarr";
+        port = config.nixflix.sonarr.config.hostConfig.port or 8989;
+        inherit (config.nixflix.sonarr.config) apiKeyPath;
+        baseUrl =
+          if config.nixflix.nginx.enable
+          then "/sonarr"
+          else "";
+        activeProfileName = defaultSonarrProfileName;
+        activeAnimeProfileName = defaultSonarrProfileName;
+        activeDirectory = head (config.nixflix.sonarr.mediaDirs or ["/data/media/tv"]);
+        activeAnimeDirectory = head (config.nixflix.sonarr.mediaDirs or ["/data/media/tv"]);
+        seriesType = "standard";
+        animeSeriesType = "standard";
+        isDefault = true;
+      };
+    };
+
+    sonarrAnimeInstance = optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
+      sonarr_anime = {
+        name = "Sonarr Anime";
+        port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
+        inherit (config.nixflix.sonarr-anime.config) apiKeyPath;
+        baseUrl =
+          if config.nixflix.nginx.enable
+          then "/sonarr-anime"
+          else "";
+        activeProfileName = defaultSonarrAnimeProfileName;
+        activeAnimeProfileName = defaultSonarrAnimeProfileName;
+        activeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or ["/data/media/anime"]);
+        activeAnimeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or ["/data/media/anime"]);
+        seriesType = "standard";
+        animeSeriesType = "anime";
+        isDefault = false;
+      };
+    };
+  in
+    (optional (sonarrInstance ? sonarr) sonarrInstance.sonarr)
+    ++ (optional (sonarrAnimeInstance ? sonarr_anime) sonarrAnimeInstance.sonarr_anime);
+in {
+  options.nixflix.jellyseerr.sonarr = mkOption {
+    type = types.listOf sonarrServerModule;
+    default = defaultInstances;
+    defaultText = "Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `[]`.";
+    description = ''
+      List of Sonarr instances to configure.
+    '';
+    example = [
+      {
+        name = "Sonarr Main";
+        port = 8989;
+        activeProfileName = "WEB-1080p";
+        activeDirectory = "/tv";
+      }
+      {
+        name = "Sonarr Anime";
+        port = 8990;
+        activeProfileName = "Remux-1080p - Anime";
+        activeDirectory = "/anime";
+      }
+    ];
+  };
+}

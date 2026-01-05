@@ -474,51 +474,41 @@ in
       categories = mkOption {
         type = types.listOf categoryType;
         default =
-          lib.optionals (nixflix.radarr.enable or false) [
-            {
-              name = "radarr";
-              dir = "radarr";
-              priority = 0;
-              pp = 3;
-              script = "None";
-            }
-          ]
-          ++ lib.optionals (nixflix.sonarr.enable or false) [
-            {
-              name = "sonarr";
-              dir = "sonarr";
-              priority = 0;
-              pp = 3;
-              script = "None";
-            }
-          ]
-          ++ lib.optionals (nixflix.sonarr-anime.enable or false) [
-            {
-              name = "sonarr-anime";
-              dir = "sonarr-anime";
-              priority = 0;
-              pp = 3;
-              script = "None";
-            }
-          ]
-          ++ lib.optionals (nixflix.lidarr.enable or false) [
-            {
-              name = "lidarr";
-              dir = "lidarr";
-              priority = 0;
-              pp = 3;
-              script = "None";
-            }
-          ]
-          ++ lib.optionals (nixflix.prowlarr.enable or false) [
-            {
-              name = "prowlarr";
-              dir = "prowlarr";
-              priority = 0;
-              pp = 3;
-              script = "None";
-            }
-          ]
+          lib.optional (nixflix.radarr.enable or false) {
+            name = "radarr";
+            dir = "radarr";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
+          ++ lib.optional (nixflix.sonarr.enable or false) {
+            name = "sonarr";
+            dir = "sonarr";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
+          ++ lib.optional (nixflix.sonarr-anime.enable or false) {
+            name = "sonarr-anime";
+            dir = "sonarr-anime";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
+          ++ lib.optional (nixflix.lidarr.enable or false) {
+            name = "lidarr";
+            dir = "lidarr";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
+          ++ lib.optional (nixflix.prowlarr.enable or false) {
+            name = "prowlarr";
+            dir = "prowlarr";
+            priority = 0;
+            pp = 3;
+            script = "None";
+          }
           ++ [
             {
               name = "*";
@@ -528,21 +518,21 @@ in
             }
           ];
         defaultText = lib.literalExpression ''
-          lib.optionals (nixflix.radarr.enable or false) [
-            { name = "radarr"; dir = "radarr"; priority = 0; pp = 3; script = "None"; }
-          ]
-          ++ lib.optionals (nixflix.sonarr.enable or false) [
-            { name = "sonarr"; dir = "sonarr"; priority = 0; pp = 3; script = "None"; }
-          ]
-          ++ lib.optionals (nixflix.sonarr-anime.enable or false) [
-            { name = "sonarr-anime"; dir = "sonarr-anime"; priority = 0; pp = 3; script = "None"; }
-          ]
-          ++ lib.optionals (nixflix.lidarr.enable or false) [
-            { name = "lidarr"; dir = "lidarr"; priority = 0; pp = 3; script = "None"; }
-          ]
-          ++ lib.optionals (nixflix.prowlarr.enable or false) [
-            { name = "prowlarr"; dir = "prowlarr"; priority = 0; pp = 3; script = "None"; }
-          ]
+          lib.optional (nixflix.radarr.enable or false) {
+            name = "radarr"; dir = "radarr"; priority = 0; pp = 3; script = "None";
+          }
+          ++ lib.optional (nixflix.sonarr.enable or false) {
+            name = "sonarr"; dir = "sonarr"; priority = 0; pp = 3; script = "None";
+          }
+          ++ lib.optional (nixflix.sonarr-anime.enable or false) {
+            name = "sonarr-anime"; dir = "sonarr-anime"; priority = 0; pp = 3; script = "None";
+          }
+          ++ lib.optional (nixflix.lidarr.enable or false) {
+            name = "lidarr"; dir = "lidarr"; priority = 0; pp = 3; script = "None";
+          }
+          ++ lib.optional (nixflix.prowlarr.enable or false) {
+            name = "prowlarr"; dir = "prowlarr"; priority = 0; pp = 3; script = "None";
+          }
           ++ [
             { name = "*"; priority = 0; pp = 3; script = "None"; }
           ]

@@ -9,40 +9,34 @@ with lib; let
   inherit (config) nixflix;
   cfg = nixflix.recyclarr;
 
-  sonarrBaseUrl =
-    optionalString cfg.sonarr.enable
-    "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
-
-  radarrBaseUrl =
-    optionalString cfg.radarr.enable
-    "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
-
-  sonarrApiVersion =
-    if cfg.sonarr.enable
-    then nixflix.sonarr.config.apiVersion
-    else "v3";
-  radarrApiVersion =
-    if cfg.radarr.enable
-    then nixflix.radarr.config.apiVersion
-    else "v3";
-
-  buildInstanceConfigs = serviceType: baseUrl: apiVersion: instances:
-    mapAttrsToList (instanceName: instanceConfig: {
-      inherit serviceType instanceName apiVersion;
-      baseUrl = instanceConfig.base_url;
-      managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
-      hasProfiles = (length instanceConfig.quality_profiles) > 0;
-      matchesNixflix = instanceConfig.base_url == baseUrl;
-    })
+  buildInstances = serviceType: instances:
+    mapAttrsToList (
+      instanceName: instanceConfig: let
+        hasProfiles = (length instanceConfig.quality_profiles) > 0;
+        apiKeyPath =
+          instanceConfig.api_key._secret or instanceConfig.api_key;
+        credentialName = "${instanceName}-api_key";
+      in
+        optional hasProfiles {
+          inherit serviceType instanceName credentialName apiKeyPath;
+          apiVersion = instanceConfig.api_version or "v3";
+          baseUrl = instanceConfig.base_url;
+          managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
+        }
+    )
     instances;
 
-  allInstances =
-    (optionals (recyclarrConfig ? sonarr)
-      (buildInstanceConfigs "sonarr" sonarrBaseUrl sonarrApiVersion recyclarrConfig.sonarr))
-    ++ (optionals (recyclarrConfig ? radarr)
-      (buildInstanceConfigs "radarr" radarrBaseUrl radarrApiVersion recyclarrConfig.radarr));
+  sonarrInstances =
+    optionals (recyclarrConfig ? sonarr)
+    (buildInstances "sonarr" recyclarrConfig.sonarr);
 
-  instancesWithProfiles = filter (i: i.hasProfiles && i.matchesNixflix) allInstances;
+  radarrInstances =
+    optionals (recyclarrConfig ? radarr)
+    (buildInstances "radarr" recyclarrConfig.radarr);
+
+  instancesWithProfiles = flatten (sonarrInstances ++ radarrInstances);
+
+  loadCredentials = map (i: "${i.credentialName}:${i.apiKeyPath}") instancesWithProfiles;
 
   cleanupConfig = builtins.toJSON {instances = instancesWithProfiles;};
 
@@ -68,6 +62,7 @@ with lib; let
       BASE_URL=$(echo "$instance" | ${pkgs.jq}/bin/jq -r '.baseUrl')
       API_VERSION=$(echo "$instance" | ${pkgs.jq}/bin/jq -r '.apiVersion')
       MANAGED_PROFILES=$(echo "$instance" | ${pkgs.jq}/bin/jq -c '.managedProfiles')
+      CREDENTIAL_NAME=$(echo "$instance" | ${pkgs.jq}/bin/jq -r '.credentialName')
 
       echo "Processing $SERVICE_TYPE instance: $INSTANCE_NAME"
       echo "  Base URL: $BASE_URL"
@@ -75,11 +70,12 @@ with lib; let
       echo "  Managed profiles: $MANAGED_PROFILES"
 
       # Get API key from credentials
+      API_KEY=$(cat /run/credentials/recyclarr-cleanup-profiles.service/$CREDENTIAL_NAME)
+
+      # Determine media endpoint based on service type
       if [ "$SERVICE_TYPE" = "sonarr" ]; then
-        API_KEY=$(cat /run/credentials/recyclarr-cleanup-profiles.service/sonarr-api_key)
         MEDIA_ENDPOINT="series"
       else
-        API_KEY=$(cat /run/credentials/recyclarr-cleanup-profiles.service/radarr-api_key)
         MEDIA_ENDPOINT="movie"
       fi
 
@@ -194,9 +190,7 @@ in {
       ProtectHome = true;
       PrivateDevices = true;
 
-      LoadCredential =
-        optional cfg.radarr.enable "radarr-api_key:${nixflix.radarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr.enable "sonarr-api_key:${nixflix.sonarr.config.apiKeyPath}";
+      LoadCredential = loadCredentials;
     };
   };
 }

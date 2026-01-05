@@ -3,7 +3,7 @@
 in {
   sonarr_anime = {
     base_url = "http://127.0.0.1:${toString nixflix.sonarr-anime.config.hostConfig.port}${toString nixflix.sonarr-anime.config.hostConfig.urlBase}";
-    api_key._secret = nixflix.sonarr.config.apiKeyPath;
+    api_key._secret = nixflix.sonarr-anime.config.apiKeyPath;
     delete_old_custom_formats = true;
     replace_existing_custom_formats = true;
 
