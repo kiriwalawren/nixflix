@@ -9,75 +9,34 @@ with lib; let
   inherit (config) nixflix;
   cfg = nixflix.recyclarr;
 
-  sonarrBaseUrl =
-    optionalString cfg.sonarr.enable
-    "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
-
-  sonarrAnimeBaseUrl =
-    optionalString cfg.sonarr-anime.enable
-    "http://127.0.0.1:${toString nixflix.sonarr-anime.config.hostConfig.port}${toString nixflix.sonarr-anime.config.hostConfig.urlBase}";
-
-  radarrBaseUrl =
-    optionalString cfg.radarr.enable
-    "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
-
-  sonarrApiVersion =
-    if cfg.sonarr.enable
-    then nixflix.sonarr.config.apiVersion
-    else "v3";
-
-  sonarrAnimeApiVersion =
-    if cfg.sonarr-anime.enable
-    then nixflix.sonarr-anime.config.apiVersion
-    else "v3";
-
-  radarrApiVersion =
-    if cfg.radarr.enable
-    then nixflix.radarr.config.apiVersion
-    else "v3";
-
-  sonarrInstances = optionals (recyclarrConfig ? sonarr)
-    (mapAttrsToList (instanceName: instanceConfig:
-      let
+  buildInstances = serviceType: instances:
+    mapAttrsToList (
+      instanceName: instanceConfig: let
         hasProfiles = (length instanceConfig.quality_profiles) > 0;
-        matchesMain = instanceConfig.base_url == sonarrBaseUrl;
-        matchesAnime = instanceConfig.base_url == sonarrAnimeBaseUrl;
+        apiKeyPath =
+          instanceConfig.api_key._secret or instanceConfig.api_key;
+        credentialName = "${instanceName}-api_key";
       in
-        optional (hasProfiles && matchesMain) {
-          serviceType = "sonarr";
-          inherit instanceName;
-          apiVersion = sonarrApiVersion;
+        optional hasProfiles {
+          inherit serviceType instanceName credentialName apiKeyPath;
+          apiVersion = instanceConfig.api_version or "v3";
           baseUrl = instanceConfig.base_url;
           managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
-          credentialName = "sonarr-api_key";
         }
-        ++ optional (hasProfiles && matchesAnime) {
-          serviceType = "sonarr";
-          inherit instanceName;
-          apiVersion = sonarrAnimeApiVersion;
-          baseUrl = instanceConfig.base_url;
-          managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
-          credentialName = "sonarr-anime-api_key";
-        }
-    ) recyclarrConfig.sonarr);
+    )
+    instances;
 
-  radarrInstances = optionals (recyclarrConfig ? radarr)
-    (mapAttrsToList (instanceName: instanceConfig:
-      let
-        hasProfiles = (length instanceConfig.quality_profiles) > 0;
-        matchesNixflix = instanceConfig.base_url == radarrBaseUrl;
-      in
-        optional (hasProfiles && matchesNixflix) {
-          serviceType = "radarr";
-          inherit instanceName;
-          apiVersion = radarrApiVersion;
-          baseUrl = instanceConfig.base_url;
-          managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
-          credentialName = "radarr-api_key";
-        }
-    ) recyclarrConfig.radarr);
+  sonarrInstances =
+    optionals (recyclarrConfig ? sonarr)
+    (buildInstances "sonarr" recyclarrConfig.sonarr);
+
+  radarrInstances =
+    optionals (recyclarrConfig ? radarr)
+    (buildInstances "radarr" recyclarrConfig.radarr);
 
   instancesWithProfiles = flatten (sonarrInstances ++ radarrInstances);
+
+  loadCredentials = map (i: "${i.credentialName}:${i.apiKeyPath}") instancesWithProfiles;
 
   cleanupConfig = builtins.toJSON {instances = instancesWithProfiles;};
 
@@ -231,10 +190,7 @@ in {
       ProtectHome = true;
       PrivateDevices = true;
 
-      LoadCredential =
-        optional cfg.radarr.enable "radarr-api_key:${nixflix.radarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr.enable "sonarr-api_key:${nixflix.sonarr.config.apiKeyPath}"
-        ++ optional cfg.sonarr-anime.enable "sonarr-anime-api_key:${nixflix.sonarr-anime.config.apiKeyPath}";
+      LoadCredential = loadCredentials;
     };
   };
 }
