@@ -3,12 +3,17 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    mkdocs-catppuccin = {
+      url = "github:ruslanlap/mkdocs-catppuccin";
+      flake = false;
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
-  }: let
+    ...
+  } @ inputs: let
     systems = ["x86_64-linux" "aarch64-linux"];
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
@@ -18,7 +23,7 @@
     packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
     in
-      (import ./docs {inherit pkgs;})
+      (import ./docs {inherit pkgs inputs;})
       // {
         default = self.packages.${system}.docs;
       });

@@ -134,7 +134,6 @@ extra:
       link: https://github.com/kiriwalawren/nixflix
 
 extra_css:
-  - stylesheets/catppuccin.css
   - stylesheets/extra.css
 
 copyright: Copyright &copy; 2024 Kiriwa Lawrence. Licensed under GPLv3.

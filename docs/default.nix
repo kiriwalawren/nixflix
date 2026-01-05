@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  inputs,
+  ...
+}: let
   docsGenerator = import ./generator {
     inherit pkgs;
     inherit (pkgs) lib;
@@ -35,6 +39,8 @@ in {
 
       echo "Building mkdocs site..."
       ${pythonEnv}/bin/mkdocs build -d $out
+
+      cat ${inputs.mkdocs-catppuccin}/docs/stylesheets/extra.css >> $out/stylesheets/extra.css
 
       rm -rf $out/generator
       rm $out/mkdocs.base.yml
