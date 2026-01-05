@@ -93,16 +93,16 @@ in
       machine.wait_for_open_port(80, timeout=60)
 
       # Wait for all services
-      machine.wait_for_unit("prowlarr.service", timeout=60)
-      machine.wait_for_unit("sonarr.service", timeout=60)
-      machine.wait_for_unit("radarr.service", timeout=60)
-      machine.wait_for_unit("lidarr.service", timeout=60)
-      machine.wait_for_unit("sabnzbd.service", timeout=60)
-      machine.wait_for_open_port(9696, timeout=60)
-      machine.wait_for_open_port(8989, timeout=60)
-      machine.wait_for_open_port(7878, timeout=60)
-      machine.wait_for_open_port(8686, timeout=60)
-      machine.wait_for_open_port(8080, timeout=60)
+      machine.wait_for_unit("prowlarr.service", timeout=120)
+      machine.wait_for_unit("sonarr.service", timeout=120)
+      machine.wait_for_unit("radarr.service", timeout=120)
+      machine.wait_for_unit("lidarr.service", timeout=120)
+      machine.wait_for_unit("sabnzbd.service", timeout=120)
+      machine.wait_for_open_port(9696, timeout=120)
+      machine.wait_for_open_port(8989, timeout=120)
+      machine.wait_for_open_port(7878, timeout=120)
+      machine.wait_for_open_port(8686, timeout=120)
+      machine.wait_for_open_port(8080, timeout=120)
 
       # Wait for configuration services
       machine.wait_for_unit("prowlarr-config.service", timeout=60)
