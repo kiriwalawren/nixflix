@@ -59,6 +59,12 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Basic server management
 - Libraries are automatically configure based on elected media managers
 
+### Jellyseerr
+
+- Media request management
+- Automatic integration with Starr services
+- Automatic integration with Jellyfin libraries
+
 ### SABnzbd
 
 - Automatic integration with Starr services
