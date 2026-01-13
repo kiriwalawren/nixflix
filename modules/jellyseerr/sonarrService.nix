@@ -199,8 +199,6 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        User = cfg.user;
-        Group = cfg.group;
         LoadCredential = imap0 (idx: s: "sonarr-${toString idx}-apikey:${s.apiKeyPath}") cfg.sonarr;
       };
 

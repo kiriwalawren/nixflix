@@ -166,8 +166,6 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        User = cfg.user;
-        Group = cfg.group;
         LoadCredential = imap0 (idx: r: "radarr-${toString idx}-apikey:${r.apiKeyPath}") cfg.radarr;
       };
 

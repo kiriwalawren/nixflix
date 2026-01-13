@@ -32,8 +32,6 @@ in {
         {
           Type = "oneshot";
           RemainAfterExit = true;
-          User = cfg.user;
-          Group = cfg.group;
         }
         // optionalAttrs (firstAdminUser.passwordFile != null) {
           LoadCredential = "jellyfin-password:${firstAdminUser.passwordFile}";
@@ -54,11 +52,12 @@ in {
         done
 
         # Check if already initialized
-        STATUS_RESPONSE=$(${pkgs.curl}/bin/curl -s "$BASE_URL/api/v1/status")
+        STATUS_RESPONSE=$(${pkgs.curl}/bin/curl -s "$BASE_URL/api/v1/settings/public")
         IS_INITIALIZED=$(echo "$STATUS_RESPONSE" | ${pkgs.jq}/bin/jq -r '.initialized // false')
 
         if [ "$IS_INITIALIZED" = "true" ]; then
           echo "Jellyseerr is already initialized"
+          source ${authUtil.authScript}
           exit 0
         fi
 
@@ -205,6 +204,7 @@ in {
           exit 1
         fi
 
+        source ${authUtil.authScript}
         echo "Jellyseerr setup completed successfully"
       '';
     };
