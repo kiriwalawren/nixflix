@@ -7,6 +7,7 @@
   inherit (config) nixflix;
 
   serverType = types.submodule {
+    freeformType = types.anything;
     options = {
       name = mkOption {
         type = types.str;
@@ -68,6 +69,7 @@
   };
 
   categoryType = types.submodule {
+    freeformType = types.anything;
     options = {
       name = mkOption {
         type = types.str;
@@ -97,6 +99,7 @@
   };
 in
   types.submodule {
+    freeformType = types.anything;
     options = {
       host = mkOption {
         type = types.str;
