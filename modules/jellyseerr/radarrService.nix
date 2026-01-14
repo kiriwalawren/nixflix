@@ -33,6 +33,7 @@ with lib; let
 
     echo "Testing Radarr connection..."
     TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+      --max-time 30 \
       -b "${authUtil.cookieFile}" \
       -H "Content-Type: application/json" \
       -d "$TEST_PAYLOAD" \
@@ -80,6 +81,7 @@ with lib; let
 
     # Check if server already exists
     EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
+      --max-time 30 \
       -b "${authUtil.cookieFile}" \
       "$BASE_URL/api/v1/settings/radarr")
 
@@ -124,6 +126,7 @@ with lib; let
     if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
       echo "Updating existing Radarr instance (ID: $EXISTING_ID)..."
       UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
+        --max-time 30 \
         -b "${authUtil.cookieFile}" \
         -H "Content-Type: application/json" \
         -d "$SERVER_CONFIG" \
@@ -140,6 +143,7 @@ with lib; let
     else
       echo "Creating new Radarr instance..."
       CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+        --max-time 30 \
         -b "${authUtil.cookieFile}" \
         -H "Content-Type: application/json" \
         -d "$SERVER_CONFIG" \
@@ -184,6 +188,7 @@ in {
         CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (map (r: r.name) cfg.radarr))}"
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
+          --max-time 30 \
           -b "${authUtil.cookieFile}" \
           "$BASE_URL/api/v1/settings/radarr")
 
@@ -194,6 +199,7 @@ in {
         for server_id in $SERVERS_TO_DELETE; do
           echo "Deleting Radarr server (ID: $server_id)..."
           ${pkgs.curl}/bin/curl -sf -X DELETE \
+            --max-time 30 \
             -b "${authUtil.cookieFile}" \
             "$BASE_URL/api/v1/settings/radarr/$server_id" >/dev/null
         done

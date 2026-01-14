@@ -57,7 +57,6 @@ in {
     if [ "$NEED_AUTH" = "true" ]; then
       echo "Authenticating to Jellyseerr as ${firstAdminName}..."
 
-      ADMIN_EMAIL="${firstAdminUser.email or firstAdminName}"
       ${
       if firstAdminUser.passwordFile != null
       then ''ADMIN_PASSWORD=$(cat ${firstAdminUser.passwordFile})''
@@ -69,13 +68,13 @@ in {
         AUTH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
           -c "$COOKIE_FILE" \
           -H "Content-Type: application/json" \
-          -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"$ADMIN_PASSWORD\"}" \
+          -d "{\"username\": \"${firstAdminName}\", \"password\": \"$ADMIN_PASSWORD\"}" \
           -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/auth/local" 2>/dev/null || echo -e "\n000")
+          "$BASE_URL/api/v1/auth/jellyfin" 2>/dev/null || echo -e "\n000")
 
         AUTH_HTTP_CODE=$(echo "$AUTH_RESPONSE" | tail -n1)
 
-        if [ "$AUTH_HTTP_CODE" = "200" ]; then
+        if [ "$AUTH_HTTP_CODE" = "200" ] || [ "$AUTH_HTTP_CODE" = "201" ]; then
           echo "Successfully authenticated"
           chmod 600 "$COOKIE_FILE"
           break
