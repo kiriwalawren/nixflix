@@ -237,10 +237,10 @@ in {
             ({
                 name = "SABnzbd";
                 implementationName = "SABnzbd";
-                inherit (nixflix.sabnzbd) apiKeyPath;
-                inherit (nixflix.sabnzbd.settings) host;
-                inherit (nixflix.sabnzbd.settings) port;
-                urlBase = nixflix.sabnzbd.settings.url_base;
+                apiKeyPath = toString nixflix.sabnzbd.apiKeyPath;
+                inherit (nixflix.sabnzbd.settings.misc) host;
+                inherit (nixflix.sabnzbd.settings.misc) port;
+                urlBase = nixflix.sabnzbd.settings.misc.url_base;
               }
               // optionalAttrs (serviceName == "radarr") {
                 movieCategory = serviceName;

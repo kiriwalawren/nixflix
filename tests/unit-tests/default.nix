@@ -149,14 +149,16 @@ in {
             enable = true;
             downloadsDir = "/downloads/usenet";
             settings = {
-              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";};
-              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";};
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-              ignore_samples = true;
-              direct_unpack = false;
-              article_tries = 5;
+              misc = {
+                api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";};
+                nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";};
+                port = 8080;
+                host = "127.0.0.1";
+                url_base = "/sabnzbd";
+                ignore_samples = true;
+                direct_unpack = false;
+                article_tries = 5;
+              };
               servers = [
                 {
                   name = "TestServer";

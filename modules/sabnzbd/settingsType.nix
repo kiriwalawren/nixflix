@@ -23,11 +23,11 @@
         description = "Server port";
       };
       username = mkOption {
-        type = types.str;
+        type = types.anything;
         description = "Server username. Use { _secret = /path/to/file; } for secrets.";
       };
       password = mkOption {
-        type = types.str;
+        type = types.anything;
         description = "Server password. Use { _secret = /path/to/file; } for secrets.";
       };
       connections = mkOption {
@@ -97,8 +97,8 @@
       };
     };
   };
-in
-  types.submodule {
+
+  miscType = types.submodule {
     freeformType = types.anything;
     options = {
       host = mkOption {
@@ -466,6 +466,17 @@ in
         type = types.bool;
         default = false;
         description = "Enable debug logging";
+      };
+    };
+  };
+in
+  types.submodule {
+    freeformType = types.anything;
+    options = {
+      misc = mkOption {
+        type = miscType;
+        default = {};
+        description = "SABnzbd [misc] section settings";
       };
 
       servers = mkOption {

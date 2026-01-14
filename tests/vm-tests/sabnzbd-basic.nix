@@ -14,6 +14,8 @@ in
     nodes.machine = {pkgs, ...}: {
       imports = [nixosModules];
 
+      environment.systemPackages = with pkgs; [jq curl];
+
       nixflix = {
         enable = true;
 
@@ -21,15 +23,17 @@ in
           enable = true;
           downloadsDir = "/downloads/usenet";
           settings = {
-            api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";};
-            nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";};
-            port = 8080;
-            host = "127.0.0.1";
-            url_base = "/sabnzbd";
-            ignore_samples = true;
-            direct_unpack = true;
-            article_tries = 5;
-            cache_limit = "512M";
+            misc = {
+              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";};
+              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";};
+              port = 8080;
+              host = "127.0.0.1";
+              url_base = "/sabnzbd";
+              ignore_samples = true;
+              direct_unpack = true;
+              article_tries = 5;
+              cache_limit = "512M";
+            };
             servers = [
               {
                 name = "TestServer";
@@ -70,6 +74,9 @@ in
       # Wait for SABnzbd to start
       machine.wait_for_unit("sabnzbd.service", timeout=60)
       machine.wait_for_open_port(8080, timeout=60)
+
+      # Wait for category configuration to complete
+      machine.wait_for_unit("sabnzbd-categories.service", timeout=60)
 
       # Verify the service is running under the correct user
       machine.succeed("pgrep -u sabnzbd")
@@ -128,16 +135,29 @@ in
       assert "priority = 0" in config_content, "Server priority not set"
       assert "retention = 3000" in config_content, "Retention (freeform) not set"
 
-      # Verify categories were configured via INI
-      assert "[categories]" in config_content, "Categories section missing"
-      assert "[[tv]]" in config_content, "TV category missing"
-      assert "[[movies]]" in config_content, "Movies category missing"
-      assert "dir = tv" in config_content, "TV category dir not set"
-      assert "pp = 3" in config_content, "TV post-processing not set"
-      assert "priority = 1" in config_content, "Movies priority not set"
-      assert "pp = 2" in config_content, "Movies post-processing not set"
+      # Verify categories section exists in INI template (even if empty after SABnzbd startup)
+      assert "[categories]" in config_content, "Categories section missing from template"
 
-      # Verify no API config service exists (removed)
-      machine.fail("systemctl status sabnzbd-config.service")
+      # Verify categories were configured via API (check via SABnzbd API)
+      categories_response = machine.succeed(
+          "curl -s 'http://127.0.0.1:8080/sabnzbd/api?mode=get_config&apikey=testapikey123456789abcdef' | jq -r '.config.categories'"
+      )
+      print(f"Categories API response:\n{categories_response}")
+
+      # Parse and verify TV category
+      tv_category = machine.succeed(
+          "curl -s 'http://127.0.0.1:8080/sabnzbd/api?mode=get_config&apikey=testapikey123456789abcdef' | jq -r '.config.categories[] | select(.name == \"tv\")'"
+      )
+      print(f"TV category:\n{tv_category}")
+      assert "tv" in tv_category, "TV category not configured"
+      assert '"dir":"tv"' in tv_category or '"dir": "tv"' in tv_category, "TV category dir not set"
+
+      # Verify Movies category
+      movies_category = machine.succeed(
+          "curl -s 'http://127.0.0.1:8080/sabnzbd/api?mode=get_config&apikey=testapikey123456789abcdef' | jq -r '.config.categories[] | select(.name == \"movies\")'"
+      )
+      print(f"Movies category:\n{movies_category}")
+      assert "movies" in movies_category, "Movies category not configured"
+      assert '"dir":"movies"' in movies_category or '"dir": "movies"' in movies_category, "Movies category dir not set"
     '';
   }

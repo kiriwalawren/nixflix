@@ -65,8 +65,8 @@ in {
     inherit (config) nixflix;
   in {
     description = "Configure ${serviceName} download clients via API";
-    after = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-config.service"];
-    requires = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-config.service"];
+    after = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-categories.service"];
+    requires = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-categories.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {

@@ -10,7 +10,7 @@ with lib; let
   cfg = nixflix.sabnzbd;
 
   settingsType = import ./settingsType.nix {inherit lib config;};
-  iniGenerator = import ./iniGenerator.nix {inherit lib pkgs;};
+  iniGenerator = import ./iniGenerator.nix {inherit lib;};
 
   stateDir = "/var/lib/sabnzbd";
   configFile = "${stateDir}/sabnzbd.ini";
@@ -19,6 +19,10 @@ with lib; let
 
   mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (builtins.readFile ./mergeSecrets.py);
 in {
+  imports = [
+    ./categoriesService.nix
+  ];
+
   options.nixflix.sabnzbd = {
     enable = mkOption {
       type = types.bool;
@@ -55,15 +59,22 @@ in {
     apiKeyPath = mkOption {
       type = types.path;
       readOnly = true;
-      default =
-        if cfg.settings ? api_key && cfg.settings.api_key ? _secret
-        then cfg.settings.api_key._secret
-        else throw "settings.api_key must be set with { _secret = /path; } for *arr integration";
-      description = "Computed API key path for *arr service integration";
+      defaultText = literalExpression "settings.misc.api_key._secret";
+      description = "Computed API key path for *arr service integration. Automatically set from settings.misc.api_key._secret";
+      internal = true;
     };
   };
 
   config = mkIf (nixflix.enable && cfg.enable) {
+    assertions = [
+      {
+        assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
+        message = "nixflix.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
+      }
+    ];
+
+    nixflix.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
+
     users.users.${cfg.user} = {
       inherit (cfg) group;
       uid = mkForce globals.uids.sabnzbd;
@@ -73,24 +84,26 @@ in {
 
     users.groups.${cfg.group} = {};
 
-    systemd.tmpfiles.settings."10-sabnzbd" = {
-      ${stateDir}.d = {
-        inherit (cfg) user group;
-        mode = "0700";
+    systemd.tmpfiles = {
+      settings."10-sabnzbd" = {
+        ${stateDir}.d = {
+          inherit (cfg) user group;
+          mode = "0700";
+        };
       };
-    };
 
-    systemd.tmpfiles.rules =
-      map (dir: "d '${dir}' 0775 ${cfg.user} ${cfg.group} - -")
-      [
-        cfg.downloadsDir
-        cfg.settings.download_dir
-        cfg.settings.complete_dir
-        cfg.settings.dirscan_dir
-        cfg.settings.nzb_backup_dir
-        cfg.settings.admin_dir
-        cfg.settings.log_dir
-      ];
+      rules =
+        map (dir: "d '${dir}' 0775 ${cfg.user} ${cfg.group} - -")
+        [
+          cfg.downloadsDir
+          cfg.settings.misc.download_dir
+          cfg.settings.misc.complete_dir
+          cfg.settings.misc.dirscan_dir
+          cfg.settings.misc.nzb_backup_dir
+          cfg.settings.misc.admin_dir
+          cfg.settings.misc.log_dir
+        ];
+    };
 
     environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
 
@@ -119,7 +132,7 @@ in {
           echo "Configuration ready"
         '';
 
-        ExecStart = "${pkgs.sabnzbd}/bin/sabnzbd -f ${configFile} -s 0.0.0.0:${toString cfg.settings.port} -b 0";
+        ExecStart = "${pkgs.sabnzbd}/bin/sabnzbd -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
 
         Restart = "on-failure";
         RestartSec = "5s";
@@ -131,19 +144,19 @@ in {
         ReadWritePaths = [
           stateDir
           cfg.downloadsDir
-          cfg.settings.download_dir
-          cfg.settings.complete_dir
-          cfg.settings.dirscan_dir
-          cfg.settings.nzb_backup_dir
-          cfg.settings.admin_dir
-          cfg.settings.log_dir
+          cfg.settings.misc.download_dir
+          cfg.settings.misc.complete_dir
+          cfg.settings.misc.dirscan_dir
+          cfg.settings.misc.nzb_backup_dir
+          cfg.settings.misc.admin_dir
+          cfg.settings.misc.log_dir
         ];
       };
     };
 
     services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations."${cfg.settings.url_base}" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.settings.port}";
+      virtualHosts.localhost.locations."${cfg.settings.misc.url_base}" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
         recommendedProxySettings = true;
         extraConfig = ''
           proxy_redirect off;
