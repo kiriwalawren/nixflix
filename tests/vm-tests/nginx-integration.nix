@@ -75,9 +75,9 @@ in
         sabnzbd = {
           enable = true;
           downloadsDir = "/downloads/usenet";
-          apiKeyPath = "${pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555"}";
-          nzbKeyPath = "${pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666"}";
           settings = {
+            api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";};
+            nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666";};
             port = 8080;
             host = "127.0.0.1";
           };
@@ -109,7 +109,6 @@ in
       machine.wait_for_unit("sonarr-config.service", timeout=60)
       machine.wait_for_unit("radarr-config.service", timeout=60)
       machine.wait_for_unit("lidarr-config.service", timeout=60)
-      machine.wait_for_unit("sabnzbd-config.service", timeout=120)
 
       # Wait for services to come back up after restart
       machine.wait_for_unit("prowlarr.service", timeout=60)

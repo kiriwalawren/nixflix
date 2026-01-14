@@ -24,11 +24,11 @@
       };
       username = mkOption {
         type = types.str;
-        description = "Server username (can use environment variable placeholder like $USERNAME)";
+        description = "Server username. Use { _secret = /path/to/file; } for secrets.";
       };
       password = mkOption {
         type = types.str;
-        description = "Server password (can use environment variable placeholder like $PASSWORD)";
+        description = "Server password. Use { _secret = /path/to/file; } for secrets.";
       };
       connections = mkOption {
         type = types.int;

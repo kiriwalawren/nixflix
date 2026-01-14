@@ -97,7 +97,9 @@ Here's a minimal configuration to get started:
 
     sabnzbd = {
       enable = true;
-      apiKeyPath = config.sops.secrets."sabnzbd/api_key".path;
+      settings = {
+        api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
+      };
     };
 
     jellyfin = {
