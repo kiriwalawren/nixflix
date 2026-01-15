@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://github.com/kiriwalawren/nixflix/blob/main/.github/assets/logo.svg" width="250px"/>
+  <img src="https://raw.githubusercontent.com/kiriwalawren/nixflix/refs/heads/main/docs/assets/logo.svg" width="250px"/>
   <div>Nixflix</div>
   <a href="https://builtwithnix.org">
       <img src="https://builtwithnix.org/badge.svg"/>

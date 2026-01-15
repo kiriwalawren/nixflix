@@ -8,6 +8,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/logo.svg
   palette:
     - scheme: latte
       media: "(prefers-color-scheme: light)"

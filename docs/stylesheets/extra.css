@@ -1,12 +1,58 @@
-:root {
-  --md-primary-fg-color: #3f51b5;
-  --md-primary-fg-color--light: #5c6bc0;
-  --md-primary-fg-color--dark: #303f9f;
-  --md-accent-fg-color: #673ab7;
+[data-md-color-scheme="mocha"] {
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-mocha-maroon) !important;
+  --md-primary-fg-color--light: var(--ctp-mocha-lavender) !important;
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-mocha-red) !important;
+
+  /* Typography */
+  --md-typeset-a-color: var(--ctp-mocha-red) !important;
+}
+
+[data-md-color-scheme="frappe"] {
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-frappe-maroon) !important;
+  --md-primary-fg-color--light: var(--ctp-frappe-lavender) !important;
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-frappe-red) !important;
+
+  /* Typography */
+  --md-typeset-a-color: var(--ctp-frappe-red) !important;
+}
+
+[data-md-color-scheme="macchiato"] {
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-macchiato-maroon) !important;
+  --md-primary-fg-color--light: var(--ctp-macchiato-lavender) !important;
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-macchiato-red) !important;
+
+  /* Typography */
+  --md-typeset-a-color: var(--ctp-macchiato-red) !important;
+}
+
+[data-md-color-scheme="latte"] {
+  /* Primary colors */
+  --md-primary-fg-color: var(--ctp-latte-maroon) !important;
+  --md-primary-fg-color--light: var(--ctp-latte-lavender) !important;
+
+  /* Accent colors */
+  --md-accent-fg-color: var(--ctp-latte-red) !important;
+
+  /* Typography */
+  --md-typeset-a-color: var(--ctp-latte-red) !important;
 }
 
 .highlight {
   border-left: 3px solid var(--md-accent-fg-color);
+  border-radius: 0 !important;
+}
+
+td .highlight {
+  margin: 0 !important;
 }
 
 .md-typeset .admonition.nixflix {
