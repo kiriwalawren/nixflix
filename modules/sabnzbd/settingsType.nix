@@ -65,9 +65,9 @@
       };
       ssl_verify = mkOption {
         type = enumFromAttrs {
-          none = 0;
+          "none" = 0;
           "allow injection" = 2;
-          strict = 3;
+          "strict" = 3;
         };
         default = 2;
         description = "Certificate verification level.";
@@ -128,9 +128,15 @@
         description = "Category priority";
       };
       pp = mkOption {
-        type = types.int;
+        type = enumFromAttrs {
+          "Default" = "";
+          "Download" = 0;
+          "Repair" = 1;
+          "Repair+Unpack" = 2;
+          "Repair+Unpack+Delete" = 3;
+        };
         default = 3;
-        description = "Post-processing level (0=None, 1=Repair, 2=Repair+Unpack, 3=Repair+Unpack+Delete)";
+        description = "Post-processing level";
       };
       script = mkOption {
         type = types.str;
