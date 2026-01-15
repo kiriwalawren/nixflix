@@ -148,32 +148,24 @@ in {
           sabnzbd = {
             enable = true;
             downloadsDir = "/downloads/usenet";
-            apiKeyPath = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-            nzbKeyPath = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
-            environmentSecrets = [
-              {
-                env = "EWEKA_USERNAME";
-                path = pkgs.writeText "eweka-username" "testuser";
-              }
-              {
-                env = "EWEKA_PASSWORD";
-                path = pkgs.writeText "eweka-password" "testpass123";
-              }
-            ];
             settings = {
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-              ignore_samples = true;
-              direct_unpack = false;
-              article_tries = 5;
+              misc = {
+                api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";};
+                nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";};
+                port = 8080;
+                host = "127.0.0.1";
+                url_base = "/sabnzbd";
+                ignore_samples = true;
+                direct_unpack = false;
+                article_tries = 5;
+              };
               servers = [
                 {
                   name = "TestServer";
                   host = "news.example.com";
                   port = 563;
-                  username = "$EWEKA_USERNAME";
-                  password = "$EWEKA_PASSWORD";
+                  username = {_secret = pkgs.writeText "eweka-username" "testuser";};
+                  password = {_secret = pkgs.writeText "eweka-password" "testpass123";};
                   connections = 10;
                   ssl = true;
                   priority = 0;
@@ -201,7 +193,7 @@ in {
       }
     ];
     systemdUnits = config.config.systemd.services;
-    hasAllServices = systemdUnits ? sabnzbd && systemdUnits ? sabnzbd-config;
+    hasAllServices = systemdUnits ? sabnzbd;
   in
-    assertTest "prowlarr-service-generation" hasAllServices;
+    assertTest "sabnzbd-service-generation" hasAllServices;
 }

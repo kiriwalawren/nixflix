@@ -48,12 +48,14 @@ in
 
         sabnzbd = {
           enable = true;
-          apiKeyPath = "${pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555"}";
-          nzbKeyPath = "${pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666"}";
           settings = {
-            port = 8080;
-            host = "127.0.0.1";
-            url_base = "/sabnzbd";
+            misc = {
+              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";};
+              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";};
+              port = 8080;
+              host = "127.0.0.1";
+              url_base = "/sabnzbd";
+            };
           };
         };
       };
@@ -69,7 +71,6 @@ in
       machine.wait_for_open_port(8080, timeout=60)
 
       # Wait for configuration services to complete
-      machine.wait_for_unit("sabnzbd-config.service", timeout=60)
       machine.wait_for_unit("sonarr-config.service", timeout=180)
 
       # Wait for sonarr to come back up after restart

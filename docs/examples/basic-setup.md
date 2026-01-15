@@ -75,46 +75,37 @@ This example shows a working media server configuration based on a real producti
 
     sabnzbd = {
       enable = true;
-      apiKeyPath = config.sops.secrets."sabnzbd/api_key".path;
-      nzbKeyPath = config.sops.secrets."sabnzbd/nzb_key".path;
-
-      environmentSecrets = [
-        {
-          env = "EWEKA_USERNAME";
-          path = config.sops.secrets."usenet/eweka/username".path;
-        }
-        {
-          env = "EWEKA_PASSWORD";
-          path = config.sops.secrets."usenet/eweka/password".path;
-        }
-        {
-          env = "NGD_USERNAME";
-          path = config.sops.secrets."usenet/newsgroupdirect/username".path;
-        }
-        {
-          env = "NGD_PASSWORD";
-          path = config.sops.secrets."usenet/newsgroupdirect/password".path;
-        }
-      ];
 
       settings = {
+        # API keys are now in settings (required for *arr integration)
+        api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
+        nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
+
+        # Freeform settings - add any SABnzbd configuration
+        cache_limit = "1G";
+        propagation_delay = 0;
+        direct_unpack = true;
+
         servers = [
           {
             name = "Eweka";
             host = "sslreader.eweka.nl";
             port = 563;
-            username = "$EWEKA_USERNAME";
-            password = "$EWEKA_PASSWORD";
+            # Secrets use { _secret = /path; } syntax
+            username = {_secret = config.sops.secrets."usenet/eweka/username".path;};
+            password = {_secret = config.sops.secrets."usenet/eweka/password".path;};
             connections = 20;
             ssl = true;
             priority = 0;
+            # Freeform server settings also supported
+            retention = 3000;
           }
           {
             name = "NewsgroupDirect";
             host = "news.newsgroupdirect.com";
             port = 563;
-            username = "$NGD_USERNAME";
-            password = "$NGD_PASSWORD";
+            username = {_secret = config.sops.secrets."usenet/newsgroupdirect/username".path;};
+            password = {_secret = config.sops.secrets."usenet/newsgroupdirect/password".path;};
             connections = 10;
             ssl = true;
             priority = 1;
