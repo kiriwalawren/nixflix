@@ -6,64 +6,106 @@
   cfg = config.nixflix.sabnzbd;
   inherit (config) nixflix;
 
+  enumFromAttrs = enum_values:
+    types.coercedTo
+    (types.enum (lib.attrNames enum_values))
+    (name: enum_values.${name})
+    (types.enum (lib.attrValues enum_values));
+
   serverType = types.submodule {
     freeformType = types.anything;
     options = {
       name = mkOption {
         type = types.str;
-        description = "Server name";
+        example = "Example News Provider";
+        description = "The name of the server.";
+      };
+      displayname = mkOption {
+        type = types.str;
+        default = "";
+        example = "Example News Provider";
+        description = "Human-friendly description of the server.";
       };
       host = mkOption {
         type = types.str;
-        description = "Server hostname";
+        example = "news.example.com";
+        description = "Hostname of the server.";
       };
       port = mkOption {
         type = types.port;
         default = 563;
-        description = "Server port";
+        example = 443;
+        description = "Port of the server.";
       };
       username = mkOption {
         type = types.anything;
-        description = "Server username. Use { _secret = /path/to/file; } for secrets.";
+        example = lib.literalExpression ''{ _secret = config.sops.secrets."usenet/username".path; }'';
+        description = "Username for server authentication. Use { _secret = /path/to/file; } for secrets.";
       };
       password = mkOption {
         type = types.anything;
-        description = "Server password. Use { _secret = /path/to/file; } for secrets.";
+        example = lib.literalExpression ''{ _secret = config.sops.secrets."usenet/password".path; }'';
+        description = "Password for server authentication. Use { _secret = /path/to/file; } for secrets.";
       };
       connections = mkOption {
         type = types.int;
         default = 10;
-        description = "Number of connections";
+        example = 50;
+        description = "Number of parallel connections permitted by the server.";
+      };
+      timeout = mkOption {
+        type = types.int;
+        default = 60;
+        description = "Time, in seconds, to wait for a response before attempting error recovery.";
       };
       ssl = mkOption {
         type = types.bool;
         default = true;
-        description = "Use SSL";
+        description = "Whether the server supports TLS.";
+      };
+      ssl_verify = mkOption {
+        type = enumFromAttrs {
+          none = 0;
+          "allow injection" = 2;
+          strict = 3;
+        };
+        default = 2;
+        description = "Certificate verification level.";
       };
       priority = mkOption {
         type = types.int;
         default = 0;
-        description = "Server priority (0 = highest)";
+        description = "Priority of this server. Servers are queried in order of priority, from highest (0) to lowest (100).";
       };
       optional = mkOption {
         type = types.bool;
         default = false;
-        description = "Server is optional";
+        description = "In case of connection failures, temporarily disable this server.";
+      };
+      required = mkOption {
+        type = types.bool;
+        default = false;
+        description = "In case of connection failures, wait for the server to come back online instead of skipping it.";
       };
       backup = mkOption {
         type = types.bool;
         default = false;
-        description = "Server is backup/fill server";
+        description = "Use this server as a backup/fill server.";
       };
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Enable this server";
+        description = "Enable this server by default.";
       };
       retention = mkOption {
         type = types.int;
         default = 0;
-        description = "Server retention in days (0 = unknown)";
+        description = "Server retention in days (0 = unknown).";
+      };
+      expire_date = mkOption {
+        type = types.str;
+        default = "";
+        description = "If notifications are enabled and an expiry date is set, warn 5 days before expiry.";
       };
     };
   };
@@ -104,23 +146,27 @@
       host = mkOption {
         type = types.str;
         default = "127.0.0.1";
-        description = "Host to bind to";
+        example = "0.0.0.0";
+        description = "Address for the Web UI to listen on for incoming connections.";
       };
 
       api_key = mkOption {
         type = types.anything;
-        description = "API Key. Use { _secret = /path/to/file; } for secrets.";
+        example = lib.literalExpression ''{ _secret = config.sops.secrets."sabnzbd/api_key".path; }'';
+        description = "API key for SABnzbd. Use { _secret = /path/to/file; } for secrets.";
       };
 
       nzb_key = mkOption {
         type = types.anything;
-        description = "NZB API Key. Use { _secret = /path/to/file; } for secrets.";
+        example = lib.literalExpression ''{ _secret = config.sops.secrets."sabnzbd/nzb_key".path; }'';
+        description = "NZB key for adding downloads via URL. Use { _secret = /path/to/file; } for secrets.";
       };
 
       port = mkOption {
         type = types.port;
         default = 8080;
-        description = "Port to listen on";
+        example = 12345;
+        description = "Port for the Web UI to listen on for incoming connections.";
       };
 
       url_base = mkOption {
@@ -136,31 +182,130 @@
       https_port = mkOption {
         type = types.port;
         default = 0;
-        description = "HTTPS port (0 to disable)";
+        description = "HTTPS port for the Web UI (0 to disable HTTPS).";
       };
 
       enable_https = mkOption {
         type = types.bool;
         default = false;
-        description = "Enable HTTPS";
+        description = "Whether to enable HTTPS for the web UI.";
+      };
+
+      https_cert = mkOption {
+        type = types.str;
+        default = "";
+        example = lib.literalExpression ''config.security.acme.certs."example.com".directory + "/fullchain.pem"'';
+        description = "Path to the TLS certificate for the web UI. If not set and HTTPS is enabled, a self-signed certificate is generated.";
+      };
+
+      https_key = mkOption {
+        type = types.str;
+        default = "";
+        example = lib.literalExpression ''config.security.acme.certs."example.com".directory + "/key.pem"'';
+        description = "Path to the TLS key for the web UI. If not set and HTTPS is enabled, a self-signed key is generated.";
+      };
+
+      bandwidth_max = mkOption {
+        type = types.str;
+        default = "";
+        example = "50MB/s";
+        description = "Maximum bandwidth in bytes/sec (supports prefixes). Use in conjunction with bandwidth_perc.";
+      };
+
+      bandwidth_perc = mkOption {
+        type = types.int;
+        default = 0;
+        example = 50;
+        description = "Percentage of bandwidth_max that SABnzbd is allowed to use. 0 means no limit.";
+      };
+
+      html_login = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Prompt for login with an HTML login mask if enabled, otherwise prompt for basic auth.";
+      };
+
+      inet_exposure = mkOption {
+        type = enumFromAttrs {
+          none = 0;
+          "api (add nzbs)" = 1;
+          "api (no config)" = 2;
+          "api (full)" = 3;
+          "api+web (auth needed)" = 4;
+          "api+web (locally no auth)" = 5;
+        };
+        default = 0;
+        description = "Controls access restrictions from non-local IP addresses.";
+      };
+
+      email_endjob = mkOption {
+        type = enumFromAttrs {
+          never = 0;
+          always = 1;
+          "on error" = 2;
+        };
+        default = 0;
+        description = "Whether to send emails on job completion.";
+      };
+
+      email_full = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Whether to send alerts for full disks.";
+      };
+
+      email_rss = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Whether to send alerts for jobs added by RSS feeds.";
+      };
+
+      email_server = mkOption {
+        type = types.str;
+        default = "";
+        description = "SMTP server for email alerts (server:port format).";
+      };
+
+      email_to = mkOption {
+        type = types.str;
+        default = "";
+        description = "Receiving address for email alerts.";
+      };
+
+      email_from = mkOption {
+        type = types.str;
+        default = "";
+        description = "'From:' field for emails (needs to be an address).";
+      };
+
+      email_account = mkOption {
+        type = types.str;
+        default = "";
+        description = "Username for SMTP authentication.";
+      };
+
+      email_pwd = mkOption {
+        type = types.anything;
+        default = "";
+        description = "Password for SMTP authentication. Use { _secret = /path/to/file; } for secrets.";
       };
 
       web_dir = mkOption {
         type = types.str;
         default = "Glitter";
-        description = "Web interface theme";
+        description = "Web interface theme.";
       };
 
       web_color = mkOption {
         type = types.str;
         default = "Gold";
-        description = "Web interface color scheme";
+        description = "Web interface color scheme.";
       };
 
       language = mkOption {
         type = types.str;
         default = "en";
-        description = "Interface language";
+        description = "Interface language.";
       };
 
       permissions = mkOption {
@@ -385,7 +530,8 @@
       cache_limit = mkOption {
         type = types.str;
         default = "512M";
-        description = "Article cache limit";
+        example = "500M";
+        description = "Size of the RAM cache, in bytes (prefixes supported). SABnzbd recommends 25% of available RAM.";
       };
 
       pause_on_post_processing = mkOption {
