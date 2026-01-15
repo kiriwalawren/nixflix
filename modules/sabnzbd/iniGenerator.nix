@@ -49,12 +49,26 @@ with lib; let
       ${concatStringsSep "\n" (map (cat: generateSubsection cat.name cat) categories)}
     '';
 
+  generatePrefixedSection = sectionName: settings:
+    if settings == {} || settings == null
+    then ""
+    else let
+      prefixedFields = mapAttrsToList (key: value: "${sectionName}_${key} = ${toIniValue value}") settings;
+    in ''
+      [${sectionName}]
+      ${concatStringsSep "\n" prefixedFields}
+    '';
+
+  prefixedSections = ["ncenter" "acenter" "ntfosd" "prowl" "pushover" "pushbullet" "apprise" "nscript"];
+
   generateSabnzbdIni = settings: let
     miscSection = generateMiscSection (settings.misc or {});
     serversSection = generateServersSection (settings.servers or []);
     categoriesSection = generateCategoriesSection (settings.categories or []);
+    prefixedSects = map (name: generatePrefixedSection name (settings.${name} or {})) prefixedSections;
+    allSections = [miscSection serversSection categoriesSection] ++ prefixedSects;
   in
-    concatStringsSep "\n\n" (filter (s: s != "") [miscSection serversSection categoriesSection]);
+    concatStringsSep "\n\n" (filter (s: s != "") allSections);
 in {
   inherit generateSabnzbdIni;
 }
