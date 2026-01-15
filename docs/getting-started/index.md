@@ -98,7 +98,7 @@ Here's a minimal configuration to get started:
     sabnzbd = {
       enable = true;
       settings = {
-        api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
+        misc.api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
       };
     };
 

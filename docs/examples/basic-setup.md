@@ -77,14 +77,16 @@ This example shows a working media server configuration based on a real producti
       enable = true;
 
       settings = {
-        # API keys are now in settings (required for *arr integration)
-        api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
-        nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
+        misc = {
+          # Secrets use { _secret = /path; } syntax
+          api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
+          nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
 
-        # Freeform settings - add any SABnzbd configuration
-        cache_limit = "1G";
-        propagation_delay = 0;
-        direct_unpack = true;
+          # Freeform settings - add any SABnzbd configuration
+          cache_limit = "1G";
+          propagation_delay = 0;
+          direct_unpack = true;
+        };
 
         servers = [
           {

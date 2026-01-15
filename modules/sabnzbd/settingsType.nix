@@ -107,6 +107,16 @@
         description = "Host to bind to";
       };
 
+      api_key = mkOption {
+        type = types.anything;
+        description = "API Key. Use { _secret = /path/to/file; } for secrets.";
+      };
+
+      nzb_key = mkOption {
+        type = types.anything;
+        description = "NZB API Key. Use { _secret = /path/to/file; } for secrets.";
+      };
+
       port = mkOption {
         type = types.port;
         default = 8080;
