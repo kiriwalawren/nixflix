@@ -43,6 +43,11 @@ This example shows a working media server configuration based on a real producti
       };
     };
 
+    recyclarr = {
+      enable = true;
+      cleanupUnmanagedProfiles = true;
+    };
+
     lidarr = {
       enable = true;
       config = {
@@ -143,11 +148,6 @@ This example shows a working media server configuration based on a real producti
         enable = true;
         allowLan = true;
       };
-    };
-
-    recyclarr = {
-      enable = true;
-      cleanupUnmanagedProfiles = true;
     };
   };
 
