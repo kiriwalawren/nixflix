@@ -46,15 +46,6 @@
   --md-typeset-a-color: var(--ctp-latte-red) !important;
 }
 
-.highlight {
-  border-left: 3px solid var(--md-accent-fg-color);
-  border-radius: 0 !important;
-}
-
-td .highlight {
-  margin: 0 !important;
-}
-
 .md-typeset .admonition.nixflix {
   border-left-color: var(--md-primary-fg-color);
 }
@@ -135,4 +126,16 @@ nav.md-nav--primary > ul > li > a.md-nav__link {
 
 .language-nix.highlight .si {
   color: var(--md-code-hl-special-color);
+}
+
+.highlight {
+  border-left: 3px solid var(--md-accent-fg-color);
+}
+
+td .highlight {
+  margin: 0 !important;
+}
+
+.md-code__nav {
+  border-radius: 0.3em !important;
 }
