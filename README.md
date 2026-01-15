@@ -1,4 +1,10 @@
-# Nixflix
+<h1 align="center">
+  <img src="https://github.com/kiriwalawren/nixflix/blob/main/.github/assets/logo.svg" width="250px"/>
+  <div>Nixflix</div>
+  <a href="https://builtwithnix.org">
+      <img src="https://builtwithnix.org/badge.svg"/>
+  </a>
+</h1>
 
 Nixflix is a declarative media server configuration manager for NixOS. The aim of the project is to automate
 all of the connective tissue required to get get Starr services (Sonarr, Radarr, Lidarr, Prowlarr) working
