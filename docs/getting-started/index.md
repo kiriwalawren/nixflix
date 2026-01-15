@@ -11,7 +11,7 @@ This guide shows how to add Nixflix to your NixOS configuration using flakes.
 - NixOS with flakes enabled
 - Git for version control
 - Basic familiarity with NixOS modules
-- (Optional, but highly recommended) Some form of secrets management, like [sops-nix](https://github.com/Mic92/sops-nix)
+- Some form of secrets management, like [sops-nix](https://github.com/Mic92/sops-nix)
 
 ## Enable Flakes
 
