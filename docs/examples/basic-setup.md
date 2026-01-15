@@ -164,6 +164,10 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/DrunkenSlug" = {};
     "indexer-api-keys/NZBFinder" = {};
     "indexer-api-keys/NzbPlanet" = {};
+    "jellyfin/alice_password" = {};
+    "mullvad-account-number" = {};
+
+    # SABnzbd settings secrets need to be owned by the sabnzbd user
     "sabnzbd/api_key" = {
       inherit (config.nixflix.sabnzbd) group;
       owner = config.nixflix.sabnzbd.user;
@@ -172,12 +176,22 @@ This example shows a working media server configuration based on a real producti
       inherit (config.nixflix.sabnzbd) group;
       owner = config.nixflix.sabnzbd.user;
     };
-    "usenet/eweka/username" = {};
-    "usenet/eweka/password" = {};
-    "usenet/newsgroupdirect/username" = {};
-    "usenet/newsgroupdirect/password" = {};
-    "jellyfin/alice_password" = {};
-    mullvad-account-number = {};
+    "usenet/eweka/username" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/eweka/password" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/newsgroupdirect/username" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/newsgroupdirect/password" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
   };
 }
 ```
@@ -187,6 +201,7 @@ This example shows a working media server configuration based on a real producti
 ### All Services
 
 - **Sonarr** - TV shows
+- **Sonarr Anime** - Anime shows
 - **Radarr** - Movies
 - **Lidarr** - Music
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
@@ -251,6 +266,7 @@ This example shows a working media server configuration based on a real producti
     ├── radarr/
     ├── recyclarr/
     ├── sabnzbd/
+    ├── sonarr-anime/
     └── sonarr/
 ```
 
@@ -259,6 +275,7 @@ This example shows a working media server configuration based on a real producti
 Via nginx reverse proxy:
 
 - http://localhost/sonarr
+- http://localhost/sonarr-anime
 - http://localhost/radarr
 - http://localhost/lidarr
 - http://localhost/prowlarr
@@ -268,6 +285,7 @@ Via nginx reverse proxy:
 Direct access:
 
 - Sonarr: http://localhost:8989
+- Sonarr Anime: http://localhost:8990
 - Radarr: http://localhost:7878
 - Lidarr: http://localhost:8686
 - Prowlarr: http://localhost:9696
