@@ -10,6 +10,48 @@ This example shows a working media server configuration based on a real producti
 
 ```nix
 {
+  sops.secrets = {
+    "sonarr/api_key" = {};
+    "sonarr/password" = {};
+    "radarr/api_key" = {};
+    "radarr/password" = {};
+    "lidarr/api_key" = {};
+    "lidarr/password" = {};
+    "prowlarr/api_key" = {};
+    "prowlarr/password" = {};
+    "indexer-api-keys/DrunkenSlug" = {};
+    "indexer-api-keys/NZBFinder" = {};
+    "indexer-api-keys/NzbPlanet" = {};
+    "jellyfin/alice_password" = {};
+    "mullvad-account-number" = {};
+
+    # SABnzbd settings secrets need to be owned by the sabnzbd user
+    "sabnzbd/api_key" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "sabnzbd/nzb_key" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/eweka/username" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/eweka/password" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/newsgroupdirect/username" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+    "usenet/newsgroupdirect/password" = {
+      inherit (config.nixflix.sabnzbd) group;
+      owner = config.nixflix.sabnzbd.user;
+    };
+  };
+
   nixflix = {
     enable = true;
     mediaDir = "/data/media";
@@ -18,7 +60,7 @@ This example shows a working media server configuration based on a real producti
 
     theme = {
       enable = true;
-      name = "plex";
+      name = "overseerr";
     };
 
     nginx.enable = true;
@@ -86,11 +128,6 @@ This example shows a working media server configuration based on a real producti
           # Secrets use { _secret = /path; } syntax
           api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
           nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
-
-          # Freeform settings - add any SABnzbd configuration
-          cache_limit = "1G";
-          propagation_delay = 0;
-          direct_unpack = true;
         };
 
         servers = [
@@ -104,7 +141,6 @@ This example shows a working media server configuration based on a real producti
             connections = 20;
             ssl = true;
             priority = 0;
-            # Freeform server settings also supported
             retention = 3000;
           }
           {
@@ -148,48 +184,6 @@ This example shows a working media server configuration based on a real producti
         enable = true;
         allowLan = true;
       };
-    };
-  };
-
-  sops.secrets = {
-    "sonarr/api_key" = {};
-    "sonarr/password" = {};
-    "radarr/api_key" = {};
-    "radarr/password" = {};
-    "lidarr/api_key" = {};
-    "lidarr/password" = {};
-    "prowlarr/api_key" = {};
-    "prowlarr/password" = {};
-    "indexer-api-keys/DrunkenSlug" = {};
-    "indexer-api-keys/NZBFinder" = {};
-    "indexer-api-keys/NzbPlanet" = {};
-    "jellyfin/alice_password" = {};
-    "mullvad-account-number" = {};
-
-    # SABnzbd settings secrets need to be owned by the sabnzbd user
-    "sabnzbd/api_key" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "sabnzbd/nzb_key" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/eweka/username" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/eweka/password" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/newsgroupdirect/username" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/newsgroupdirect/password" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
     };
   };
 }
