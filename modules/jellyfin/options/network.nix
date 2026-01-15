@@ -60,7 +60,7 @@ with lib; {
     enableRemoteAccess = mkOption {
       type = types.bool;
       default = true;
-      description = "Enable remote access";
+      description = "Enable remote access. (Disabling this can cause unexpected authentication failures)";
     };
 
     enableUPnP = mkOption {

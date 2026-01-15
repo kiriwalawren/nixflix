@@ -120,7 +120,6 @@ This example shows a working media server configuration based on a real producti
 
     jellyfin = {
       enable = true;
-      network.enableRemoteAccess = false;
       users = {
         alice = {
           mutable = false;
