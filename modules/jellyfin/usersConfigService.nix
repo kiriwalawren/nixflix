@@ -132,23 +132,48 @@ in {
 
             if [ "$SHOULD_UPDATE" = "true" ]; then
               echo ""
-              echo "Sending update request to: $BASE_URL/Users?userId=$USER_ID"
+              echo "Sending configuration update request to: $BASE_URL/Users/$USER_ID"
 
+              # Update user configuration and basic settings
               UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
                 -H "Content-Type: application/json" \
                 -d @${userConfigFiles.${userName}} \
                 -w "\n%{http_code}" \
-                "$BASE_URL/Users?userId=$USER_ID")
+                "$BASE_URL/Users/$USER_ID")
 
               UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
               UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
 
-              echo "Update user response (HTTP $UPDATE_HTTP_CODE):"
+              echo "Update user configuration response (HTTP $UPDATE_HTTP_CODE):"
               echo "$UPDATE_BODY" | ${pkgs.jq}/bin/jq . || echo "$UPDATE_BODY"
 
               if [ "$UPDATE_HTTP_CODE" -lt 200 ] || [ "$UPDATE_HTTP_CODE" -ge 300 ]; then
-                echo "Failed to update user ${userName} (HTTP $UPDATE_HTTP_CODE)" >&2
+                echo "Failed to update user configuration for ${userName} (HTTP $UPDATE_HTTP_CODE)" >&2
+                exit 1
+              fi
+
+              echo ""
+              echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
+
+              # Update user policy separately
+              POLICY_JSON=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.policy')
+
+              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                -H "Content-Type: application/json" \
+                -d "$POLICY_JSON" \
+                -w "\n%{http_code}" \
+                "$BASE_URL/Users/$USER_ID/Policy")
+
+              POLICY_HTTP_CODE=$(echo "$POLICY_RESPONSE" | tail -n1)
+              POLICY_BODY=$(echo "$POLICY_RESPONSE" | sed '$d')
+
+              echo "Update user policy response (HTTP $POLICY_HTTP_CODE):"
+              echo "$POLICY_BODY" | ${pkgs.jq}/bin/jq . || echo "$POLICY_BODY"
+
+              if [ "$POLICY_HTTP_CODE" -lt 200 ] || [ "$POLICY_HTTP_CODE" -ge 300 ]; then
+                echo "Failed to update user policy for ${userName} (HTTP $POLICY_HTTP_CODE)" >&2
                 exit 1
               fi
 
