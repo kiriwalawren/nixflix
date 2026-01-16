@@ -156,9 +156,23 @@ in {
               echo ""
               echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
 
-              # Update user policy separately - wrap in newPolicy field (note: capital P in Policy)
-              POLICY_JSON=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '{newPolicy: .Policy}')
-              echo "Policy payload:"
+              # Fetch current policy from server
+              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
+
+              echo "Current policy from server:"
+              echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq '.Policy'
+
+              # Get our desired policy settings
+              DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
+
+              # Merge: start with current policy, overlay our desired changes
+              MERGED_POLICY=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
+
+              # Wrap in newPolicy field
+              POLICY_JSON=$(echo "$MERGED_POLICY" | ${pkgs.jq}/bin/jq '{newPolicy: .}')
+
+              echo ""
+              echo "Merged policy payload to send:"
               echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
 
               POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
