@@ -179,6 +179,9 @@ in {
           SystemCallFilter = mkForce [];
           NoNewPrivileges = mkForce false;
           ProtectControlGroups = mkForce false;
+        }
+        // optionalAttrs cfg.encoding.enableHardwareEncoding {
+          SupplementaryGroups = ["video" "render"];
         };
     };
 
