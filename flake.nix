@@ -14,23 +14,43 @@
     nixpkgs,
     ...
   } @ inputs: let
+    lib = nixpkgs.lib;
     systems = ["x86_64-linux" "aarch64-linux"];
-    forAllSystems = nixpkgs.lib.genAttrs systems;
+
+    perSystem = f:
+      lib.genAttrs systems (system:
+        f rec {
+          inherit system;
+          pkgs = pkgsFor.${system};
+        });
+
+    pkgsFor = lib.genAttrs systems (
+      system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+          config.allowUnfreePredicate = _: true;
+        }
+    );
   in {
     nixosModules.default = import ./modules;
     nixosModules.nixflix = import ./modules;
 
-    packages = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in
+    packages = perSystem ({
+      system,
+      pkgs,
+      ...
+    }:
       (import ./docs {inherit pkgs inputs;})
       // {
         default = self.packages.${system}.docs;
       });
 
-    apps = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in {
+    apps = perSystem ({
+      system,
+      pkgs,
+      ...
+    }: {
       docs-serve = {
         type = "app";
         program = toString (pkgs.writeShellScript "docs-serve" ''
@@ -40,17 +60,18 @@
       };
     });
 
-    formatter = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in
+    formatter = perSystem ({pkgs, ...}:
       pkgs.writeShellScriptBin "formatter" ''
         ${pkgs.deadnix}/bin/deadnix --edit
         ${pkgs.statix}/bin/statix fix ./.
         ${pkgs.alejandra}/bin/alejandra ./.
       '');
 
-    checks = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
+    checks = perSystem ({
+      pkgs,
+      system,
+      ...
+    }: let
       tests = import ./tests {
         inherit system pkgs;
         nixosModules = self.nixosModules.default;
@@ -69,9 +90,7 @@
       // tests.vm-tests
       // tests.unit-tests);
 
-    devShells = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in {
+    devShells = perSystem ({pkgs, ...}: {
       default = pkgs.mkShell {
         packages = with pkgs; [
           alejandra
