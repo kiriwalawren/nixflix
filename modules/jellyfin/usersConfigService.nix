@@ -156,8 +156,10 @@ in {
               echo ""
               echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
 
-              # Update user policy separately
-              POLICY_JSON=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.policy')
+              # Update user policy separately - wrap in newPolicy field
+              POLICY_JSON=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '{newPolicy: .policy}')
+              echo "Policy payload:"
+              echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
 
               POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
