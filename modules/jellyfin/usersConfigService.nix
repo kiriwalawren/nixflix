@@ -69,7 +69,9 @@ in {
         fi
 
         ${concatStringsSep "\n" (mapAttrsToList (userName: userCfg: ''
+            echo "=========================================="
             echo "Processing user: ${userName}"
+            echo "=========================================="
 
             USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id' || echo "")
             echo "Found USER_ID for ${userName}: $USER_ID"
@@ -106,15 +108,31 @@ in {
               USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id')
             fi
 
+            echo "Current user settings from server:"
+            echo "$USERS_JSON" | ${pkgs.jq}/bin/jq ".[] | select(.Name == \"${userName}\")"
+
+            echo ""
+            echo "Configured payload to send:"
+            ${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq .
+
+            echo ""
+            echo "mutable setting: ${boolToString userCfg.mutable}"
+            echo "IS_NEW_USER: $IS_NEW_USER"
+
             SHOULD_UPDATE=false
             if [ "$IS_NEW_USER" = "true" ]; then
               SHOULD_UPDATE=true
+              echo "Update decision: YES (new user)"
             elif [ "${boolToString userCfg.mutable}" = "false" ]; then
               SHOULD_UPDATE=true
+              echo "Update decision: YES (mutable=false)"
+            else
+              echo "Update decision: NO (mutable=true and existing user)"
             fi
 
             if [ "$SHOULD_UPDATE" = "true" ]; then
-              echo "Updating user configuration for: ${userName}"
+              echo ""
+              echo "Sending update request to: $BASE_URL/Users?userId=$USER_ID"
 
               UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
@@ -126,15 +144,22 @@ in {
               UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
               UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
 
-              echo "Update user response (HTTP $UPDATE_HTTP_CODE): $UPDATE_BODY"
+              echo "Update user response (HTTP $UPDATE_HTTP_CODE):"
+              echo "$UPDATE_BODY" | ${pkgs.jq}/bin/jq . || echo "$UPDATE_BODY"
 
               if [ "$UPDATE_HTTP_CODE" -lt 200 ] || [ "$UPDATE_HTTP_CODE" -ge 300 ]; then
                 echo "Failed to update user ${userName} (HTTP $UPDATE_HTTP_CODE)" >&2
                 exit 1
               fi
+
+              echo ""
+              echo "Verifying update - fetching user again:"
+              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
+              echo "$VERIFY_RESPONSE" | ${pkgs.jq}/bin/jq .
             else
-              echo "Skipping user ${userName} (mutable=true and not a new user)"
+              echo "Skipping user ${userName} - no update needed"
             fi
+            echo ""
           '')
           cfg.users)}
 
