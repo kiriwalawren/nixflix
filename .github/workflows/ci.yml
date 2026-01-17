@@ -13,7 +13,7 @@ jobs:
     outputs:
       checks: ${{ steps.checks.outputs.checks }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -41,7 +41,7 @@ jobs:
       matrix:
         check: ${{ fromJSON(needs.prepare.outputs.checks) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
