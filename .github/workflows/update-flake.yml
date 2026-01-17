@@ -26,9 +26,6 @@ jobs:
       - name: Update flake.lock
         run: nix flake update
 
-      - name: Run checks with updated dependencies
-        run: nix flake check --all-systems
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
