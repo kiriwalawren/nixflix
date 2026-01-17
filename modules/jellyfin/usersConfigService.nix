@@ -166,10 +166,7 @@ in {
               DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
 
               # Merge: start with current policy, overlay our desired changes
-              MERGED_POLICY=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
-
-              # Wrap in newPolicy field
-              POLICY_JSON=$(echo "$MERGED_POLICY" | ${pkgs.jq}/bin/jq '{newPolicy: .}')
+              POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
 
               echo ""
               echo "Merged policy payload to send:"
