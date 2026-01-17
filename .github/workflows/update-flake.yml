@@ -32,20 +32,21 @@ jobs:
 
       - name: Create Pull Request
         run: |
+          BRANCH="update-flake-lock"
           gh auth status
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout -b update-flake-lock
+          git checkout -b "$BRANCH"
           git add --all
           git commit -m "update flake.lock"
-          git push origin update-flake-lock
+          git push origin "$BRANCH"
 
           gh pr create \
             --title "chore: update flake.lock" \
             --body "Automated flake.lock update.\n\nThis PR updates all flake inputs." \
-            --base main
-            --head $(git rev-parse --abbrev-ref HEAD)
+            --base main \
+            --head "$BRANCH"
         env:
           GH_TOKEN: ${{ github.token }}
