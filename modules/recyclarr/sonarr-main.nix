@@ -106,7 +106,17 @@ in {
           "d0c516558625b04b363fa6c5c2c7cfd4" # WEB Scene
         ];
         assign_scores_to = [
-          {name = "WEB-2160p";}
+          {name = "WEB-1080p";}
+        ];
+      }
+
+      {
+        trash_ids = [
+          "923b6abef9b17f937fab56cfcf89e1f1" # DV (w/o HDR fallback)
+        ];
+
+        assign_scores_to = [
+          {name = "WEB-1080p";}
         ];
       }
     ];

@@ -109,6 +109,16 @@ in {
           {name = "UHD Bluray + WEB";}
         ];
       }
+
+      {
+        trash_ids = [
+          "923b6abef9b17f937fab56cfcf89e1f1" # DV (w/o HDR fallback)
+        ];
+
+        assign_scores_to = [
+          {name = "UHD Bluray + WEB";}
+        ];
+      }
     ];
   };
 }
