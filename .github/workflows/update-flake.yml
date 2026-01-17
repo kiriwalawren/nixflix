@@ -6,10 +6,6 @@ on:
     # Run every Sunday at 00:00 UTC
     - cron: '0 0 * * 0'
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -34,6 +30,7 @@ jobs:
         run: |
           BRANCH="update-flake-lock"
           gh auth status
+          gh auth setup-git
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
