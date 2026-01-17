@@ -34,6 +34,9 @@ jobs:
         run: |
           gh auth status
 
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git checkout -b update-flake-lock
           git add --all
           git commit -m "update flake.lock"
