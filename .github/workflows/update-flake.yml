@@ -6,6 +6,10 @@ on:
     # Run every Sunday at 00:00 UTC
     - cron: '0 0 * * 0'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -28,6 +32,8 @@ jobs:
 
       - name: Create Pull Request
         run: |
+          gh auth status
+
           git checkout -b update-flake-lock
           git add --all
           git commit -m "update flake.lock"
@@ -39,4 +45,4 @@ jobs:
             --base main
             --head $(git rev-parse --abbrev-ref HEAD)
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
