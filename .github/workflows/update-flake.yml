@@ -27,14 +27,16 @@ jobs:
         run: nix flake update
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: update flake.lock"
-          title: "chore: update flake.lock"
-          body: |
-            Automated flake.lock update.
+        run: |
+          git checkout -b update-flake-lock
+          git add --all
+          git commit -m "update flake.lock"
+          git push origin update-flake-lock
 
-            This PR updates all flake inputs to their latest versions.
-          branch: update-flake-lock
-          delete-branch: true
+          gh pr create \
+            --title "chore: update flake.lock" \
+            --body "Automated flake.lock update.\n\nThis PR updates all flake inputs." \
+            --base main
+            --head $(git rev-parse --abbrev-ref HEAD)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
