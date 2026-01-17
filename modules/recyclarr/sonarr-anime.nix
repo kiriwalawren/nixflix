@@ -135,6 +135,7 @@ in {
       {
         trash_ids = [
           "923b6abef9b17f937fab56cfcf89e1f1" # DV (w/o HDR fallback)
+          "b337d6812e06c200ec9a2d3cfa9d20a7" # DV (ALL - Excludes all DV releases)
         ];
 
         assign_scores_to = [
