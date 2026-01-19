@@ -5,6 +5,7 @@
   config,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   options = mkOption {
@@ -25,9 +26,8 @@ in {
           description = "Type of download client to configure (matches schema implementationName)";
           example = "SABnzbd";
         };
-        apiKeyPath = mkOption {
-          type = types.str;
-          description = "Path to file containing the API key for the download client";
+        apiKey = secrets.mkSecretOption {
+          description = "API key for the download client.";
         };
       };
     });
@@ -36,7 +36,7 @@ in {
       lib.optional (nixflix.sabnzbd.enable or false) {
         name = "SABnzbd";
         implementationName = "SABnzbd";
-        apiKeyPath = nixflix.sabnzbd.apiKeyPath;
+        apiKey = nixflix.sabnzbd.settings.misc.api_key;
         host = nixflix.sabnzbd.settings.host;
         port = nixflix.sabnzbd.settings.port;
         urlBase = nixflix.sabnzbd.settings.url_base;
@@ -44,7 +44,7 @@ in {
     '';
     description = ''
       List of download clients to configure via the API /downloadclient endpoint.
-      Any additional attributes beyond name, implementationName, and apiKeyPath
+      Any additional attributes beyond name, implementationName, and apiKey
       will be applied as field values to the download client schema.
 
       When SABnzbd is enabled, each service is automatically configured with
@@ -78,7 +78,7 @@ in {
       set -eu
 
       # Read API key secret
-      API_KEY=$(cat ${serviceConfig.apiKeyPath})
+      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
 
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
@@ -112,9 +112,8 @@ in {
 
       ${concatMapStringsSep "\n" (clientConfig: let
           clientName = clientConfig.name;
-          inherit (clientConfig) implementationName;
-          inherit (clientConfig) apiKeyPath;
-          allOverrides = builtins.removeAttrs clientConfig ["implementationName" "apiKeyPath"];
+          inherit (clientConfig) implementationName apiKey;
+          allOverrides = builtins.removeAttrs clientConfig ["implementationName" "apiKey"];
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
@@ -141,7 +140,7 @@ in {
               '
           }
 
-          CLIENT_API_KEY=$(cat ${apiKeyPath})
+          ${secrets.toShellValue "CLIENT_API_KEY" apiKey}
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
           EXISTING_CLIENT=$(echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${clientName}") | @json' || echo "")

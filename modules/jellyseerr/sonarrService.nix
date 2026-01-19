@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
   jellyfinCfg = nixflix.jellyfin;
@@ -199,7 +200,15 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        LoadCredential = imap0 (idx: s: "sonarr-${toString idx}-apikey:${s.apiKeyPath}") cfg.sonarr;
+        LoadCredential =
+          imap0 (
+            idx: s: "sonarr-${toString idx}-apikey:${
+              if secrets.isSecretRef s.apiKey
+              then s.apiKey._secret
+              else pkgs.writeText "sonarr-${toString idx}-inline-key" s.apiKey
+            }"
+          )
+          cfg.sonarr;
       };
 
       script = ''

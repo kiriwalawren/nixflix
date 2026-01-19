@@ -3,7 +3,9 @@
   config,
   ...
 }:
-with lib; {
+with lib; let
+  secrets = import ../../lib/secrets {inherit lib;};
+in {
   options.nixflix.jellyfin.network = {
     autoDiscovery = mkOption {
       type = types.bool;
@@ -21,10 +23,9 @@ with lib; {
       description = "Base URL for Jellyfin (URL prefix) http://localhost:8096/<baseUrl>";
     };
 
-    certificatePassword = mkOption {
-      type = types.str;
+    certificatePassword = secrets.mkSecretOption {
       default = "";
-      description = "Certificate password";
+      description = "Certificate password.";
     };
 
     certificatePath = mkOption {

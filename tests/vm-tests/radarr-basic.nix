@@ -25,9 +25,9 @@ in
             hostConfig = {
               port = 7878;
               username = "admin";
-              passwordPath = "${pkgs.writeText "radarr-password" "testpassword123"}";
+              password = {_secret = pkgs.writeText "radarr-password" "testpassword123";};
             };
-            apiKeyPath = "${pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234"}";
+            apiKey = {_secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";};
             delayProfiles = [
               {
                 enableUsenet = true;

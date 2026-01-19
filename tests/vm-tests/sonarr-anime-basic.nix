@@ -25,9 +25,9 @@ in
             hostConfig = {
               port = 8989;
               username = "admin";
-              passwordPath = "${pkgs.writeText "sonarr-anime-password" "testpassword123"}";
+              password = {_secret = pkgs.writeText "sonarr-anime-password" "testpassword123";};
             };
-            apiKeyPath = "${pkgs.writeText "sonarr-anime-apikey" "0123456789abcdef0123456789abcdef"}";
+            apiKey = {_secret = pkgs.writeText "sonarr-anime-apikey" "0123456789abcdef0123456789abcdef";};
             delayProfiles = [
               {
                 enableUsenet = true;

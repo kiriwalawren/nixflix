@@ -4,6 +4,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../../lib/secrets {inherit lib;};
   radarrRecyclarrConfig =
     optionalAttrs (config.nixflix.recyclarr.radarr.enable or false)
     (import ../../recyclarr/radarr-main.nix {inherit config;});
@@ -31,9 +32,8 @@ with lib; let
         description = "Radarr port";
       };
 
-      apiKeyPath = mkOption {
-        type = types.path;
-        description = "Path to file containing Radarr API key";
+      apiKey = secrets.mkSecretOption {
+        description = "Radarr API key.";
       };
 
       useSsl = mkOption {
@@ -114,7 +114,7 @@ with lib; let
       {
         name = "Radarr";
         port = config.nixflix.radarr.config.hostConfig.port or 7878;
-        inherit (config.nixflix.radarr.config) apiKeyPath;
+        inherit (config.nixflix.radarr.config) apiKey;
         baseUrl =
           if config.nixflix.nginx.enable
           then "/radarr"
@@ -137,7 +137,7 @@ in {
     example = [
       {
         name = "Radarr Main";
-        apiKeyPath = "/run/secrets/radarr-apikey";
+        apiKey = {_secret = "/run/secrets/radarr-apikey";};
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
       }

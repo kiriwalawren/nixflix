@@ -4,6 +4,7 @@
   serviceName,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 
   defaultDelayProfile = {
@@ -130,7 +131,7 @@ in {
       set -eu
 
       # Read API key secret
-      API_KEY=$(cat ${serviceConfig.apiKeyPath})
+      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
 
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 

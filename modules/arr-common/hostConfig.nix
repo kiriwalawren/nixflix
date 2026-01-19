@@ -4,6 +4,7 @@
   serviceName,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
@@ -29,8 +30,12 @@ in {
       set -eu
 
       # Read secrets
-      API_KEY=$(cat ${serviceConfig.apiKeyPath})
-      AUTH_PASSWORD=$(cat ${serviceConfig.hostConfig.passwordPath})
+      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
+      ${
+        if serviceConfig.hostConfig.password == null
+        then "AUTH_PASSWORD=''"
+        else secrets.toShellValue "AUTH_PASSWORD" serviceConfig.hostConfig.password
+      }
 
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 

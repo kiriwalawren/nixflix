@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
@@ -76,8 +77,8 @@ in {
           echo "GET /Startup/User response (HTTP $GET_HTTP_CODE): $GET_BODY"
 
           ${
-          if firstAdminUser.passwordFile != null
-          then ''PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
+          if firstAdminUser.password != null
+          then secrets.toShellValue "PASSWORD" firstAdminUser.password
           else ''PASSWORD=""''
         }
 

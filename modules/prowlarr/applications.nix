@@ -5,6 +5,7 @@
 }:
 with lib; let
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+  secrets = import ../lib/secrets {inherit lib;};
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
@@ -15,11 +16,10 @@ in {
           description = "User-defined name for the application instance";
         };
         implementationName = mkOption {
-          type = types.enum ["LazyLibrarian" "Lidarr" "Mylar" "Readarr" "Radarr" "Sonarr" "Whisper"];
+          type = types.enum ["LazyLibrarian" "Lidarr" "Mylar" "Readarr" "Radarr" "Sonarr" "Whisparr"];
           description = "Type of application to configure (matches schema implementationName)";
         };
-        apiKeyPath = mkOption {
-          type = types.str;
+        apiKey = secrets.mkSecretOption {
           description = "Path to file containing the API key for the application";
         };
       };
@@ -32,7 +32,7 @@ in {
     '';
     description = ''
       List of applications to configure in Prowlarr.
-      Any additional attributes beyond name, implementationName, and apiKeyPath
+      Any additional attributes beyond name, implementationName, and apiKey
       will be applied as field values to the application schema.
     '';
   };
@@ -52,7 +52,7 @@ in {
       set -eu
 
       # Read API key secret
-      API_KEY=$(cat ${serviceConfig.apiKeyPath})
+      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
 
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
@@ -87,8 +87,8 @@ in {
       ${concatMapStringsSep "\n" (applicationConfig: let
           applicationName = applicationConfig.name;
           inherit (applicationConfig) implementationName;
-          inherit (applicationConfig) apiKeyPath;
-          allOverrides = builtins.removeAttrs applicationConfig ["implementationName" "apiKeyPath"];
+          inherit (applicationConfig) apiKey;
+          allOverrides = builtins.removeAttrs applicationConfig ["implementationName" "apiKey"];
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
@@ -115,7 +115,7 @@ in {
               '
           }
 
-          APPLICATION_API_KEY=$(cat ${apiKeyPath})
+          ${secrets.toShellValue "APPLICATION_API_KEY" apiKey}
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
           EXISTING_APPLICATION=$(echo "$APPLICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${applicationName}") | @json' || echo "")
