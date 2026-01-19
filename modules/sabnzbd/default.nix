@@ -17,7 +17,7 @@ with lib; let
 
   templateIni = iniGenerator.generateSabnzbdIni cfg.settings;
 
-  mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (builtins.readFile ./mergeSecrets.py);
+  mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (builtins.readFile ../lib/secrets/mergeSecrets.py);
 in {
   imports = [
     ./categoriesService.nix
