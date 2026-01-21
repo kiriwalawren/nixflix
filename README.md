@@ -43,6 +43,14 @@ Nixflix is:
 - **Unified Theming**: All supported services can be themed to look the same, powered by [theme.park](https://docs.theme-park.dev/)
 - [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines
 
+### Upcoming Features
+
+- [ ] Jellyfin Plugin Configuration
+- [ ] Qbittorrent Client Configuration/Integration
+- [ ] Jellystat configuration
+- [ ] Media Removal Automation
+- [ ] Subtitle Management
+
 ## Documentation
 
 Checkout the [documentation](https://kiriwalawren.github.io/nixflix/) to get started.
