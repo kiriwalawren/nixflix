@@ -21,17 +21,12 @@
       lib.genAttrs systems (system:
         f rec {
           inherit system;
-          pkgs = pkgsFor.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            config.allowUnfreePredicate = _: true;
+          };
         });
-
-    pkgsFor = lib.genAttrs systems (
-      system:
-        import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-          config.allowUnfreePredicate = _: true;
-        }
-    );
   in {
     nixosModules.default = import ./modules;
     nixosModules.nixflix = import ./modules;
