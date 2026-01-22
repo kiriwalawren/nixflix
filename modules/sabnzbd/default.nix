@@ -118,19 +118,22 @@ in {
         User = cfg.user;
         Group = cfg.group;
 
-        ExecStartPre = pkgs.writeShellScript "sabnzbd-prestart" ''
-          set -euo pipefail
+        # Run with root privileges ('+' prefix) to read secrets owned by root
+        ExecStartPre =
+          "+"
+          + pkgs.writeShellScript "sabnzbd-prestart" ''
+            set -euo pipefail
 
-          echo "Merging secrets into SABnzbd configuration..."
-          ${pkgs.python3}/bin/python3 ${mergeSecretsScript} \
-            /etc/sabnzbd/sabnzbd.ini.template \
-            ${configFile}
+            echo "Merging secrets into SABnzbd configuration..."
+            ${pkgs.python3}/bin/python3 ${mergeSecretsScript} \
+              /etc/sabnzbd/sabnzbd.ini.template \
+              ${configFile}
 
-          ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
-          ${pkgs.coreutils}/bin/chmod 600 ${configFile}
+            ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
+            ${pkgs.coreutils}/bin/chmod 600 ${configFile}
 
-          echo "Configuration ready"
-        '';
+            echo "Configuration ready"
+          '';
 
         ExecStart = "${pkgs.sabnzbd}/bin/sabnzbd -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
 

@@ -25,32 +25,12 @@ This example shows a working media server configuration based on a real producti
     "jellyfin/alice_password" = {};
     "jellyseerr/api_key" = {};
     "mullvad-account-number" = {};
-
-    # SABnzbd settings secrets need to be owned by the sabnzbd user
-    "sabnzbd/api_key" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "sabnzbd/nzb_key" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/eweka/username" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/eweka/password" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/newsgroupdirect/username" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
-    "usenet/newsgroupdirect/password" = {
-      inherit (config.nixflix.sabnzbd) group;
-      owner = config.nixflix.sabnzbd.user;
-    };
+    "sabnzbd/api_key" = {};
+    "sabnzbd/nzb_key" = {};
+    "usenet/eweka/username" = {};
+    "usenet/eweka/password" = {};
+    "usenet/newsgroupdirect/username" = {};
+    "usenet/newsgroupdirect/password" = {};
   };
 
   nixflix = {
