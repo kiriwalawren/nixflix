@@ -13,28 +13,10 @@ in {
   isSecretRef = value:
     (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
-  getSecretPath = value:
-    if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
-    then value._secret
-    else null;
-
   toShellValue = varName: value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
     then "${varName}=$(cat ${escapeShellArg value._secret})"
     else "${varName}=${escapeShellArg (toString value)}";
-
-  mkSecretAssertion = fieldName: value: {
-    assertion = true; # Always true - we just want to warn, not fail
-    message =
-      if (builtins.isString value) && !(builtins.isAttrs value)
-      then "Warning: ${fieldName} is set to a plain-text string. This will be visible in the Nix store. Consider using { _secret = /path/to/file; } instead for sensitive data."
-      else "";
-  };
-
-  toPlaceholder = value:
-    if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
-    then "__SECRET_FILE__${toString value._secret}__"
-    else toString value;
 
   processValue = value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
