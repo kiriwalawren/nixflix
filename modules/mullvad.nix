@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ./lib/secrets {inherit lib;};
   cfg = config.nixflix.mullvad;
   mullvadPkg =
     if cfg.gui.enable
@@ -101,10 +102,9 @@ in {
       type = types.bool;
     };
 
-    accountNumberPath = mkOption {
-      type = types.nullOr types.path;
+    accountNumber = secrets.mkSecretOption {
       default = null;
-      description = "Path to file containing the Mullvad account number";
+      description = "Mullvad account number.";
     };
 
     gui = {
@@ -187,10 +187,10 @@ in {
             sleep 1
           done
 
-          ${optionalString (cfg.accountNumberPath != null) ''
+          ${optionalString (cfg.accountNumber != null) ''
             if ${mullvadPkg}/bin/mullvad account get | grep -q "Not logged in"; then
               echo "Logging in to Mullvad account..."
-              ACCOUNT_NUMBER=$(cat ${cfg.accountNumberPath})
+              ${secrets.toShellValue "ACCOUNT_NUMBER" cfg.accountNumber}
               ${mullvadPkg}/bin/mullvad account login "$ACCOUNT_NUMBER"
 
               echo "Waiting for relay list to download..."

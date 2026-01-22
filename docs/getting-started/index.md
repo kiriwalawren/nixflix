@@ -74,24 +74,24 @@ Here's a minimal configuration to get started:
     sonarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."sonarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."sonarr/password".path;
+        apiKey = {_secret = config.sops.secrets."sonarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."sonarr/password".path;};
       };
     };
 
     radarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."radarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."radarr/password".path;
+        apiKey = {_secret = config.sops.secrets."radarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."radarr/password".path;};
       };
     };
 
     prowlarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."prowlarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."prowlarr/password".path;
+        apiKey = {_secret = config.sops.secrets."prowlarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."prowlarr/password".path;};
       };
     };
 
@@ -106,7 +106,7 @@ Here's a minimal configuration to get started:
       enable = true;
       users.admin = {
         policy.isAdministrator = true;
-        passwordFile = config.sops.secrets."jellyfin/admin_password".path;
+        password = {_secret = config.sops.secrets."jellyfin/admin_password".path;};
       };
     };
   };

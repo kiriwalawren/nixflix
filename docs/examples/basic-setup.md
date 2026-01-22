@@ -23,6 +23,7 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/NZBFinder" = {};
     "indexer-api-keys/NzbPlanet" = {};
     "jellyfin/alice_password" = {};
+    "jellyseerr/api_key" = {};
     "mullvad-account-number" = {};
 
     # SABnzbd settings secrets need to be owned by the sabnzbd user
@@ -68,20 +69,17 @@ This example shows a working media server configuration based on a real producti
 
     sonarr = {
       enable = true;
-      mediaDirs = [
-        "${config.nixflix.mediaDir}/tv"
-      ];
       config = {
-        apiKeyPath = config.sops.secrets."sonarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."sonarr/password".path;
+        apiKey = {_secret = config.sops.secrets."sonarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."sonarr/password".path;};
       };
     };
 
     radarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."radarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."radarr/password".path;
+        apiKey = {_secret = config.sops.secrets."radarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."radarr/password".path;};
       };
     };
 
@@ -93,28 +91,28 @@ This example shows a working media server configuration based on a real producti
     lidarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."lidarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."lidarr/password".path;
+        apiKey = {_secret = config.sops.secrets."lidarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."lidarr/password".path;};
       };
     };
 
     prowlarr = {
       enable = true;
       config = {
-        apiKeyPath = config.sops.secrets."prowlarr/api_key".path;
-        hostConfig.passwordPath = config.sops.secrets."prowlarr/password".path;
+        apiKey = {_secret = config.sops.secrets."prowlarr/api_key".path;};
+        hostConfig.password = {_secret = config.sops.secrets."prowlarr/password".path;};
         indexers = [
           {
             name = "DrunkenSlug";
-            apiKeyPath = config.sops.secrets."indexer-api-keys/DrunkenSlug".path;
+            apiKey = {_secret = config.sops.secrets."indexer-api-keys/DrunkenSlug".path;};
           }
           {
             name = "NZBFinder";
-            apiKeyPath = config.sops.secrets."indexer-api-keys/NZBFinder".path;
+            apiKey = {_secret = config.sops.secrets."indexer-api-keys/NZBFinder".path;};
           }
           {
             name = "NzbPlanet";
-            apiKeyPath = config.sops.secrets."indexer-api-keys/NzbPlanet".path;
+            apiKey = {_secret = config.sops.secrets."indexer-api-keys/NzbPlanet".path;};
           }
         ];
       };
@@ -125,7 +123,6 @@ This example shows a working media server configuration based on a real producti
 
       settings = {
         misc = {
-          # Secrets use { _secret = /path; } syntax
           api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
           nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
         };
@@ -165,14 +162,19 @@ This example shows a working media server configuration based on a real producti
         alice = {
           mutable = false;
           policy.isAdministrator = true;
-          passwordFile = config.sops.secrets."jellyfin/alice_password".path;
+          password = {_secret = config.sops.secrets."jellyfin/alice_password".path;};
         };
       };
     };
 
+    jellyseerr = {
+      enable = true;
+      apiKey = {_secret = config.sops.secrets."jellyseerr/api_key".path;};
+    };
+
     mullvad = {
       enable = true;
-      accountNumberPath = config.sops.secrets.mullvad-account-number.path;
+      accountNumber = {_secret = config.sops.secrets.mullvad-account-number.path;};
       location = ["us" "nyc"];
       dns = [
         "94.140.14.14"
