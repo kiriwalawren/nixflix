@@ -12,19 +12,11 @@ with lib; let
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
-  transformSyncPlayAccess = hasAccess:
-    if hasAccess
-    then "CreateAndJoinGroups"
-    else "None";
-
   buildUserPayload = userName: userCfg: {
     name = userName;
     inherit (userCfg) enableAutoLogin;
-    configuration = util.recursiveTransform userCfg.preferences;
-    policy = util.recursiveTransform (userCfg.policy
-      // {
-        syncPlayAccess = transformSyncPlayAccess userCfg.policy.syncPlayAccess;
-      });
+    configuration = util.recursiveTransform userCfg.configuration;
+    policy = util.recursiveTransform userCfg.policy;
   };
 
   userConfigFiles =
@@ -87,7 +79,7 @@ in {
               echo "Creating new user: ${userName}"
               IS_NEW_USER=true
 
-              ${
+            ${
               if userCfg.password != null
               then secrets.toShellValue "PASSWORD" userCfg.password
               else ''PASSWORD=""''
