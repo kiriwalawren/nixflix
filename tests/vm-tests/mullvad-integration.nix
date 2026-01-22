@@ -13,6 +13,7 @@ pkgs.testers.runNixOSTest {
       enable = true;
       mullvad = {
         enable = true;
+        accountNumber = "";
         autoConnect = false; # Don't auto-connect in tests
         killSwitch = {
           enable = true;
