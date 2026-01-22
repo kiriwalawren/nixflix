@@ -6,7 +6,7 @@
 pkgs.testers.runNixOSTest {
   name = "jellyfin-basic";
 
-  nodes.machine = {pkgs, ...}: {
+  nodes.machine = {...}: {
     imports = [nixosModules];
 
     networking.useDHCP = true;

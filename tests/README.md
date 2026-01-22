@@ -54,7 +54,7 @@ The `-L` flag shows detailed logs during the build/test process.
 
 Some tests will require internet access for their services to reach
 a successful state. In order to do so you will neet to set `networking.useDHCP = true;`
-inside your test and run the test with sandbox disabled
+inside your test and run the test with sandbox disabled:
 
 ```bash
 nix build .#checks.x86_64-linux.<test-name> -L --option sandbox false
