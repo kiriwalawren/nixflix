@@ -165,8 +165,10 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_open_port(port, timeout=180)
 
     # Wait for configuration services to complete
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
+    machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'

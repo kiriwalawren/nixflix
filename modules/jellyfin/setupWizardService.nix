@@ -53,7 +53,7 @@ in {
           echo "Setting initial configuration..."
           RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -H "Content-Type: application/json" \
-            -d '{"ServerName":"${cfg.system.serverName}","UICulture":"${cfg.system.UICulture}","MetadataCountryCode":"${cfg.system.metadataCountryCode}","PreferredMetadataLanguage":"${cfg.system.preferredMetadataLanguage}"}' \
+            -d '{"ServerName":"${cfg.system.serverName}","UICulture":"${cfg.system.uiCulture}","MetadataCountryCode":"${cfg.system.metadataCountryCode}","PreferredMetadataLanguage":"${cfg.system.preferredMetadataLanguage}"}' \
             -w "\n%{http_code}" \
             "$BASE_URL/Startup/Configuration")
 

@@ -11,9 +11,14 @@ with lib; let
     };
 in {
   options.nixflix.jellyfin.system = {
-    serverName = mkStrOption config.networking.hostName ''
-      This name will be used to identify the server and will default to the server's hostname.
-    '';
+    serverName = mkOption {
+      type = types.str;
+      default = config.networking.hostName;
+      defaultText = literalExpression ''"''${config.networking.hostName}"'';
+      description = ''
+        This name will be used to identify the server and will default to the server's hostname.
+      '';
+    };
 
     # Language
     preferredMetadataLanguage = mkStrOption "en" "Display language of jellyfin.";
@@ -180,111 +185,85 @@ in {
     };
 
     imageSavingConvention = mkOption {
-      type = types.enum ["Legacy"];
+      type = types.enum ["Legacy" "Compatible"];
       default = "Legacy";
-      description = "i got no idea what this is";
+      description = "Specifies how images are saved. Legacy uses the old format, Compatible uses a more widely compatible format.";
     };
 
     metadataOptions = mkOption {
-      type = with types; listOf attrs;
+      type = with types;
+        listOf (submodule {
+          options = {
+            itemType = mkOption {
+              type = str;
+              description = "Media type (e.g., Movie, Series, MusicAlbum)";
+            };
+            disabledMetadataSavers = mkOption {
+              type = listOf str;
+              default = [];
+              description = "List of metadata savers to disable for this media type";
+            };
+            localMetadataReaderOrder = mkOption {
+              type = listOf str;
+              default = [];
+              description = "Priority order for reading local metadata";
+            };
+            disabledMetadataFetchers = mkOption {
+              type = listOf str;
+              default = [];
+              description = "List of metadata fetchers to disable for this media type";
+            };
+            metadataFetcherOrder = mkOption {
+              type = listOf str;
+              default = [];
+              description = "Priority order for fetching metadata from remote sources";
+            };
+            disabledImageFetchers = mkOption {
+              type = listOf str;
+              default = [];
+              description = "List of image fetchers to disable for this media type";
+            };
+            imageFetcherOrder = mkOption {
+              type = listOf str;
+              default = [];
+              description = "Priority order for fetching images from remote sources";
+            };
+          };
+        });
       default = [
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "Movie";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = [];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "Movie";
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "MusicVideo";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = ["The Open Movie Database"];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = ["The Open Movie Database"];
-            imageFetcherOrder = [];
-          };
+          itemType = "MusicVideo";
+          disabledMetadataFetchers = ["The Open Movie Database"];
+          disabledImageFetchers = ["The Open Movie Database"];
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "Series";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = [];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "Series";
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "MusicAlbum";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = ["TheAudioDB"];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "MusicAlbum";
+          disabledMetadataFetchers = ["TheAudioDB"];
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "MusicArtist";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = ["TheAudioDB"];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            ImageFetcherOrder = [];
-          };
+          itemType = "MusicArtist";
+          disabledMetadataFetchers = ["TheAudioDB"];
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "BoxSet";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = [];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "BoxSet";
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "Season";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = [];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "Season";
         }
         {
-          tag = "MetadataOptions";
-          content = {
-            itemType = "Episode";
-            disabledMetadataSavers = [];
-            disabledMetadataFetchers = [];
-            localMetadataReaderOrder = [];
-            metadataFetcherOrder = [];
-            disabledImageFetchers = [];
-            imageFetcherOrder = [];
-          };
+          itemType = "Episode";
         }
       ];
+      description = ''
+        Configure metadata fetching options for different media types.
+        Each entry specifies which metadata and image sources to use or disable.
+      '';
     };
 
     skipDeserializationForBasicTypes = mkOption {
@@ -292,7 +271,7 @@ in {
       default = true;
     };
 
-    UICulture = mkOption {
+    uiCulture = mkOption {
       type = types.str;
       default = "en-US";
     };
@@ -323,9 +302,9 @@ in {
 
     enableFolderView = mkEnableOption "";
 
-    enableGroupingMoviesIntoCollections = mkEnableOption "";
+    enableGroupingMoviesIntoCollections = mkEnableOption "grouping movies into collections";
 
-    enableGroupingShowsIntoCollections = mkEnableOption "";
+    enableGroupingShowsIntoCollections = mkEnableOption "grouping shows into collections";
 
     displaySpecialsWithinSeasons = mkOption {
       type = types.bool;
@@ -343,9 +322,9 @@ in {
         {
           tag = "RepositoryInfo";
           content = {
-            Name = "Jellyfin Stable";
-            Url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-            Enabled = true;
+            name = "Jellyfin Stable";
+            url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+            enabled = true;
           };
         }
       ];
@@ -399,8 +378,9 @@ in {
     };
 
     activityLogRetentionDays = mkOption {
-      type = types.int;
+      type = types.nullOr types.int;
       default = 30;
+      description = "Number of days to retain activity logs. Set to null to never delete.";
     };
 
     libraryScanFanoutConcurrency = mkOption {
@@ -441,14 +421,14 @@ in {
     chapterImageResolution = mkOption {
       type = types.enum [
         "MatchSource"
-        "2160p"
-        "1440p"
-        "1080p"
-        "720p"
-        "480p"
-        "360p"
-        "240p"
-        "144p"
+        "P2160"
+        "P1440"
+        "P1080"
+        "P720"
+        "P480"
+        "P360"
+        "P240"
+        "P144"
       ];
       default = "MatchSource";
       description = ''
@@ -467,34 +447,56 @@ in {
     };
 
     castReceiverApplications = mkOption {
-      type = with types; listOf attrs;
+      type = with types;
+        listOf (submodule {
+          options = {
+            id = mkOption {
+              type = str;
+              description = "Cast receiver application ID";
+            };
+            name = mkOption {
+              type = str;
+              description = "Display name for the cast receiver";
+            };
+          };
+        });
       default = [
         {
-          tag = "CastRecieverApplication";
-          content = {
-            Id = "F007D354";
-            Name = "Stable";
-          };
+          id = "F007D354";
+          name = "Stable";
         }
         {
-          tag = "CastRecieverApplication";
-          content = {
-            Id = "6F511C87";
-            Name = "Unstable";
-          };
+          id = "6F511C87";
+          name = "Unstable";
         }
       ];
     };
 
     trickplayOptions = {
-      enableHwAcceleration = mkEnableOption "Enable hardware acceleration";
+      enableHwAcceleration = mkEnableOption "hardware acceleration";
 
-      enableHwEncoding = mkEnableOption "Currently only available on QSV, VA-API, VideoToolbox and RKMPP, this option has no effect on other hardware acceleration methods.";
+      enableHwEncoding = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Whether to enable hardware encoding.
 
-      enableKeyFrameOnlyExtraction = mkEnableOption ''
-        Extract key frames only for significantly faster processing with less accurate timing.
-        If the configured hardware decoder does not support this mode, will use the software decoder instead.
-      '';
+          Currently only available on QSV, VA-API, VideoToolbox and RKMPP, this option has no effect on other hardware acceleration methods.
+        '';
+      };
+
+      enableKeyFrameOnlyExtraction = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Whether to enable key frame only extraction.
+
+          Extract key frames only for significantly faster processing with less accurate timing.
+          If the configured hardware decoder does not support this mode, will use the software decoder instead.
+        '';
+      };
 
       scanBehavior = mkOption {
         type = types.enum [
@@ -531,13 +533,8 @@ in {
       };
 
       widthResolutions = mkOption {
-        type = with types; listOf attrs;
-        default = [
-          {
-            tag = "int";
-            content = 320;
-          }
-        ];
+        type = with types; listOf int;
+        default = [320];
         description = ''
           List of the widths (px) that trickplay images will be generated at.
           All images should generate proportionally to the source, so a width of 320 on a 16:9 video ends up around 320x180.
