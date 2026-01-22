@@ -34,6 +34,11 @@ with lib; let
         (builtins.toJSON (util.recursiveTransform (buildUserPayload userName userCfg)))
     )
     cfg.users;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
@@ -50,7 +55,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin users..."
 
@@ -88,7 +93,7 @@ in {
               else ''PASSWORD=""''
             }
 
-              RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+              RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
                 -H "Content-Type: application/json" \
                 -d "{\"Name\": \"${userName}\", \"Password\": \"$PASSWORD\"}" \
@@ -136,7 +141,7 @@ in {
               echo "Sending configuration update request to: $BASE_URL/Users/$USER_ID"
 
               # Update user configuration and basic settings
-              UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+              UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
                 -H "Content-Type: application/json" \
                 -d @${userConfigFiles.${userName}} \
@@ -173,7 +178,7 @@ in {
               echo "Merged policy payload to send:"
               echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
 
-              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
                 -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
                 -H "Content-Type: application/json" \
                 -d "$POLICY_JSON" \

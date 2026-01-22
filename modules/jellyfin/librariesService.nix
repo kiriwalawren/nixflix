@@ -30,6 +30,11 @@ with lib; let
         (builtins.toJSON (buildCreatePayload libraryName libraryCfg))
     )
     cfg.libraries;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable && cfg.libraries != {}) {
     systemd.services.jellyfin-libraries = {
@@ -46,7 +51,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin libraries..."
 

@@ -15,6 +15,11 @@ with lib; let
   encodingConfig = util.recursiveTransform cfg.encoding;
   encodingConfigJson = builtins.toJSON encodingConfig;
   encodingConfigFile = pkgs.writeText "jellyfin-encoding-config.json" encodingConfigJson;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-encoding-config = {
@@ -31,7 +36,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin encoding settings..."
 
@@ -39,7 +44,7 @@ in {
 
         echo "Updating encoding configuration..."
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-encoding-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
           -H "Content-Type: application/json" \
           -d @${encodingConfigFile} \

@@ -10,7 +10,10 @@ with lib; let
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
 
-  baseUrl = "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
   tokenFile = "/run/jellyfin/auth-token";
 in {
   inherit tokenFile;

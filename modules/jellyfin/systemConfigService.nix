@@ -16,6 +16,11 @@ with lib; let
   systemConfigJson = builtins.toJSON systemConfig;
 
   systemConfigFile = pkgs.writeText "jellyfin-system-config.json" systemConfigJson;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-system-config = {
@@ -32,13 +37,13 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin system settings..."
 
         source ${authUtil.authScript}
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-system-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
           -H "Content-Type: application/json" \
           -d @${systemConfigFile} \

@@ -15,12 +15,17 @@ with lib; let
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-setup-wizard = {
       description = "Complete Jellyfin Setup Wizard";
-      after = ["jellyfin-initialization.service"];
-      requires = ["jellyfin-initialization.service"];
+      after = ["jellyfin.service"];
+      requires = ["jellyfin.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
@@ -31,7 +36,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Checking if first admin user needs to be created..."
 
@@ -46,7 +51,7 @@ in {
 
           # Step 1: Set configuration
           echo "Setting initial configuration..."
-          RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -H "Content-Type: application/json" \
             -d '{"ServerName":"${cfg.system.serverName}","UICulture":"${cfg.system.UICulture}","MetadataCountryCode":"${cfg.system.metadataCountryCode}","PreferredMetadataLanguage":"${cfg.system.preferredMetadataLanguage}"}' \
             -w "\n%{http_code}" \
@@ -82,7 +87,7 @@ in {
           else ''PASSWORD=""''
         }
 
-          RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -H "Content-Type: application/json" \
             -d "{\"Name\": \"${firstAdminName}\", \"Password\": \"$PASSWORD\"}" \
             -w "\n%{http_code}" \
@@ -100,7 +105,7 @@ in {
 
           # Step 3: Set remote access
           echo "Configuring remote access..."
-          RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -H "Content-Type: application/json" \
             -d '{"EnableRemoteAccess":${boolToString cfg.network.enableRemoteAccess}}' \
             -w "\n%{http_code}" \
@@ -118,7 +123,7 @@ in {
 
           # Step 4: Complete wizard
           echo "Completing setup wizard..."
-          RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -w "\n%{http_code}" \
             "$BASE_URL/Startup/Complete")
 
