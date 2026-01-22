@@ -25,9 +25,9 @@ in
             hostConfig = {
               port = 8989;
               username = "admin";
-              password = {_secret = toString (pkgs.writeText "sonarr-anime-password" "testpassword123");};
+              password = {_secret = pkgs.writeText "sonarr-anime-password" "testpassword123";};
             };
-            apiKey = {_secret = toString (pkgs.writeText "sonarr-anime-apikey" "0123456789abcdef0123456789abcdef");};
+            apiKey = {_secret = pkgs.writeText "sonarr-anime-apikey" "0123456789abcdef0123456789abcdef";};
             delayProfiles = [
               {
                 enableUsenet = true;
@@ -50,8 +50,8 @@ in
           enable = true;
           settings = {
             misc = {
-              api_key = {_secret = toString (pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555");};
-              nzb_key = {_secret = toString (pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666");};
+              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";};
+              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";};
               port = 8080;
               host = "127.0.0.1";
               url_base = "/sabnzbd";

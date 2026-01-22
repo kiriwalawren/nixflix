@@ -28,9 +28,9 @@ pkgs.testers.runNixOSTest {
           hostConfig = {
             port = 9696;
             username = "admin";
-            password = {_secret = toString (pkgs.writeText "prowlarr-password" "testpass");};
+            password = {_secret = pkgs.writeText "prowlarr-password" "testpass";};
           };
-          apiKey = {_secret = toString (pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111");};
+          apiKey = {_secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";};
         };
       };
 
@@ -42,9 +42,9 @@ pkgs.testers.runNixOSTest {
           hostConfig = {
             port = 8989;
             username = "admin";
-            password = {_secret = toString (pkgs.writeText "sonarr-password" "testpass");};
+            password = {_secret = pkgs.writeText "sonarr-password" "testpass";};
           };
-          apiKey = {_secret = toString (pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222");};
+          apiKey = {_secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";};
         };
       };
 
@@ -56,9 +56,9 @@ pkgs.testers.runNixOSTest {
           hostConfig = {
             port = 7878;
             username = "admin";
-            password = {_secret = toString (pkgs.writeText "radarr-password" "testpass");};
+            password = {_secret = pkgs.writeText "radarr-password" "testpass";};
           };
-          apiKey = {_secret = toString (pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333");};
+          apiKey = {_secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";};
         };
       };
 
@@ -70,9 +70,9 @@ pkgs.testers.runNixOSTest {
           hostConfig = {
             port = 8686;
             username = "admin";
-            password = {_secret = toString (pkgs.writeText "lidarr-password" "testpass");};
+            password = {_secret = pkgs.writeText "lidarr-password" "testpass";};
           };
-          apiKey = {_secret = toString (pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444");};
+          apiKey = {_secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";};
         };
       };
     };

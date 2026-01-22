@@ -4,7 +4,7 @@ with lib; let
     types.str
     (types.submodule {
       options._secret = mkOption {
-        type = types.str;
+        type = types.oneOf [types.str types.path];
         description = "Path to a file containing the secret value";
       };
     })
