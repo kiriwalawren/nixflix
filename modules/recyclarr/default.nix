@@ -129,10 +129,12 @@ in {
           after =
             ["network-online.target"]
             ++ optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service";
+            ++ optional cfg.sonarr.enable "sonarr-config.service"
+            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
           requires =
             optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service";
+            ++ optional cfg.sonarr.enable "sonarr-config.service"
+            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
           wants = ["network-online.target"];
           wantedBy = mkForce ["multi-user.target"];
         };
