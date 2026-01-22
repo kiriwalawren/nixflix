@@ -44,7 +44,7 @@ in {
         source ${authUtil.authScript}
 
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-system-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           -H "Content-Type: application/json" \
           -d @${systemConfigFile} \
           -w "\n%{http_code}" \

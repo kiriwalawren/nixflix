@@ -62,7 +62,7 @@ in {
         source ${authUtil.authScript}
 
         echo "Fetching users from $BASE_URL/Users..."
-        USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users")
+        USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "$AUTH_HEADER" "$BASE_URL/Users")
 
         USERS_HTTP_CODE=$(echo "$USERS_RESPONSE" | tail -n1)
         USERS_JSON=$(echo "$USERS_RESPONSE" | sed '$d')
@@ -94,7 +94,7 @@ in {
             }
 
               RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d "{\"Name\": \"${userName}\", \"Password\": \"$PASSWORD\"}" \
                 -w "\n%{http_code}" \
@@ -110,7 +110,7 @@ in {
                 exit 1
               fi
 
-              USERS_JSON=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users")
+              USERS_JSON=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users")
               USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id')
             fi
 
@@ -142,7 +142,7 @@ in {
 
               # Update user configuration and basic settings
               UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d @${userConfigFiles.${userName}} \
                 -w "\n%{http_code}" \
@@ -163,7 +163,7 @@ in {
               echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
 
               # Fetch current policy from server
-              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
+              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
 
               echo "Current policy from server:"
               echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq '.Policy'
@@ -179,7 +179,7 @@ in {
               echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
 
               POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d "$POLICY_JSON" \
                 -w "\n%{http_code}" \
@@ -198,7 +198,7 @@ in {
 
               echo ""
               echo "Verifying update - fetching user again:"
-              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
+              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
               echo "$VERIFY_RESPONSE" | ${pkgs.jq}/bin/jq .
             else
               echo "Skipping user ${userName} - no update needed"

@@ -59,7 +59,7 @@ in {
 
         echo "Fetching existing libraries from $BASE_URL/Library/VirtualFolders..."
         LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           "$BASE_URL/Library/VirtualFolders")
 
         LIBRARIES_HTTP_CODE=$(echo "$LIBRARIES_RESPONSE" | tail -n1)
@@ -84,7 +84,7 @@ in {
           if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$LIBRARY_NAME" 'index($name)' >/dev/null 2>&1; then
             echo "Deleting unmanaged library: $LIBRARY_NAME"
             DELETE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-              -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+              -H "$AUTH_HEADER" \
               "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "$LIBRARY_NAME" '$n|@uri')")
 
             DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
@@ -99,7 +99,7 @@ in {
 
         echo "Refreshing library list..."
         LIBRARIES_JSON=$(${pkgs.curl}/bin/curl -s \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           "$BASE_URL/Library/VirtualFolders")
 
         ${concatStringsSep "\n" (mapAttrsToList (libraryName: libraryCfg: ''
@@ -111,7 +111,7 @@ in {
                   echo "Creating new library: ${libraryName}"
 
                   CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                    -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                    -H "$AUTH_HEADER" \
                     -H "Content-Type: application/json" \
                     -d @${libraryConfigFiles.${libraryName}} \
                     "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true")
@@ -149,7 +149,7 @@ in {
             )
 
                     UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                      -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                      -H "$AUTH_HEADER" \
                       -H "Content-Type: application/json" \
                       -d "$UPDATE_PAYLOAD" \
                       "$BASE_URL/Library/VirtualFolders/LibraryOptions")
@@ -174,7 +174,7 @@ in {
                       if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$existing_path" 'index($path)' >/dev/null 2>&1; then
                         echo "Removing path: $existing_path"
                         REMOVE_PATH_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-                          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                          -H "$AUTH_HEADER" \
                           "$BASE_URL/Library/VirtualFolders/Paths?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&path=$(${pkgs.jq}/bin/jq -rn --arg p "$existing_path" '$p|@uri')")
 
                         REMOVE_PATH_HTTP_CODE=$(echo "$REMOVE_PATH_RESPONSE" | tail -n1)
@@ -191,7 +191,7 @@ in {
                         ADD_PATH_PAYLOAD=$(${pkgs.jq}/bin/jq -n --arg name "${libraryName}" --arg path "$configured_path" '{Name: $name, Path: $path}')
 
                         ADD_PATH_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                          -H "$AUTH_HEADER" \
                           -H "Content-Type: application/json" \
                           -d "$ADD_PATH_PAYLOAD" \
                           "$BASE_URL/Library/VirtualFolders/Paths")
@@ -209,7 +209,7 @@ in {
                     echo "CollectionType changed from $EXISTING_COLLECTION_TYPE to ${libraryCfg.collectionType}, recreating library..."
 
                     DELETE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-                      -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                      -H "$AUTH_HEADER" \
                       "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')")
 
                     DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
@@ -220,7 +220,7 @@ in {
                     fi
 
                     CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                      -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-libraries-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+                      -H "$AUTH_HEADER" \
                       -H "Content-Type: application/json" \
                       -d @${libraryConfigFiles.${libraryName}} \
                       "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true")

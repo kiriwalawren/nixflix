@@ -37,12 +37,14 @@ in {
     done
 
     NEED_AUTH=true
+    AUTH_HEADER_PREFIX="Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\""
 
     if [ -f "$TOKEN_FILE" ]; then
       ACCESS_TOKEN=$(${pkgs.coreutils}/bin/cat "$TOKEN_FILE" 2>/dev/null || echo "")
+      AUTH_HEADER="$AUTH_HEADER_PREFIX, Token=\"$ACCESS_TOKEN\""
       if [ -n "$ACCESS_TOKEN" ]; then
         VALIDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           "${baseUrl}/System/Info")
 
         VALIDATE_HTTP_CODE=$(echo "$VALIDATE_RESPONSE" | tail -n1)
@@ -50,6 +52,7 @@ in {
         if [ "$VALIDATE_HTTP_CODE" = "200" ]; then
           echo "Using cached authentication token"
           export ACCESS_TOKEN
+          export AUTH_HEADER
           NEED_AUTH=false
         elif [ "$VALIDATE_HTTP_CODE" = "401" ]; then
           echo "Cached token invalid (401), re-authenticating..."
@@ -88,6 +91,7 @@ in {
           ${pkgs.coreutils}/bin/chmod 600 "$TOKEN_FILE"
 
           export ACCESS_TOKEN
+          export AUTH_HEADER="$AUTH_HEADER_PREFIX, Token=\"$ACCESS_TOKEN\""
           break
         fi
 

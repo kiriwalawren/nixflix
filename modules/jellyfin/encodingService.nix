@@ -45,7 +45,7 @@ in {
         echo "Updating encoding configuration..."
 
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-encoding-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           -H "Content-Type: application/json" \
           -d @${encodingConfigFile} \
           -w "\n%{http_code}" \

@@ -29,9 +29,10 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     start_all()
 
+    port = 8096
     # Wait for services to start (longer timeout for initial DB migrations and startup)
     machine.wait_for_unit("jellyfin.service", timeout=180)
-    machine.wait_for_open_port(8096, timeout=180)
+    machine.wait_for_open_port(port, timeout=180)
 
     # Wait for configuration services to complete
     machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
@@ -39,5 +40,12 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
+
+    api_token = machine.succeed("cat /run/jellyfin/auth-token")
+    auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'
+    base_url = f'http://127.0.0.1:{port}'
+
+    # Test API connectivity
+    machine.succeed( f'curl -f -H {auth_header} {base_url}/System/Info')
   '';
 }

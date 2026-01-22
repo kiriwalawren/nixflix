@@ -47,7 +47,7 @@ in {
 
         # Update branding configuration (customCss, loginDisclaimer, splashscreenEnabled)
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-branding-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          -H "$AUTH_HEADER" \
           -H "Content-Type: application/json" \
           -d @${brandingConfigFile} \
           -w "\n%{http_code}" \
@@ -89,7 +89,7 @@ in {
 
           # Upload the splashscreen
           SPLASH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-            -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-splashscreen-upload\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+            -H "$AUTH_HEADER" \
             -H "Content-Type: $CONTENT_TYPE" \
             --data-binary "$BASE64_IMAGE" \
             -w "\n%{http_code}" \
