@@ -73,7 +73,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Basic server management
 - Libraries are automatically configure based on elected media managers
 
-### Jellyseerr
+### Seerr
 
 - Media request management
 - Automatic integration with Starr services

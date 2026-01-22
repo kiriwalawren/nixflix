@@ -133,7 +133,7 @@ with lib; let
       preventSearch = mkOption {
         type = types.bool;
         default = false;
-        description = "Prevent Jellyseerr from triggering searches";
+        description = "Prevent Seerr from triggering searches";
       };
     };
   });
@@ -180,7 +180,7 @@ with lib; let
     (optional (sonarrInstance ? sonarr) sonarrInstance.sonarr)
     ++ (optional (sonarrAnimeInstance ? sonarr_anime) sonarrAnimeInstance.sonarr_anime);
 in {
-  options.nixflix.jellyseerr.sonarr = mkOption {
+  options.nixflix.seerr.sonarr = mkOption {
     type = types.listOf sonarrServerModule;
     default = defaultInstances;
     description = ''

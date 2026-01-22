@@ -7,7 +7,7 @@
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   jellyfinCfg = nixflix.jellyfin;
 
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
@@ -20,13 +20,13 @@ with lib; let
 in {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
     systemd.tmpfiles.rules = [
-      "d '/run/jellyseerr' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '/run/seerr' 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
-    systemd.services.jellyseerr-setup = {
-      description = "Complete Jellyseerr initial setup with Jellyfin";
-      after = ["jellyseerr.service" "jellyfin-setup-wizard.service"];
-      requires = ["jellyseerr.service" "jellyfin-setup-wizard.service"];
+    systemd.services.seerr-setup = {
+      description = "Complete Seerr initial setup with Jellyfin";
+      after = ["seerr.service" "jellyfin-setup-wizard.service"];
+      requires = ["seerr.service" "jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig =
@@ -47,8 +47,8 @@ in {
 
         BASE_URL="${baseUrl}"
 
-        # Wait for Jellyseerr
-        echo "Waiting for Jellyseerr..."
+        # Wait for Seerr
+        echo "Waiting for Seerr..."
         for i in {1..60}; do
           if ${pkgs.curl}/bin/curl -sf "$BASE_URL/api/v1/status" >/dev/null 2>&1; then
             break
@@ -61,7 +61,7 @@ in {
         IS_INITIALIZED=$(echo "$STATUS_RESPONSE" | ${pkgs.jq}/bin/jq -r '.initialized // false')
 
         if [ "$IS_INITIALIZED" = "true" ]; then
-          echo "Jellyseerr is already initialized"
+          echo "Seerr is already initialized"
           source ${authUtil.authScript}
           exit 0
         fi
@@ -210,7 +210,7 @@ in {
         fi
 
         source ${authUtil.authScript}
-        echo "Jellyseerr setup completed successfully"
+        echo "Seerr setup completed successfully"
       '';
     };
   };

@@ -12,25 +12,25 @@ with lib; let
   firstAdminUser = adminUsers.${firstAdminName};
 
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
-  cookieFile = "/run/jellyseerr/auth-cookie";
+  cookieFile = "/run/seerr/auth-cookie";
 in {
   inherit cookieFile;
 
-  authScript = pkgs.writeShellScript "jellyseerr-auth" ''
+  authScript = pkgs.writeShellScript "seerr-auth" ''
     set -euo pipefail
 
     COOKIE_FILE="${cookieFile}"
     BASE_URL="${baseUrl}"
 
-    # Wait for Jellyseerr to be available
-    echo "Waiting for Jellyseerr API..."
+    # Wait for Seerr to be available
+    echo "Waiting for Seerr API..."
     for attempt in {1..60}; do
       if ${pkgs.curl}/bin/curl -sf "$BASE_URL/api/v1/status" >/dev/null 2>&1; then
-        echo "Jellyseerr is available"
+        echo "Seerr is available"
         break
       fi
       if [[ $attempt -eq 60 ]]; then
-        echo "Jellyseerr did not become available" >&2
+        echo "Seerr did not become available" >&2
         exit 1
       fi
       sleep 1
@@ -56,7 +56,7 @@ in {
 
     # Authenticate if needed
     if [ "$NEED_AUTH" = "true" ]; then
-      echo "Authenticating to Jellyseerr as ${firstAdminName}..."
+      echo "Authenticating to Seerr as ${firstAdminName}..."
 
       ${
       if firstAdminUser.password != null

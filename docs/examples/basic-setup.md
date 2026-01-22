@@ -23,7 +23,7 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/NZBFinder" = {};
     "indexer-api-keys/NzbPlanet" = {};
     "jellyfin/alice_password" = {};
-    "jellyseerr/api_key" = {};
+    "seerr/api_key" = {};
     "mullvad-account-number" = {};
     "sabnzbd/api_key" = {};
     "sabnzbd/nzb_key" = {};
@@ -147,9 +147,9 @@ This example shows a working media server configuration based on a real producti
       };
     };
 
-    jellyseerr = {
+    seerr = {
       enable = true;
-      apiKey = {_secret = config.sops.secrets."jellyseerr/api_key".path;};
+      apiKey = {_secret = config.sops.secrets."seerr/api_key".path;};
     };
 
     mullvad = {

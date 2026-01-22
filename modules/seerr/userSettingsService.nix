@@ -6,17 +6,17 @@
 }:
 with lib; let
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   jellyfinCfg = nixflix.jellyfin;
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
   userSettings = cfg.settings.users;
 in {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
-    systemd.services.jellyseerr-user-settings = {
-      description = "Configure Jellyseerr default user settings";
-      after = ["jellyseerr-setup.service"];
-      requires = ["jellyseerr-setup.service"];
+    systemd.services.seerr-user-settings = {
+      description = "Configure Seerr default user settings";
+      after = ["seerr-setup.service"];
+      requires = ["seerr-setup.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

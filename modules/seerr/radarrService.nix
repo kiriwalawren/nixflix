@@ -7,7 +7,7 @@
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   jellyfinCfg = nixflix.jellyfin;
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
@@ -162,10 +162,10 @@ with lib; let
   '';
 in {
   config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != []) {
-    systemd.services.jellyseerr-radarr = {
-      description = "Configure Jellyseerr Radarr integration";
-      after = ["jellyseerr-setup.service"];
-      requires = ["jellyseerr-setup.service"];
+    systemd.services.seerr-radarr = {
+      description = "Configure Seerr Radarr integration";
+      after = ["seerr-setup.service"];
+      requires = ["seerr-setup.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

@@ -103,7 +103,7 @@ with lib; let
       preventSearch = mkOption {
         type = types.bool;
         default = false;
-        description = "Prevent Jellyseerr from triggering searches";
+        description = "Prevent Seerr from triggering searches";
       };
     };
   };
@@ -126,7 +126,7 @@ with lib; let
     ]
     else [];
 in {
-  options.nixflix.jellyseerr.radarr = mkOption {
+  options.nixflix.seerr.radarr = mkOption {
     type = types.listOf radarrServerModule;
     default = defaultInstance;
     description = ''

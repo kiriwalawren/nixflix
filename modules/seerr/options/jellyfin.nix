@@ -4,7 +4,7 @@
   ...
 }:
 with lib; {
-  options.nixflix.jellyseerr.jellyfin = {
+  options.nixflix.seerr.jellyfin = {
     hostname = mkOption {
       type = types.str;
       default = "localhost";

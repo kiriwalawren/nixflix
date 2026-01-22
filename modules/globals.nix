@@ -16,7 +16,7 @@ with lib; {
       bazarr = 232;
       lidarr = 306;
       prowlarr = 293;
-      jellyseerr = 262;
+      seerr = 262;
       sonarr = 274;
       sonarr-anime = 273;
       radarr = 275;
@@ -29,7 +29,7 @@ with lib; {
       autobrr = 188;
       cross-seed = 183;
       jellyfin = 146;
-      jellyseerr = 250;
+      seerr = 250;
       media = 169;
       prowlarr = 287;
       recyclarr = 269;
