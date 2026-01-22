@@ -83,6 +83,75 @@ pkgs.testers.runNixOSTest {
             };
           };
         };
+
+        libraries = {
+          "Test Movies" = {
+            collectionType = "movies";
+            paths = ["/media/movies" "/media/films"];
+            enabled = true;
+            enablePhotos = false;
+            enableRealtimeMonitor = false;
+            enableLUFSScan = false;
+            enableChapterImageExtraction = false;
+            extractChapterImagesDuringLibraryScan = false;
+            saveLocalMetadata = false;
+            enableAutomaticSeriesGrouping = false;
+            enableEmbeddedTitles = false;
+            enableEmbeddedExtrasTitles = false;
+            enableEmbeddedEpisodeInfos = false;
+            automaticRefreshIntervalDays = 90;
+            preferredMetadataLanguage = "en";
+            metadataCountryCode = "US";
+            seasonZeroDisplayName = "Extras";
+            metadataSavers = ["Nfo"];
+            disabledLocalMetadataReaders = ["Nfo"];
+            localMetadataReaderOrder = ["Nfo"];
+            disabledSubtitleFetchers = ["Open Subtitles"];
+            subtitleFetcherOrder = ["Open Subtitles"];
+            skipSubtitlesIfEmbeddedSubtitlesPresent = false;
+            skipSubtitlesIfAudioTrackMatches = false;
+            subtitleDownloadLanguages = ["eng" "spa" "fra"];
+            requirePerfectSubtitleMatch = false;
+            saveSubtitlesWithMedia = false;
+            allowEmbeddedSubtitles = "AllowText";
+            automaticallyAddToCollection = false;
+          };
+
+          "Test Music" = {
+            collectionType = "music";
+            paths = ["/media/music"];
+            enabled = true;
+            preferNonstandardArtistsTag = true;
+            useCustomTagDelimiters = true;
+            customTagDelimiters = [";" "|"];
+            saveLyricsWithMedia = true;
+            disabledLyricFetchers = [];
+            lyricFetcherOrder = ["LrcLib"];
+            disabledMediaSegmentProviders = [];
+            mediaSegmentProviderOrder = ["ChapterDb"];
+            typeOptions = [
+              {
+                type = "MusicAlbum";
+                metadataFetchers = ["TheAudioDB" "MusicBrainz"];
+                metadataFetcherOrder = ["TheAudioDB" "MusicBrainz"];
+                imageFetchers = ["TheAudioDB"];
+                imageFetcherOrder = ["TheAudioDB"];
+                imageOptions = [
+                  {
+                    type = "Primary";
+                    limit = 1;
+                    minWidth = 300;
+                  }
+                  {
+                    type = "Backdrop";
+                    limit = 3;
+                    minWidth = 1920;
+                  }
+                ];
+              }
+            ];
+          };
+        };
       };
     };
   };
@@ -97,6 +166,7 @@ pkgs.testers.runNixOSTest {
 
     # Wait for configuration services to complete
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'
@@ -166,5 +236,91 @@ pkgs.testers.runNixOSTest {
     assert policy['AuthenticationProviderId'] == 'Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider', "AuthenticationProviderId mismatch"
     assert policy['PasswordResetProviderId'] == 'Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider', "PasswordResetProviderId mismatch"
     assert policy['MaxParentalSubRating'] == 10, f"MaxParentalSubRating should be 10, got {policy.get('MaxParentalSubRating')}"
+
+    print("Testing library configuration...")
+
+    libraries_json = machine.succeed(f'curl -f -H {auth_header} {base_url}/Library/VirtualFolders')
+    libraries = json.loads(libraries_json)
+
+    assert len(libraries) == 2, f"Expected 2 libraries, found {len(libraries)}"
+
+    movies_libs = [lib for lib in libraries if lib['Name'] == 'Test Movies']
+    assert len(movies_libs) == 1, f"Expected 1 'Test Movies' library, found {len(movies_libs)}"
+    movies_lib = movies_libs[0]
+
+    music_libs = [lib for lib in libraries if lib['Name'] == 'Test Music']
+    assert len(music_libs) == 1, f"Expected 1 'Test Music' library, found {len(music_libs)}"
+    music_lib = music_libs[0]
+
+    assert movies_lib['CollectionType'] == 'movies', f"Expected collection type 'movies', got {movies_lib['CollectionType']}"
+    assert set([loc['Path'] for loc in movies_lib['LibraryOptions']['PathInfos']]) == {'/media/movies', '/media/films'}, \
+        f"Expected paths ['/media/movies', '/media/films'], got {[loc['Path'] for loc in movies_lib['LibraryOptions']['PathInfos']]}"
+
+    opts = movies_lib['LibraryOptions']
+
+    assert opts['EnablePhotos'] == False, f"EnablePhotos should be False, got {opts['EnablePhotos']}"
+    assert opts['EnableRealtimeMonitor'] == False, f"EnableRealtimeMonitor should be False, got {opts['EnableRealtimeMonitor']}"
+    assert opts['EnableLUFSScan'] == False, f"EnableLUFSScan should be False, got {opts['EnableLUFSScan']}"
+    assert opts['EnableChapterImageExtraction'] == False, f"EnableChapterImageExtraction should be False, got {opts['EnableChapterImageExtraction']}"
+    assert opts['ExtractChapterImagesDuringLibraryScan'] == False, f"ExtractChapterImagesDuringLibraryScan should be False, got {opts['ExtractChapterImagesDuringLibraryScan']}"
+    assert opts['SaveLocalMetadata'] == False, f"SaveLocalMetadata should be False, got {opts['SaveLocalMetadata']}"
+    assert opts['EnableAutomaticSeriesGrouping'] == False, f"EnableAutomaticSeriesGrouping should be False, got {opts['EnableAutomaticSeriesGrouping']}"
+    assert opts['EnableEmbeddedTitles'] == False, f"EnableEmbeddedTitles should be False, got {opts['EnableEmbeddedTitles']}"
+    assert opts['EnableEmbeddedExtrasTitles'] == False, f"EnableEmbeddedExtrasTitles should be False, got {opts['EnableEmbeddedExtrasTitles']}"
+    assert opts['EnableEmbeddedEpisodeInfos'] == False, f"EnableEmbeddedEpisodeInfos should be False, got {opts['EnableEmbeddedEpisodeInfos']}"
+    assert opts['SkipSubtitlesIfEmbeddedSubtitlesPresent'] == False, f"SkipSubtitlesIfEmbeddedSubtitlesPresent should be False, got {opts['SkipSubtitlesIfEmbeddedSubtitlesPresent']}"
+    assert opts['SkipSubtitlesIfAudioTrackMatches'] == False, f"SkipSubtitlesIfAudioTrackMatches should be False, got {opts['SkipSubtitlesIfAudioTrackMatches']}"
+    assert opts['RequirePerfectSubtitleMatch'] == False, f"RequirePerfectSubtitleMatch should be False, got {opts['RequirePerfectSubtitleMatch']}"
+    assert opts['SaveSubtitlesWithMedia'] == False, f"SaveSubtitlesWithMedia should be False, got {opts['SaveSubtitlesWithMedia']}"
+    assert opts['AutomaticallyAddToCollection'] == False, f"AutomaticallyAddToCollection should be False, got {opts['AutomaticallyAddToCollection']}"
+
+    assert opts['PreferredMetadataLanguage'] == 'en', f"PreferredMetadataLanguage should be 'en', got {opts.get('PreferredMetadataLanguage')}"
+    assert opts['MetadataCountryCode'] == 'US', f"MetadataCountryCode should be 'US', got {opts.get('MetadataCountryCode')}"
+    assert opts['SeasonZeroDisplayName'] == 'Extras', f"SeasonZeroDisplayName should be 'Extras', got {opts['SeasonZeroDisplayName']}"
+
+    assert opts['AutomaticRefreshIntervalDays'] == 90, f"AutomaticRefreshIntervalDays should be 90, got {opts['AutomaticRefreshIntervalDays']}"
+
+    assert opts['AllowEmbeddedSubtitles'] == 'AllowText', f"AllowEmbeddedSubtitles should be 'AllowText', got {opts['AllowEmbeddedSubtitles']}"
+
+    assert opts['MetadataSavers'] == ['Nfo'], f"MetadataSavers should be ['Nfo'], got {opts.get('MetadataSavers')}"
+    assert opts['DisabledLocalMetadataReaders'] == ['Nfo'], f"DisabledLocalMetadataReaders should be ['Nfo'], got {opts.get('DisabledLocalMetadataReaders')}"
+    assert opts['LocalMetadataReaderOrder'] == ['Nfo'], f"LocalMetadataReaderOrder should be ['Nfo'], got {opts.get('LocalMetadataReaderOrder')}"
+    assert opts['DisabledSubtitleFetchers'] == ['Open Subtitles'], f"DisabledSubtitleFetchers should be ['Open Subtitles'], got {opts.get('DisabledSubtitleFetchers')}"
+    assert opts['SubtitleFetcherOrder'] == ['Open Subtitles'], f"SubtitleFetcherOrder should be ['Open Subtitles'], got {opts.get('SubtitleFetcherOrder')}"
+    assert set(opts['SubtitleDownloadLanguages']) == {'eng', 'spa', 'fra'}, f"SubtitleDownloadLanguages should be ['eng', 'spa', 'fra'], got {opts.get('SubtitleDownloadLanguages')}"
+
+    assert music_lib['CollectionType'] == 'music', f"Expected collection type 'music', got {music_lib['CollectionType']}"
+    assert [loc['Path'] for loc in music_lib['LibraryOptions']['PathInfos']] == ['/media/music'], \
+        f"Expected paths ['/media/music'], got {[loc['Path'] for loc in music_lib['LibraryOptions']['PathInfos']]}"
+
+    music_opts = music_lib['LibraryOptions']
+
+    assert music_opts['PreferNonstandardArtistsTag'] == True, f"PreferNonstandardArtistsTag should be True, got {music_opts['PreferNonstandardArtistsTag']}"
+    assert music_opts['UseCustomTagDelimiters'] == True, f"UseCustomTagDelimiters should be True, got {music_opts['UseCustomTagDelimiters']}"
+    assert set(music_opts['CustomTagDelimiters']) == {';', '|'}, f"CustomTagDelimiters should be [';', '|'], got {music_opts.get('CustomTagDelimiters')}"
+
+    assert music_opts['SaveLyricsWithMedia'] == True, f"SaveLyricsWithMedia should be True, got {music_opts['SaveLyricsWithMedia']}"
+    assert music_opts['LyricFetcherOrder'] == ['LrcLib'], f"LyricFetcherOrder should be ['LrcLib'], got {music_opts.get('LyricFetcherOrder')}"
+
+    assert music_opts['MediaSegmentProviderOrder'] == ['ChapterDb'], f"MediaSegmentProviderOrder should be ['ChapterDb'], got {music_opts.get('MediaSegmentProviderOrder')}"
+
+    assert len(music_opts['TypeOptions']) == 1, f"Expected 1 TypeOptions entry, got {len(music_opts.get('TypeOptions', []))}"
+    type_opt = music_opts['TypeOptions'][0]
+
+    assert type_opt['Type'] == 'MusicAlbum', f"TypeOptions type should be 'MusicAlbum', got {type_opt.get('Type')}"
+    assert type_opt['MetadataFetchers'] == ['TheAudioDB', 'MusicBrainz'], f"MetadataFetchers should be ['TheAudioDB', 'MusicBrainz'], got {type_opt.get('MetadataFetchers')}"
+    assert type_opt['MetadataFetcherOrder'] == ['TheAudioDB', 'MusicBrainz'], f"MetadataFetcherOrder should be ['TheAudioDB', 'MusicBrainz'], got {type_opt.get('MetadataFetcherOrder')}"
+    assert type_opt['ImageFetchers'] == ['TheAudioDB'], f"ImageFetchers should be ['TheAudioDB'], got {type_opt.get('ImageFetchers')}"
+    assert type_opt['ImageFetcherOrder'] == ['TheAudioDB'], f"ImageFetcherOrder should be ['TheAudioDB'], got {type_opt.get('ImageFetcherOrder')}"
+
+    assert len(type_opt['ImageOptions']) == 2, f"Expected 2 ImageOptions entries, got {len(type_opt.get('ImageOptions', []))}"
+
+    img_opt_primary = [io for io in type_opt['ImageOptions'] if io['Type'] == 'Primary'][0]
+    assert img_opt_primary['Limit'] == 1, f"Primary image limit should be 1, got {img_opt_primary['Limit']}"
+    assert img_opt_primary['MinWidth'] == 300, f"Primary image minWidth should be 300, got {img_opt_primary['MinWidth']}"
+
+    img_opt_backdrop = [io for io in type_opt['ImageOptions'] if io['Type'] == 'Backdrop'][0]
+    assert img_opt_backdrop['Limit'] == 3, f"Backdrop image limit should be 3, got {img_opt_backdrop['Limit']}"
+    assert img_opt_backdrop['MinWidth'] == 1920, f"Backdrop image minWidth should be 1920, got {img_opt_backdrop['MinWidth']}"
   '';
 }

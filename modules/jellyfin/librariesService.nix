@@ -55,6 +55,17 @@ in {
 
         echo "Configuring Jellyfin libraries..."
 
+        echo "Creating library paths..."
+        ${concatStringsSep "\n" (mapAttrsToList (
+            _libraryName: libraryCfg:
+              concatMapStringsSep "\n" (path: ''
+                mkdir -p "${path}"
+                echo "Created path: ${path}"
+              '')
+              libraryCfg.paths
+          )
+          cfg.libraries)}
+
         source ${authUtil.authScript}
 
         echo "Fetching existing libraries from $BASE_URL/Library/VirtualFolders..."
@@ -187,6 +198,8 @@ in {
 
                     echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r configured_path; do
                       if ! echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$configured_path" 'index($path)' >/dev/null 2>&1; then
+                        echo "Creating path: $configured_path"
+                        mkdir -p "$configured_path"
                         echo "Adding path: $configured_path"
                         ADD_PATH_PAYLOAD=$(${pkgs.jq}/bin/jq -n --arg name "${libraryName}" --arg path "$configured_path" '{Name: $name, Path: $path}')
 
