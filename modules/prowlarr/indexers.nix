@@ -4,6 +4,7 @@
   serviceName,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   type = mkOption {
@@ -13,9 +14,8 @@ in {
           type = types.str;
           description = "Name of the Prowlarr Indexer Schema";
         };
-        apiKeyPath = mkOption {
-          type = types.str;
-          description = "Path to file containing the API key for the indexer";
+        apiKey = secrets.mkSecretOption {
+          description = "API key for the indexer.";
         };
         appProfileId = mkOption {
           type = types.int;
@@ -27,7 +27,7 @@ in {
     default = [];
     description = ''
       List of indexers to configure in Prowlarr.
-      Any additional attributes beyond name, apiKeyPath, and appProfileId
+      Any additional attributes beyond name, apiKey, and appProfileId
       will be applied as field values to the indexer schema.
     '';
   };
@@ -47,7 +47,7 @@ in {
       set -eu
 
       # Read API key secret
-      API_KEY=$(cat ${serviceConfig.apiKeyPath})
+      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
 
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
@@ -81,8 +81,8 @@ in {
 
       ${concatMapStringsSep "\n" (indexerConfig: let
           indexerName = indexerConfig.name;
-          inherit (indexerConfig) apiKeyPath;
-          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKeyPath"];
+          inherit (indexerConfig) apiKey;
+          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey"];
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
@@ -109,7 +109,7 @@ in {
               '
           }
 
-          INDEXER_API_KEY=$(cat ${apiKeyPath})
+          ${secrets.toShellValue "INDEXER_API_KEY" apiKey}
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
           EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")

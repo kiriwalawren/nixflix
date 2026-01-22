@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
@@ -80,7 +81,7 @@ in {
     };
 
     systemd.services = {
-      jellyseerr-env = mkIf (cfg.apiKeyPath != null) {
+      jellyseerr-env = mkIf (cfg.apiKey != null) {
         description = "Setup Jellyseerr environment file";
         wantedBy = ["jellyseerr.service"];
         before = ["jellyseerr.service"];
@@ -92,7 +93,8 @@ in {
 
         script = ''
           mkdir -p /run/jellyseerr
-          echo "API_KEY=$(cat ${cfg.apiKeyPath})" > /run/jellyseerr/env
+          ${secrets.toShellValue "API_KEY" cfg.apiKey}
+          echo "API_KEY=''${API_KEY}" > /run/jellyseerr/env
           chown ${cfg.user}:${cfg.group} /run/jellyseerr/env
           chmod 0400 /run/jellyseerr/env
         '';
@@ -129,7 +131,7 @@ in {
 
         after =
           ["network-online.target"]
-          ++ optional (cfg.apiKeyPath != null) "jellyseerr-env.service"
+          ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
           ++ optional nixflix.mullvad.enable "mullvad-config.service"
           ++ optional nixflix.jellyfin.enable "jellyfin.service"
           ++ optional config.services.postgresql.enable "postgresql-ready.target";
@@ -140,7 +142,7 @@ in {
           ++ optional nixflix.jellyfin.enable "jellyfin.service";
 
         requires =
-          optional (cfg.apiKeyPath != null) "jellyseerr-env.service"
+          optional (cfg.apiKey != null) "jellyseerr-env.service"
           ++ optional config.services.postgresql.enable "postgresql-ready.target";
 
         wantedBy = ["multi-user.target"];
@@ -202,7 +204,7 @@ in {
               "~@resources"
             ];
           }
-          // optionalAttrs (cfg.apiKeyPath != null) {
+          // optionalAttrs (cfg.apiKey != null) {
             EnvironmentFile = "/run/jellyseerr/env";
           }
           // optionalAttrs (nixflix.mullvad.enable && !cfg.vpn.enable) {

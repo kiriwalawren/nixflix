@@ -4,6 +4,7 @@
   cfg,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
@@ -61,8 +62,8 @@ in {
       echo "Authenticating as ${firstAdminName}..."
 
       ${
-      if firstAdminUser.passwordFile != null
-      then ''ADMIN_PASSWORD=$(${pkgs.coreutils}/bin/cat ${firstAdminUser.passwordFile})''
+      if firstAdminUser.password != null
+      then secrets.toShellValue "ADMIN_PASSWORD" firstAdminUser.password
       else ''ADMIN_PASSWORD=""''
     }
 

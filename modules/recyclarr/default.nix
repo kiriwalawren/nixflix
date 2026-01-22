@@ -99,12 +99,12 @@ in {
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = [
       {
-        assertion = cfg.sonarr.enable -> nixflix.sonarr.config.apiKeyPath != null;
-        message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKeyPath to be set";
+        assertion = cfg.sonarr.enable -> nixflix.sonarr.config.apiKey != null;
+        message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKey to be set";
       }
       {
-        assertion = cfg.radarr.enable -> nixflix.radarr.config.apiKeyPath != null;
-        message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKeyPath to be set";
+        assertion = cfg.radarr.enable -> nixflix.radarr.config.apiKey != null;
+        message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKey to be set";
       }
     ];
 
@@ -129,10 +129,12 @@ in {
           after =
             ["network-online.target"]
             ++ optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service";
+            ++ optional cfg.sonarr.enable "sonarr-config.service"
+            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
           requires =
             optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service";
+            ++ optional cfg.sonarr.enable "sonarr-config.service"
+            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
           wants = ["network-online.target"];
           wantedBy = mkForce ["multi-user.target"];
         };

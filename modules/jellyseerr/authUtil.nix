@@ -5,6 +5,7 @@
   jellyfinCfg,
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
@@ -58,8 +59,8 @@ in {
       echo "Authenticating to Jellyseerr as ${firstAdminName}..."
 
       ${
-      if firstAdminUser.passwordFile != null
-      then ''ADMIN_PASSWORD=$(cat ${firstAdminUser.passwordFile})''
+      if firstAdminUser.password != null
+      then secrets.toShellValue "ADMIN_PASSWORD" firstAdminUser.password
       else ''ADMIN_PASSWORD=""''
     }
 

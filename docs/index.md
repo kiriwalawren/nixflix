@@ -19,17 +19,17 @@ title: Nixflix
 
     sonarr = {
       enable = true;
-      config.apiKeyPath = "/run/secrets/sonarr-api-key";
+      config.apiKey = {_secret = "/run/secrets/sonarr-api-key";};
     };
 
     prowlarr = {
       enable = true;
-      config.apiKeyPath = "/run/secrets/prowlarr-api-key";
+      config.apiKey = {_secret = "/run/secrets/prowlarr-api-key";};
     };
 
     sabnzbd = {
       enable = true;
-      apiKeyPath = "/run/secrets/sabnzbd-api-key";
+      settings.misc.api_key = {_secret = "/run/secrets/sabnzbd-api-key";};
     };
 
     jellyfin.enable = true;

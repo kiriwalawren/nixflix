@@ -46,7 +46,7 @@ with lib; let
     mkIf (nixflix.${serviceName}.enable or false) {
       name = displayName;
       inherit implementationName;
-      apiKeyPath = mkDefault serviceConfig.apiKeyPath;
+      apiKey = mkDefault serviceConfig.apiKey;
       baseUrl = mkDefault baseUrl;
       prowlarrUrl = mkDefault prowlarrUrl;
     };
@@ -73,11 +73,11 @@ in {
       };
     };
 
-    systemd.services."prowlarr-indexers" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKeyPath != null) (
+    systemd.services."prowlarr-indexers" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKey != null) (
       indexers.mkService nixflix.prowlarr.config
     );
 
-    systemd.services."prowlarr-applications" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKeyPath != null) (
+    systemd.services."prowlarr-applications" = mkIf (nixflix.enable && nixflix.prowlarr.enable && nixflix.prowlarr.config.apiKey != null) (
       applications.mkService nixflix.prowlarr.config
     );
   };

@@ -25,9 +25,9 @@ in
             hostConfig = {
               port = 8686;
               username = "admin";
-              passwordPath = "${pkgs.writeText "lidarr-password" "testpassword123"}";
+              password = {_secret = pkgs.writeText "lidarr-password" "testpassword123";};
             };
-            apiKeyPath = "${pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh"}";
+            apiKey = {_secret = pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh";};
             delayProfiles = [
               {
                 enableUsenet = true;

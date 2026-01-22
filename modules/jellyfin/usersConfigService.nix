@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
@@ -82,8 +83,8 @@ in {
               IS_NEW_USER=true
 
               ${
-              if userCfg.passwordFile != null
-              then ''PASSWORD=$(${pkgs.coreutils}/bin/cat ${userCfg.passwordFile})''
+              if userCfg.password != null
+              then secrets.toShellValue "PASSWORD" userCfg.password
               else ''PASSWORD=""''
             }
 

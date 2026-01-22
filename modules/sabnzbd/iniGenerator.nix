@@ -1,7 +1,7 @@
 {lib}:
 with lib; let
-  valueOrSecret = import ./valueOrSecretType.nix {inherit lib;};
-  inherit (valueOrSecret) isSecretRef processValue;
+  secrets = import ../lib/secrets {inherit lib;};
+  inherit (secrets) isSecretRef processValue;
 
   toIniValue = value:
     if isSecretRef value

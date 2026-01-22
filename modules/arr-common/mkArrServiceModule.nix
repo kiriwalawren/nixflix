@@ -5,6 +5,7 @@
   ...
 }: serviceName: extraConfigOptions:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = nixflix.${serviceName};
@@ -165,10 +166,9 @@ in {
                 description = "Current version of the API of the service";
               };
 
-              apiKeyPath = mkOption {
-                type = types.nullOr types.path;
+              apiKey = secrets.mkSecretOption {
                 default = null;
-                description = "Path to API key secret file";
+                description = "API key for ${capitalizedName}.";
               };
             }
             // extraConfigOptions
@@ -221,10 +221,10 @@ in {
           };
         });
       config = {
-        apiKeyPath = mkDefault null;
+        apiKey = mkDefault null;
         hostConfig = {
           username = mkDefault serviceBase;
-          passwordPath = mkDefault null;
+          password = mkDefault null;
           instanceName = mkDefault capitalizedName;
           urlBase = mkDefault (
             if nixflix.nginx.enable
@@ -237,7 +237,7 @@ in {
             ({
                 name = "SABnzbd";
                 implementationName = "SABnzbd";
-                apiKeyPath = toString nixflix.sabnzbd.apiKeyPath;
+                apiKey = nixflix.sabnzbd.settings.misc.api_key;
                 inherit (nixflix.sabnzbd.settings.misc) host;
                 inherit (nixflix.sabnzbd.settings.misc) port;
                 urlBase = nixflix.sabnzbd.settings.misc.url_base;
@@ -361,11 +361,11 @@ in {
 
           after =
             ["network.target"]
-            ++ (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+            ++ (optional (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
             ++ (optional nixflix.mullvad.enable "mullvad-config.service");
           requires =
-            (optional (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) "${serviceName}-env.service")
+            (optional (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
           wants = optional nixflix.mullvad.enable "mullvad-config.service";
           wantedBy = ["multi-user.target"];
@@ -379,7 +379,7 @@ in {
               ExecStartPost = mkWaitForApiScript serviceName cfg.config;
               Restart = "on-failure";
             }
-            // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
+            // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
               EnvironmentFile = "/run/${serviceName}/env";
             }
             // optionalAttrs (nixflix.mullvad.enable && !cfg.vpn.enable) {
@@ -392,7 +392,7 @@ in {
             };
         };
       }
-      // optionalAttrs (cfg.config.apiKeyPath != null && cfg.config.hostConfig.passwordPath != null) {
+      // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
         "${serviceName}-env" = {
           description = "Setup ${capitalizedName} environment file";
           wantedBy = ["${serviceName}.service"];
@@ -407,7 +407,8 @@ in {
             envVar = toUpper serviceBase + "__AUTH__APIKEY";
           in ''
             mkdir -p /run/${serviceName}
-            echo "${envVar}=$(cat ${cfg.config.apiKeyPath})" > /run/${serviceName}/env
+            ${secrets.toShellValue envVar cfg.config.apiKey}
+            echo "${envVar}=''${${envVar}}" > /run/${serviceName}/env
             chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
             chmod 0400 /run/${serviceName}/env
           '';
@@ -415,13 +416,13 @@ in {
 
         "${serviceName}-config" = hostConfig.mkService cfg.config;
       }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null && cfg.config.rootFolders != []) {
+      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null && cfg.config.rootFolders != []) {
         "${serviceName}-rootfolders" = rootFolders.mkService cfg.config;
       }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKeyPath != null) {
+      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null) {
         "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
       }
-      // optionalAttrs (cfg.config.apiKeyPath != null) {
+      // optionalAttrs (cfg.config.apiKey != null) {
         "${serviceName}-downloadclients" = downloadClients.mkService cfg.config;
       };
   };

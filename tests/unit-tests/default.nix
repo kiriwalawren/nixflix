@@ -40,9 +40,9 @@ in {
               hostConfig = {
                 port = 8989;
                 username = "admin";
-                passwordPath = "/run/secrets/sonarr-pass";
+                password = {_secret = "/run/secrets/sonarr-pass";};
               };
-              apiKeyPath = "/run/secrets/sonarr-api";
+              apiKey = {_secret = "/run/secrets/sonarr-api";};
               rootFolders = [{path = "/media/tv";}];
             };
           };
@@ -67,9 +67,9 @@ in {
               hostConfig = {
                 port = 8990;
                 username = "admin";
-                passwordPath = "/run/secrets/sonarr-pass";
+                password = {_secret = "/run/secrets/sonarr-pass";};
               };
-              apiKeyPath = "/run/secrets/sonarr-api";
+              apiKey = {_secret = "/run/secrets/sonarr-api";};
               rootFolders = [{path = "/media/anime";}];
             };
           };
@@ -94,9 +94,9 @@ in {
               hostConfig = {
                 port = 7878;
                 username = "admin";
-                passwordPath = "/run/secrets/radarr-pass";
+                password = {_secret = "/run/secrets/radarr-pass";};
               };
-              apiKeyPath = "/run/secrets/radarr-api";
+              apiKey = {_secret = "/run/secrets/radarr-api";};
               rootFolders = [{path = "/media/movies";}];
             };
           };
@@ -120,13 +120,13 @@ in {
               hostConfig = {
                 port = 9696;
                 username = "admin";
-                passwordPath = "/run/secrets/prowlarr-pass";
+                password = {_secret = "/run/secrets/prowlarr-pass";};
               };
-              apiKeyPath = "/run/secrets/prowlarr-api";
+              apiKey = {_secret = "/run/secrets/prowlarr-api";};
               indexers = [
                 {
                   name = "1337x";
-                  apiKeyPath = "/run/secrets/1337x-api";
+                  apiKey = {_secret = "/run/secrets/1337x-api";};
                 }
               ];
             };

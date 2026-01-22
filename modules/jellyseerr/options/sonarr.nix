@@ -4,6 +4,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../../lib/secrets {inherit lib;};
   sonarrRecyclarrConfig =
     optionalAttrs (config.nixflix.recyclarr.sonarr.enable or false)
     (import ../../recyclarr/sonarr-main.nix {inherit config;});
@@ -37,9 +38,8 @@ with lib; let
         description = "Sonarr port";
       };
 
-      apiKeyPath = mkOption {
-        type = types.path;
-        description = "Path to file containing Sonarr API key";
+      apiKey = secrets.mkSecretOption {
+        description = "Sonarr API key.";
       };
 
       useSsl = mkOption {
@@ -143,7 +143,7 @@ with lib; let
       sonarr = {
         name = "Sonarr";
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
-        inherit (config.nixflix.sonarr.config) apiKeyPath;
+        inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl =
           if config.nixflix.nginx.enable
           then "/sonarr"
@@ -162,7 +162,7 @@ with lib; let
       sonarr_anime = {
         name = "Sonarr Anime";
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
-        inherit (config.nixflix.sonarr-anime.config) apiKeyPath;
+        inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl =
           if config.nixflix.nginx.enable
           then "/sonarr-anime"

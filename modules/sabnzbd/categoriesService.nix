@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   cfg = nixflix.sabnzbd;
 in {
@@ -20,14 +21,12 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        User = cfg.user;
-        Group = cfg.group;
       };
 
       script = ''
         set -euo pipefail
 
-        API_KEY=$(cat ${cfg.settings.misc.api_key._secret})
+        ${secrets.toShellValue "API_KEY" cfg.settings.misc.api_key}
         BASE_URL="http://${cfg.settings.misc.host}:${toString cfg.settings.misc.port}${cfg.settings.misc.url_base}"
 
         # Function to make API calls

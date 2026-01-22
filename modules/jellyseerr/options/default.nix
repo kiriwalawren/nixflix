@@ -4,7 +4,9 @@
   pkgs,
   ...
 }:
-with lib; {
+with lib; let
+  secrets = import ../../lib/secrets {inherit lib;};
+in {
   imports = [
     ./jellyfin.nix
     ./radarr.nix
@@ -17,10 +19,9 @@ with lib; {
 
     package = mkPackageOption pkgs "jellyseerr" {};
 
-    apiKeyPath = mkOption {
-      type = types.nullOr types.path;
+    apiKey = secrets.mkSecretOption {
       default = null;
-      description = "Path to API key secret file";
+      description = "API key for Jellyseerr.";
     };
 
     user = mkOption {

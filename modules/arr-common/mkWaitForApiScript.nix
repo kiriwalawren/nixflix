@@ -3,6 +3,7 @@
   pkgs,
 }: serviceName: serviceConfig:
 pkgs.writeShellScript "${serviceName}-wait-for-api" (let
+  secrets = import ../lib/secrets {inherit lib;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
   screamingServiceBase = lib.toUpper (builtins.elemAt (lib.splitString "-" serviceName) 0);
   apiKeyEnvVar = screamingServiceBase + "__AUTH__APIKEY";
@@ -10,7 +11,7 @@ in ''
   if [ -n "${"$"}{${apiKeyEnvVar}:-}" ]; then
     API_KEY="${"$"}${apiKeyEnvVar}"
   else
-    API_KEY=$(cat ${serviceConfig.apiKeyPath})
+    ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
   fi
 
   BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"

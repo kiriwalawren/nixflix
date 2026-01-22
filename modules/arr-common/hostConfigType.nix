@@ -1,5 +1,7 @@
 {lib}:
-with lib;
+with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
+in
   types.submodule {
     options = {
       bindAddress = mkOption {
@@ -43,10 +45,9 @@ with lib;
         description = "Username";
       };
 
-      passwordPath = mkOption {
-        type = types.nullOr types.path;
+      password = secrets.mkSecretOption {
         default = null;
-        description = "Path to password secret file";
+        description = "Password for web interface authentication.";
       };
 
       urlBase = mkOption {

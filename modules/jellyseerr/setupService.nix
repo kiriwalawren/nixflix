@@ -5,6 +5,7 @@
   ...
 }:
 with lib; let
+  secrets = import ../lib/secrets {inherit lib;};
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
   jellyfinCfg = nixflix.jellyfin;
@@ -33,8 +34,12 @@ in {
           Type = "oneshot";
           RemainAfterExit = true;
         }
-        // optionalAttrs (firstAdminUser.passwordFile != null) {
-          LoadCredential = "jellyfin-password:${firstAdminUser.passwordFile}";
+        // optionalAttrs (firstAdminUser.password != null) {
+          LoadCredential = "jellyfin-password:${
+            if secrets.isSecretRef firstAdminUser.password
+            then firstAdminUser.password._secret
+            else pkgs.writeText "jellyfin-${firstAdminName}-password" firstAdminUser.password
+          }";
         };
 
       script = ''
@@ -66,7 +71,7 @@ in {
         # Step 1: Connect to Jellyfin (this creates the session cookie)
         # Use Jellyfin's first admin credentials
         ${
-          if firstAdminUser.passwordFile != null
+          if firstAdminUser.password != null
           then ''JELLYFIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/jellyfin-password")''
           else ''JELLYFIN_PASSWORD=""''
         }

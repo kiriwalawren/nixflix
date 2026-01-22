@@ -3,7 +3,7 @@
 in {
   radarr_main = {
     base_url = "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
-    api_key._secret = nixflix.radarr.config.apiKeyPath;
+    api_key = nixflix.radarr.config.apiKey;
     delete_old_custom_formats = true;
     replace_existing_custom_formats = true;
 

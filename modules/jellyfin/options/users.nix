@@ -1,5 +1,6 @@
 {lib, ...}:
 with lib; let
+  secrets = import ../../lib/secrets {inherit lib;};
   preferenceOpts = _: {
     options = {
       enabledLibraries = mkOption {
@@ -373,12 +374,9 @@ with lib; let
         type = with types; nullOr int;
         default = null;
       };
-      passwordFile = mkOption {
-        type = types.nullOr types.path;
-        description = ''
-          Path to a file containing the user's password in plain text.
-        '';
+      password = secrets.mkSecretOption {
         default = null;
+        description = "User's password.";
       };
       passwordResetProviderId = mkOption {
         type = types.str;
@@ -466,7 +464,7 @@ in {
     type = with types; attrsOf (submodule userOpts);
     example = {
       admin = {
-        passwordFile = "/run/secrets/jellyfin-admin-password";
+        password = {_secret = "/run/secrets/jellyfin-admin-password";};
         policy = {
           isAdministrator = true;
         };

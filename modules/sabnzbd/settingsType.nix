@@ -3,6 +3,7 @@
   config,
 }: let
   inherit (lib) types mkOption;
+  secrets = import ../lib/secrets {inherit lib;};
   cfg = config.nixflix.sabnzbd;
   inherit (config) nixflix;
 
@@ -37,15 +38,11 @@
         example = 443;
         description = "Port of the server.";
       };
-      username = mkOption {
-        type = types.anything;
-        example = lib.literalExpression ''{ _secret = config.sops.secrets."usenet/username".path; }'';
-        description = "Username for server authentication. Use { _secret = /path/to/file; } for secrets.";
+      username = secrets.mkSecretOption {
+        description = "Username for server authentication.";
       };
-      password = mkOption {
-        type = types.anything;
-        example = lib.literalExpression ''{ _secret = config.sops.secrets."usenet/password".path; }'';
-        description = "Password for server authentication. Use { _secret = /path/to/file; } for secrets.";
+      password = secrets.mkSecretOption {
+        description = "Password for server authentication.";
       };
       connections = mkOption {
         type = types.int;
@@ -156,16 +153,12 @@
         description = "Address for the Web UI to listen on for incoming connections.";
       };
 
-      api_key = mkOption {
-        type = types.anything;
-        example = lib.literalExpression ''{ _secret = config.sops.secrets."sabnzbd/api_key".path; }'';
-        description = "API key for SABnzbd. Use { _secret = /path/to/file; } for secrets.";
+      api_key = secrets.mkSecretOption {
+        description = "API key for SABnzbd.";
       };
 
-      nzb_key = mkOption {
-        type = types.anything;
-        example = lib.literalExpression ''{ _secret = config.sops.secrets."sabnzbd/nzb_key".path; }'';
-        description = "NZB key for adding downloads via URL. Use { _secret = /path/to/file; } for secrets.";
+      nzb_key = secrets.mkSecretOption {
+        description = "NZB key for adding downloads via URL.";
       };
 
       port = mkOption {
@@ -290,10 +283,9 @@
         description = "Username for SMTP authentication.";
       };
 
-      email_pwd = mkOption {
-        type = types.anything;
+      email_pwd = secrets.mkSecretOption {
         default = "";
-        description = "Password for SMTP authentication. Use { _secret = /path/to/file; } for secrets.";
+        description = "Password for SMTP authentication.";
       };
 
       web_dir = mkOption {

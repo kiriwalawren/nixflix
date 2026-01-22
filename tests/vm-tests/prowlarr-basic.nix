@@ -23,9 +23,9 @@ in
             hostConfig = {
               port = 9696;
               username = "admin";
-              passwordPath = "${pkgs.writeText "prowlarr-password" "testpassword123"}";
+              password = {_secret = pkgs.writeText "prowlarr-password" "testpassword123";};
             };
-            apiKeyPath = "${pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210"}";
+            apiKey = {_secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";};
           };
         };
 
