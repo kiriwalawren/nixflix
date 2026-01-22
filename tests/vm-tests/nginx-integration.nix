@@ -24,9 +24,9 @@ in
             hostConfig = {
               port = 9696;
               username = "admin";
-              password = {_secret = pkgs.writeText "prowlarr-password" "testpass";};
+              password = {_secret = toString (pkgs.writeText "prowlarr-password" "testpass");};
             };
-            apiKey = {_secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";};
+            apiKey = {_secret = toString (pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111");};
           };
         };
 
@@ -38,9 +38,9 @@ in
             hostConfig = {
               port = 8989;
               username = "admin";
-              password = {_secret = pkgs.writeText "sonarr-password" "testpass";};
+              password = {_secret = toString (pkgs.writeText "sonarr-password" "testpass");};
             };
-            apiKey = {_secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";};
+            apiKey = {_secret = toString (pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222");};
           };
         };
 
@@ -52,9 +52,9 @@ in
             hostConfig = {
               port = 7878;
               username = "admin";
-              password = {_secret = pkgs.writeText "radarr-password" "testpass";};
+              password = {_secret = toString (pkgs.writeText "radarr-password" "testpass");};
             };
-            apiKey = {_secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";};
+            apiKey = {_secret = toString (pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333");};
           };
         };
 
@@ -66,9 +66,9 @@ in
             hostConfig = {
               port = 8686;
               username = "admin";
-              password = {_secret = pkgs.writeText "lidarr-password" "testpass";};
+              password = {_secret = toString (pkgs.writeText "lidarr-password" "testpass");};
             };
-            apiKey = {_secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";};
+            apiKey = {_secret = toString (pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444");};
           };
         };
 
@@ -77,8 +77,8 @@ in
           downloadsDir = "/downloads/usenet";
           settings = {
             misc = {
-              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";};
-              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666";};
+              api_key = {_secret = toString (pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555");};
+              nzb_key = {_secret = toString (pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666");};
               port = 8080;
               host = "127.0.0.1";
             };

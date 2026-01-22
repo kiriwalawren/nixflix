@@ -5,3 +5,5 @@
 docs/reference/*/
 !docs/reference/index.md
 mkdocs.yml
+
+.nixos-test-history

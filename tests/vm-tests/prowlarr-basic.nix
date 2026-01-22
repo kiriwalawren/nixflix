@@ -23,9 +23,9 @@ in
             hostConfig = {
               port = 9696;
               username = "admin";
-              password = {_secret = pkgs.writeText "prowlarr-password" "testpassword123";};
+              password = {_secret = toString (pkgs.writeText "prowlarr-password" "testpassword123");};
             };
-            apiKey = {_secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";};
+            apiKey = {_secret = toString (pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210");};
           };
         };
 
@@ -33,8 +33,8 @@ in
           enable = true;
           settings = {
             misc = {
-              api_key = {_secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";};
-              nzb_key = {_secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";};
+              api_key = {_secret = toString (pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555");};
+              nzb_key = {_secret = toString (pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666");};
               port = 8080;
               host = "127.0.0.1";
               url_base = "/sabnzbd";

@@ -408,7 +408,7 @@ in {
           in ''
             mkdir -p /run/${serviceName}
             ${secrets.toShellValue envVar cfg.config.apiKey}
-            echo "$${envVar}" > /run/${serviceName}/env
+            echo "${envVar}=''${${envVar}}" > /run/${serviceName}/env
             chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
             chmod 0400 /run/${serviceName}/env
           '';

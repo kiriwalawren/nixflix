@@ -1,6 +1,5 @@
 {lib}:
-with lib;
-let
+with lib; let
   secretOrStrType = types.oneOf [
     types.str
     (types.submodule {
