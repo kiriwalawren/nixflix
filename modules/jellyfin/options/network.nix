@@ -29,7 +29,7 @@ in {
     };
 
     certificatePath = mkOption {
-      type = types.str;
+      type = types.oneOf [types.str types.path];
       default = "";
       description = "Path to certificate file";
     };

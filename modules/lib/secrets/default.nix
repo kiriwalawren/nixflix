@@ -73,8 +73,10 @@ in {
         else literalExpression ''{ _secret = "/run/secrets/secret-file"; }'';
       description = ''
         ${description}
-        Can be a plain string (visible in Nix store) or { _secret = /path/to/file; } for file-based secrets.
-        Warning: Plain-text secrets will be visible in the Nix store. Use { _secret = path; } for sensitive data.
+        Can be a plain string (visible in Nix store) or `{ _secret = /path/to/file; }` for file-based secrets.
+
+        !!! warning
+            Plain-text secrets will be visible in the Nix store. Use `{ _secret = path; }` for sensitive data.
       '';
     };
 }
