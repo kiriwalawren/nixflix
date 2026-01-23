@@ -220,6 +220,28 @@ pkgs.testers.runNixOSTest {
           allowOnDemandMetadataBasedKeyframeExtractionForExtensions = ["mkv" "mp4"];
         };
 
+        branding = {
+          customCss = ''
+            body {
+              background-color: #1a1a2e;
+            }
+            .headerTop {
+              background-color: #16213e;
+            }
+          '';
+          loginDisclaimer = ''
+            This is a test Jellyfin server.
+            Please use your assigned credentials.
+          '';
+          splashscreenEnabled = true;
+          splashscreenLocation =
+            pkgs.runCommand "test-splashscreen.png" {
+              buildInputs = [pkgs.imagemagick];
+            } ''
+              magick -size 1920x1080 xc:#1a1a2e $out
+            '';
+        };
+
         libraries = {
           "Test Movies" = {
             collectionType = "movies";
@@ -306,6 +328,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
     machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'
@@ -712,5 +735,25 @@ pkgs.testers.runNixOSTest {
             f"AllowOnDemandMetadataBasedKeyframeExtractionForExtensions should be ['mkv', 'mp4'], got {encoding_config.get('AllowOnDemandMetadataBasedKeyframeExtractionForExtensions')}"
 
         print("All encoding configuration assertions passed!")
+
+    with subtest("Verify branding configuration"):
+        print("Querying branding configuration...")
+        branding_config_json = machine.succeed(
+            f'curl -f -H {auth_header} {base_url}/System/Configuration/Branding'
+        )
+        branding_config = json.loads(branding_config_json)
+
+        expected_css = "body {\n  background-color: #1a1a2e;\n}\n.headerTop {\n  background-color: #16213e;\n}\n"
+        assert branding_config['CustomCss'] == expected_css, \
+            f"CustomCss mismatch.\nExpected: {repr(expected_css)}\nGot: {repr(branding_config.get('CustomCss'))}"
+
+        expected_disclaimer = "This is a test Jellyfin server.\nPlease use your assigned credentials.\n"
+        assert branding_config['LoginDisclaimer'] == expected_disclaimer, \
+            f"LoginDisclaimer mismatch.\nExpected: {repr(expected_disclaimer)}\nGot: {repr(branding_config.get('LoginDisclaimer'))}"
+
+        assert branding_config['SplashscreenEnabled'] == True, \
+            f"SplashscreenEnabled should be True, got {branding_config.get('SplashscreenEnabled')}"
+
+        print("All branding configuration assertions passed!")
   '';
 }

@@ -11,7 +11,6 @@ with lib; let
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
-  # Transform encoding config to API format
   encodingConfig = util.recursiveTransform cfg.encoding;
   encodingConfigJson = builtins.toJSON encodingConfig;
   encodingConfigFile = pkgs.writeText "jellyfin-encoding-config.json" encodingConfigJson;
