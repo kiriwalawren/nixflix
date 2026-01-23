@@ -16,6 +16,11 @@ with lib; let
   brandingConfig = util.recursiveTransform (removeAttrs cfg.branding ["splashscreenLocation"]);
   brandingConfigJson = builtins.toJSON brandingConfig;
   brandingConfigFile = pkgs.writeText "jellyfin-branding-config.json" brandingConfigJson;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-branding-config = {
@@ -32,7 +37,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin branding settings..."
 
@@ -41,8 +46,8 @@ in {
         echo "Updating branding configuration..."
 
         # Update branding configuration (customCss, loginDisclaimer, splashscreenEnabled)
-        RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-branding-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "$AUTH_HEADER" \
           -H "Content-Type: application/json" \
           -d @${brandingConfigFile} \
           -w "\n%{http_code}" \
@@ -83,8 +88,8 @@ in {
           BASE64_IMAGE=$(${pkgs.coreutils}/bin/base64 -w 0 "$SPLASHSCREEN_FILE")
 
           # Upload the splashscreen
-          SPLASH_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-            -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-splashscreen-upload\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+          SPLASH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+            -H "$AUTH_HEADER" \
             -H "Content-Type: $CONTENT_TYPE" \
             --data-binary "$BASE64_IMAGE" \
             -w "\n%{http_code}" \

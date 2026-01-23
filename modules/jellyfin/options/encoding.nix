@@ -62,8 +62,8 @@ with lib; {
         "None"
         "Dave750"
         "NightmodeDialogue"
-        "RFC7845"
-        "AC-4"
+        "Rfc7845"
+        "Ac4"
       ];
       default = "None";
       description = "Algorithm used to downmix multi-channel audio to stereo.";
@@ -297,6 +297,7 @@ with lib; {
     encoderPreset = mkOption {
       type = types.enum [
         "auto"
+        "placebo"
         "veryslow"
         "slower"
         "slow"

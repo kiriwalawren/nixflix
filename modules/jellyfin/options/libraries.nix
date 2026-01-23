@@ -1,28 +1,5 @@
 {lib, ...}:
 with lib; let
-  embeddedSubtitleOptions = types.enum [
-    "AllowAll"
-    "AllowText"
-    "AllowImage"
-    "AllowNone"
-  ];
-
-  imageTypeOptions = types.enum [
-    "Primary"
-    "Art"
-    "Backdrop"
-    "Banner"
-    "Logo"
-    "Thumb"
-    "Disc"
-    "Box"
-    "Screenshot"
-    "Menu"
-    "Chapter"
-    "BoxRear"
-    "Profile"
-  ];
-
   typeOptionsModule = types.submodule {
     options = {
       type = mkOption {
@@ -54,7 +31,21 @@ with lib; let
         type = types.listOf (types.submodule {
           options = {
             type = mkOption {
-              type = imageTypeOptions;
+              type = types.enum [
+                "Primary"
+                "Art"
+                "Backdrop"
+                "Banner"
+                "Logo"
+                "Thumb"
+                "Disc"
+                "Box"
+                "Screenshot"
+                "Menu"
+                "Chapter"
+                "BoxRear"
+                "Profile"
+              ];
               description = "The image type";
             };
             limit = mkOption {
@@ -274,7 +265,12 @@ with lib; let
       };
 
       allowEmbeddedSubtitles = mkOption {
-        type = embeddedSubtitleOptions;
+        type = types.enum [
+          "AllowAll"
+          "AllowText"
+          "AllowImage"
+          "AllowNone"
+        ];
         default = "AllowAll";
         description = ''
           Control which types of embedded subtitles to allow:

@@ -12,13 +12,17 @@ with lib; let
   xml = import ./xml.nix {inherit lib;};
 
   networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   imports = [
     ./options
 
     ./brandingService.nix
     ./encodingService.nix
-    ./initializationService.nix
     ./librariesService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
@@ -131,6 +135,38 @@ in {
                   --logdir '${cfg.logDir}'
               ''
             else "${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}'";
+
+          ExecStartPost = pkgs.writeShellScript "jellyfin-wait-ready" ''
+            set -eu
+
+            BASE_URL="${baseUrl}"
+
+            echo "Waiting for Jellyfin to be ready..."
+            consecutive_success=0
+            consecutive_required=5
+            for i in {1..180}; do
+              HTTP_CODE=$(${pkgs.curl}/bin/curl --connect-timeout 5 --max-time 10 -s -o /dev/null -w "%{http_code}" "$BASE_URL/System/Info/Public" 2>/dev/null || echo "000")
+
+              if [ "$HTTP_CODE" = "200" ]; then
+                consecutive_success=$((consecutive_success + 1))
+                echo "Jellyfin responded with HTTP 200 ($consecutive_success/$consecutive_required consecutive successes)"
+
+                if [ $consecutive_success -ge $consecutive_required ]; then
+                  echo "Jellyfin is ready (3 consecutive HTTP 200 responses)"
+                  exit 0
+                fi
+              else
+                consecutive_success=0
+                echo "Jellyfin is still loading (HTTP $HTTP_CODE)... attempt $i/180"
+
+                if [ $i -eq 180 ]; then
+                  exit 1
+                fi
+              fi
+
+              sleep 1
+            done
+          '';
 
           NoNewPrivileges = true;
           LockPersonality = true;

@@ -12,19 +12,11 @@ with lib; let
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
-  transformSyncPlayAccess = hasAccess:
-    if hasAccess
-    then "CreateAndJoinGroups"
-    else "None";
-
   buildUserPayload = userName: userCfg: {
     name = userName;
     inherit (userCfg) enableAutoLogin;
-    configuration = util.recursiveTransform userCfg.preferences;
-    policy = util.recursiveTransform (userCfg.policy
-      // {
-        syncPlayAccess = transformSyncPlayAccess userCfg.policy.syncPlayAccess;
-      });
+    configuration = util.recursiveTransform userCfg.configuration;
+    policy = util.recursiveTransform userCfg.policy;
   };
 
   userConfigFiles =
@@ -34,6 +26,11 @@ with lib; let
         (builtins.toJSON (util.recursiveTransform (buildUserPayload userName userCfg)))
     )
     cfg.users;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
@@ -50,14 +47,14 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin users..."
 
         source ${authUtil.authScript}
 
         echo "Fetching users from $BASE_URL/Users..."
-        USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users")
+        USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "$AUTH_HEADER" "$BASE_URL/Users")
 
         USERS_HTTP_CODE=$(echo "$USERS_RESPONSE" | tail -n1)
         USERS_JSON=$(echo "$USERS_RESPONSE" | sed '$d')
@@ -82,14 +79,14 @@ in {
               echo "Creating new user: ${userName}"
               IS_NEW_USER=true
 
-              ${
+            ${
               if userCfg.password != null
               then secrets.toShellValue "PASSWORD" userCfg.password
               else ''PASSWORD=""''
             }
 
-              RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+              RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d "{\"Name\": \"${userName}\", \"Password\": \"$PASSWORD\"}" \
                 -w "\n%{http_code}" \
@@ -105,7 +102,7 @@ in {
                 exit 1
               fi
 
-              USERS_JSON=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users")
+              USERS_JSON=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users")
               USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id')
             fi
 
@@ -136,8 +133,8 @@ in {
               echo "Sending configuration update request to: $BASE_URL/Users/$USER_ID"
 
               # Update user configuration and basic settings
-              UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+              UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d @${userConfigFiles.${userName}} \
                 -w "\n%{http_code}" \
@@ -158,10 +155,7 @@ in {
               echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
 
               # Fetch current policy from server
-              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
-
-              echo "Current policy from server:"
-              echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq '.Policy'
+              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
 
               # Get our desired policy settings
               DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
@@ -169,12 +163,8 @@ in {
               # Merge: start with current policy, overlay our desired changes
               POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
 
-              echo ""
-              echo "Merged policy payload to send:"
-              echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
-
-              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-                -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+                -H "$AUTH_HEADER" \
                 -H "Content-Type: application/json" \
                 -d "$POLICY_JSON" \
                 -w "\n%{http_code}" \
@@ -193,7 +183,7 @@ in {
 
               echo ""
               echo "Verifying update - fetching user again:"
-              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-users-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" "$BASE_URL/Users/$USER_ID")
+              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
               echo "$VERIFY_RESPONSE" | ${pkgs.jq}/bin/jq .
             else
               echo "Skipping user ${userName} - no update needed"

@@ -1,23 +1,8 @@
 {lib, ...}:
 with lib; let
   secrets = import ../../lib/secrets {inherit lib;};
-  preferenceOpts = _: {
+  configurationOpts = _: {
     options = {
-      enabledLibraries = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          A list of libraries this user as access to.
-          If it is empty, it means that the user has access to all libraries.
-          The libraries are specified by the library name specified in
-          `nixflix.jellyfin.libraries.<name>`
-        '';
-        example = [
-          "Movies"
-          "Family Photos"
-        ];
-      };
-
       groupedFolders = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -37,11 +22,100 @@ with lib; let
         type = types.listOf types.str;
         default = [];
       };
+
+      audioLanguagePreference = mkOption {
+        type = with types; nullOr str;
+        description = "The audio language preference. Defaults to 'Any Language'";
+        default = null;
+        example = "eng";
+      };
+
+      playDefaultAudioTrack = mkOption {
+        type = types.bool;
+        example = false;
+        default = true;
+      };
+
+      subtitleLanguagePreference = mkOption {
+        type = with types; nullOr str;
+        description = "The subtitle language preference. Defaults to 'Any Language'";
+        example = "eng";
+        default = null;
+      };
+
+      displayMissingEpisodes = mkOption {
+        type = types.bool;
+        description = "Whether to show missing episodes";
+        example = true;
+        default = false;
+      };
+
+      subtitleMode = mkOption {
+        type = types.enum [
+          "Default"
+          "Always"
+          "OnlyForced"
+          "None"
+          "Smart"
+        ];
+        description = ''
+          Default: The default subtitle playback mode.
+          Always: Always show subtitles.
+          OnlyForced: Only show forced subtitles.
+          None: Don't show subtitles.
+          Smart: Only show subtitles when the current audio stream is in a different language.
+        '';
+        default = "Default";
+      };
+
+      displayCollectionsView = mkOption {
+        type = types.bool;
+        description = "Whether to show the Collections View";
+        example = true;
+        default = false;
+      };
+
+      enableLocalPassword = mkOption {
+        type = types.bool;
+        example = true;
+        default = false;
+      };
+
+      hidePlayedInLatest = mkOption {
+        type = types.bool;
+        description = "Whether to hide already played titles in the 'Latest' section";
+        example = false;
+        default = true;
+      };
+
+      rememberAudioSelections = mkOption {
+        type = types.bool;
+        example = false;
+        default = true;
+      };
+
+      rememberSubtitleSelections = mkOption {
+        type = types.bool;
+        example = false;
+        default = true;
+      };
+
+      enableNextEpisodeAutoPlay = mkOption {
+        type = types.bool;
+        description = "Automatically play the next episode";
+        example = false;
+        default = true;
+      };
+
+      castReceiverId = mkOption {
+        type = types.str;
+        default = "F007D354";
+      };
     };
   };
   # See: https://github.com/jellyfin/jellyfin/blob/master/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/PermissionKind.cs
   # Defaults: https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Data/UserEntityExtensions.cs#L170
-  permissionOpts = _: {
+  policyOpts = _: {
     options = {
       isAdministrator = mkOption {
         type = types.bool;
@@ -180,7 +254,17 @@ with lib; let
       };
 
       blockUnratedItems = mkOption {
-        type = types.listOf types.str;
+        type = types.listOf (types.enum [
+          "Movie"
+          "Trailer"
+          "Series"
+          "Music"
+          "Book"
+          "LiveTvChannel"
+          "LiveTvProgram"
+          "ChannelContent"
+          "Other"
+        ]);
         default = [];
       };
 
@@ -221,6 +305,9 @@ with lib; let
                 "Thursday"
                 "Friday"
                 "Saturday"
+                "Everyday"
+                "Weekday"
+                "Weekend"
               ];
             };
             startHour = mkOption {
@@ -235,10 +322,14 @@ with lib; let
       };
 
       syncPlayAccess = mkOption {
-        type = types.bool;
+        type = types.enum [
+          "CreateAndJoinGroups"
+          "JoinGroups"
+          "None"
+        ];
         description = "Whether or not this user has access to SyncPlay";
-        example = true;
-        default = false;
+        example = "None";
+        default = "CreateAndJoinGroups";
       };
 
       authenticationProviderId = mkOption {
@@ -252,26 +343,58 @@ with lib; let
         default = "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider";
         description = "Password reset provider ID";
       };
+
+      maxParentalSubRating = mkOption {
+        type = with types; nullOr int;
+        default = null;
+      };
+
+      enableUserPreferenceAccess = mkOption {
+        type = types.bool;
+        default = true;
+      };
+
+      invalidLoginAttemptCount = mkOption {
+        type = types.int;
+        default = 0;
+      };
+
+      loginAttemptsBeforeLockout = mkOption {
+        type = types.nullOr types.int;
+        description = "The number of login attempts the user can make before they are locked out. 0 for default (3 for normal users, 5 for admins). null for unlimited";
+        example = 10;
+        default = 3;
+      };
+
+      maxActiveSessions = mkOption {
+        type = types.int;
+        description = "The maximum number of active sessions the user can have at once. 0 for unlimited";
+        example = 5;
+        default = 0;
+      };
+
+      remoteClientBitrateLimit = mkOption {
+        type = types.int;
+        description = "0 for unlimited";
+        default = 0;
+      };
     };
   };
   userOpts = _: {
     options = {
-      preferences = mkOption {
-        description = "Preferences for this user";
+      configuration = mkOption {
+        description = "Configuration for this user";
         default = {};
-        type = with types; submodule preferenceOpts;
+        type = with types; submodule configurationOpts;
         example = {
-          # Whitelist libraries
-          enabledLibraries = [
-            "TV Shows"
-            "Movies"
-          ];
+          subtitleMode = "Always";
+          enableNextEpisodeAutoPlay = true;
         };
       };
       policy = mkOption {
         description = "Policy for this user";
         default = {};
-        type = with types; submodule permissionOpts;
+        type = with types; submodule policyOpts;
         example = {
           isAdministrator = true;
           enableContentDeletion = false;
@@ -302,143 +425,14 @@ with lib; let
         example = "18B51E25-33FD-46B6-BBF8-DB4DD77D0679";
         default = null;
       };
-      audioLanguagePreference = mkOption {
-        type = with types; nullOr str;
-        description = "The audio language preference. Defaults to 'Any Language'";
-        default = null;
-        example = "eng";
-      };
-      authenticationProviderId = mkOption {
-        type = types.str;
-        default = "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider";
-      };
-      displayCollectionsView = mkOption {
-        type = types.bool;
-        description = "Whether to show the Collections View";
-        example = true;
-        default = false;
-      };
-      displayMissingEpisodes = mkOption {
-        type = types.bool;
-        description = "Whether to show missing episodes";
-        example = true;
-        default = false;
-      };
       enableAutoLogin = mkOption {
         type = types.bool;
         example = true;
         default = false;
       };
-      enableLocalPassword = mkOption {
-        type = types.bool;
-        example = true;
-        default = false;
-      };
-      enableNextEpisodeAutoPlay = mkOption {
-        type = types.bool;
-        description = "Automatically play the next episode";
-        example = false;
-        default = true;
-      };
-      enableUserPreferenceAccess = mkOption {
-        type = types.bool;
-        example = false;
-        default = true;
-      };
-      hidePlayedInLatest = mkOption {
-        type = types.bool;
-        description = "Whether to hide already played titles in the 'Latest' section";
-        example = false;
-        default = true;
-      };
-      internalId = mkOption {
-        type = with types; nullOr int;
-        # NOTE: index is 1-indexed! NOT 0-indexed.
-        description = "The index of the user in the database. Be careful setting this option. 1 indexed.";
-        example = 69;
-        default = null;
-      };
-      loginAttemptsBeforeLockout = mkOption {
-        type = types.nullOr types.int;
-        description = "The number of login attempts the user can make before they are locked out. 0 for default (3 for normal users, 5 for admins). null for unlimited";
-        example = 10;
-        default = 3;
-      };
-      maxActiveSessions = mkOption {
-        type = types.int;
-        description = "The maximum number of active sessions the user can have at once. 0 for unlimited";
-        example = 5;
-        default = 0;
-      };
-      maxParentalRatingSubScore = mkOption {
-        type = with types; nullOr int;
-        default = null;
-      };
       password = secrets.mkSecretOption {
         default = null;
         description = "User's password.";
-      };
-      passwordResetProviderId = mkOption {
-        type = types.str;
-        default = "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider";
-      };
-      playDefaultAudioTrack = mkOption {
-        type = types.bool;
-        example = false;
-        default = true;
-      };
-      rememberAudioSelections = mkOption {
-        type = types.bool;
-        default = true;
-      };
-      rememberSubtitleSelections = mkOption {
-        type = types.bool;
-        default = true;
-      };
-      remoteClientBitrateLimit = mkOption {
-        type = types.int;
-        description = "0 for unlimited";
-        default = 0;
-      };
-      subtitleLanguagePreference = mkOption {
-        type = with types; nullOr str;
-        description = "The subtitle language preference. Defaults to 'Any Language'";
-        example = "eng";
-        default = null;
-      };
-      # https://github.com/jellyfin/jellyfin/blob/master/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/SubtitlePlaybackMode.cs
-      subtitleMode = mkOption {
-        type = types.enum [
-          "default"
-          "always"
-          "onlyForced"
-          "none"
-          "smart"
-        ];
-        description = ''
-          Default: The default subtitle playback mode.
-          Always: Always show subtitles.
-          OnlyForced: Only show forced subtitles.
-          None: Don't show subtitles.
-          Smart: Only show subtitles when the current audio stream is in a different language.
-        '';
-        default = "default";
-      };
-      castReceiverId = mkOption {
-        type = types.str;
-        default = "F007D354";
-      };
-      invalidLoginAttemptCount = mkOption {
-        type = types.int;
-        default = 0;
-      };
-      mustUpdatePassword = mkOption {
-        type = types.int;
-        default = 0;
-      };
-      rowVersion = mkOption {
-        type = types.int;
-        default = 0;
       };
       lastActivityDate = mkOption {
         type = with types; nullOr str;

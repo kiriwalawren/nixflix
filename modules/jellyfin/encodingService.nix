@@ -11,15 +11,23 @@ with lib; let
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
-  # Transform encoding config to API format
   encodingConfig = util.recursiveTransform cfg.encoding;
   encodingConfigJson = builtins.toJSON encodingConfig;
   encodingConfigFile = pkgs.writeText "jellyfin-encoding-config.json" encodingConfigJson;
+
+  baseUrl =
+    if cfg.network.baseUrl == ""
+    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
+    systemd.tmpfiles.rules = mkIf (cfg.encoding.transcodingTempPath != "") [
+      "d '${cfg.encoding.transcodingTempPath}' 0755 ${cfg.user} ${cfg.group} - -"
+    ];
+
     systemd.services.jellyfin-encoding-config = {
       description = "Configure Jellyfin Encoding via API";
-      after = ["jellyfin-setup-wizard.service"];
+      after = ["jellyfin-setup-wizard.service" "systemd-tmpfiles-setup.service"];
       requires = ["jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
@@ -31,7 +39,7 @@ in {
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}"
+        BASE_URL="${baseUrl}"
 
         echo "Configuring Jellyfin encoding settings..."
 
@@ -39,8 +47,8 @@ in {
 
         echo "Updating encoding configuration..."
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -X POST \
-          -H "Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-encoding-config\", Version=\"1.0.0\", Token=\"$ACCESS_TOKEN\"" \
+        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "$AUTH_HEADER" \
           -H "Content-Type: application/json" \
           -d @${encodingConfigFile} \
           -w "\n%{http_code}" \

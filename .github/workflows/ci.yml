@@ -63,4 +63,9 @@ jobs:
 
       - name: Run Check 📋
         run: |
-          nix build -L .#checks.x86_64-linux.${{ matrix.check }}
+          if nix eval --raw ".#checks.x86_64-linux.${{ matrix.check }}.passthru.meta.requiresNetwork" 2>/dev/null | grep -q "true"; then
+            echo "Test requires network access, disabling sandbox"
+            nix build -L --quiet .#checks.x86_64-linux.${{ matrix.check }} --option sandbox false
+          else
+            nix build -L --quiet .#checks.x86_64-linux.${{ matrix.check }}
+          fi

@@ -26,6 +26,11 @@
       ${lib.optionalString (!cond) "echo 'FAIL: ${name}' && exit 1"}
       echo 'PASS: ${name}' > $out
     '';
+
+  check = name: cond: ''
+    ${lib.optionalString (!cond) "echo 'FAIL: ${name}' && exit 1"}
+    echo 'PASS: ${name}'
+  '';
 in {
   # Test that nixflix.sonarr options generate correct systemd units
   sonarr-service-generation = let
@@ -196,4 +201,99 @@ in {
     hasAllServices = systemdUnits ? sabnzbd;
   in
     assertTest "sabnzbd-service-generation" hasAllServices;
+
+  jellyfin-integration = let
+    config = evalConfig [
+      {
+        nixflix = {
+          enable = true;
+
+          jellyfin = {
+            enable = true;
+            users.admin = {
+              password = "testpassword";
+              policy.isAdministrator = true;
+            };
+          };
+
+          radarr = {
+            enable = true;
+            mediaDirs = ["/media/movies"];
+            config = {
+              hostConfig = {
+                port = 7878;
+                username = "admin";
+                password = {_secret = "/run/secrets/radarr-pass";};
+              };
+              apiKey = {_secret = "/run/secrets/radarr-api";};
+              rootFolders = [{path = "/media/movies";}];
+            };
+          };
+
+          sonarr = {
+            enable = true;
+            mediaDirs = ["/media/shows"];
+            config = {
+              hostConfig = {
+                port = 8989;
+                username = "admin";
+                password = {_secret = "/run/secrets/sonarr-pass";};
+              };
+              apiKey = {_secret = "/run/secrets/sonarr-api";};
+              rootFolders = [{path = "/media/shows";}];
+            };
+          };
+
+          sonarr-anime = {
+            enable = true;
+            mediaDirs = ["/media/anime"];
+            config = {
+              hostConfig = {
+                port = 8990;
+                username = "admin";
+                password = {_secret = "/run/secrets/sonarr-anime-pass";};
+              };
+              apiKey = {_secret = "/run/secrets/sonarr-anime-api";};
+              rootFolders = [{path = "/media/anime";}];
+            };
+          };
+
+          lidarr = {
+            enable = true;
+            mediaDirs = ["/media/music"];
+            config = {
+              hostConfig = {
+                port = 8686;
+                username = "admin";
+                password = {_secret = "/run/secrets/lidarr-pass";};
+              };
+              apiKey = {_secret = "/run/secrets/lidarr-api";};
+              rootFolders = [{path = "/media/music";}];
+            };
+          };
+        };
+      }
+    ];
+
+    inherit (config.config.nixflix.jellyfin) libraries;
+  in
+    pkgs.runCommand "unit-test-jellyfin-integration" {} ''
+      ${check "Movies library exists" (libraries ? Movies)}
+      ${check "Movies library has correct collectionType" (libraries.Movies.collectionType == "movies")}
+      ${check "Movies library has correct path" (builtins.elem "/media/movies" libraries.Movies.paths)}
+
+      ${check "Shows library exists" (libraries ? Shows)}
+      ${check "Shows library has correct collectionType" (libraries.Shows.collectionType == "tvshows")}
+      ${check "Shows library has correct path" (builtins.elem "/media/shows" libraries.Shows.paths)}
+
+      ${check "Anime library exists" (libraries ? Anime)}
+      ${check "Anime library has correct collectionType" (libraries.Anime.collectionType == "tvshows")}
+      ${check "Anime library has correct path" (builtins.elem "/media/anime" libraries.Anime.paths)}
+
+      ${check "Music library exists" (libraries ? Music)}
+      ${check "Music library has correct collectionType" (libraries.Music.collectionType == "music")}
+      ${check "Music library has correct path" (builtins.elem "/media/music" libraries.Music.paths)}
+
+      echo 'PASS: jellyfin-integration' > $out
+    '';
 }

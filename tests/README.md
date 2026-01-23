@@ -45,14 +45,20 @@ nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames
 ### Run Individual Tests
 
 ```bash
-# Run a specific VM test (replace <test-name> with actual test name)
 nix build .#checks.x86_64-linux.<test-name> -L
-
-# Example:
-nix build .#checks.x86_64-linux.sonarr-basic -L
 ```
 
 The `-L` flag shows detailed logs during the build/test process.
+
+#### Tests that require internet access
+
+Some tests will require internet access for their services to reach
+a successful state. In order to do so you will neet to set `networking.useDHCP = true;`
+inside your test and run the test with sandbox disabled:
+
+```bash
+nix build .#checks.x86_64-linux.<test-name> -L --option sandbox false
+```
 
 ### Run Tests Locally with Interactive VM
 
@@ -113,15 +119,6 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("sonarr.service")
     # ... your test assertions
   '';
-}
-```
-
-2. Add it to `tests/vm-tests/default.nix`:
-
-```nix
-{
-  # ... existing tests
-  my-test = import ./my-test.nix {inherit system pkgs nixosModules;};
 }
 ```
 
