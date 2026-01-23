@@ -84,6 +84,107 @@ pkgs.testers.runNixOSTest {
           };
         };
 
+        system = {
+          serverName = "test-jellyfin-server";
+          preferredMetadataLanguage = "de";
+          metadataCountryCode = "DE";
+          uiCulture = "de-DE";
+          logFileRetentionDays = 7;
+          activityLogRetentionDays = 60;
+          enableMetrics = true;
+          enableNormalizedItemByNameIds = false;
+          isPortAuthorized = false;
+          quickConnectAvailable = false;
+          enableCaseSensitiveItemIds = false;
+          disableLiveTvChannelUserDataName = false;
+          sortReplaceCharacters = ["-" "_"];
+          sortRemoveCharacters = ["!" "?"];
+          sortRemoveWords = ["der" "die" "das"];
+          minResumePct = 10;
+          maxResumePct = 85;
+          minAudiobookResume = 2;
+          maxAudiobookResume = 3;
+          minResumeDurationSeconds = 120;
+          inactiveSessionThreshold = 15;
+          libraryMonitorDelay = 30;
+          libraryUpdateDuration = 45;
+          cacheSize = 500;
+          imageSavingConvention = "Compatible";
+          imageExtractionTimeoutMs = 5000;
+          skipDeserializationForBasicTypes = false;
+          saveMetadataHidden = true;
+          enableFolderView = true;
+          enableGroupingMoviesIntoCollections = true;
+          enableGroupingShowsIntoCollections = true;
+          displaySpecialsWithinSeasons = false;
+          remoteClientBitrateLimit = 8000000;
+          enableSlowResponseWarning = false;
+          slowResponseThresholdMs = 1000;
+          corsHosts = ["localhost" "test.example.com"];
+          libraryScanFanoutConcurrency = 2;
+          libraryMetadataRefreshConcurrency = 4;
+          allowClientLogUpload = false;
+          enableExternalContentInSuggestions = false;
+          dummyChapterDuration = 10;
+          chapterImageResolution = "P720";
+          parallelImageEncodingLimit = 3;
+          castReceiverApplications = [
+            {
+              id = "CUSTOM123";
+              name = "Test Receiver";
+            }
+          ];
+          trickplayOptions = {
+            enableHwAcceleration = true;
+            enableHwEncoding = true;
+            enableKeyFrameOnlyExtraction = true;
+            scanBehavior = "Blocking";
+            processPriority = "Normal";
+            interval = 5000;
+            widthResolutions = [320 480 720];
+            tileWidth = 8;
+            tileHeight = 8;
+            qscale = 6;
+            jpegQuality = 85;
+            processThreads = 2;
+          };
+          metadataOptions = [
+            {
+              itemType = "Movie";
+              disabledMetadataSavers = ["Nfo"];
+              disabledMetadataFetchers = ["TheMovieDb"];
+              localMetadataReaderOrder = ["Nfo"];
+              metadataFetcherOrder = ["TheMovieDb"];
+              disabledImageFetchers = ["TheMovieDb"];
+              imageFetcherOrder = ["TheMovieDb"];
+            }
+          ];
+          contentTypes = [
+            {
+              name = "test";
+              value = "application/test";
+            }
+          ];
+          pathSubstitutions = [
+            {
+              from = "/old/path";
+              to = "/new/path";
+            }
+          ];
+          codecsUsed = ["h264" "hevc"];
+          pluginRepositories = [
+            {
+              tag = "RepositoryInfo";
+              content = {
+                name = "Test Repo";
+                url = "https://test.example.com/manifest.json";
+                enabled = true;
+              };
+            }
+          ];
+          enableLegacyAuthorization = false;
+        };
+
         libraries = {
           "Test Movies" = {
             collectionType = "movies";
@@ -324,5 +425,177 @@ pkgs.testers.runNixOSTest {
     img_opt_backdrop = [io for io in type_opt['ImageOptions'] if io['Type'] == 'Backdrop'][0]
     assert img_opt_backdrop['Limit'] == 3, f"Backdrop image limit should be 3, got {img_opt_backdrop['Limit']}"
     assert img_opt_backdrop['MinWidth'] == 1920, f"Backdrop image minWidth should be 1920, got {img_opt_backdrop['MinWidth']}"
+
+    with subtest("Verify system configuration"):
+        print("Querying system configuration...")
+        system_config_json = machine.succeed(
+            f'curl -f -H {auth_header} {base_url}/System/Configuration'
+        )
+        system_config = json.loads(system_config_json)
+
+        assert system_config['ServerName'] == 'test-jellyfin-server', \
+            f"ServerName should be 'test-jellyfin-server', got {system_config.get('ServerName')}"
+        assert system_config['PreferredMetadataLanguage'] == 'de', \
+            f"PreferredMetadataLanguage should be 'de', got {system_config.get('PreferredMetadataLanguage')}"
+        assert system_config['MetadataCountryCode'] == 'DE', \
+            f"MetadataCountryCode should be 'DE', got {system_config.get('MetadataCountryCode')}"
+        assert system_config['UICulture'] == 'de-DE', \
+            f"UICulture should be 'de-DE', got {system_config.get('UICulture')}"
+        assert system_config['LogFileRetentionDays'] == 7, \
+            f"LogFileRetentionDays should be 7, got {system_config.get('LogFileRetentionDays')}"
+        assert system_config['ActivityLogRetentionDays'] == 60, \
+            f"ActivityLogRetentionDays should be 60, got {system_config.get('ActivityLogRetentionDays')}"
+        assert system_config['EnableMetrics'] == True, \
+            f"EnableMetrics should be True, got {system_config.get('EnableMetrics')}"
+        assert system_config['EnableNormalizedItemByNameIds'] == False, \
+            f"EnableNormalizedItemByNameIds should be False, got {system_config.get('EnableNormalizedItemByNameIds')}"
+        assert system_config['IsPortAuthorized'] == False, \
+            f"IsPortAuthorized should be False, got {system_config.get('IsPortAuthorized')}"
+        assert system_config['QuickConnectAvailable'] == False, \
+            f"QuickConnectAvailable should be False, got {system_config.get('QuickConnectAvailable')}"
+        assert system_config['EnableCaseSensitiveItemIds'] == False, \
+            f"EnableCaseSensitiveItemIds should be False, got {system_config.get('EnableCaseSensitiveItemIds')}"
+        assert system_config['DisableLiveTvChannelUserDataName'] == False, \
+            f"DisableLiveTvChannelUserDataName should be False, got {system_config.get('DisableLiveTvChannelUserDataName')}"
+        assert set(system_config['SortReplaceCharacters']) == {'-', '_'}, \
+            f"SortReplaceCharacters should be ['-', '_'], got {system_config.get('SortReplaceCharacters')}"
+        assert set(system_config['SortRemoveCharacters']) == {'!', '?'}, \
+            f"SortRemoveCharacters should be ['!', '?'], got {system_config.get('SortRemoveCharacters')}"
+        assert set(system_config['SortRemoveWords']) == {'der', 'die', 'das'}, \
+            f"SortRemoveWords should be ['der', 'die', 'das'], got {system_config.get('SortRemoveWords')}"
+        assert system_config['MinResumePct'] == 10, \
+            f"MinResumePct should be 10, got {system_config.get('MinResumePct')}"
+        assert system_config['MaxResumePct'] == 85, \
+            f"MaxResumePct should be 85, got {system_config.get('MaxResumePct')}"
+        assert system_config['MinAudiobookResume'] == 2, \
+            f"MinAudiobookResume should be 2, got {system_config.get('MinAudiobookResume')}"
+        assert system_config['MaxAudiobookResume'] == 3, \
+            f"MaxAudiobookResume should be 3, got {system_config.get('MaxAudiobookResume')}"
+        assert system_config['MinResumeDurationSeconds'] == 120, \
+            f"MinResumeDurationSeconds should be 120, got {system_config.get('MinResumeDurationSeconds')}"
+        assert system_config['InactiveSessionThreshold'] == 15, \
+            f"InactiveSessionThreshold should be 15, got {system_config.get('InactiveSessionThreshold')}"
+        assert system_config['LibraryMonitorDelay'] == 30, \
+            f"LibraryMonitorDelay should be 30, got {system_config.get('LibraryMonitorDelay')}"
+        assert system_config['LibraryUpdateDuration'] == 45, \
+            f"LibraryUpdateDuration should be 45, got {system_config.get('LibraryUpdateDuration')}"
+        assert system_config['CacheSize'] == 500, \
+            f"CacheSize should be 500, got {system_config.get('CacheSize')}"
+        assert system_config['ImageSavingConvention'] == 'Compatible', \
+            f"ImageSavingConvention should be 'Compatible', got {system_config.get('ImageSavingConvention')}"
+        assert system_config['ImageExtractionTimeoutMs'] == 5000, \
+            f"ImageExtractionTimeoutMs should be 5000, got {system_config.get('ImageExtractionTimeoutMs')}"
+        assert system_config['SkipDeserializationForBasicTypes'] == False, \
+            f"SkipDeserializationForBasicTypes should be False, got {system_config.get('SkipDeserializationForBasicTypes')}"
+        assert system_config['SaveMetadataHidden'] == True, \
+            f"SaveMetadataHidden should be True, got {system_config.get('SaveMetadataHidden')}"
+        assert system_config['EnableFolderView'] == True, \
+            f"EnableFolderView should be True, got {system_config.get('EnableFolderView')}"
+        assert system_config['EnableGroupingMoviesIntoCollections'] == True, \
+            f"EnableGroupingMoviesIntoCollections should be True, got {system_config.get('EnableGroupingMoviesIntoCollections')}"
+        assert system_config['EnableGroupingShowsIntoCollections'] == True, \
+            f"EnableGroupingShowsIntoCollections should be True, got {system_config.get('EnableGroupingShowsIntoCollections')}"
+        assert system_config['DisplaySpecialsWithinSeasons'] == False, \
+            f"DisplaySpecialsWithinSeasons should be False, got {system_config.get('DisplaySpecialsWithinSeasons')}"
+        assert system_config['RemoteClientBitrateLimit'] == 8000000, \
+            f"RemoteClientBitrateLimit should be 8000000, got {system_config.get('RemoteClientBitrateLimit')}"
+        assert system_config['EnableSlowResponseWarning'] == False, \
+            f"EnableSlowResponseWarning should be False, got {system_config.get('EnableSlowResponseWarning')}"
+        assert system_config['SlowResponseThresholdMs'] == 1000, \
+            f"SlowResponseThresholdMs should be 1000, got {system_config.get('SlowResponseThresholdMs')}"
+        assert set(system_config['CorsHosts']) == {'localhost', 'test.example.com'}, \
+            f"CorsHosts should be ['localhost', 'test.example.com'], got {system_config.get('CorsHosts')}"
+        assert system_config['LibraryScanFanoutConcurrency'] == 2, \
+            f"LibraryScanFanoutConcurrency should be 2, got {system_config.get('LibraryScanFanoutConcurrency')}"
+        assert system_config['LibraryMetadataRefreshConcurrency'] == 4, \
+            f"LibraryMetadataRefreshConcurrency should be 4, got {system_config.get('LibraryMetadataRefreshConcurrency')}"
+        assert system_config['AllowClientLogUpload'] == False, \
+            f"AllowClientLogUpload should be False, got {system_config.get('AllowClientLogUpload')}"
+        assert system_config['EnableExternalContentInSuggestions'] == False, \
+            f"EnableExternalContentInSuggestions should be False, got {system_config.get('EnableExternalContentInSuggestions')}"
+        assert system_config['DummyChapterDuration'] == 10, \
+            f"DummyChapterDuration should be 10, got {system_config.get('DummyChapterDuration')}"
+        assert system_config['ChapterImageResolution'] == 'P720', \
+            f"ChapterImageResolution should be 'P720', got {system_config.get('ChapterImageResolution')}"
+        assert system_config['ParallelImageEncodingLimit'] == 3, \
+            f"ParallelImageEncodingLimit should be 3, got {system_config.get('ParallelImageEncodingLimit')}"
+        assert len(system_config['CastReceiverApplications']) == 1, \
+            f"Should have 1 cast receiver application, got {len(system_config.get('CastReceiverApplications', []))}"
+        cast_app = system_config['CastReceiverApplications'][0]
+        assert cast_app['Id'] == 'CUSTOM123', \
+            f"Cast receiver ID should be 'CUSTOM123', got {cast_app.get('Id')}"
+        assert cast_app['Name'] == 'Test Receiver', \
+            f"Cast receiver Name should be 'Test Receiver', got {cast_app.get('Name')}"
+        trickplay = system_config['TrickplayOptions']
+        assert trickplay['EnableHwAcceleration'] == True, \
+            f"EnableHwAcceleration should be True, got {trickplay.get('EnableHwAcceleration')}"
+        assert trickplay['EnableHwEncoding'] == True, \
+            f"EnableHwEncoding should be True, got {trickplay.get('EnableHwEncoding')}"
+        assert trickplay['EnableKeyFrameOnlyExtraction'] == True, \
+            f"EnableKeyFrameOnlyExtraction should be True, got {trickplay.get('EnableKeyFrameOnlyExtraction')}"
+        assert trickplay['ScanBehavior'] == 'Blocking', \
+            f"ScanBehavior should be 'Blocking', got {trickplay.get('ScanBehavior')}"
+        assert trickplay['ProcessPriority'] == 'Normal', \
+            f"ProcessPriority should be 'Normal', got {trickplay.get('ProcessPriority')}"
+        assert trickplay['Interval'] == 5000, \
+            f"Interval should be 5000, got {trickplay.get('Interval')}"
+        assert set(trickplay['WidthResolutions']) == {320, 480, 720}, \
+            f"WidthResolutions should be [320, 480, 720], got {trickplay.get('WidthResolutions')}"
+        assert trickplay['TileWidth'] == 8, \
+            f"TileWidth should be 8, got {trickplay.get('TileWidth')}"
+        assert trickplay['TileHeight'] == 8, \
+            f"TileHeight should be 8, got {trickplay.get('TileHeight')}"
+        assert trickplay['Qscale'] == 6, \
+            f"Qscale should be 6, got {trickplay.get('Qscale')}"
+        assert trickplay['JpegQuality'] == 85, \
+            f"JpegQuality should be 85, got {trickplay.get('JpegQuality')}"
+        assert trickplay['ProcessThreads'] == 2, \
+            f"ProcessThreads should be 2, got {trickplay.get('ProcessThreads')}"
+        assert len(system_config['MetadataOptions']) == 1, \
+            f"Should have 1 metadata option, got {len(system_config.get('MetadataOptions', []))}"
+        metadata_opt = system_config['MetadataOptions'][0]
+        assert metadata_opt['ItemType'] == 'Movie', \
+            f"ItemType should be 'Movie', got {metadata_opt.get('ItemType')}"
+        assert set(metadata_opt['DisabledMetadataSavers']) == {'Nfo'}, \
+            f"DisabledMetadataSavers should be ['Nfo'], got {metadata_opt.get('DisabledMetadataSavers')}"
+        assert set(metadata_opt['DisabledMetadataFetchers']) == {'TheMovieDb'}, \
+            f"DisabledMetadataFetchers should be ['TheMovieDb'], got {metadata_opt.get('DisabledMetadataFetchers')}"
+        assert set(metadata_opt['LocalMetadataReaderOrder']) == {'Nfo'}, \
+            f"LocalMetadataReaderOrder should be ['Nfo'], got {metadata_opt.get('LocalMetadataReaderOrder')}"
+        assert set(metadata_opt['MetadataFetcherOrder']) == {'TheMovieDb'}, \
+            f"MetadataFetcherOrder should be ['TheMovieDb'], got {metadata_opt.get('MetadataFetcherOrder')}"
+        assert set(metadata_opt['DisabledImageFetchers']) == {'TheMovieDb'}, \
+            f"DisabledImageFetchers should be ['TheMovieDb'], got {metadata_opt.get('DisabledImageFetchers')}"
+        assert set(metadata_opt['ImageFetcherOrder']) == {'TheMovieDb'}, \
+            f"ImageFetcherOrder should be ['TheMovieDb'], got {metadata_opt.get('ImageFetcherOrder')}"
+        assert len(system_config['ContentTypes']) == 1, \
+            f"Should have 1 content type, got {len(system_config.get('ContentTypes', []))}"
+        content_type = system_config['ContentTypes'][0]
+        assert content_type['Name'] == 'test', \
+            f"ContentType Name should be 'test', got {content_type.get('Name')}"
+        assert content_type['Value'] == 'application/test', \
+            f"ContentType Value should be 'application/test', got {content_type.get('Value')}"
+        assert len(system_config['PathSubstitutions']) == 1, \
+            f"Should have 1 path substitution, got {len(system_config.get('PathSubstitutions', []))}"
+        path_sub = system_config['PathSubstitutions'][0]
+        assert path_sub['From'] == '/old/path', \
+            f"PathSubstitution From should be '/old/path', got {path_sub.get('From')}"
+        assert path_sub['To'] == '/new/path', \
+            f"PathSubstitution To should be '/new/path', got {path_sub.get('To')}"
+        assert set(system_config['CodecsUsed']) == {'h264', 'hevc'}, \
+            f"CodecsUsed should be ['h264', 'hevc'], got {system_config.get('CodecsUsed')}"
+        assert len(system_config['PluginRepositories']) == 1, \
+            f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
+        plugin_repo = system_config['PluginRepositories'][0]
+        assert plugin_repo['Name'] == 'Test Repo', \
+            f"Plugin repo Name should be 'Test Repo', got {plugin_repo.get('Name')}"
+        assert plugin_repo['Url'] == 'https://test.example.com/manifest.json', \
+            f"Plugin repo Url should be 'https://test.example.com/manifest.json', got {plugin_repo.get('Url')}"
+        assert plugin_repo['Enabled'] == True, \
+            f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
+        assert system_config['EnableLegacyAuthorization'] == False, \
+            f"EnableLegacyAuthorization should be False, got {system_config.get('EnableLegacyAuthorization')}"
+
+        print("All system configuration assertions passed!")
   '';
 }
