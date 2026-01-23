@@ -185,6 +185,41 @@ pkgs.testers.runNixOSTest {
           enableLegacyAuthorization = false;
         };
 
+        encoding = {
+          enableHardwareEncoding = false;
+          allowHevcEncoding = true;
+          allowAv1Encoding = true;
+          encodingThreadCount = 4;
+          transcodingTempPath = "/custom/transcode/path";
+          enableAudioVbr = true;
+          downMixAudioBoost = 3;
+          downMixStereoAlgorithm = "Rfc7845";
+          maxMuxingQueueSize = 4096;
+          enableThrottling = true;
+          throttleDelaySeconds = 120;
+          enableSegmentDeletion = true;
+          segmentKeepSeconds = 600;
+          hardwareAccelerationType = "vaapi";
+          vaapiDevice = "/dev/dri/renderD129";
+          enableTonemapping = true;
+          tonemappingAlgorithm = "hable";
+          tonemappingMode = "rgb";
+          tonemappingRange = "pc";
+          tonemappingDesat = 0.5;
+          tonemappingPeak = 200;
+          tonemappingParam = 1.5;
+          h264Crf = 20;
+          h265Crf = 25;
+          encoderPreset = "placebo";
+          deinterlaceDoubleRate = true;
+          deinterlaceMethod = "bwdif";
+          enableDecodingColorDepth10Hevc = false;
+          enableDecodingColorDepth10Vp9 = false;
+          hardwareDecodingCodecs = ["h264" "hevc" "vp9" "av1"];
+          enableSubtitleExtraction = false;
+          allowOnDemandMetadataBasedKeyframeExtractionForExtensions = ["mkv" "mp4"];
+        };
+
         libraries = {
           "Test Movies" = {
             collectionType = "movies";
@@ -270,6 +305,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
     machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'
@@ -597,5 +633,84 @@ pkgs.testers.runNixOSTest {
             f"EnableLegacyAuthorization should be False, got {system_config.get('EnableLegacyAuthorization')}"
 
         print("All system configuration assertions passed!")
+
+    with subtest("Verify encoding configuration"):
+        print("Querying encoding configuration...")
+        encoding_config_json = machine.succeed(
+            f'curl -f -H {auth_header} {base_url}/System/Configuration/encoding'
+        )
+        encoding_config = json.loads(encoding_config_json)
+
+        assert encoding_config['EnableHardwareEncoding'] == False, \
+            f"EnableHardwareEncoding should be False, got {encoding_config.get('EnableHardwareEncoding')}"
+        assert encoding_config['AllowHevcEncoding'] == True, \
+            f"AllowHevcEncoding should be True, got {encoding_config.get('AllowHevcEncoding')}"
+        assert encoding_config['AllowAv1Encoding'] == True, \
+            f"AllowAv1Encoding should be True, got {encoding_config.get('AllowAv1Encoding')}"
+        assert encoding_config['EnableAudioVbr'] == True, \
+            f"EnableAudioVbr should be True, got {encoding_config.get('EnableAudioVbr')}"
+        assert encoding_config['EnableThrottling'] == True, \
+            f"EnableThrottling should be True, got {encoding_config.get('EnableThrottling')}"
+        assert encoding_config['EnableSegmentDeletion'] == True, \
+            f"EnableSegmentDeletion should be True, got {encoding_config.get('EnableSegmentDeletion')}"
+        assert encoding_config['EnableTonemapping'] == True, \
+            f"EnableTonemapping should be True, got {encoding_config.get('EnableTonemapping')}"
+        assert encoding_config['DeinterlaceDoubleRate'] == True, \
+            f"DeinterlaceDoubleRate should be True, got {encoding_config.get('DeinterlaceDoubleRate')}"
+        assert encoding_config['EnableDecodingColorDepth10Hevc'] == False, \
+            f"EnableDecodingColorDepth10Hevc should be False, got {encoding_config.get('EnableDecodingColorDepth10Hevc')}"
+        assert encoding_config['EnableDecodingColorDepth10Vp9'] == False, \
+            f"EnableDecodingColorDepth10Vp9 should be False, got {encoding_config.get('EnableDecodingColorDepth10Vp9')}"
+        assert encoding_config['EnableSubtitleExtraction'] == False, \
+            f"EnableSubtitleExtraction should be False, got {encoding_config.get('EnableSubtitleExtraction')}"
+
+        assert encoding_config['EncodingThreadCount'] == 4, \
+            f"EncodingThreadCount should be 4, got {encoding_config.get('EncodingThreadCount')}"
+        assert encoding_config['MaxMuxingQueueSize'] == 4096, \
+            f"MaxMuxingQueueSize should be 4096, got {encoding_config.get('MaxMuxingQueueSize')}"
+        assert encoding_config['ThrottleDelaySeconds'] == 120, \
+            f"ThrottleDelaySeconds should be 120, got {encoding_config.get('ThrottleDelaySeconds')}"
+        assert encoding_config['SegmentKeepSeconds'] == 600, \
+            f"SegmentKeepSeconds should be 600, got {encoding_config.get('SegmentKeepSeconds')}"
+        assert encoding_config['H264Crf'] == 20, \
+            f"H264Crf should be 20, got {encoding_config.get('H264Crf')}"
+        assert encoding_config['H265Crf'] == 25, \
+            f"H265Crf should be 25, got {encoding_config.get('H265Crf')}"
+
+        assert encoding_config['DownMixAudioBoost'] == 3, \
+            f"DownMixAudioBoost should be 3, got {encoding_config.get('DownMixAudioBoost')}"
+        assert encoding_config['TonemappingDesat'] == 0.5, \
+            f"TonemappingDesat should be 0.5, got {encoding_config.get('TonemappingDesat')}"
+        assert encoding_config['TonemappingPeak'] == 200, \
+            f"TonemappingPeak should be 200, got {encoding_config.get('TonemappingPeak')}"
+        assert encoding_config['TonemappingParam'] == 1.5, \
+            f"TonemappingParam should be 1.5, got {encoding_config.get('TonemappingParam')}"
+
+        assert encoding_config['TranscodingTempPath'] == '/custom/transcode/path', \
+            f"TranscodingTempPath should be '/custom/transcode/path', got {encoding_config.get('TranscodingTempPath')}"
+        assert encoding_config['VaapiDevice'] == '/dev/dri/renderD129', \
+            f"VaapiDevice should be '/dev/dri/renderD129', got {encoding_config.get('VaapiDevice')}"
+
+        assert encoding_config['DownMixStereoAlgorithm'] == 'Rfc7845', \
+            f"DownMixStereoAlgorithm should be 'Rfc7845', got {encoding_config.get('DownMixStereoAlgorithm')}"
+        assert encoding_config['HardwareAccelerationType'] == 'vaapi', \
+            f"HardwareAccelerationType should be 'vaapi', got {encoding_config.get('HardwareAccelerationType')}"
+        assert encoding_config['TonemappingAlgorithm'] == 'hable', \
+            f"TonemappingAlgorithm should be 'hable', got {encoding_config.get('TonemappingAlgorithm')}"
+        assert encoding_config['TonemappingMode'] == 'rgb', \
+            f"TonemappingMode should be 'rgb', got {encoding_config.get('TonemappingMode')}"
+        assert encoding_config['TonemappingRange'] == 'pc', \
+            f"TonemappingRange should be 'pc', got {encoding_config.get('TonemappingRange')}"
+        assert encoding_config['EncoderPreset'] == 'placebo', \
+            f"EncoderPreset should be 'placebo', got {encoding_config.get('EncoderPreset')}"
+        assert encoding_config['DeinterlaceMethod'] == 'bwdif', \
+            f"DeinterlaceMethod should be 'bwdif', got {encoding_config.get('DeinterlaceMethod')}"
+
+        assert set(encoding_config['HardwareDecodingCodecs']) == {'h264', 'hevc', 'vp9', 'av1'}, \
+            f"HardwareDecodingCodecs should be ['h264', 'hevc', 'vp9', 'av1'], got {encoding_config.get('HardwareDecodingCodecs')}"
+        assert set(encoding_config['AllowOnDemandMetadataBasedKeyframeExtractionForExtensions']) == {'mkv', 'mp4'}, \
+            f"AllowOnDemandMetadataBasedKeyframeExtractionForExtensions should be ['mkv', 'mp4'], got {encoding_config.get('AllowOnDemandMetadataBasedKeyframeExtractionForExtensions')}"
+
+        print("All encoding configuration assertions passed!")
   '';
 }

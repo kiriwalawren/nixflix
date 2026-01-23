@@ -157,18 +157,11 @@ in {
               # Fetch current policy from server
               CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
 
-              echo "Current policy from server:"
-              echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq '.Policy'
-
               # Get our desired policy settings
               DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
 
               # Merge: start with current policy, overlay our desired changes
               POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
-
-              echo ""
-              echo "Merged policy payload to send:"
-              echo "$POLICY_JSON" | ${pkgs.jq}/bin/jq .
 
               POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
                 -H "$AUTH_HEADER" \

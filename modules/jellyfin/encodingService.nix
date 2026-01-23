@@ -22,9 +22,13 @@ with lib; let
     else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
   config = mkIf (nixflix.enable && cfg.enable) {
+    systemd.tmpfiles.rules = mkIf (cfg.encoding.transcodingTempPath != "") [
+      "d '${cfg.encoding.transcodingTempPath}' 0755 ${cfg.user} ${cfg.group} - -"
+    ];
+
     systemd.services.jellyfin-encoding-config = {
       description = "Configure Jellyfin Encoding via API";
-      after = ["jellyfin-setup-wizard.service"];
+      after = ["jellyfin-setup-wizard.service" "systemd-tmpfiles-setup.service"];
       requires = ["jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
