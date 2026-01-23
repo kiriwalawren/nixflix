@@ -14,6 +14,14 @@ in
     nodes.machine = {pkgs, ...}: {
       imports = [nixosModules];
 
+      jellyfin = {
+        enable = true;
+        users.admin = {
+          password = "testpassword";
+          policy.isAdministrator = true;
+        };
+      };
+
       nixflix = {
         enable = true;
 
@@ -110,6 +118,7 @@ in
       machine.wait_for_unit("radarr.service", timeout=180)
       machine.wait_for_unit("lidarr.service", timeout=180)
       machine.wait_for_unit("sabnzbd.service", timeout=60)
+      machine.wait_for_unit("jellyfin.service", timeout=180)
 
       # Wait for ports
       machine.wait_for_open_port(9696, timeout=180)
@@ -118,6 +127,7 @@ in
       machine.wait_for_open_port(7878, timeout=180)
       machine.wait_for_open_port(8686, timeout=180)
       machine.wait_for_open_port(8080, timeout=60)
+      machine.wait_for_open_port(8096, timeout=180)
 
       # Wait for all configuration services
       machine.wait_for_unit("prowlarr-config.service", timeout=60)
@@ -125,6 +135,7 @@ in
       machine.wait_for_unit("sonarr-anime-config.service", timeout=60)
       machine.wait_for_unit("radarr-config.service", timeout=60)
       machine.wait_for_unit("lidarr-config.service", timeout=60)
+      machine.wait_for_unit("jellyfin-system-config.service", timeout=60)
 
       # Wait for all services to come back up after restart
       machine.wait_for_unit("prowlarr.service", timeout=60)
@@ -159,6 +170,10 @@ in
           "curl -f -H 'X-Api-Key: lidarr444444444444444444444444444' "
           "http://127.0.0.1:8686/api/v1/system/status"
       )
+
+      jellyfin_api_token = machine.succeed("cat /run/jellyfin/auth-token")
+      jellyfin_auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{jellyfin_api_token}\""'
+      machine.succeed(f'curl -f -H {jellyfin_auth_header} http://127.0.0.1:8096/System/Info')
 
       # Wait for additional services (root folders only - indexers omitted)
       machine.wait_for_unit("sonarr-rootfolders.service", timeout=60)
