@@ -71,6 +71,10 @@ in {
         assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
         message = "nixflix.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
       }
+     {
+        assertion = cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
+        message = "nixflix.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
+      }
     ];
 
     nixflix.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;

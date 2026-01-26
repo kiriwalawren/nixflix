@@ -173,9 +173,13 @@
         default =
           if nixflix.nginx.enable
           then "/sabnzbd"
-          else "/";
-        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "/sabnzbd" else "/"'';
-        description = "URL base path for the web interface";
+          else "";
+        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "/sabnzbd" else ""'';
+        description = ''
+          When using a reverse proxy (or just if you feel like it), you can change the base-URL of SABnzbd that is used during redirects.
+          Trailing slash is not allowed. Leading slash is required unless the base URL is an empty string.
+          SABnzbd will forcefully restart after changing this setting, you will need to reload the page after the restart completes.
+        '';
       };
 
       https_port = mkOption {
