@@ -221,7 +221,10 @@
       html_login = mkOption {
         type = types.bool;
         default = true;
-        description = "Prompt for login with an HTML login mask if enabled, otherwise prompt for basic auth.";
+        description = ''
+          HTML based login form, uncheck for basic authentication.
+          Both offer similar security but password managers might not be able to fill basic authentication automatically.
+        '';
       };
 
       inet_exposure = mkOption {
@@ -408,7 +411,11 @@
       allow_incomplete_nzb = mkOption {
         type = types.bool;
         default = false;
-        description = "Allow incomplete NZB files";
+        description = ''
+          Sometimes you get an incomplete NZB file (partial content, incorrect syntax etc.)
+          You can enable this option to allow SABnzbd to salvage as much as possible from the NZB.
+          The job will enter the queue in paused mode.
+        '';
       };
 
       enable_all_par = mkOption {
@@ -504,7 +511,10 @@
       enable_par_cleanup = mkOption {
         type = types.bool;
         default = true;
-        description = "Delete par2 files after verification";
+        description = ''
+          Normally SABnzbd will clean up par2 files after verify/repair. You can disable this by using 0.
+          Disabling this will also force all par2 files to be downloaded.
+        '';
       };
 
       reorder_files = mkOption {
@@ -571,7 +581,7 @@
       keep_awake = mkOption {
         type = types.bool;
         default = false;
-        description = "Keep system awake during downloads";
+        description = "Disable to stop SABnzbd's attempts to keep the system awake while the queue isn't empty.";
       };
 
       require_modern_tls = mkOption {
