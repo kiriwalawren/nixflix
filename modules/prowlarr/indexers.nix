@@ -130,19 +130,19 @@ in {
           }
 
           ${
-            if apiKey != null
-            then secrets.toShellValue "INDEXER_API_KEY" apiKey
-            else "INDEXER_API_KEY=''"
+            if apiKey == null
+            then "INDEXER_API_KEY=''"
+            else secrets.toShellValue "INDEXER_API_KEY" apiKey
           }
           ${
-            if username != null
-            then secrets.toShellValue "INDEXER_USERNAME" username
-            else "INDEXER_USERNAME=''"
+            if username == null
+            then "INDEXER_USERNAME=''"
+            else secrets.toShellValue "INDEXER_USERNAME" username
           }
           ${
-            if password != null
-            then secrets.toShellValue "INDEXER_PASSWORD" password
-            else "INDEXER_PASSWORD=''"
+            if password == null
+            then "INDEXER_PASSWORD=''"
+            else secrets.toShellValue "INDEXER_PASSWORD" password
           }
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
