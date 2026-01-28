@@ -151,16 +151,18 @@ in {
 
           EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
+          TEMP_FILE=$(mktemp)
           if [ -n "$EXISTING_INDEXER" ]; then
             echo "Indexer ${indexerName} already exists, updating..."
             INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
 
             UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
+            echo "$UPDATED_INDEXER" > "$TEMP_FILE"
 
             ${pkgs.curl}/bin/curl -sSf -X PUT \
               -H "X-Api-Key: $API_KEY" \
               -H "Content-Type: application/json" \
-              -d "$UPDATED_INDEXER" \
+              --data @"$TEMP_FILE" \
               "$BASE_URL/indexer/$INDEXER_ID" >/dev/null
 
             echo "Indexer ${indexerName} updated"
@@ -175,15 +177,17 @@ in {
             fi
 
             NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
+            echo "$NEW_INDEXER" > "$TEMP_FILE"
 
             ${pkgs.curl}/bin/curl -sSf -X POST \
               -H "X-Api-Key: $API_KEY" \
               -H "Content-Type: application/json" \
-              -d "$NEW_INDEXER" \
+              --data @"$TEMP_FILE" \
               "$BASE_URL/indexer" >/dev/null
 
             echo "Indexer ${indexerName} created"
           fi
+          rm -f "$TEMP_FILE"
         '')
         serviceConfig.indexers}
 
