@@ -6,6 +6,12 @@
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+
+  enumFromAttrs = enum_values:
+    types.coercedTo
+    (types.enum (lib.attrNames enum_values))
+    (name: enum_values.${name})
+    (types.enum (lib.attrValues enum_values));
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
@@ -22,13 +28,58 @@ in {
           default = 1;
           description = "Application profile ID for the indexer (default: 1)";
         };
+        "baseSettings.queryLimit" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "The number of max queries as specified by the respective unit that Prowlarr will allow to the site";
+        };
+        "baseSettings.grabLimit" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "The number of max grabs as specified by the respective unit that Prowlarr will allow to the site.";
+        };
+        "baseSettings.limitsUnit" = mkOption {
+          type = enumFromAttrs {
+            "Day" = 0;
+            "Hour" = 1;
+          };
+          default = "Day";
+          description = "The unit of time for counting limits per indexer.";
+        };
+        "torrentBaseSettings.appMinimumSeeders" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "Minimum seeders required by the Applications for the indexer to grab, empty is Sync profile's default.";
+        };
+        "torrentBaseSettings.preferMagnetUrl" = mkOption {
+          type = types.nullOr types.bool;
+          default = null;
+          description = "When enabled, this indexer will prefer the use of magnet URLs for grabs with fallback to torrent links.";
+        };
+        "torrentBaseSettings.packSeedTime" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "The time (in minutes) a pack (season or discography) torrent should be seeded before stopping, empty is app's default.";
+        };
+        "torrentBaseSettings.seedTime" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "The time (in minutes) a torrent should be seeded before stopping, empty uses the download client's default.";
+        };
+        "torrentBaseSettings.seedRatio" = mkOption {
+          type = types.nullOr types.numbers.positive;
+          default = null;
+          description = "The time (in minutes) a torrent should be seeded before stopping, empty uses the download client's default.";
+        };
       };
     });
     default = [];
     description = ''
       List of indexers to configure in Prowlarr.
-      Any additional attributes beyond name, apiKey, and appProfileId
-      will be applied as field values to the indexer schema.
+      Any additional attributes beyond what is defined here will be applied as field values to the indexer schema.
+
+      The field names can be kind of hard to figure out. I had to look at the network tab of the developer console.
+      In general, the name you see in the UI should be camel case. i.e. "Move first tags to end of release title" becomes `moveFirstTagsToEndOfReleaseTitle`.
     '';
   };
 
@@ -83,7 +134,7 @@ in {
           indexerName = indexerConfig.name;
           inherit (indexerConfig) apiKey;
           allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey"];
-          fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
+          fieldOverrides = lib.filterAttrs (name: _value: !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
           echo "Processing indexer: ${indexerName}"
@@ -97,11 +148,19 @@ in {
               --arg apiKey "$api_key" \
               --argjson overrides "$overrides" '
                 .fields[] |= (if .name == "apiKey" then .value = $apiKey else . end)
-                | . + $overrides
+                | . as $indexer
+                | ($indexer.fields | map(.name)) as $fieldNames
+                | $indexer + ($overrides | to_entries | map(
+                    select(.value != null or (($fieldNames | index(.key)) == null))
+                  ) | from_entries)
                 | .fields[] |= (
                     . as $field |
-                    if $overrides[$field.name] != null then
-                      .value = $overrides[$field.name]
+                    if ($overrides | has($field.name)) then
+                      if $overrides[$field.name] != null then
+                        .value = $overrides[$field.name]
+                      else
+                        del(.value)
+                      end
                     else
                       .
                     end
