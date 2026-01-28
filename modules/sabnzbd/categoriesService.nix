@@ -37,7 +37,7 @@ in {
           for param in "$@"; do
             url="$url&$param"
           done
-          curl -s "$url"
+          curl -s "$url" -H "apikey:$API_KEY"
         }
 
         # Wait for SABnzbd API to be ready
