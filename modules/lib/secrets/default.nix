@@ -42,13 +42,18 @@ in {
     else toString value;
 
   mkSecretOption = {
+    nullable ? false,
     type ? secretOrStrType,
     default ? null,
     example ? null,
     description,
   }:
     mkOption {
-      inherit type default;
+      inherit default;
+      type =
+        if nullable
+        then types.nullOr type
+        else type;
       example =
         if example != null
         then example
