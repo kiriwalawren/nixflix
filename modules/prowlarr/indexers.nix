@@ -9,6 +9,7 @@ with lib; let
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
+      freeformType = types.attrsOf types.anything;
       options = {
         name = mkOption {
           type = types.str;
@@ -16,6 +17,12 @@ in {
         };
         apiKey = secrets.mkSecretOption {
           description = "API key for the indexer.";
+        };
+        username = secrets.mkSecretOption {
+          description = "Username for the indexer.";
+        };
+        password = secrets.mkSecretOption {
+          description = "Password for the indexer.";
         };
         appProfileId = mkOption {
           type = types.int;
@@ -27,8 +34,11 @@ in {
     default = [];
     description = ''
       List of indexers to configure in Prowlarr.
-      Any additional attributes beyond name, apiKey, and appProfileId
+      Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
+
+      The field names can be kind of hard to figure out. I had to look at the network tab of the developer console.
+      I'm not sure how to make this part easier.
     '';
   };
 
@@ -81,8 +91,8 @@ in {
 
       ${concatMapStringsSep "\n" (indexerConfig: let
           indexerName = indexerConfig.name;
-          inherit (indexerConfig) apiKey;
-          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey"];
+          inherit (indexerConfig) apiKey username password;
+          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey" "username" "password"];
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
@@ -91,12 +101,22 @@ in {
           apply_field_overrides() {
             local indexer_json="$1"
             local api_key="$2"
-            local overrides="$3"
+            local username="$3"
+            local password="$4"
+            local overrides="$5"
 
             echo "$indexer_json" | ${pkgs.jq}/bin/jq \
               --arg apiKey "$api_key" \
+              --arg username "$username" \
+              --arg password "$password" \
               --argjson overrides "$overrides" '
-                .fields[] |= (if .name == "apiKey" then .value = $apiKey else . end)
+                .fields[] |= (
+                  if .name == "apiKey" and $apiKey != "" then .value = $apiKey
+                  elif .name == "username" and $username != "" then .value = $username
+                  elif .name == "password" and $password != "" then .value = $password
+                  else .
+                  end
+                )
                 | . + $overrides
                 | .fields[] |= (
                     . as $field |
@@ -109,7 +129,21 @@ in {
               '
           }
 
-          ${secrets.toShellValue "INDEXER_API_KEY" apiKey}
+          ${
+            if apiKey != null
+            then secrets.toShellValue "INDEXER_API_KEY" apiKey
+            else "INDEXER_API_KEY=''"
+          }
+          ${
+            if username != null
+            then secrets.toShellValue "INDEXER_USERNAME" username
+            else "INDEXER_USERNAME=''"
+          }
+          ${
+            if password != null
+            then secrets.toShellValue "INDEXER_PASSWORD" password
+            else "INDEXER_PASSWORD=''"
+          }
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
           EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
@@ -118,7 +152,7 @@ in {
             echo "Indexer ${indexerName} already exists, updating..."
             INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
 
-            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
+            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
 
             ${pkgs.curl}/bin/curl -sSf -X PUT \
               -H "X-Api-Key: $API_KEY" \
@@ -137,7 +171,7 @@ in {
               exit 1
             fi
 
-            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
+            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
 
             ${pkgs.curl}/bin/curl -sSf -X POST \
               -H "X-Api-Key: $API_KEY" \
