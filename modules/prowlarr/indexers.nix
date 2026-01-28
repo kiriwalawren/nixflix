@@ -17,12 +17,15 @@ in {
         };
         apiKey = secrets.mkSecretOption {
           description = "API key for the indexer.";
+          nullable = true;
         };
         username = secrets.mkSecretOption {
           description = "Username for the indexer.";
+          nullable = true;
         };
         password = secrets.mkSecretOption {
           description = "Password for the indexer.";
+          nullable = true;
         };
         appProfileId = mkOption {
           type = types.int;
