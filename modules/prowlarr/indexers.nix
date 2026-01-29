@@ -9,6 +9,7 @@ with lib; let
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
+      freeformType = types.attrsOf types.anything;
       options = {
         name = mkOption {
           type = types.str;
@@ -16,6 +17,15 @@ in {
         };
         apiKey = secrets.mkSecretOption {
           description = "API key for the indexer.";
+          nullable = true;
+        };
+        username = secrets.mkSecretOption {
+          description = "Username for the indexer.";
+          nullable = true;
+        };
+        password = secrets.mkSecretOption {
+          description = "Password for the indexer.";
+          nullable = true;
         };
         appProfileId = mkOption {
           type = types.int;
@@ -27,8 +37,20 @@ in {
     default = [];
     description = ''
       List of indexers to configure in Prowlarr.
-      Any additional attributes beyond name, apiKey, and appProfileId
+      Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
+
+      You can run the following command to get the field names for a particular indexer:
+
+      ```sh
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/prowlarr/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      ```
+
+      Or if you have nginx disabled or `config.nixflix.prowlarr.config.hostConfig.urlBase` is not configured
+
+      ```sh
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      ```
     '';
   };
 
@@ -81,8 +103,8 @@ in {
 
       ${concatMapStringsSep "\n" (indexerConfig: let
           indexerName = indexerConfig.name;
-          inherit (indexerConfig) apiKey;
-          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey"];
+          inherit (indexerConfig) apiKey username password;
+          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey" "username" "password"];
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
@@ -91,12 +113,22 @@ in {
           apply_field_overrides() {
             local indexer_json="$1"
             local api_key="$2"
-            local overrides="$3"
+            local username="$3"
+            local password="$4"
+            local overrides="$5"
 
             echo "$indexer_json" | ${pkgs.jq}/bin/jq \
               --arg apiKey "$api_key" \
+              --arg username "$username" \
+              --arg password "$password" \
               --argjson overrides "$overrides" '
-                .fields[] |= (if .name == "apiKey" then .value = $apiKey else . end)
+                .fields[] |= (
+                  if .name == "apiKey" and $apiKey != "" then .value = $apiKey
+                  elif .name == "username" and $username != "" then .value = $username
+                  elif .name == "password" and $password != "" then .value = $password
+                  else .
+                  end
+                )
                 | . + $overrides
                 | .fields[] |= (
                     . as $field |
@@ -109,21 +141,37 @@ in {
               '
           }
 
-          ${secrets.toShellValue "INDEXER_API_KEY" apiKey}
+          ${
+            if apiKey == null
+            then "INDEXER_API_KEY=''"
+            else secrets.toShellValue "INDEXER_API_KEY" apiKey
+          }
+          ${
+            if username == null
+            then "INDEXER_USERNAME=''"
+            else secrets.toShellValue "INDEXER_USERNAME" username
+          }
+          ${
+            if password == null
+            then "INDEXER_PASSWORD=''"
+            else secrets.toShellValue "INDEXER_PASSWORD" password
+          }
           FIELD_OVERRIDES='${fieldOverridesJson}'
 
           EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
+          TEMP_FILE=$(mktemp)
           if [ -n "$EXISTING_INDEXER" ]; then
             echo "Indexer ${indexerName} already exists, updating..."
             INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
 
-            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
+            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
+            echo "$UPDATED_INDEXER" > "$TEMP_FILE"
 
             ${pkgs.curl}/bin/curl -sSf -X PUT \
               -H "X-Api-Key: $API_KEY" \
               -H "Content-Type: application/json" \
-              -d "$UPDATED_INDEXER" \
+              --data @"$TEMP_FILE" \
               "$BASE_URL/indexer/$INDEXER_ID" >/dev/null
 
             echo "Indexer ${indexerName} updated"
@@ -137,16 +185,18 @@ in {
               exit 1
             fi
 
-            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$FIELD_OVERRIDES")
+            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
+            echo "$NEW_INDEXER" > "$TEMP_FILE"
 
             ${pkgs.curl}/bin/curl -sSf -X POST \
               -H "X-Api-Key: $API_KEY" \
               -H "Content-Type: application/json" \
-              -d "$NEW_INDEXER" \
+              --data @"$TEMP_FILE" \
               "$BASE_URL/indexer" >/dev/null
 
             echo "Indexer ${indexerName} created"
           fi
+          rm -f "$TEMP_FILE"
         '')
         serviceConfig.indexers}
 
