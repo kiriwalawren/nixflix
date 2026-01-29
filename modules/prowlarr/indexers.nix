@@ -40,8 +40,17 @@ in {
       Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
 
-      The field names can be kind of hard to figure out. I had to look at the network tab of the developer console.
-      I'm not sure how to make this part easier.
+      You can run the following command to get the field names for a particular indexer:
+
+      ```sh
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/prowlarr/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      ```
+
+      Or if you have nginx disabled or `config.nixflix.prowlarr.config.hostConfig.urlBase` is not configured
+
+      ```sh
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      ```
     '';
   };
 
