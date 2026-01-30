@@ -10,7 +10,10 @@ pkgs.testers.runNixOSTest {
     imports = [nixosModules];
 
     networking.useDHCP = true;
-    virtualisation.diskSize = 3 * 1024;
+    virtualisation = {
+      diskSize = 3 * 1024;
+      cores = 4;
+    };
 
     nixflix = {
       enable = true;

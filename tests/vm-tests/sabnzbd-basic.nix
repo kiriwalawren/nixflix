@@ -14,6 +14,8 @@ in
     nodes.machine = {pkgs, ...}: {
       imports = [nixosModules];
 
+      virtualisation.cores = 4;
+
       environment.systemPackages = with pkgs; [jq curl];
 
       nixflix = {

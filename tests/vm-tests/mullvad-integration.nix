@@ -9,6 +9,8 @@ pkgs.testers.runNixOSTest {
   nodes.machine = {pkgs, ...}: {
     imports = [nixosModules];
 
+    virtualisation.cores = 4;
+
     nixflix = {
       enable = true;
       mullvad = {
