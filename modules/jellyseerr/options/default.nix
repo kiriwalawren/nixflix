@@ -24,6 +24,16 @@ in {
       description = "API key for Jellyseerr.";
     };
 
+    externalBaseUrl = mkOption {
+      type = types.str;
+      default = "";
+      example = "https://some.domain.com";
+      description = ''
+        Public accessible domain used for your services.
+        This makes sure linking works when services link to each other.
+      '';
+    };
+
     user = mkOption {
       type = types.str;
       default = "jellyseerr";

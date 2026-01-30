@@ -150,6 +150,10 @@ with lib; let
         seriesType = "standard";
         animeSeriesType = "standard";
         isDefault = true;
+        externalUrl =
+          if config.nixflix.jellyseerr.externalBaseUrl != ""
+          then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+          else "";
       };
     })
     // (optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
@@ -167,6 +171,10 @@ with lib; let
         seriesType = "standard";
         animeSeriesType = "anime";
         isDefault = false;
+        externalUrl =
+          if config.nixflix.jellyseerr.externalBaseUrl != ""
+          then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+          else "";
       };
     });
 in {
@@ -176,8 +184,7 @@ in {
     description = ''
       Sonarr instances to configure. Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `{}`.
 
-      Default instances can be overridden with `lib.mkForce {}`. Or you can override individual
-      attributes of each instance `nixflix.jellyseerr.sonarr."Sonarr Anime".externalUrl = "https://test-me";`.
+      Default instances can be overridden with `lib.mkForce {}`.
     '';
     example = {
       Sonarr = {

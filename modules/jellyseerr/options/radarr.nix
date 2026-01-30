@@ -112,6 +112,10 @@ with lib; let
       activeProfileName = defaultRadarrProfileName;
       activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
       isDefault = true;
+      externalUrl =
+        if config.nixflix.jellyseerr.externalBaseUrl != ""
+        then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        else "";
     };
   };
 in {
@@ -121,8 +125,7 @@ in {
     description = ''
       Radarr instances to configure. Automatically configured from `config.nixflix.radarr` when enabled, otherwise `{}`.
 
-      Default instances can be overridden with `lib.mkForce {}`. Or you can override individual
-      attributes of each instance `nixflix.jellyseerr.radarr.Radarr.externalUrl = "https://test-me";`.
+      Default instances can be overridden with `lib.mkForce {}`.
     '';
     example = {
       Radarr = {
