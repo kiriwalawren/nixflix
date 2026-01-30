@@ -6,7 +6,7 @@
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
-  nodes.machine = {...}: {
+  nodes.machine = {lib, ...}: {
     imports = [nixosModules];
 
     networking.useDHCP = true;
@@ -67,23 +67,26 @@ pkgs.testers.runNixOSTest {
         apiKey = {_secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";};
       };
     };
+
+    # Increase timeout for CI environments where Jellyfin may start slower
+    systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
   };
 
   testScript = ''
     start_all()
 
     port = 5055
-    machine.wait_for_unit("jellyfin.service", timeout=240)
-    machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
-    machine.wait_for_unit("jellyseerr.service", timeout=180)
-    machine.wait_for_open_port(port, timeout=180)
+    machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
+    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_open_port(port, timeout=300)
 
     # Wait for configuration services to complete
-    machine.wait_for_unit("jellyseerr-setup.service", timeout=180)
-    machine.wait_for_unit("jellyseerr-user-settings.service", timeout=180)
-    machine.wait_for_unit("jellyseerr-radarr.service", timeout=180)
-    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=180)
-    machine.wait_for_unit("jellyseerr-libraries.service", timeout=180)
+    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-user-settings.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-libraries.service", timeout=300)
 
     cookie_file = "/run/jellyseerr/auth-cookie"
     base_url = f'http://127.0.0.1:{port}/api/v1'
