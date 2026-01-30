@@ -389,7 +389,10 @@ in {
       description = ''
         Maximum number of parallel tasks during library scans.
         Setting this to 0 will choose a limit based on your systems core count.
-        WARNING: Setting this number too high may cause issues with network file systems; if you encounter problems lower this number.
+
+        !!! warning
+
+            Setting this number too high may cause issues with network file systems; if you encounter problems lower this number.
       '';
     };
 
@@ -399,7 +402,10 @@ in {
       description = ''
         Maximum number of parallel tasks during library scans.
         Setting this to 0 will choose a limit based on your systems core count.
-        WARNING: Setting this number too high may cause issues with network file systems; if you encounter problems lower this number.
+
+        !!! warning
+
+            Setting this number too high may cause issues with network file systems; if you encounter problems lower this number.
       '';
     };
 
