@@ -318,7 +318,6 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     port = 8096
-    # Wait for services to start (longer timeout for initial DB migrations and startup)
     machine.wait_for_unit("jellyfin.service", timeout=180)
     machine.wait_for_open_port(port, timeout=180)
 

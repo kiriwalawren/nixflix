@@ -58,7 +58,8 @@ in {
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = true;
+        default = config.nixflix.mullvad.enable;
+        defaultText = literalExpression "config.nixflix.mullvad.enable";
         description = ''
           Whether to route Jellyseerr traffic through the VPN.
           When true (default), Jellyseerr routes through the VPN (requires nixflix.mullvad.enable = true).
