@@ -195,8 +195,16 @@ in {
   config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != {}) {
     systemd.services.jellyseerr-sonarr = {
       description = "Configure Jellyseerr Sonarr integration";
-      after = ["jellyseerr-setup.service"];
-      requires = ["jellyseerr-setup.service"];
+      after =
+        ["jellyseerr-setup.service"]
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+      requires =
+        ["jellyseerr-setup.service"]
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

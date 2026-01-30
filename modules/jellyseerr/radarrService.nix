@@ -166,8 +166,14 @@ in {
   config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != {}) {
     systemd.services.jellyseerr-radarr = {
       description = "Configure Jellyseerr Radarr integration";
-      after = ["jellyseerr-setup.service"];
-      requires = ["jellyseerr-setup.service"];
+      after =
+        ["jellyseerr-setup.service"]
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.radarr.enable "radarr-config.service";
+      requires =
+        ["jellyseerr-setup.service"]
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {

@@ -27,8 +27,7 @@ with lib; let
 
       port = mkOption {
         type = types.port;
-        default = config.nixflix.sonarr.config.hostConfig.port or 8989;
-        defaultText = literalExpression "config.nixflix.sonarr.config.hostConfig.port";
+        default = 8989;
         description = "Sonarr port";
       };
 
@@ -44,11 +43,8 @@ with lib; let
 
       baseUrl = mkOption {
         type = types.str;
-        default =
-          if config.nixflix.nginx.enable
-          then "/sonarr"
-          else "";
-        defaultText = literalExpression ''if config.nixflix.nginx.enable then "/sonarr" else ""'';
+        default = "";
+        example = "/sonarr";
         description = "Sonarr URL base";
       };
 
@@ -139,7 +135,7 @@ with lib; let
         inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl =
           if config.nixflix.nginx.enable
-          then "/sonarr"
+          then config.nixflix.sonarr.config.hostConfig.urlBase
           else "";
         activeProfileName = defaultSonarrProfileName;
         activeAnimeProfileName = defaultSonarrProfileName;
@@ -156,7 +152,7 @@ with lib; let
         inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl =
           if config.nixflix.nginx.enable
-          then "/sonarr-anime"
+          then config.nixflix.sonarr-anime.config.hostConfig.urlBase
           else "";
         activeProfileName = defaultSonarrAnimeProfileName;
         activeAnimeProfileName = defaultSonarrAnimeProfileName;

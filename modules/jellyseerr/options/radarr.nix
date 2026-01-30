@@ -21,8 +21,7 @@ with lib; let
 
       port = mkOption {
         type = types.port;
-        default = config.nixflix.radarr.config.hostConfig.port or 7878;
-        defaultText = literalExpression "config.nixflix.radarr.config.hostConfig.port";
+        default = 7878;
         description = "Radarr port";
       };
 
@@ -38,11 +37,8 @@ with lib; let
 
       baseUrl = mkOption {
         type = types.str;
-        default =
-          if config.nixflix.nginx.enable
-          then "/radarr"
-          else "";
-        defaultText = literalExpression ''if config.nixflix.nginx.enable then "/radarr" else ""'';
+        default = "";
+        example = "/radarr";
         description = "Radarr URL base";
       };
 
@@ -108,7 +104,7 @@ with lib; let
       inherit (config.nixflix.radarr.config) apiKey;
       baseUrl =
         if config.nixflix.nginx.enable
-        then "/radarr"
+        then config.nixflix.radarr.config.hostConfig.urlBase
         else "";
       activeProfileName = defaultRadarrProfileName;
       activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
