@@ -9,7 +9,10 @@ with lib; let
     optionalAttrs (config.nixflix.recyclarr.radarr.enable or false)
     (import ../../recyclarr/radarr-main.nix {inherit config;});
   firstRadarrProfile = head (radarrRecyclarrConfig.radarr_main.quality_profiles or []);
-  defaultRadarrProfileName = firstRadarrProfile.name or null;
+  defaultRadarrProfileName =
+    if config.nixflix.recyclarr.enable
+    then firstRadarrProfile.name
+    else null;
 
   radarrServerModule = types.submodule {
     options = {

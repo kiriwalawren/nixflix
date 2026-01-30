@@ -28,6 +28,7 @@ pkgs.testers.runNixOSTest {
       };
 
       sonarr-anime = {
+        enable = true;
         user = "sonarr-anime";
         mediaDirs = ["/media/anime"];
         config = {

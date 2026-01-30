@@ -9,13 +9,19 @@ with lib; let
     optionalAttrs (config.nixflix.recyclarr.sonarr.enable or false)
     (import ../../recyclarr/sonarr-main.nix {inherit config;});
   firstSonarrProfile = head (sonarrRecyclarrConfig.sonarr_main.quality_profiles or []);
-  defaultSonarrProfileName = firstSonarrProfile.name or null;
+  defaultSonarrProfileName =
+    if config.nixflix.recyclarr.enable
+    then firstSonarrProfile.name
+    else null;
 
   sonarrAnimeRecyclarrConfig =
     optionalAttrs (config.nixflix.recyclarr.sonarr-anime.enable or false)
     (import ../../recyclarr/sonarr-anime.nix {inherit config;});
   firstSonarrAnimeProfile = head (sonarrAnimeRecyclarrConfig.sonarr_anime.quality_profiles or []);
-  defaultSonarrAnimeProfileName = firstSonarrAnimeProfile.name or null;
+  defaultSonarrAnimeProfileName =
+    if config.nixflix.recyclarr.enable
+    then firstSonarrAnimeProfile.name
+    else null;
 
   sonarrServerModule = types.submodule ({config, ...}: {
     options = {
