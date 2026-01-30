@@ -13,12 +13,6 @@ with lib; let
 
   radarrServerModule = types.submodule {
     options = {
-      name = mkOption {
-        type = types.str;
-        default = "Radarr";
-        description = "Display name for this Radarr instance";
-      };
-
       hostname = mkOption {
         type = types.str;
         default = "127.0.0.1";
@@ -108,39 +102,41 @@ with lib; let
     };
   };
 
-  defaultInstance =
-    if (config.nixflix.radarr.enable or false)
-    then [
-      {
-        name = "Radarr";
-        port = config.nixflix.radarr.config.hostConfig.port or 7878;
-        inherit (config.nixflix.radarr.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable
-          then "/radarr"
-          else "";
-        activeProfileName = defaultRadarrProfileName;
-        activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
-        isDefault = true;
-      }
-    ]
-    else [];
+  defaultInstance = optionalAttrs (config.nixflix.radarr.enable or false) {
+    Radarr = {
+      port = config.nixflix.radarr.config.hostConfig.port or 7878;
+      inherit (config.nixflix.radarr.config) apiKey;
+      baseUrl =
+        if config.nixflix.nginx.enable
+        then "/radarr"
+        else "";
+      activeProfileName = defaultRadarrProfileName;
+      activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
+      isDefault = true;
+    };
+  };
 in {
   options.nixflix.jellyseerr.radarr = mkOption {
-    type = types.listOf radarrServerModule;
+    type = types.attrsOf radarrServerModule;
     default = defaultInstance;
     description = ''
-      List of Radarr instances to configure.
+      Radarr instances to configure. Automatically configured from `config.nixflix.radarr` when enabled, otherwise `{}`.
 
-      Automatically configured from `config.nixflix.radarr` when enabled, otherwise `[]`.
+      Default instances can be overridden with `lib.mkForce {}`. Or you can override individual
+      attributes of each instance `nixflix.jellyseerr.radarr.Radarr.externalUrl = "https://test-me";`.
     '';
-    example = [
-      {
-        name = "Radarr Main";
+    example = {
+      Radarr = {
         apiKey = {_secret = "/run/secrets/radarr-apikey";};
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
-      }
-    ];
+      };
+      "Radarr 4K" = {
+        apiKey = {_secret = "/run/secrets/radarr-4k-apikey";};
+        activeProfileName = "UHD-2160p";
+        activeDirectory = "/movies-4k";
+        is4k = true;
+      };
+    };
   };
 }

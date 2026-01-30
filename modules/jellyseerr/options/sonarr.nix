@@ -19,12 +19,6 @@ with lib; let
 
   sonarrServerModule = types.submodule ({config, ...}: {
     options = {
-      name = mkOption {
-        type = types.str;
-        default = "Sonarr";
-        description = "Display name for this Sonarr instance";
-      };
-
       hostname = mkOption {
         type = types.str;
         default = "127.0.0.1";
@@ -138,10 +132,9 @@ with lib; let
     };
   });
 
-  defaultInstances = let
-    sonarrInstance = optionalAttrs (config.nixflix.sonarr.enable or false) {
-      sonarr = {
-        name = "Sonarr";
+  defaultInstances =
+    (optionalAttrs (config.nixflix.sonarr.enable or false) {
+      Sonarr = {
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl =
@@ -156,11 +149,9 @@ with lib; let
         animeSeriesType = "standard";
         isDefault = true;
       };
-    };
-
-    sonarrAnimeInstance = optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
-      sonarr_anime = {
-        name = "Sonarr Anime";
+    })
+    // (optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
+      "Sonarr Anime" = {
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl =
@@ -175,32 +166,28 @@ with lib; let
         animeSeriesType = "anime";
         isDefault = false;
       };
-    };
-  in
-    (optional (sonarrInstance ? sonarr) sonarrInstance.sonarr)
-    ++ (optional (sonarrAnimeInstance ? sonarr_anime) sonarrAnimeInstance.sonarr_anime);
+    });
 in {
   options.nixflix.jellyseerr.sonarr = mkOption {
-    type = types.listOf sonarrServerModule;
+    type = types.attrsOf sonarrServerModule;
     default = defaultInstances;
     description = ''
-      List of Sonarr instances to configure.
+      Sonarr instances to configure. Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `{}`.
 
-      Automatically configured from `config.nixflix.sonarr` and `config.nixflix.sonarr-anime` when enabled, otherwise `[]`.
+      Default instances can be overridden with `lib.mkForce {}`. Or you can override individual
+      attributes of each instance `nixflix.jellyseerr.sonarr."Sonarr Anime".externalUrl = "https://test-me";`.
     '';
-    example = [
-      {
-        name = "Sonarr Main";
+    example = {
+      Sonarr = {
         port = 8989;
         activeProfileName = "WEB-1080p";
         activeDirectory = "/tv";
-      }
-      {
-        name = "Sonarr Anime";
+      };
+      "Sonarr Anime" = {
         port = 8990;
         activeProfileName = "Remux-1080p - Anime";
         activeDirectory = "/anime";
-      }
-    ];
+      };
+    };
   };
 }

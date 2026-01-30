@@ -12,10 +12,12 @@ with lib; let
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
 
-  mkRadarrConfigScript = idx: radarrCfg: ''
-    echo "Configuring Radarr instance: ${radarrCfg.name}"
+  sanitizeName = name: builtins.replaceStrings [" " "-"] ["_" "_"] name;
 
-    RADARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/radarr-${toString (idx - 1)}-apikey")
+  mkRadarrConfigScript = radarrName: radarrCfg: ''
+    echo "Configuring Radarr instance: ${radarrName}"
+
+    RADARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/radarr-${sanitizeName radarrName}-apikey")
 
     # Test connection and get profiles
     TEST_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
@@ -87,11 +89,11 @@ with lib; let
       "$BASE_URL/api/v1/settings/radarr")
 
     EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-      '.[] | select(.name == "${radarrCfg.name}") | .id')
+      '.[] | select(.name == "${radarrName}") | .id')
 
     # Build server configuration
     SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \
-      --arg name "${radarrCfg.name}" \
+      --arg name "${radarrName}" \
       --arg hostname "${radarrCfg.hostname}" \
       --arg port "${toString radarrCfg.port}" \
       --arg apiKey "$RADARR_API_KEY" \
@@ -161,7 +163,7 @@ with lib; let
     fi
   '';
 in {
-  config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != []) {
+  config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != {}) {
     systemd.services.jellyseerr-radarr = {
       description = "Configure Jellyseerr Radarr integration";
       after = ["jellyseerr-setup.service"];
@@ -172,11 +174,11 @@ in {
         Type = "oneshot";
         RemainAfterExit = true;
         LoadCredential =
-          imap0 (
-            idx: r: "radarr-${toString idx}-apikey:${
+          mapAttrsToList (
+            name: r: "radarr-${sanitizeName name}-apikey:${
               if secrets.isSecretRef r.apiKey
               then r.apiKey._secret
-              else pkgs.writeText "radarr-${toString idx}-inline-key" r.apiKey
+              else pkgs.writeText "radarr-${sanitizeName name}-inline-key" r.apiKey
             }"
           )
           cfg.radarr;
@@ -191,10 +193,10 @@ in {
         source ${authUtil.authScript}
 
         # Configure each Radarr instance
-        ${concatImapStringsSep "\n" mkRadarrConfigScript cfg.radarr}
+        ${concatStringsSep "\n" (mapAttrsToList mkRadarrConfigScript cfg.radarr)}
 
         # Delete servers not in configuration
-        CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (map (r: r.name) cfg.radarr))}"
+        CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (attrNames cfg.radarr))}"
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
           --max-time 30 \
