@@ -73,8 +73,9 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     port = 5055
-    machine.wait_for_unit("jellyseerr.service", timeout=180)
+    machine.wait_for_unit("jellyfin.service", timeout=240)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
+    machine.wait_for_unit("jellyseerr.service", timeout=180)
     machine.wait_for_open_port(port, timeout=180)
 
     # Wait for configuration services to complete
