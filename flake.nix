@@ -7,6 +7,10 @@
       url = "github:ruslanlap/mkdocs-catppuccin";
       flake = false;
     };
+    flake-compat = {
+      url = "github:NixOS/flake-compat";
+      flake = false;
+    };
   };
 
   outputs = {
