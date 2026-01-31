@@ -7,7 +7,7 @@ with lib; {
   options.nixflix.jellyseerr.jellyfin = {
     hostname = mkOption {
       type = types.str;
-      default = "172.0.0.1";
+      default = "127.0.0.1";
       description = "Jellyfin server hostname";
     };
 

@@ -11,12 +11,13 @@ with lib; let
   cfg = config.nixflix.jellyseerr;
 in {
   imports = [
-    ./options
-    ./setupService.nix
-    ./userSettingsService.nix
+    ./jellyfinService.nix
     ./librarySyncService.nix
+    ./options
     ./radarrService.nix
+    ./setupService.nix
     ./sonarrService.nix
+    ./userSettingsService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
