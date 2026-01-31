@@ -16,6 +16,7 @@
   outputs = {
     self,
     nixpkgs,
+    flake-compat,
     ...
   } @ inputs: let
     inherit (nixpkgs) lib;
