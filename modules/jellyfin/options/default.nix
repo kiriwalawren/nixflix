@@ -5,9 +5,7 @@
   ...
 }:
 with lib; let
-  inherit (config) nixflix;
-  inherit (config.nixflix) globals;
-  stateDir = "${nixflix.stateDir}/jellyfin";
+  stateDir = "${config.nixflix.stateDir}/jellyfin";
 in {
   imports = [
     ./network.nix
@@ -39,7 +37,7 @@ in {
 
     group = mkOption {
       type = types.str;
-      default = globals.libraryOwner.group;
+      default = config.nixflix.globals.libraryOwner.group;
       defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
       description = "Group under which the service runs";
     };
@@ -92,7 +90,8 @@ in {
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = false;
+        default = config.nixflix.mullvad.enable;
+        defaultText = literalExpression "config.nixflix.mullvad.enable";
         description = ''
           Whether to route Jellyfin traffic through the VPN.
           When false (default), Jellyfin bypasses the VPN.

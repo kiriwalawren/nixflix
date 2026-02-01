@@ -12,10 +12,12 @@ with lib; let
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
 
-  mkSonarrConfigScript = idx: sonarrCfg: ''
-    echo "Configuring Sonarr instance: ${sonarrCfg.name}"
+  sanitizeName = name: builtins.replaceStrings [" " "-"] ["_" "_"] name;
 
-    SONARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/sonarr-${toString (idx - 1)}-apikey")
+  mkSonarrConfigScript = sonarrName: sonarrCfg: ''
+    echo "Configuring Sonarr instance: ${sonarrName}"
+
+    SONARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/sonarr-${sanitizeName sonarrName}-apikey")
 
     # Test connection and get profiles
     TEST_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
@@ -34,6 +36,7 @@ with lib; let
 
     echo "Testing Sonarr connection..."
     TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+      --max-time 30 \
       -b "${authUtil.cookieFile}" \
       -H "Content-Type: application/json" \
       -d "$TEST_PAYLOAD" \
@@ -108,11 +111,11 @@ with lib; let
       "$BASE_URL/api/v1/settings/sonarr")
 
     EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-      '.[] | select(.name == "${sonarrCfg.name}") | .id')
+      '.[] | select(.name == "${sonarrName}") | .id')
 
     # Build server configuration
     SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \
-      --arg name "${sonarrCfg.name}" \
+      --arg name "${sonarrName}" \
       --arg hostname "${sonarrCfg.hostname}" \
       --arg port "${toString sonarrCfg.port}" \
       --arg apiKey "$SONARR_API_KEY" \
@@ -190,22 +193,32 @@ with lib; let
     fi
   '';
 in {
-  config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != []) {
+  config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != {}) {
     systemd.services.jellyseerr-sonarr = {
       description = "Configure Jellyseerr Sonarr integration";
-      after = ["jellyseerr-setup.service"];
-      requires = ["jellyseerr-setup.service"];
+      after =
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
+        ++ optional (cfg.radarr != {}) "jellyseerr-radarr.service"
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+      requires =
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
+        ++ optional (cfg.radarr != {}) "jellyseerr-radarr.service"
+        ++ optional nixflix.recyclarr.enable "recyclarr.service"
+        ++ optional nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         LoadCredential =
-          imap0 (
-            idx: s: "sonarr-${toString idx}-apikey:${
+          mapAttrsToList (
+            name: s: "sonarr-${sanitizeName name}-apikey:${
               if secrets.isSecretRef s.apiKey
               then s.apiKey._secret
-              else pkgs.writeText "sonarr-${toString idx}-inline-key" s.apiKey
+              else pkgs.writeText "sonarr-${sanitizeName name}-inline-key" s.apiKey
             }"
           )
           cfg.sonarr;
@@ -220,10 +233,10 @@ in {
         source ${authUtil.authScript}
 
         # Configure each Sonarr instance
-        ${concatImapStringsSep "\n" mkSonarrConfigScript cfg.sonarr}
+        ${concatStringsSep "\n" (mapAttrsToList mkSonarrConfigScript cfg.sonarr)}
 
         # Delete servers not in configuration
-        CONFIGURED_NAMES="${pkgs.writeText "sonarr-names.json" (builtins.toJSON (map (s: s.name) cfg.sonarr))}"
+        CONFIGURED_NAMES="${pkgs.writeText "sonarr-names.json" (builtins.toJSON (attrNames cfg.sonarr))}"
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
           -b "${authUtil.cookieFile}" \

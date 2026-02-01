@@ -151,8 +151,10 @@ in {
           Attribute set of arbitrary config options.
           Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
 
-          WARNING: this configuration is stored in the world-readable Nix store!
-          Don't put secrets here!
+          !!! warning
+
+              This configuration is stored in the world-readable Nix store!
+              Don't put secrets here!
         '';
       };
 
