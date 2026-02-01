@@ -40,7 +40,7 @@ in {
     NEED_AUTH=true
     if [ -f "$COOKIE_FILE" ]; then
       VALIDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" \
-        -c "$COOKIE_FILE" \
+        -b "$COOKIE_FILE" \
         "$BASE_URL/api/v1/auth/me" 2>/dev/null || echo -e "\n000")
 
       VALIDATE_HTTP_CODE=$(echo "$VALIDATE_RESPONSE" | tail -n1)

@@ -98,7 +98,7 @@ in {
 
         echo "Connecting to Jellyfin..."
         SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          -c "${authUtil.cookieFile}" \
           -H "Content-Type: application/json" \
           -d "$SETUP_PAYLOAD" \
           -w "\n%{http_code}" \
