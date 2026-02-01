@@ -150,7 +150,7 @@ in {
               if [ "$HTTP_CODE" = "200" ]; then
                 STARTUP_CODE=$(${pkgs.curl}/bin/curl --connect-timeout 5 --max-time 10 -s -o /dev/null -w "%{http_code}" -X GET "$BASE_URL/Startup/Configuration" 2>/dev/null || echo "000")
 
-                if [ "$STARTUP_CODE" = "200" ] || [ "$STARTUP_CODE" = "204" ]; then
+                if [ "$STARTUP_CODE" = "200" ] || [ "$STARTUP_CODE" = "204" ] || [ "$STARTUP_CODE" = "401" ]; then
                   consecutive_success=$((consecutive_success + 1))
                   echo "Jellyfin is ready ($consecutive_success/$consecutive_required consecutive successes)"
 
