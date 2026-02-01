@@ -197,12 +197,14 @@ in {
     systemd.services.jellyseerr-sonarr = {
       description = "Configure Jellyseerr Sonarr integration";
       after =
-        ["jellyseerr-libraries.service"]
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
+        ++ optional (cfg.radarr != {}) "jellyseerr-radarr.service"
         ++ optional nixflix.recyclarr.enable "recyclarr.service"
         ++ optional nixflix.sonarr.enable "sonarr-config.service"
         ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
       requires =
-        ["jellyseerr-libraries.service"]
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
+        ++ optional (cfg.radarr != {}) "jellyseerr-radarr.service"
         ++ optional nixflix.recyclarr.enable "recyclarr.service"
         ++ optional nixflix.sonarr.enable "sonarr-config.service"
         ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";

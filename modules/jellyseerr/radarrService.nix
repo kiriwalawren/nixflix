@@ -167,11 +167,11 @@ in {
     systemd.services.jellyseerr-radarr = {
       description = "Configure Jellyseerr Radarr integration";
       after =
-        ["jellyseerr-libraries.service"]
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
         ++ optional nixflix.recyclarr.enable "recyclarr.service"
         ++ optional nixflix.radarr.enable "radarr-config.service";
       requires =
-        ["jellyseerr-libraries.service"]
+        ["jellyseerr-setup.service" "jellyseerr-libraries.service"]
         ++ optional nixflix.recyclarr.enable "recyclarr.service"
         ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = ["multi-user.target"];
