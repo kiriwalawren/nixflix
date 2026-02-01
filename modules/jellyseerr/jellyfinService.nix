@@ -12,7 +12,7 @@ with lib; let
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
 in {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
-    systemd.services.jellyseerr-jellyfin-settings = {
+    systemd.services.jellyseerr-jellyfin = {
       description = "Configure Jellyfin settings in Jellyseerr";
       after = ["jellyseerr-setup.service"];
       requires = ["jellyseerr-setup.service"];

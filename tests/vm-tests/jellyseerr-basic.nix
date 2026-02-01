@@ -91,6 +91,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyseerr-libraries.service", timeout=300)
     machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
     machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-jellyfin.service", timeout=300)
 
     cookie_file = "/run/jellyseerr/auth-cookie"
     base_url = f'http://127.0.0.1:{port}/api/v1'
