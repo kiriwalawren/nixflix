@@ -18,6 +18,8 @@ pkgs.testers.runNixOSTest {
     nixflix = {
       enable = true;
 
+      recyclarr.enable = false;
+
       sonarr = {
         enable = true;
         mediaDirs = ["/media/tv"];
