@@ -38,7 +38,7 @@ with lib; {
       type = types.str;
       default =
         if config.nixflix.jellyseerr.externalBaseUrl != ""
-        then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.jellyfin.network.baseUrl}"
+        then "${config.nixflix.jellyseerr.externalBaseUrl}/${config.nixflix.jellyfin.network.baseUrl}"
         else "";
       defaultText = literalExpression ''
         if config.nixflix.jellyseerr.externalBaseUrl != ""
