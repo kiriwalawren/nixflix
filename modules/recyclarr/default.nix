@@ -62,6 +62,7 @@ in {
       enable = mkOption {
         type = types.bool;
         default = nixflix.sonarr-anime.enable;
+        defaultText = literalExpression "nixflix.sonarr-anime.enable";
         description = ''
           Whether to enable anime-specific profiles for Sonarr.
           When enabled, BOTH normal and anime quality profiles will be configured,
