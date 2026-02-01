@@ -14,8 +14,8 @@ in {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
     systemd.services.jellyseerr-libraries = {
       description = "Sync Jellyseerr library selections";
-      after = ["jellyseerr-setup.service" "jellyfin-libraries.service"];
-      requires = ["jellyseerr-setup.service" "jellyfin-libraries.service"];
+      after = ["jellyseerr-jellyfin.service"];
+      requires = ["jellyseerr-jellyfin.service"];
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
