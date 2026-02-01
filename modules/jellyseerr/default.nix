@@ -11,22 +11,23 @@ with lib; let
   cfg = config.nixflix.jellyseerr;
 in {
   imports = [
-    ./options
-    ./setupService.nix
-    ./userSettingsService.nix
+    ./jellyfinService.nix
     ./librarySyncService.nix
+    ./options
     ./radarrService.nix
+    ./setupService.nix
     ./sonarrService.nix
+    ./userSettingsService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
     assertions = let
-      radarrDefaults = filter (r: r.isDefault) cfg.radarr;
+      radarrDefaults = filter (r: r.isDefault) (attrValues cfg.radarr);
       radarrDefaultCount = length radarrDefaults;
       radarrDefault4k = filter (r: r.is4k) radarrDefaults;
       radarrDefaultNon4k = filter (r: !r.is4k) radarrDefaults;
 
-      sonarrDefaults = filter (s: s.isDefault) cfg.sonarr;
+      sonarrDefaults = filter (s: s.isDefault) (attrValues cfg.sonarr);
       sonarrDefaultCount = length sonarrDefaults;
       sonarrDefault4k = filter (s: s.is4k) sonarrDefaults;
       sonarrDefaultNon4k = filter (s: !s.is4k) sonarrDefaults;

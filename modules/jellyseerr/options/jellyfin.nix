@@ -7,7 +7,7 @@ with lib; {
   options.nixflix.jellyseerr.jellyfin = {
     hostname = mkOption {
       type = types.str;
-      default = "localhost";
+      default = "127.0.0.1";
       description = "Jellyfin server hostname";
     };
 
@@ -32,6 +32,19 @@ with lib; {
         else "";
       defaultText = literalExpression ''if config.nixflix.nginx.enable then "/jellyfin" else ""'';
       description = "Jellyfin URL base";
+    };
+
+    externalHostname = mkOption {
+      type = types.str;
+      default =
+        if config.nixflix.jellyseerr.externalBaseUrl != ""
+        then "${config.nixflix.jellyseerr.externalBaseUrl}/${config.nixflix.jellyfin.network.baseUrl}"
+        else "";
+      defaultText = literalExpression ''
+        if config.nixflix.jellyseerr.externalBaseUrl != ""
+        then "$${config.nixflix.jellyseerr.externalBaseUrl}$${config.nixflix.jellyfin.network.baseUrl}"
+        else "";
+      '';
     };
 
     serverType = mkOption {

@@ -9,16 +9,13 @@ with lib; let
     optionalAttrs (config.nixflix.recyclarr.radarr.enable or false)
     (import ../../recyclarr/radarr-main.nix {inherit config;});
   firstRadarrProfile = head (radarrRecyclarrConfig.radarr_main.quality_profiles or []);
-  defaultRadarrProfileName = firstRadarrProfile.name or null;
+  defaultRadarrProfileName =
+    if config.nixflix.recyclarr.enable
+    then firstRadarrProfile.name
+    else null;
 
   radarrServerModule = types.submodule {
     options = {
-      name = mkOption {
-        type = types.str;
-        default = "Radarr";
-        description = "Display name for this Radarr instance";
-      };
-
       hostname = mkOption {
         type = types.str;
         default = "127.0.0.1";
@@ -27,8 +24,7 @@ with lib; let
 
       port = mkOption {
         type = types.port;
-        default = config.nixflix.radarr.config.hostConfig.port or 7878;
-        defaultText = literalExpression "config.nixflix.radarr.config.hostConfig.port";
+        default = 7878;
         description = "Radarr port";
       };
 
@@ -44,11 +40,8 @@ with lib; let
 
       baseUrl = mkOption {
         type = types.str;
-        default =
-          if config.nixflix.nginx.enable
-          then "/radarr"
-          else "";
-        defaultText = literalExpression ''if config.nixflix.nginx.enable then "/radarr" else ""'';
+        default = "";
+        example = "/radarr";
         description = "Radarr URL base";
       };
 
@@ -108,39 +101,44 @@ with lib; let
     };
   };
 
-  defaultInstance =
-    if (config.nixflix.radarr.enable or false)
-    then [
-      {
-        name = "Radarr";
-        port = config.nixflix.radarr.config.hostConfig.port or 7878;
-        inherit (config.nixflix.radarr.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable
-          then "/radarr"
-          else "";
-        activeProfileName = defaultRadarrProfileName;
-        activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
-        isDefault = true;
-      }
-    ]
-    else [];
+  defaultInstance = optionalAttrs (config.nixflix.radarr.enable or false) {
+    Radarr = {
+      port = config.nixflix.radarr.config.hostConfig.port or 7878;
+      inherit (config.nixflix.radarr.config) apiKey;
+      baseUrl =
+        if config.nixflix.nginx.enable
+        then config.nixflix.radarr.config.hostConfig.urlBase
+        else "";
+      activeProfileName = defaultRadarrProfileName;
+      activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
+      isDefault = true;
+      externalUrl =
+        if config.nixflix.jellyseerr.externalBaseUrl != ""
+        then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        else "";
+    };
+  };
 in {
   options.nixflix.jellyseerr.radarr = mkOption {
-    type = types.listOf radarrServerModule;
+    type = types.attrsOf radarrServerModule;
     default = defaultInstance;
     description = ''
-      List of Radarr instances to configure.
+      Radarr instances to configure. Automatically configured from `config.nixflix.radarr` when enabled, otherwise `{}`.
 
-      Automatically configured from `config.nixflix.radarr` when enabled, otherwise `[]`.
+      Default instances can be overridden with `lib.mkForce {}`.
     '';
-    example = [
-      {
-        name = "Radarr Main";
+    example = {
+      Radarr = {
         apiKey = {_secret = "/run/secrets/radarr-apikey";};
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
-      }
-    ];
+      };
+      "Radarr 4K" = {
+        apiKey = {_secret = "/run/secrets/radarr-4k-apikey";};
+        activeProfileName = "UHD-2160p";
+        activeDirectory = "/movies-4k";
+        is4k = true;
+      };
+    };
   };
 }
