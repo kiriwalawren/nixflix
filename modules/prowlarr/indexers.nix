@@ -5,6 +5,7 @@
 }:
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   type = mkOption {
@@ -75,11 +76,17 @@ in {
 
       # Fetch all indexer schemas
       echo "Fetching indexer schemas..."
-      SCHEMAS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/indexer/schema")
+      SCHEMAS=$(${mkSecureCurl "API_KEY" {
+        url = "$BASE_URL/indexer/schema";
+        extraArgs = "-S";
+      }})
 
       # Fetch existing indexers
       echo "Fetching existing indexers..."
-      INDEXERS=$(${pkgs.curl}/bin/curl -sS -H "X-Api-Key: $API_KEY" "$BASE_URL/indexer")
+      INDEXERS=$(${mkSecureCurl "API_KEY" {
+        url = "$BASE_URL/indexer";
+        extraArgs = "-S";
+      }})
 
       # Build list of configured indexer names
       CONFIGURED_NAMES=$(cat <<'EOF'
@@ -95,9 +102,11 @@ in {
 
         if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
           echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-          ${pkgs.curl}/bin/curl -sSf -X DELETE \
-            -H "X-Api-Key: $API_KEY" \
-            "$BASE_URL/indexer/$INDEXER_ID" >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
+          ${mkSecureCurl "API_KEY" {
+        url = "$BASE_URL/indexer/$INDEXER_ID";
+        method = "DELETE";
+        extraArgs = "-Sf";
+      }} >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
         fi
       done
 
@@ -108,95 +117,102 @@ in {
           fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
         in ''
-          echo "Processing indexer: ${indexerName}"
+                    echo "Processing indexer: ${indexerName}"
 
-          apply_field_overrides() {
-            local indexer_json="$1"
-            local api_key="$2"
-            local username="$3"
-            local password="$4"
-            local overrides="$5"
+                    apply_field_overrides() {
+                      local indexer_json="$1"
+                      local api_key="$2"
+                      local username="$3"
+                      local password="$4"
+                      local overrides="$5"
 
-            echo "$indexer_json" | ${pkgs.jq}/bin/jq \
-              --arg apiKey "$api_key" \
-              --arg username "$username" \
-              --arg password "$password" \
-              --argjson overrides "$overrides" '
-                .fields[] |= (
-                  if .name == "apiKey" and $apiKey != "" then .value = $apiKey
-                  elif .name == "username" and $username != "" then .value = $username
-                  elif .name == "password" and $password != "" then .value = $password
-                  else .
-                  end
-                )
-                | . + $overrides
-                | .fields[] |= (
-                    . as $field |
-                    if $overrides[$field.name] != null then
-                      .value = $overrides[$field.name]
-                    else
-                      .
-                    end
-                  )
-              '
+                      local secrets_json=$(cat <<EOF
+          {
+            "apiKey": "$api_key",
+            "username": "$username",
+            "password": "$password"
           }
+          EOF
+          )
 
-          ${
+                      echo "$indexer_json" | ${pkgs.jq}/bin/jq \
+                        --argjson secrets "$secrets_json" \
+                        --argjson overrides "$overrides" '
+                          .fields[] |= (
+                            if .name == "apiKey" and $secrets.apiKey != "" then .value = $secrets.apiKey
+                            elif .name == "username" and $secrets.username != "" then .value = $secrets.username
+                            elif .name == "password" and $secrets.password != "" then .value = $secrets.password
+                            else .
+                            end
+                          )
+                          | . + $overrides
+                          | .fields[] |= (
+                              . as $field |
+                              if $overrides[$field.name] != null then
+                                .value = $overrides[$field.name]
+                              else
+                                .
+                              end
+                            )
+                        '
+                    }
+
+                    ${
             if apiKey == null
             then "INDEXER_API_KEY=''"
             else secrets.toShellValue "INDEXER_API_KEY" apiKey
           }
-          ${
+                    ${
             if username == null
             then "INDEXER_USERNAME=''"
             else secrets.toShellValue "INDEXER_USERNAME" username
           }
-          ${
+                    ${
             if password == null
             then "INDEXER_PASSWORD=''"
             else secrets.toShellValue "INDEXER_PASSWORD" password
           }
-          FIELD_OVERRIDES='${fieldOverridesJson}'
+                    FIELD_OVERRIDES='${fieldOverridesJson}'
 
-          EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+                    EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
-          TEMP_FILE=$(mktemp)
-          if [ -n "$EXISTING_INDEXER" ]; then
-            echo "Indexer ${indexerName} already exists, updating..."
-            INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
+                    if [ -n "$EXISTING_INDEXER" ]; then
+                      echo "Indexer ${indexerName} already exists, updating..."
+                      INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
 
-            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
-            echo "$UPDATED_INDEXER" > "$TEMP_FILE"
+                      UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
 
-            ${pkgs.curl}/bin/curl -sSf -X PUT \
-              -H "X-Api-Key: $API_KEY" \
-              -H "Content-Type: application/json" \
-              --data @"$TEMP_FILE" \
-              "$BASE_URL/indexer/$INDEXER_ID" >/dev/null
+                      ${mkSecureCurl "API_KEY" {
+            url = "$BASE_URL/indexer/$INDEXER_ID";
+            method = "PUT";
+            headers = {"Content-Type" = "application/json";};
+            data = "$UPDATED_INDEXER";
+            extraArgs = "-Sf";
+          }} >/dev/null
 
-            echo "Indexer ${indexerName} updated"
-          else
-            echo "Indexer ${indexerName} does not exist, creating..."
+                      echo "Indexer ${indexerName} updated"
+                    else
+                      echo "Indexer ${indexerName} does not exist, creating..."
 
-            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+                      SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
-            if [ -z "$SCHEMA" ]; then
-              echo "Error: No schema found for indexer ${indexerName}"
-              exit 1
-            fi
+                      if [ -z "$SCHEMA" ]; then
+                        echo "Error: No schema found for indexer ${indexerName}"
+                        exit 1
+                      fi
 
-            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
-            echo "$NEW_INDEXER" > "$TEMP_FILE"
+                      NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$INDEXER_API_KEY" "$INDEXER_USERNAME" "$INDEXER_PASSWORD" "$FIELD_OVERRIDES")
 
-            ${pkgs.curl}/bin/curl -sSf -X POST \
-              -H "X-Api-Key: $API_KEY" \
-              -H "Content-Type: application/json" \
-              --data @"$TEMP_FILE" \
-              "$BASE_URL/indexer" >/dev/null
+                      ${mkSecureCurl "API_KEY" {
+            url = "$BASE_URL/indexer";
+            method = "POST";
+            headers = {"Content-Type" = "application/json";};
+            data = "$NEW_INDEXER";
+            extraArgs = "-Sf";
+          }} >/dev/null
 
-            echo "Indexer ${indexerName} created"
-          fi
-          rm -f "$TEMP_FILE"
+                      echo "Indexer ${indexerName} created"
+                    fi
         '')
         serviceConfig.indexers}
 
