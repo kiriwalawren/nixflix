@@ -36,7 +36,8 @@ in {
     });
     default = [];
     description = ''
-      List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents)
+      List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents).
+
       Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
 
