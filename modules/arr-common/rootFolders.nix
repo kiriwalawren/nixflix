@@ -24,6 +24,7 @@ in {
   mkService = serviceConfig: {
     description = "Configure ${serviceName} root folders via API";
     after = ["${serviceName}-config.service"];
+    requires = ["${serviceName}-config.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {

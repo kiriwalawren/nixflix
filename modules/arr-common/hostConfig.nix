@@ -17,6 +17,8 @@ in {
   mkService = serviceConfig: {
     description = "Configure ${serviceName} via API";
     after = ["${serviceName}.service"];
+    # DO NOT ADD `requires` here <service>-config restarts
+    # the service and enter failed state as a result
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {

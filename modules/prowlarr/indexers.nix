@@ -1,11 +1,9 @@
 {
   lib,
   pkgs,
-  serviceName,
 }:
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
-  capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
@@ -56,9 +54,9 @@ in {
   };
 
   mkService = serviceConfig: {
-    description = "Configure ${serviceName} indexers via API";
-    after = ["${serviceName}-config.service"];
-    requires = ["${serviceName}-config.service"];
+    description = "Configure Prowlarr indexers via API";
+    after = ["prowlarr-config.service"];
+    requires = ["prowlarr-config.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
@@ -201,7 +199,7 @@ in {
         '')
         serviceConfig.indexers}
 
-      echo "${capitalizedName} indexers configuration complete"
+      echo "Prowlarr indexers configuration complete"
     '';
   };
 }
