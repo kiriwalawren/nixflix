@@ -8,11 +8,9 @@ with lib; let
   inherit (config) nixflix;
   indexers = import ./indexers.nix {
     inherit lib pkgs;
-    serviceName = "prowlarr";
   };
   applications = import ./applications.nix {
-    inherit lib pkgs;
-    serviceName = "prowlarr";
+    inherit lib pkgs config;
   };
 
   arrServices =
@@ -55,7 +53,6 @@ with lib; let
 
   extraConfigOptions = {
     indexers = indexers.type;
-
     applications = applications.type;
   };
 in {

@@ -60,13 +60,10 @@ in {
     '';
   };
 
-  mkService = serviceConfig: let
-    inherit (lib) optionals;
-    inherit (config) nixflix;
-  in {
+  mkService = serviceConfig: {
     description = "Configure ${serviceName} download clients via API";
-    after = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-categories.service"];
-    requires = ["${serviceName}-config.service"] ++ optionals (nixflix.sabnzbd.enable or false) ["sabnzbd-categories.service"];
+    after = ["${serviceName}-config.service"] ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
+    requires = ["${serviceName}-config.service"] ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
