@@ -107,6 +107,7 @@ in
 
       # Verify tmpfile configuration
       machine.wait_for_unit("multi-user.target")
+      machine.wait_for_unit("systemd-tmpfiles-setup.service")
       machine.succeed("systemd-tmpfiles --create --dry-run")
 
       # Wait for all services to start (longer timeout for initial DB migrations)
