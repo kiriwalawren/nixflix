@@ -32,8 +32,7 @@ in {
   options.nixflix.recyclarr = {
     enable = mkOption {
       type = types.bool;
-      default = nixflix.radarr.enable or nixflix.sonarr.enable or nixflix.sonarr-anime.enable;
-      defaultText = literalExpression "nixflix.radarr.enable or nixflix.sonarr.enable or nixflix.sonarr-anime.enable";
+      default = false;
       description = "Whether to enable Recyclarr for automated TRaSH guide syncing";
     };
 
