@@ -105,6 +105,11 @@ in
     testScript = ''
       start_all()
 
+      # Verify tmpfile configuration
+      machine.wait_for_unit("multi-user.target")
+      machine.wait_for_unit("systemd-tmpfiles-setup.service")
+      machine.succeed("systemd-tmpfiles --create --dry-run")
+
       # Wait for all services to start (longer timeout for initial DB migrations)
       machine.wait_for_unit("prowlarr.service", timeout=180)
       machine.wait_for_unit("sonarr.service", timeout=180)
