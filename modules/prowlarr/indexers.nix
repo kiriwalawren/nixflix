@@ -1,12 +1,11 @@
 {
   lib,
   pkgs,
-  serviceName,
 }:
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
+
   mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
-  capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   type = mkOption {
     type = types.listOf (types.submodule {
@@ -37,28 +36,29 @@ in {
     });
     default = [];
     description = ''
-      List of indexers to configure in Prowlarr.
+      List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents).
+
       Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
 
       You can run the following command to get the field names for a particular indexer:
 
       ```sh
-      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/prowlarr/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/prowlarr/api/v1/indexer/schema" | jq '.[] | select(.name=="<indexerName>") | .fields'
       ```
 
       Or if you have nginx disabled or `config.nixflix.prowlarr.config.hostConfig.urlBase` is not configured
 
       ```sh
-      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/api/v1/indexer/schema" | jq '.[] | select(.implementationName=="<indexerName>") | .fields'
+      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/api/v1/indexer/schema" | jq '.[] | select(.name=="<indexerName>") | .fields'
       ```
     '';
   };
 
   mkService = serviceConfig: {
-    description = "Configure ${serviceName} indexers via API";
-    after = ["${serviceName}-config.service"];
-    requires = ["${serviceName}-config.service"];
+    description = "Configure Prowlarr indexers via API";
+    after = ["prowlarr-config.service"];
+    requires = ["prowlarr-config.service"];
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
@@ -216,7 +216,7 @@ in {
         '')
         serviceConfig.indexers}
 
-      echo "${capitalizedName} indexers configuration complete"
+      echo "Prowlarr indexers configuration complete"
     '';
   };
 }

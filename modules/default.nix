@@ -127,8 +127,8 @@ in {
     users.groups.media.members = cfg.mediaUsers;
     systemd.tmpfiles.rules = [
       "d '${cfg.stateDir}' 0755 root root - -"
-      "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user}:${globals.libraryOwner.group} - -"
-      "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user}:${globals.libraryOwner.group} - -"
+      "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
+      "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
     ];
 
     services.nginx = mkIf cfg.nginx.enable {

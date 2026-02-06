@@ -1,10 +1,9 @@
 {
+  config,
   lib,
   pkgs,
-  serviceName,
 }:
 with lib; let
-  capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
   secrets = import ../lib/secrets {inherit lib;};
 in {
   type = mkOption {
@@ -38,9 +37,19 @@ in {
   };
 
   mkService = serviceConfig: {
-    description = "Configure ${serviceName} applications via API";
-    after = ["${serviceName}-config.service"];
-    requires = ["${serviceName}-config.service"];
+    description = "Configure Prowlarr applications via API";
+    after =
+      ["prowlarr-config.service"]
+      ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
+      ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
+      ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+      ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
+    requires =
+      ["prowlarr-config.service"]
+      ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
+      ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
+      ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+      ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
     wantedBy = ["multi-user.target"];
 
     serviceConfig = {
@@ -156,7 +165,7 @@ in {
         '')
         serviceConfig.applications}
 
-      echo "${capitalizedName} applications configuration complete"
+      echo "Prowlarr applications configuration complete"
     '';
   };
 }
