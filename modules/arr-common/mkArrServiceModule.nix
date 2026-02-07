@@ -234,30 +234,28 @@ in {
             else ""
           );
         };
-        downloadClients = mkDefault (
-          optionals (nixflix.sabnzbd.enable or false) [
-            ({
-                name = "SABnzbd";
-                implementationName = "SABnzbd";
-                apiKey = nixflix.sabnzbd.settings.misc.api_key;
-                inherit (nixflix.sabnzbd.settings.misc) host;
-                inherit (nixflix.sabnzbd.settings.misc) port;
-                urlBase = nixflix.sabnzbd.settings.misc.url_base;
-              }
-              // optionalAttrs (serviceName == "radarr") {
-                movieCategory = serviceName;
-              }
-              // optionalAttrs (elem serviceName ["sonarr" "sonarr-anime"]) {
-                tvCategory = serviceName;
-              }
-              // optionalAttrs (serviceName == "lidarr") {
-                musicCategory = serviceName;
-              }
-              // optionalAttrs (serviceName == "prowlarr") {
-                category = serviceName;
-              })
-          ]
-        );
+        downloadClients = optionals (nixflix.sabnzbd.enable or false) [
+          ({
+              name = "SABnzbd";
+              implementationName = "SABnzbd";
+              apiKey = nixflix.sabnzbd.settings.misc.api_key;
+              inherit (nixflix.sabnzbd.settings.misc) host;
+              inherit (nixflix.sabnzbd.settings.misc) port;
+              urlBase = nixflix.sabnzbd.settings.misc.url_base;
+            }
+            // optionalAttrs (serviceName == "radarr") {
+              movieCategory = serviceName;
+            }
+            // optionalAttrs (elem serviceName ["sonarr" "sonarr-anime"]) {
+              tvCategory = serviceName;
+            }
+            // optionalAttrs (serviceName == "lidarr") {
+              musicCategory = serviceName;
+            }
+            // optionalAttrs (serviceName == "prowlarr") {
+              category = serviceName;
+            })
+        ];
       };
     };
 
