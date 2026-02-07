@@ -7,7 +7,7 @@
 </h1>
 
 Nixflix is a declarative media server configuration manager for NixOS. The aim of the project is to automate
-all of the connective tissue required to get get Starr services (Sonarr, Radarr, Lidarr, Prowlarr) working
+all of the connective tissue required to get get Starr services ([Sonarr](https://github.com/Sonarr/Sonarr), [Radarr](https://github.com/Radarr/Radarr), [Lidarr](https://github.com/Lidarr/Lidarr), [Prowlarr](https://github.com/Prowlarr/Prowlarr)) working
 together. I want users to be able to configure this module and it just works.
 
 ## Why Nixflix?
