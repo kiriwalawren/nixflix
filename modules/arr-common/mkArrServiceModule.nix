@@ -205,7 +205,8 @@ in {
     ];
 
     nixflix.${serviceName} = {
-      settings = mkDefault ({
+      settings =
+        {
           auth = {
             required = "Enabled";
             method = "Forms";
@@ -221,7 +222,7 @@ in {
             mainDb = cfg.user;
             logDb = cfg.user;
           };
-        });
+        };
       config = {
         apiKey = mkDefault null;
         hostConfig = {
