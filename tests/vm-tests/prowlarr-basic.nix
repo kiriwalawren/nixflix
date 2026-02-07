@@ -16,12 +16,41 @@ in
 
       virtualisation.cores = 4;
 
+      services.qbittorrent = {
+        enable = true;
+        webuiPort = 8282;
+        serverConfig = {
+          LegalNotice.Accepted = true;
+          Preferences = {
+            WebUI = {
+              Username = "admin";
+              Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
+            };
+            General.Locale = "en";
+          };
+        };
+      };
+
+      systemd.services.prowlarr-downloadclients = {
+        after = ["qbittorrent.service"];
+        requires = ["qbittorrent.service"];
+      };
+
       nixflix = {
         enable = true;
 
         prowlarr = {
           enable = true;
           config = {
+            downloadClients = [
+              {
+                name = "qBittorrent";
+                implementationName = "qBittorrent";
+                username = "admin";
+                password = "test123";
+                port = 8282;
+              }
+            ];
             hostConfig = {
               port = 9696;
               username = "admin";
@@ -54,8 +83,10 @@ in
       machine.wait_for_unit("sabnzbd.service", timeout=60)
       machine.wait_for_open_port(9696, timeout=180)
       machine.wait_for_open_port(8080, timeout=60)
+      machine.wait_for_open_port(8282, timeout=60)
 
       # Wait for configuration services to complete
+      machine.wait_for_unit("qbittorrent.service", timeout=180)
       machine.wait_for_unit("prowlarr-config.service", timeout=180)
 
       # Wait for prowlarr to come back up after restart
@@ -78,13 +109,23 @@ in
           "http://127.0.0.1:9696/api/v1/downloadclient"
       )
       clients_list = json.loads(clients)
+
       print(f"Download clients: {clients}")
-      assert len(clients_list) == 1, f"Expected 1 download client, found {len(clients_list)}"
-      assert clients_list[0]['name'] == 'SABnzbd', \
-          f"Expected SABnzbd download client, found {clients_list[0]['name']}"
-      assert clients_list[0]['implementationName'] == 'SABnzbd', \
+      assert len(clients_list) == 2, f"Expected 2 download client, found {len(clients_list)}"
+
+      sabnzbd = next((c for c in clients_list if c["name"] == "SABnzbd"), None)
+      assert sabnzbd is not None, \
+          f"Expected SABnzbd download client, found {clients_list}"
+      assert sabnzbd['implementationName'] == 'SABnzbd', \
           "Expected SABnzbd implementation"
       print("SABnzbd download client configured successfully!")
+
+      qbittorrent = next((c for c in clients_list if c["name"] == "qBittorrent"), None)
+      assert qbittorrent is not None, \
+          f"Expected qBittorrent download client, found {clients_list}"
+      assert qbittorrent['implementationName'] == 'qBittorrent', \
+          "Expected qBittorrent implementation"
+      print("qBittorrent download client configured successfully!")
 
       # Verify the service is running
       machine.succeed("pgrep Prowlarr")
