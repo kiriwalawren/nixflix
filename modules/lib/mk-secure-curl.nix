@@ -29,7 +29,7 @@
   dataHandling = lib.optionalString (data != null) ''
     CURL_DATA_FILE=$(mktemp)
     trap "rm -f $CURL_DATA_FILE" EXIT
-    cat > "$CURL_DATA_FILE" <<'DATA_EOF'
+    cat > "$CURL_DATA_FILE" <<DATA_EOF
     ${data}
     DATA_EOF
   '';

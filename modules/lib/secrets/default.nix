@@ -9,7 +9,7 @@ with lib; let
       };
     })
   ];
-in {
+in rec {
   isSecretRef = value:
     (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
@@ -68,22 +68,25 @@ in {
     };
 
   mkJqSecretArgs = secretFields: let
-    processedFields = lib.mapAttrs (name: value:
-      if value == null
-      then {
-        flag = "--arg ${name} \"\"";
-        ref = "$${name}";
-      }
-      else if isSecretRef value
-      then {
-        flag = "--rawfile ${name}Content ${lib.escapeShellArg (toString value._secret)}";
-        ref = "($${name}Content | rtrimstr(\"\\n\"))";
-      }
-      else {
-        flag = "--arg ${name} ${lib.escapeShellArg (toString value)}";
-        ref = "$${name}";
-      }
-    ) secretFields;
+    processedFields =
+      lib.mapAttrs (
+        name: value:
+          if value == null
+          then {
+            flag = "--arg ${name} \"\"";
+            ref = "$" + name;
+          }
+          else if isSecretRef value
+          then {
+            flag = "--rawfile ${name}Content ${lib.escapeShellArg (toString value._secret)}";
+            ref = "($" + name + "Content | rtrimstr(\"\\n\"))";
+          }
+          else {
+            flag = "--arg ${name} ${lib.escapeShellArg (toString value)}";
+            ref = "$" + name;
+          }
+      )
+      secretFields;
 
     flags = lib.mapAttrsToList (_name: field: field.flag) processedFields;
     refs = lib.mapAttrs (_name: field: field.ref) processedFields;

@@ -5,6 +5,7 @@
 }:
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
@@ -14,7 +15,12 @@ in {
     description = "Host configuration options that will be set via the API /config/host endpoint";
   };
 
-  mkService = serviceConfig: {
+  mkService = serviceConfig: let
+    jqSecrets = secrets.mkJqSecretArgs {
+      inherit (serviceConfig) apiKey;
+      inherit (serviceConfig.hostConfig) password;
+    };
+  in {
     description = "Configure ${serviceName} via API";
     after = ["${serviceName}.service"];
     # DO NOT ADD `requires` here <service>-config restarts
@@ -31,19 +37,14 @@ in {
     script = ''
       set -eu
 
-      # Read secrets
-      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
-      ${
-        if serviceConfig.hostConfig.password == null
-        then "AUTH_PASSWORD=''"
-        else secrets.toShellValue "AUTH_PASSWORD" serviceConfig.hostConfig.password
-      }
-
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
       # Get current host configuration
       echo "Fetching current host configuration..."
-      HOST_CONFIG=$(${pkgs.curl}/bin/curl -s -f -H "X-Api-Key: $API_KEY" "$BASE_URL/config/host" 2>/dev/null)
+      HOST_CONFIG=$(${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/config/host";
+        extraArgs = "-f";
+      }} 2>/dev/null)
 
       if [ -z "$HOST_CONFIG" ]; then
         echo "Failed to fetch host configuration"
@@ -56,8 +57,7 @@ in {
       # Build the complete configuration JSON
       echo "Building configuration..."
       NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
-        --arg apiKey "$API_KEY" \
-        --arg password "$AUTH_PASSWORD" \
+        ${jqSecrets.flagsString} \
         --argjson id "$CONFIG_ID" \
         '{
           id: $id,
@@ -70,13 +70,13 @@ in {
           authenticationRequired: "${serviceConfig.hostConfig.authenticationRequired}",
           analyticsEnabled: ${boolToString serviceConfig.hostConfig.analyticsEnabled},
           username: "${serviceConfig.hostConfig.username}",
-          password: $password,
-          passwordConfirmation: $password,
+          password: ${jqSecrets.refs.password},
+          passwordConfirmation: ${jqSecrets.refs.password},
           logLevel: "${serviceConfig.hostConfig.logLevel}",
           logSizeLimit: ${builtins.toString serviceConfig.hostConfig.logSizeLimit},
           consoleLogLevel: "${serviceConfig.hostConfig.consoleLogLevel}",
           branch: "${serviceConfig.hostConfig.branch}",
-          apiKey: $apiKey,
+          apiKey: ${jqSecrets.refs.apiKey},
           sslCertPath: "${serviceConfig.hostConfig.sslCertPath}",
           sslCertPassword: "${serviceConfig.hostConfig.sslCertPassword}",
           urlBase: "${serviceConfig.hostConfig.urlBase}",
@@ -102,11 +102,13 @@ in {
 
       # Update host configuration
       echo "Updating ${capitalizedName} configuration via API..."
-      ${pkgs.curl}/bin/curl -s -f -X PUT \
-        -H "X-Api-Key: $API_KEY" \
-        -H "Content-Type: application/json" \
-        -d "$NEW_CONFIG" \
-        "$BASE_URL/config/host/$CONFIG_ID" > /dev/null
+      ${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/config/host/$CONFIG_ID";
+        method = "PUT";
+        headers = {"Content-Type" = "application/json";};
+        data = "$NEW_CONFIG";
+        extraArgs = "-f";
+      }} > /dev/null
 
       echo "Configuration updated successfully"
 

@@ -115,50 +115,59 @@ in {
           fieldOverridesJson = builtins.toJSON fieldOverrides;
 
           jqSecrets = secrets.mkJqSecretArgs {
-            apiKey = if apiKey == null then "" else apiKey;
-            username = if username == null then "" else username;
-            password = if password == null then "" else password;
+            apiKey =
+              if apiKey == null
+              then ""
+              else apiKey;
+            username =
+              if username == null
+              then ""
+              else username;
+            password =
+              if password == null
+              then ""
+              else password;
           };
         in ''
-                    echo "Processing indexer: ${indexerName}"
+          echo "Processing indexer: ${indexerName}"
 
-                    apply_field_overrides() {
-                      local indexer_json="$1"
-                      local overrides="$2"
+          apply_field_overrides() {
+            local indexer_json="$1"
+            local overrides="$2"
 
-                      echo "$indexer_json" | ${pkgs.jq}/bin/jq \
-                        ${jqSecrets.flagsString} \
-                        --argjson overrides "$overrides" '
-                          .fields[] |= (
-                            if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
-                            elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
-                            elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
-                            else .
-                            end
-                          )
-                          | . + $overrides
-                          | .fields[] |= (
-                              . as $field |
-                              if $overrides[$field.name] != null then
-                                .value = $overrides[$field.name]
-                              else
-                                .
-                              end
-                            )
-                        '
-                    }
+            echo "$indexer_json" | ${pkgs.jq}/bin/jq \
+              ${jqSecrets.flagsString} \
+              --argjson overrides "$overrides" '
+                .fields[] |= (
+                  if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                  elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
+                  elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
+                  else .
+                  end
+                )
+                | . + $overrides
+                | .fields[] |= (
+                    . as $field |
+                    if $overrides[$field.name] != null then
+                      .value = $overrides[$field.name]
+                    else
+                      .
+                    end
+                  )
+              '
+          }
 
-                    FIELD_OVERRIDES='${fieldOverridesJson}'
+          FIELD_OVERRIDES='${fieldOverridesJson}'
 
-                    EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+          EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
-                    if [ -n "$EXISTING_INDEXER" ]; then
-                      echo "Indexer ${indexerName} already exists, updating..."
-                      INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
+          if [ -n "$EXISTING_INDEXER" ]; then
+            echo "Indexer ${indexerName} already exists, updating..."
+            INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
 
-                      UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
+            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
 
-                      ${mkSecureCurl serviceConfig.apiKey {
+            ${mkSecureCurl serviceConfig.apiKey {
             url = "$BASE_URL/indexer/$INDEXER_ID";
             method = "PUT";
             headers = {"Content-Type" = "application/json";};
@@ -166,20 +175,20 @@ in {
             extraArgs = "-Sf";
           }} >/dev/null
 
-                      echo "Indexer ${indexerName} updated"
-                    else
-                      echo "Indexer ${indexerName} does not exist, creating..."
+            echo "Indexer ${indexerName} updated"
+          else
+            echo "Indexer ${indexerName} does not exist, creating..."
 
-                      SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
 
-                      if [ -z "$SCHEMA" ]; then
-                        echo "Error: No schema found for indexer ${indexerName}"
-                        exit 1
-                      fi
+            if [ -z "$SCHEMA" ]; then
+              echo "Error: No schema found for indexer ${indexerName}"
+              exit 1
+            fi
 
-                      NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
+            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
-                      ${mkSecureCurl serviceConfig.apiKey {
+            ${mkSecureCurl serviceConfig.apiKey {
             url = "$BASE_URL/indexer";
             method = "POST";
             headers = {"Content-Type" = "application/json";};
@@ -187,8 +196,8 @@ in {
             extraArgs = "-Sf";
           }} >/dev/null
 
-                      echo "Indexer ${indexerName} created"
-                    fi
+            echo "Indexer ${indexerName} created"
+          fi
         '')
         serviceConfig.indexers}
 
