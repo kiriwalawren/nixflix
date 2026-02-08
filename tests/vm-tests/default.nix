@@ -1,7 +1,8 @@
 {
-  system ? builtins.currentSystem,
-  pkgs ? import <nixpkgs> {inherit system;},
+  lib,
   nixosModules,
+  pkgs ? import <nixpkgs> {inherit system;},
+  system ? builtins.currentSystem,
 }: let
   testFiles =
     builtins.filter
@@ -23,7 +24,7 @@
             (test.passthru.meta or {})
             // {
               requiresNetwork =
-                builtins.match ".*networking\\.useDHCP[[:space:]]*=[[:space:]]*true.*" fileContents != null;
+                lib.boolToString (builtins.match ".*networking\\.useDHCP[[:space:]]*=[[:space:]]*true.*" fileContents != null);
             };
         };
     };

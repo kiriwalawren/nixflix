@@ -20,7 +20,7 @@
     perSystem = f:
       lib.genAttrs systems (system:
         f rec {
-          inherit system;
+          inherit system lib;
           pkgs = import nixpkgs {
             inherit system;
             config.allowUnfree = true;
@@ -63,12 +63,13 @@
       '');
 
     checks = perSystem ({
+      lib,
       pkgs,
       system,
       ...
     }: let
       tests = import ./tests {
-        inherit system pkgs;
+        inherit system pkgs lib;
         nixosModules = self.nixosModules.default;
       };
     in
