@@ -182,6 +182,7 @@ This example shows a working media server configuration based on a real producti
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
+- **Jellyseerr** - Requests Management
 - **Mullvad VPN** - Download protection with kill switch
 - **Recyclarr** - TRaSH guides automation
 
@@ -234,28 +235,28 @@ This example shows a working media server configuration based on a real producti
 │       ├── complete/
 │       └── incomplete/
 └── .state/
-    ├── postgresql/
     ├── jellyfin/
+    ├── jellyseerr/
     ├── lidarr/
+    ├── postgres/
     ├── prowlarr/
     ├── radarr/
-    ├── recyclarr/
-    ├── sabnzbd/
-    ├── sonarr-anime/
-    └── sonarr/
+    ├── sonarr/
+    └── sonarr-anime/
 ```
 
 ## Service Access
 
 Via nginx reverse proxy:
 
-- http://localhost/sonarr
-- http://localhost/sonarr-anime
-- http://localhost/radarr
-- http://localhost/lidarr
-- http://localhost/prowlarr
-- http://localhost/sabnzbd
-- http://localhost/jellyfin
+- Sonarr: http://localhost/sonarr
+- Sonarr Anime: http://localhost/sonarr-anime
+- Radarr: http://localhost/radarr
+- Lidarr: http://localhost/lidarr
+- Prowlarr: http://localhost/prowlarr
+- SABnzbd: http://localhost/sabnzbd
+- Jellyfin: http://localhost/jellyfin
+- Jellyseerr: http://localhost/jellyseerr
 
 Direct access:
 
@@ -266,6 +267,7 @@ Direct access:
 - Prowlarr: http://localhost:9696
 - SABnzbd: http://localhost:8080
 - Jellyfin: http://localhost:8096
+- Jellyseerr: http://localhost:5055
 
 ## Customization
 
