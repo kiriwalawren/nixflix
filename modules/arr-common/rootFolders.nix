@@ -4,7 +4,7 @@
   serviceName,
 }:
 with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 in {
   options = mkOption {
@@ -35,14 +35,14 @@ in {
     script = ''
       set -eu
 
-      # Read API key secret
-      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
-
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
       # Create root folders if they don't exist
       echo "Checking for root folders..."
-      ROOT_FOLDERS=$(${pkgs.curl}/bin/curl -sSf -H "X-Api-Key: $API_KEY" "$BASE_URL/rootfolder" 2>/dev/null)
+      ROOT_FOLDERS=$(${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/rootfolder";
+        extraArgs = "-Sf";
+      }} 2>/dev/null)
 
       # Build list of configured paths
       CONFIGURED_PATHS=$(cat <<'EOF'
@@ -58,9 +58,11 @@ in {
 
         if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$FOLDER_PATH" 'index($path)' >/dev/null 2>&1; then
           echo "Deleting root folder not in config: $FOLDER_PATH (ID: $FOLDER_ID)"
-          ${pkgs.curl}/bin/curl -sSf -X DELETE \
-            -H "X-Api-Key: $API_KEY" \
-            "$BASE_URL/rootfolder/$FOLDER_ID" >/dev/null 2>&1 || echo "Warning: Failed to delete root folder $FOLDER_PATH"
+          ${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/rootfolder/$FOLDER_ID";
+        method = "DELETE";
+        extraArgs = "-Sf";
+      }} >/dev/null 2>&1 || echo "Warning: Failed to delete root folder $FOLDER_PATH"
         fi
       done
 
@@ -70,11 +72,13 @@ in {
         in ''
           if ! echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -e '.[] | select(.path == "${folderPath}")' >/dev/null 2>&1; then
             echo "Creating root folder: ${folderPath}"
-            ${pkgs.curl}/bin/curl -sSf -X POST \
-              -H "X-Api-Key: $API_KEY" \
-              -H "Content-Type: application/json" \
-              -d '${folderJson}' \
-              "$BASE_URL/rootfolder" > /dev/null
+            ${mkSecureCurl serviceConfig.apiKey {
+            url = "$BASE_URL/rootfolder";
+            method = "POST";
+            headers = {"Content-Type" = "application/json";};
+            data = folderJson;
+            extraArgs = "-Sf";
+          }} > /dev/null
             echo "Root folder created: ${folderPath}"
           else
             echo "Root folder already exists: ${folderPath}"

@@ -4,7 +4,7 @@
   serviceName,
 }:
 with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 
   defaultDelayProfile = {
@@ -131,14 +131,14 @@ in {
     in ''
       set -eu
 
-      # Read API key secret
-      ${secrets.toShellValue "API_KEY" serviceConfig.apiKey}
-
       BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
       # Fetch existing delay profiles
       echo "Fetching existing delay profiles..."
-      DELAY_PROFILES=$(${pkgs.curl}/bin/curl -sSf -H "X-Api-Key: $API_KEY" "$BASE_URL/delayprofile" 2>/dev/null)
+      DELAY_PROFILES=$(${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/delayprofile";
+        extraArgs = "-Sf";
+      }} 2>/dev/null)
 
       # Build list of configured profile IDs
       CONFIGURED_IDS=$(cat <<'EOF'
@@ -153,9 +153,11 @@ in {
 
         if ! echo "$CONFIGURED_IDS" | ${pkgs.jq}/bin/jq -e --argjson id "$PROFILE_ID" 'index($id)' >/dev/null 2>&1; then
           echo "Deleting delay profile not in config (ID: $PROFILE_ID)"
-          ${pkgs.curl}/bin/curl -sSf -X DELETE \
-            -H "X-Api-Key: $API_KEY" \
-            "$BASE_URL/delayprofile/$PROFILE_ID" >/dev/null 2>&1 || echo "Warning: Failed to delete delay profile $PROFILE_ID (may be in use)"
+          ${mkSecureCurl serviceConfig.apiKey {
+        url = "$BASE_URL/delayprofile/$PROFILE_ID";
+        method = "DELETE";
+        extraArgs = "-Sf";
+      }} >/dev/null 2>&1 || echo "Warning: Failed to delete delay profile $PROFILE_ID (may be in use)"
         fi
       done
 
@@ -169,19 +171,23 @@ in {
 
           if [ -n "$EXISTING_PROFILE" ]; then
             echo "Delay profile ${profileId} already exists, updating..."
-            ${pkgs.curl}/bin/curl -sSf -X PUT \
-              -H "X-Api-Key: $API_KEY" \
-              -H "Content-Type: application/json" \
-              -d '${profileJson}' \
-              "$BASE_URL/delayprofile/${profileId}" > /dev/null
+            ${mkSecureCurl serviceConfig.apiKey {
+            url = "$BASE_URL/delayprofile/${profileId}";
+            method = "PUT";
+            headers = {"Content-Type" = "application/json";};
+            data = profileJson;
+            extraArgs = "-Sf";
+          }} > /dev/null
             echo "Delay profile ${profileId} updated"
           else
             echo "Delay profile ${profileId} does not exist, creating..."
-            ${pkgs.curl}/bin/curl -sSf -X POST \
-              -H "X-Api-Key: $API_KEY" \
-              -H "Content-Type: application/json" \
-              -d '${profileJson}' \
-              "$BASE_URL/delayprofile" > /dev/null
+            ${mkSecureCurl serviceConfig.apiKey {
+            url = "$BASE_URL/delayprofile";
+            method = "POST";
+            headers = {"Content-Type" = "application/json";};
+            data = profileJson;
+            extraArgs = "-Sf";
+          }} > /dev/null
             echo "Delay profile ${profileId} created"
           fi
         '')
