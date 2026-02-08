@@ -383,7 +383,7 @@ in {
           environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
           after =
-            ["network.target"]
+            ["network-online.target"]
             ++ (optional (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
             ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
