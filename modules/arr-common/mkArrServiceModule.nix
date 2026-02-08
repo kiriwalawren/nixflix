@@ -6,10 +6,9 @@
 }: serviceName: extraConfigOptions:
 with lib; let
   secrets = import ../lib/secrets {inherit lib;};
-  inherit (config) nixflix;
-  inherit (nixflix) globals;
-  cfg = nixflix.${serviceName};
-  stateDir = "${nixflix.stateDir}/${serviceName}";
+  inherit (config.nixflix) globals;
+  cfg = config.nixflix.${serviceName};
+  stateDir = "${config.nixflix.stateDir}/${serviceName}";
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix {inherit lib pkgs;};
   hostConfig = import ./hostConfig.nix {inherit lib pkgs serviceName;};
@@ -123,16 +122,16 @@ in {
               method = "Forms";
             };
             server = {
-              inherit (nixflix.${serviceName}.config.hostConfig) port urlBase;
+              inherit (config.nixflix.${serviceName}.config.hostConfig) port urlBase;
             };
           } // optionalAttrs config.services.postgresql.enable {
             log.dbEnabled = true;
             postgres = {
-              user = nixflix.${serviceName}.user;
+              user = config.nixflix.${serviceName}.user;
               host = "/run/postgresql";
-              port = 5432;
-              mainDb = nixflix.${serviceName}.user;
-              logDb = nixflix.${serviceName}.user;
+              port = config.services.postgresql.settings.port;
+              mainDb = config.nixflix.${serviceName}.user;
+              logDb = "''${config.nixflix.${serviceName}.user}-logs";
             };
           }
         '';
@@ -191,16 +190,16 @@ in {
       mediaDirs = mkOption {
         type = types.listOf types.path;
         default = [];
-        defaultText = literalExpression ''[nixflix.mediaDir + "/<media-type>"]'';
+        defaultText = literalExpression ''[config.nixflix.mediaDir + "/<media-type>"]'';
         description = "List of media directories to create and manage";
       };
     };
 
-  config = mkIf (nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) {
     assertions = [
       {
-        assertion = cfg.vpn.enable -> nixflix.mullvad.enable;
-        message = "Cannot enable VPN routing for ${capitalizedName} (nixflix.${serviceName}.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
+        assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
+        message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
       }
     ];
 
@@ -217,10 +216,10 @@ in {
           log.dbEnabled = true;
           postgres = {
             inherit (cfg) user;
+            inherit (config.services.postgresql.settings) port;
             host = "/run/postgresql";
-            port = 5432;
             mainDb = cfg.user;
-            logDb = cfg.user;
+            logDb = "${cfg.user}-logs";
           };
         };
       config = {
@@ -230,19 +229,19 @@ in {
           password = mkDefault null;
           instanceName = mkDefault capitalizedName;
           urlBase = mkDefault (
-            if nixflix.nginx.enable
+            if config.nixflix.nginx.enable
             then "/${serviceName}"
             else ""
           );
         };
-        downloadClients = optionals (nixflix.sabnzbd.enable or false) [
+        downloadClients = optionals (config.nixflix.sabnzbd.enable or false) [
           ({
               name = "SABnzbd";
               implementationName = "SABnzbd";
-              apiKey = nixflix.sabnzbd.settings.misc.api_key;
-              inherit (nixflix.sabnzbd.settings.misc) host;
-              inherit (nixflix.sabnzbd.settings.misc) port;
-              urlBase = nixflix.sabnzbd.settings.misc.url_base;
+              apiKey = config.nixflix.sabnzbd.settings.misc.api_key;
+              inherit (config.nixflix.sabnzbd.settings.misc) host;
+              inherit (config.nixflix.sabnzbd.settings.misc) port;
+              urlBase = config.nixflix.sabnzbd.settings.misc.url_base;
             }
             // optionalAttrs (serviceName == "radarr") {
               movieCategory = serviceName;
@@ -262,22 +261,24 @@ in {
 
     services = {
       postgresql = mkIf config.services.postgresql.enable {
-        ensureDatabases = [cfg.user];
+        ensureDatabases = [
+          cfg.settings.postgres.mainDb
+          cfg.settings.postgres.logDb
+        ];
         ensureUsers = [
           {
             name = cfg.user;
-            ensureDBOwnership = true;
           }
         ];
       };
 
-      nginx = mkIf nixflix.nginx.enable {
+      nginx = mkIf config.nixflix.nginx.enable {
         virtualHosts.localhost.locations."${
           if cfg.config.hostConfig.urlBase == ""
           then "/"
           else cfg.config.hostConfig.urlBase
         }" = let
-          themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${nixflix.theme.name}.css";
+          themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${config.nixflix.theme.name}.css";
         in {
           proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
           recommendedProxySettings = true;
@@ -285,7 +286,7 @@ in {
             proxy_redirect off;
 
             ${
-              if nixflix.theme.enable
+              if config.nixflix.theme.enable
               then ''
                 proxy_set_header Accept-Encoding "";
                 sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
@@ -330,8 +331,28 @@ in {
 
     systemd.services =
       {
+        "${serviceName}-setup-logs-db" = mkIf config.services.postgresql.enable {
+          description = "Grant ownership of ${capitalizedName} databases";
+          after = ["postgresql.service" "postgresql-setup.service"];
+          requires = ["postgresql.service" "postgresql-setup.service"];
+          before = ["postgresql-ready.target"];
+          requiredBy = ["postgresql-ready.target"];
+
+          serviceConfig = {
+            User = "postgres";
+            Group = "postgres";
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+
+          script = ''
+            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.mainDb}" OWNER TO "${cfg.user}";'
+            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.logDb}" OWNER TO "${cfg.user}";'
+          '';
+        };
+
         "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
-          description = "Wait for ${capitalizedName} PostgreSQL database role to be ready";
+          description = "Wait for ${capitalizedName} PostgreSQL databases to be ready";
           after = ["postgresql.service" "postgresql-setup.service"];
           before = ["postgresql-ready.target"];
           requiredBy = ["postgresql-ready.target"];
@@ -346,11 +367,12 @@ in {
 
           script = ''
             while true; do
-              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
-                echo "${capitalizedName} PostgreSQL database is ready"
+              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1 && \
+                 ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user}-logs -c "SELECT 1" > /dev/null 2>&1; then
+                echo "${capitalizedName} PostgreSQL databases are ready"
                 exit 0
               fi
-              echo "Waiting for PostgreSQL role ${capitalizedName}..."
+              echo "Waiting for ${capitalizedName} PostgreSQL databases..."
               sleep 1
             done
           '';
@@ -364,11 +386,11 @@ in {
             ["network.target"]
             ++ (optional (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target")
-            ++ (optional nixflix.mullvad.enable "mullvad-config.service");
+            ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
           requires =
             (optional (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) "${serviceName}-env.service")
             ++ (optional config.services.postgresql.enable "postgresql-ready.target");
-          wants = optional nixflix.mullvad.enable "mullvad-config.service";
+          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
           wantedBy = ["multi-user.target"];
 
           serviceConfig =
@@ -383,7 +405,7 @@ in {
             // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
               EnvironmentFile = "/run/${serviceName}/env";
             }
-            // optionalAttrs (nixflix.mullvad.enable && !cfg.vpn.enable) {
+            // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
               ExecStart = mkForce (pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
                 exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package} \
                   -nobrowser -data='${stateDir}'
