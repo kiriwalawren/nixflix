@@ -1,7 +1,7 @@
 {
   lib,
   pkgs,
-}: apiKeyVar: {
+}: apiKeyValue: {
   url,
   method ? "GET",
   headers ? {},
@@ -10,11 +10,20 @@
   silent ? true,
   apiKeyHeader ? "X-Api-Key",
 }: let
+  secrets = import ./secrets {inherit lib;};
+
   baseArgs = lib.optionalString silent "-s";
   methodArg = lib.optionalString (method != "GET") "-X ${method}";
 
-  otherHeaders = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (name: value: ''header = "${name}: ${value}"'') headers
+  apiKeyVariable =
+    if secrets.isSecretRef apiKeyValue
+    then "--variable apiKey@${lib.escapeShellArg (toString apiKeyValue._secret)}"
+    else "--variable apiKey=${lib.escapeShellArg (toString apiKeyValue)}";
+
+  apiKeyHeaderArg = ''--expand-header "${apiKeyHeader}: {{apiKey:trim}}"'';
+
+  otherHeaderArgs = lib.concatStringsSep " " (
+    lib.mapAttrsToList (name: value: ''--header "${name}: ${value}"'') headers
   );
 
   dataHandling = lib.optionalString (data != null) ''
@@ -30,9 +39,4 @@ in
   lib.optionalString (data != null) ''
     ${dataHandling}
   ''
-  + ''
-    ${pkgs.curl}/bin/curl -K - ${baseArgs} ${methodArg} ${dataBinaryArg} ${extraArgs} "${url}" <<CURL_CONFIG
-    header = "${apiKeyHeader}: ''$${apiKeyVar}"
-    ${otherHeaders}
-    CURL_CONFIG
-  ''
+  + "${pkgs.curl}/bin/curl ${apiKeyVariable} ${apiKeyHeaderArg} ${baseArgs} ${methodArg} ${dataBinaryArg} ${otherHeaderArgs} ${extraArgs} \"${url}\""
