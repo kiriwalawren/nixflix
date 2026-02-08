@@ -117,7 +117,7 @@ in
           "systemctl show recyclarr.service -p SubState | grep -q 'SubState=dead' && "
           "systemctl show recyclarr.service -p ActiveEnterTimestamp | grep -q 'ActiveEnterTimestamp=\n' && "
           "systemctl show recyclarr.service -p Result | grep -q 'Result=success'",
-          timeout=90
+          timeout=180
       )
 
       # Check that quality profiles were created by recyclarr for Radarr

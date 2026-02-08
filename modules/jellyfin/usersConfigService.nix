@@ -5,9 +5,8 @@
   ...
 }:
 with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
-  inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
+  secrets = import ../lib/secrets {inherit lib;};
 
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
@@ -32,7 +31,7 @@ with lib; let
     then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
     else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 in {
-  config = mkIf (nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";
       after = ["jellyfin-setup-wizard.service"];
