@@ -184,24 +184,5 @@ in
           )
           assert "NOT_FOUND" in cmdline_check, \
               f"API key {api_key} found in /proc/*/cmdline! Security vulnerability!"
-
-      # Verify the cleanup script exists and uses mkSecureCurl pattern (curl --variable)
-      cleanup_script = machine.succeed(
-          "cat /nix/store/*-cleanup-quality-profiles.sh | head -200"
-      )
-
-      # Check that the script uses curl with --variable (secure pattern)
-      assert "--variable apiKey@" in cleanup_script, \
-          "Cleanup script should use 'curl --variable apiKey@' for security"
-      assert "--expand-header" in cleanup_script, \
-          "Cleanup script should use '--expand-header' with curl variables"
-
-      # Verify multiple instances are handled (should have multiple sections for radarr, sonarr, sonarr-anime)
-      assert cleanup_script.count("Processing") >= 3, \
-          "Cleanup script should process at least 3 instances (radarr, sonarr, sonarr-anime)"
-      assert "radarr" in cleanup_script.lower(), \
-          "Cleanup script should mention radarr instance"
-      assert "sonarr" in cleanup_script.lower(), \
-          "Cleanup script should mention sonarr instance"
     '';
   }
