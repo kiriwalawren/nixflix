@@ -5,9 +5,8 @@
   ...
 }:
 with lib; let
-  inherit (config) nixflix;
-  cfg = nixflix.postgres;
-  stateDir = "${nixflix.stateDir}/postgres";
+  cfg = config.nixflix.postgres;
+  stateDir = "${config.nixflix.stateDir}/postgres";
 in {
   options.nixflix.postgres = {
     enable = mkOption {
@@ -18,7 +17,7 @@ in {
     };
   };
 
-  config = mkIf (nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) {
     services.postgresql = {
       enable = true;
       package = pkgs.postgresql_16;
