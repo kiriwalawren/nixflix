@@ -9,6 +9,7 @@ with lib; let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
   pathsToPathInfos = paths: map (path: {Path = path;}) paths;
@@ -69,9 +70,11 @@ in {
         source ${authUtil.authScript}
 
         echo "Fetching existing libraries from $BASE_URL/Library/VirtualFolders..."
-        LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" \
-          -H "$AUTH_HEADER" \
-          "$BASE_URL/Library/VirtualFolders")
+        LIBRARIES_RESPONSE=$(${mkSecureCurl authUtil.token {
+          url = "$BASE_URL/Library/VirtualFolders";
+          apiKeyHeader = "Authorization";
+          extraArgs = "-w \"\\n%{http_code}\"";
+        }})
 
         LIBRARIES_HTTP_CODE=$(echo "$LIBRARIES_RESPONSE" | tail -n1)
         LIBRARIES_JSON=$(echo "$LIBRARIES_RESPONSE" | sed '$d')
@@ -94,9 +97,12 @@ in {
 
           if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$LIBRARY_NAME" 'index($name)' >/dev/null 2>&1; then
             echo "Deleting unmanaged library: $LIBRARY_NAME"
-            DELETE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-              -H "$AUTH_HEADER" \
-              "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "$LIBRARY_NAME" '$n|@uri')")
+            DELETE_RESPONSE=$(${mkSecureCurl authUtil.token {
+          method = "DELETE";
+          url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"$LIBRARY_NAME\" '\$n|@uri')";
+          apiKeyHeader = "Authorization";
+          extraArgs = "-w \"\\n%{http_code}\"";
+        }})
 
             DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
 
@@ -109,9 +115,10 @@ in {
         done
 
         echo "Refreshing library list..."
-        LIBRARIES_JSON=$(${pkgs.curl}/bin/curl -s \
-          -H "$AUTH_HEADER" \
-          "$BASE_URL/Library/VirtualFolders")
+        LIBRARIES_JSON=$(${mkSecureCurl authUtil.token {
+          url = "$BASE_URL/Library/VirtualFolders";
+          apiKeyHeader = "Authorization";
+        }})
 
         ${concatStringsSep "\n" (mapAttrsToList (libraryName: libraryCfg: ''
                 echo "Processing library: ${libraryName}"
@@ -121,11 +128,14 @@ in {
                 if [ -z "$EXISTING_LIBRARY" ]; then
                   echo "Creating new library: ${libraryName}"
 
-                  CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                    -H "$AUTH_HEADER" \
-                    -H "Content-Type: application/json" \
-                    -d @${libraryConfigFiles.${libraryName}} \
-                    "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true")
+                  CREATE_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              data = "@${libraryConfigFiles.${libraryName}}";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                   CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
 
@@ -159,11 +169,14 @@ in {
             EOF
             )
 
-                    UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                      -H "$AUTH_HEADER" \
-                      -H "Content-Type: application/json" \
-                      -d "$UPDATE_PAYLOAD" \
-                      "$BASE_URL/Library/VirtualFolders/LibraryOptions")
+                    UPDATE_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Library/VirtualFolders/LibraryOptions";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              data = "$UPDATE_PAYLOAD";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                     UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
 
@@ -184,9 +197,12 @@ in {
                     echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r existing_path; do
                       if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$existing_path" 'index($path)' >/dev/null 2>&1; then
                         echo "Removing path: $existing_path"
-                        REMOVE_PATH_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-                          -H "$AUTH_HEADER" \
-                          "$BASE_URL/Library/VirtualFolders/Paths?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&path=$(${pkgs.jq}/bin/jq -rn --arg p "$existing_path" '$p|@uri')")
+                        REMOVE_PATH_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "DELETE";
+              url = "$BASE_URL/Library/VirtualFolders/Paths?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&path=$(${pkgs.jq}/bin/jq -rn --arg p \"$existing_path\" '\$p|@uri')";
+              apiKeyHeader = "Authorization";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                         REMOVE_PATH_HTTP_CODE=$(echo "$REMOVE_PATH_RESPONSE" | tail -n1)
 
@@ -203,11 +219,14 @@ in {
                         echo "Adding path: $configured_path"
                         ADD_PATH_PAYLOAD=$(${pkgs.jq}/bin/jq -n --arg name "${libraryName}" --arg path "$configured_path" '{Name: $name, Path: $path}')
 
-                        ADD_PATH_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                          -H "$AUTH_HEADER" \
-                          -H "Content-Type: application/json" \
-                          -d "$ADD_PATH_PAYLOAD" \
-                          "$BASE_URL/Library/VirtualFolders/Paths")
+                        ADD_PATH_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Library/VirtualFolders/Paths";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              data = "$ADD_PATH_PAYLOAD";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                         ADD_PATH_HTTP_CODE=$(echo "$ADD_PATH_RESPONSE" | tail -n1)
 
@@ -221,9 +240,12 @@ in {
                   else
                     echo "CollectionType changed from $EXISTING_COLLECTION_TYPE to ${libraryCfg.collectionType}, recreating library..."
 
-                    DELETE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X DELETE \
-                      -H "$AUTH_HEADER" \
-                      "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')")
+                    DELETE_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "DELETE";
+              url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')";
+              apiKeyHeader = "Authorization";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                     DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
 
@@ -232,11 +254,14 @@ in {
                       exit 1
                     fi
 
-                    CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-                      -H "$AUTH_HEADER" \
-                      -H "Content-Type: application/json" \
-                      -d @${libraryConfigFiles.${libraryName}} \
-                      "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n "${libraryName}" '$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true")
+                    CREATE_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              data = "@${libraryConfigFiles.${libraryName}}";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }})
 
                     CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
 

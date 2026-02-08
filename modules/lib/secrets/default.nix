@@ -18,6 +18,11 @@ in rec {
     then "${varName}=$(cat ${escapeShellArg value._secret})"
     else "${varName}=${escapeShellArg (toString value)}";
 
+  toShell = value:
+    if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
+    then "$(cat ${escapeShellArg value._secret})"
+    else "${escapeShellArg (toString value)}";
+
   processValue = value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
     then "__SECRET_FILE__${toString value._secret}__"

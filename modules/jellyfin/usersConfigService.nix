@@ -7,6 +7,7 @@
 with lib; let
   cfg = config.nixflix.jellyfin;
   secrets = import ../lib/secrets {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
 
   util = import ./util.nix {inherit lib;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
@@ -53,7 +54,11 @@ in {
         source ${authUtil.authScript}
 
         echo "Fetching users from $BASE_URL/Users..."
-        USERS_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -H "$AUTH_HEADER" "$BASE_URL/Users")
+        USERS_RESPONSE=$(${mkSecureCurl authUtil.token {
+          url = "$BASE_URL/users";
+          apiKeyHeader = "Authorization";
+          extraArgs = "-w \"\n%{http_code}\"";
+        }})
 
         USERS_HTTP_CODE=$(echo "$USERS_RESPONSE" | tail -n1)
         USERS_JSON=$(echo "$USERS_RESPONSE" | sed '$d')
@@ -65,7 +70,11 @@ in {
           exit 1
         fi
 
-        ${concatStringsSep "\n" (mapAttrsToList (userName: userCfg: ''
+        ${concatStringsSep "\n" (mapAttrsToList (userName: userCfg: let
+            jqSecrets = secrets.mkJqSecretArgs {
+              inherit (userCfg) password;
+            };
+          in ''
             echo "=========================================="
             echo "Processing user: ${userName}"
             echo "=========================================="
@@ -78,18 +87,19 @@ in {
               echo "Creating new user: ${userName}"
               IS_NEW_USER=true
 
-            ${
-              if userCfg.password != null
-              then secrets.toShellValue "PASSWORD" userCfg.password
-              else ''PASSWORD=""''
-            }
+              USER_CREATE_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+                ${jqSecrets.flagsString} \
+                --arg name "${userName}" \
+                '{Name: $name, Password: ${jqSecrets.refs.password}}')
 
-              RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "$AUTH_HEADER" \
-                -H "Content-Type: application/json" \
-                -d "{\"Name\": \"${userName}\", \"Password\": \"$PASSWORD\"}" \
-                -w "\n%{http_code}" \
-                "$BASE_URL/Users/New")
+              RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Users/New";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              extraArgs = "-w \"\\n%{http_code}\"";
+              data = "$USER_CREATE_PAYLOAD";
+            }})
 
               HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
               BODY=$(echo "$RESPONSE" | sed '$d')
@@ -101,7 +111,10 @@ in {
                 exit 1
               fi
 
-              USERS_JSON=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users")
+              USERS_JSON=$(${mkSecureCurl authUtil.token {
+              url = "$BASE_URL/Users";
+              apiKeyHeader = "Authorization";
+            }})
               USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id')
             fi
 
@@ -132,12 +145,14 @@ in {
               echo "Sending configuration update request to: $BASE_URL/Users/$USER_ID"
 
               # Update user configuration and basic settings
-              UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "$AUTH_HEADER" \
-                -H "Content-Type: application/json" \
-                -d @${userConfigFiles.${userName}} \
-                -w "\n%{http_code}" \
-                "$BASE_URL/Users/$USER_ID")
+              UPDATE_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Users/$USER_ID";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              extraArgs = "-w \"\\n%{http_code}\"";
+              data = "@${userConfigFiles.${userName}}";
+            }})
 
               UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
               UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
@@ -154,7 +169,10 @@ in {
               echo "Sending policy update request to: $BASE_URL/Users/$USER_ID/Policy"
 
               # Fetch current policy from server
-              CURRENT_POLICY=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
+              CURRENT_POLICY=$(${mkSecureCurl authUtil.token {
+              url = "$BASE_URL/Users/$USER_ID";
+              apiKeyHeader = "Authorization";
+            }})
 
               # Get our desired policy settings
               DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
@@ -162,12 +180,14 @@ in {
               # Merge: start with current policy, overlay our desired changes
               POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
 
-              POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-                -H "$AUTH_HEADER" \
-                -H "Content-Type: application/json" \
-                -d "$POLICY_JSON" \
-                -w "\n%{http_code}" \
-                "$BASE_URL/Users/$USER_ID/Policy")
+              POLICY_RESPONSE=$(${mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Users/$USER_ID/Policy";
+              apiKeyHeader = "Authorization";
+              headers = {"Content-Type" = "application/json";};
+              extraArgs = "-w \"\\n%{http_code}\"";
+              data = "$POLICY_JSON";
+            }})
 
               POLICY_HTTP_CODE=$(echo "$POLICY_RESPONSE" | tail -n1)
               POLICY_BODY=$(echo "$POLICY_RESPONSE" | sed '$d')
@@ -182,7 +202,10 @@ in {
 
               echo ""
               echo "Verifying update - fetching user again:"
-              VERIFY_RESPONSE=$(${pkgs.curl}/bin/curl -s -H "$AUTH_HEADER" "$BASE_URL/Users/$USER_ID")
+              VERIFY_RESPONSE=$(${mkSecureCurl authUtil.token {
+              url = "$BASE_URL/Users/$USER_ID";
+              apiKeyHeader = "Authorization";
+            }})
               echo "$VERIFY_RESPONSE" | ${pkgs.jq}/bin/jq .
             else
               echo "Skipping user ${userName} - no update needed"

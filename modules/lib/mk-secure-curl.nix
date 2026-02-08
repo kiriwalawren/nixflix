@@ -26,7 +26,7 @@
     lib.mapAttrsToList (name: value: ''--header "${name}: ${value}"'') headers
   );
 
-  dataHandling = lib.optionalString (data != null) ''
+  dataHandling = lib.optionalString (data != null || !(lib.hasPrefix "@" data)) ''
     CURL_DATA_FILE=$(mktemp)
     trap "rm -f $CURL_DATA_FILE" EXIT
     cat > "$CURL_DATA_FILE" <<DATA_EOF
@@ -34,7 +34,12 @@
     DATA_EOF
   '';
 
-  dataBinaryArg = lib.optionalString (data != null) "--data-binary @$CURL_DATA_FILE";
+  dataBinaryArg =
+    if data == null
+    then ""
+    else if lib.hasPrefix "@" data
+    then "-d ${data}"
+    else "--data-binary @$CURL_DATA_FILE";
 in
   lib.optionalString (data != null) ''
     ${dataHandling}
