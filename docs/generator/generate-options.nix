@@ -1,30 +1,31 @@
 {
   pkgs,
   lib,
-}: let
+}:
+let
   nixflixModule = import ../../modules;
 
   baseNixOS = _: {
     options = {
       assertions = lib.mkOption {
         type = lib.types.listOf lib.types.unspecified;
-        default = [];
+        default = [ ];
       };
       warnings = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [];
+        default = [ ];
       };
       environment = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
       };
       systemd = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
       };
       users = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
       };
       networking = lib.mkOption {
         type = lib.types.submodule {
@@ -33,22 +34,22 @@
             default = "nixos";
           };
         };
-        default = {};
+        default = { };
       };
       services = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
       };
       nixpkgs = lib.mkOption {
         type = lib.types.attrs;
-        default = {};
+        default = { };
       };
     };
   };
 
   eval = lib.evalModules {
     modules = [
-      {_module.args = {inherit pkgs;};}
+      { _module.args = { inherit pkgs; }; }
       baseNixOS
       nixflixModule
       {
@@ -61,33 +62,37 @@
   optionsDoc = pkgs.nixosOptionsDoc {
     inherit (eval) options;
 
-    transformOptions = opt:
+    transformOptions =
+      opt:
       opt
       // {
-        declarations = map (decl: let
-          declStr = toString decl;
-          rootStr = toString ../../.;
-        in
-          if lib.hasPrefix rootStr declStr
-          then lib.removePrefix (rootStr + "/") declStr
-          else declStr)
-        opt.declarations;
+        declarations = map (
+          decl:
+          let
+            declStr = toString decl;
+            rootStr = toString ../../.;
+          in
+          if lib.hasPrefix rootStr declStr then lib.removePrefix (rootStr + "/") declStr else declStr
+        ) opt.declarations;
       };
 
     warningsAreErrors = false;
   };
-in {
+in
+{
   inherit (optionsDoc) optionsCommonMark;
   inherit (optionsDoc) optionsJSON;
 
   optionsDocs =
-    pkgs.runCommand "nixflix-options-docs" {
-      nativeBuildInputs = [pkgs.python3];
-    } ''
-      mkdir -p $out/reference
+    pkgs.runCommand "nixflix-options-docs"
+      {
+        nativeBuildInputs = [ pkgs.python3 ];
+      }
+      ''
+        mkdir -p $out/reference
 
-      python3 ${./split-options.py} \
-        ${optionsDoc.optionsJSON}/share/doc/nixos/options.json \
-        $out/reference/
-    '';
+        python3 ${./split-options.py} \
+          ${optionsDoc.optionsJSON}/share/doc/nixos/options.json \
+          $out/reference/
+      '';
 }

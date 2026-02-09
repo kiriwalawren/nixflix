@@ -4,30 +4,34 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
-  util = import ./util.nix {inherit lib;};
-  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
+  util = import ./util.nix { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
   # Transform branding config to API format
   # Remove splashscreenLocation as it's handled separately via upload endpoint
-  brandingConfig = util.recursiveTransform (removeAttrs cfg.branding ["splashscreenLocation"]);
+  brandingConfig = util.recursiveTransform (removeAttrs cfg.branding [ "splashscreenLocation" ]);
   brandingConfigJson = builtins.toJSON brandingConfig;
   brandingConfigFile = pkgs.writeText "jellyfin-branding-config.json" brandingConfigJson;
 
   baseUrl =
-    if cfg.network.baseUrl == ""
-    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
-    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
-in {
+    if cfg.network.baseUrl == "" then
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+in
+{
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-branding-config = {
       description = "Configure Jellyfin Branding via API";
-      after = ["jellyfin-setup-wizard.service"];
-      requires = ["jellyfin-setup-wizard.service"];
-      wantedBy = ["multi-user.target"];
+      after = [ "jellyfin-setup-wizard.service" ];
+      requires = [ "jellyfin-setup-wizard.service" ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
@@ -46,12 +50,18 @@ in {
         echo "Updating branding configuration..."
 
         # Update branding configuration (customCss, loginDisclaimer, splashscreenEnabled)
-        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "$AUTH_HEADER" \
-          -H "Content-Type: application/json" \
-          -d @${brandingConfigFile} \
-          -w "\n%{http_code}" \
-          "$BASE_URL/System/Configuration/Branding")
+        RESPONSE=$(${
+          mkSecureCurl authUtil.token {
+            method = "POST";
+            url = "$BASE_URL/System/Configuration/Branding";
+            apiKeyHeader = "Authorization";
+            headers = {
+              "Content-Type" = "application/json";
+            };
+            data = "@${brandingConfigFile}";
+            extraArgs = "-w \"\\n%{http_code}\"";
+          }
+        })
 
         HTTP_CODE=$(echo "$RESPONSE" | ${pkgs.coreutils}/bin/tail -n1)
         BODY=$(echo "$RESPONSE" | ${pkgs.gnused}/bin/sed '$d')
@@ -88,12 +98,18 @@ in {
           BASE64_IMAGE=$(${pkgs.coreutils}/bin/base64 -w 0 "$SPLASHSCREEN_FILE")
 
           # Upload the splashscreen
-          SPLASH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-            -H "$AUTH_HEADER" \
-            -H "Content-Type: $CONTENT_TYPE" \
-            --data-binary "$BASE64_IMAGE" \
-            -w "\n%{http_code}" \
-            "$BASE_URL/Branding/Splashscreen")
+          SPLASH_RESPONSE=$(${
+            mkSecureCurl authUtil.token {
+              method = "POST";
+              url = "$BASE_URL/Branding/Splashscreen";
+              apiKeyHeader = "Authorization";
+              headers = {
+                "Content-Type" = "$CONTENT_TYPE";
+              };
+              data = "$BASE64_IMAGE";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }
+          })
 
           SPLASH_HTTP_CODE=$(echo "$SPLASH_RESPONSE" | ${pkgs.coreutils}/bin/tail -n1)
           SPLASH_BODY=$(echo "$SPLASH_RESPONSE" | ${pkgs.gnused}/bin/sed '$d')

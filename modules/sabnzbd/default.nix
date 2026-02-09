@@ -4,21 +4,25 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = nixflix.sabnzbd;
 
-  settingsType = import ./settingsType.nix {inherit lib config;};
-  iniGenerator = import ./iniGenerator.nix {inherit lib;};
+  settingsType = import ./settingsType.nix { inherit lib config; };
+  iniGenerator = import ./iniGenerator.nix { inherit lib; };
 
   stateDir = "/var/lib/sabnzbd";
   configFile = "${stateDir}/sabnzbd.ini";
 
   templateIni = iniGenerator.generateSabnzbdIni cfg.settings;
 
-  mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (builtins.readFile ../lib/secrets/mergeSecrets.py);
-in {
+  mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (
+    builtins.readFile ../lib/secrets/mergeSecrets.py
+  );
+in
+{
   imports = [
     ./categoriesService.nix
   ];
@@ -52,7 +56,7 @@ in {
 
     settings = mkOption {
       type = settingsType;
-      default = {};
+      default = { };
       description = "SABnzbd settings";
     };
 
@@ -72,7 +76,8 @@ in {
         message = "nixflix.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
       }
       {
-        assertion = cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
+        assertion =
+          cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
         message = "nixflix.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
       }
     ];
@@ -86,7 +91,7 @@ in {
       isSystemUser = true;
     };
 
-    users.groups.${cfg.group} = {};
+    users.groups.${cfg.group} = { };
 
     systemd.tmpfiles = {
       settings."10-sabnzbd" = {
@@ -96,27 +101,25 @@ in {
         };
       };
 
-      rules =
-        map (dir: "d '${dir}' 0775 ${cfg.user} ${cfg.group} - -")
-        [
-          cfg.downloadsDir
-          cfg.settings.misc.download_dir
-          cfg.settings.misc.complete_dir
-          cfg.settings.misc.dirscan_dir
-          cfg.settings.misc.nzb_backup_dir
-          cfg.settings.misc.admin_dir
-          cfg.settings.misc.log_dir
-        ];
+      rules = map (dir: "d '${dir}' 0775 ${cfg.user} ${cfg.group} - -") [
+        cfg.downloadsDir
+        cfg.settings.misc.download_dir
+        cfg.settings.misc.complete_dir
+        cfg.settings.misc.dirscan_dir
+        cfg.settings.misc.nzb_backup_dir
+        cfg.settings.misc.admin_dir
+        cfg.settings.misc.log_dir
+      ];
     };
 
     environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
 
     systemd.services.sabnzbd = {
       description = "SABnzbd Usenet Downloader";
-      after = ["network-online.target"];
-      wants = ["network-online.target"];
-      wantedBy = ["multi-user.target"];
-      restartTriggers = [config.environment.etc."sabnzbd/sabnzbd.ini.template".text];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+      restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
 
       serviceConfig = {
         Type = "simple";
@@ -170,13 +173,14 @@ in {
           proxy_redirect off;
 
           ${
-            if nixflix.theme.enable
-            then ''
-              proxy_set_header Accept-Encoding "";
-              sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${nixflix.theme.name}.css"></head>';
-              sub_filter_once on;
-            ''
-            else ""
+            if nixflix.theme.enable then
+              ''
+                proxy_set_header Accept-Encoding "";
+                sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${nixflix.theme.name}.css"></head>';
+                sub_filter_once on;
+              ''
+            else
+              ""
           }
         '';
       };

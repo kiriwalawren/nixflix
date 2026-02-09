@@ -4,9 +4,11 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   stateDir = "${config.nixflix.stateDir}/jellyfin";
-in {
+in
+{
   imports = [
     ./network.nix
     ./branding.nix

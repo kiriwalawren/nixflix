@@ -4,31 +4,34 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = nixflix.recyclarr;
 
-  configOption = import ./config-option.nix {inherit lib;};
+  configOption = import ./config-option.nix { inherit lib; };
 
-  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix {inherit config;});
-  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (import ./sonarr-anime.nix {inherit config;});
-  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix {inherit config;});
+  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix { inherit config; });
+  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (
+    import ./sonarr-anime.nix { inherit config; }
+  );
+  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix { inherit config; });
   effectiveConfiguration =
-    if cfg.config == null
-    then {
-      radarr = radarrMainConfig;
-      sonarr =
-        sonarrMainConfig
-        // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
-    }
-    else cfg.config;
+    if cfg.config == null then
+      {
+        radarr = radarrMainConfig;
+        sonarr = sonarrMainConfig // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
+      }
+    else
+      cfg.config;
 
   cleanupProfilesServices = import ./cleanup-profiles.nix {
     inherit config lib pkgs;
     recyclarrConfig = effectiveConfiguration;
   };
-in {
+in
+{
   options.nixflix.recyclarr = {
     enable = mkOption {
       type = types.bool;
@@ -124,22 +127,22 @@ in {
       schedule = "daily";
     };
 
-    systemd.services =
-      {
-        recyclarr = {
-          after =
-            ["network-online.target"]
-            ++ optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service"
-            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
-          requires =
-            optional cfg.radarr.enable "radarr-config.service"
-            ++ optional cfg.sonarr.enable "sonarr-config.service"
-            ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
-          wants = ["network-online.target"];
-          wantedBy = mkForce ["multi-user.target"];
-        };
-      }
-      // cleanupProfilesServices;
+    systemd.services = {
+      recyclarr = {
+        after = [
+          "network-online.target"
+        ]
+        ++ optional cfg.radarr.enable "radarr-config.service"
+        ++ optional cfg.sonarr.enable "sonarr-config.service"
+        ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+        requires =
+          optional cfg.radarr.enable "radarr-config.service"
+          ++ optional cfg.sonarr.enable "sonarr-config.service"
+          ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+        wants = [ "network-online.target" ];
+        wantedBy = mkForce [ "multi-user.target" ];
+      };
+    }
+    // cleanupProfilesServices;
   };
 }

@@ -4,12 +4,14 @@ import sys
 import re
 from pathlib import Path
 
+
 def read_secret_file(path: str) -> str:
     try:
         return Path(path).read_text().strip()
     except Exception as e:
         print(f"Error reading secret file {path}: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 def merge_secrets(template_path: str, output_path: str):
     try:
@@ -18,7 +20,7 @@ def merge_secrets(template_path: str, output_path: str):
         print(f"Error reading template {template_path}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    pattern = r'__SECRET_FILE__(.+?)__'
+    pattern = r"__SECRET_FILE__(.+?)__"
 
     def replace_secret(match):
         secret_path = match.group(1)
@@ -32,6 +34,7 @@ def merge_secrets(template_path: str, output_path: str):
     except Exception as e:
         print(f"Error writing output {output_path}: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

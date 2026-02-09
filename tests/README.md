@@ -155,14 +155,15 @@ pkgs.testers.runNixOSTest {
    nix build .#checks.x86_64-linux.sonarr-basic -L
    ```
 
-2. Use the interactive driver to explore:
+1. Use the interactive driver to explore:
 
    ```bash
    nix build .#checks.x86_64-linux.sonarr-basic.driverInteractive
    ./result/bin/nixos-test-driver
    ```
 
-3. Check service logs in the VM:
+1. Check service logs in the VM:
+
    ```python
    >>> machine.succeed("journalctl -u sonarr.service")
    ```

@@ -1,82 +1,99 @@
 {
   system ? builtins.currentSystem,
-  pkgs ? import <nixpkgs> {inherit system;},
+  pkgs ? import <nixpkgs> { inherit system; },
   nixosModules,
 }:
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
-  nodes.machine = {lib, ...}: {
-    imports = [nixosModules];
+  nodes.machine =
+    { lib, ... }:
+    {
+      imports = [ nixosModules ];
 
-    networking.useDHCP = true;
-    virtualisation = {
-      diskSize = 3 * 1024;
-      cores = 4;
+      virtualisation = {
+        diskSize = 3 * 1024;
+        cores = 4;
+      };
+
+      nixflix = {
+        enable = true;
+
+        recyclarr.enable = false;
+
+        sonarr = {
+          enable = true;
+          mediaDirs = [ "/media/tv" ];
+          config = {
+            hostConfig = {
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "sonarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+            };
+          };
+        };
+
+        sonarr-anime = {
+          enable = true;
+          user = "sonarr-anime";
+          mediaDirs = [ "/media/anime" ];
+          config = {
+            hostConfig = {
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "sonarr-anime-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
+            };
+          };
+        };
+
+        radarr = {
+          enable = true;
+          mediaDirs = [ "/media/movies" ];
+          config = {
+            hostConfig = {
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "radarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+            };
+          };
+        };
+
+        jellyfin = {
+          enable = true;
+
+          users = {
+            admin = {
+              password = {
+                _secret = pkgs.writeText "kiri_password" "321password";
+              };
+              policy.isAdministrator = true;
+            };
+          };
+        };
+
+        jellyseerr = {
+          enable = true;
+          apiKey = {
+            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+          };
+        };
+      };
+
+      # Increase timeout for CI environments where Jellyfin may start slower
+      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
     };
-
-    nixflix = {
-      enable = true;
-
-      recyclarr.enable = false;
-
-      sonarr = {
-        enable = true;
-        mediaDirs = ["/media/tv"];
-        config = {
-          hostConfig = {
-            username = "admin";
-            password = {_secret = pkgs.writeText "sonarr-password" "testpass";};
-          };
-          apiKey = {_secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";};
-        };
-      };
-
-      sonarr-anime = {
-        enable = true;
-        user = "sonarr-anime";
-        mediaDirs = ["/media/anime"];
-        config = {
-          hostConfig = {
-            username = "admin";
-            password = {_secret = pkgs.writeText "sonarr-anime-password" "testpass";};
-          };
-          apiKey = {_secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";};
-        };
-      };
-
-      radarr = {
-        enable = true;
-        mediaDirs = ["/media/movies"];
-        config = {
-          hostConfig = {
-            username = "admin";
-            password = {_secret = pkgs.writeText "radarr-password" "testpass";};
-          };
-          apiKey = {_secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";};
-        };
-      };
-
-      jellyfin = {
-        enable = true;
-
-        users = {
-          admin = {
-            password = {_secret = pkgs.writeText "kiri_password" "321password";};
-            policy.isAdministrator = true;
-          };
-        };
-      };
-
-      jellyseerr = {
-        enable = true;
-        apiKey = {_secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";};
-      };
-    };
-
-    # Increase timeout for CI environments where Jellyfin may start slower
-    systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
-  };
 
   testScript = ''
     start_all()

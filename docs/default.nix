@@ -2,26 +2,29 @@
   pkgs,
   inputs,
   ...
-}: let
+}:
+let
   docsGenerator = import ./generator {
     inherit pkgs;
     inherit (pkgs) lib;
   };
 
-  pythonEnv = pkgs.python3.withPackages (ps:
-    with ps; [
+  pythonEnv = pkgs.python3.withPackages (
+    ps: with ps; [
       mkdocs-material
       mkdocs-minify-plugin
       mkdocs-git-revision-date-localized-plugin
       pymdown-extensions
       pygments
-    ]);
-in {
+    ]
+  );
+in
+{
   docs = pkgs.stdenv.mkDerivation {
     name = "nixflix-docs";
     src = ../.;
 
-    nativeBuildInputs = [pythonEnv];
+    nativeBuildInputs = [ pythonEnv ];
 
     buildPhase = ''
       echo "Generating option documentation..."

@@ -4,30 +4,34 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
-  util = import ./util.nix {inherit lib;};
-  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
+  util = import ./util.nix { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
-  systemConfig = util.recursiveTransform (removeAttrs cfg.system ["removeOldPlugins"]);
+  systemConfig = util.recursiveTransform (removeAttrs cfg.system [ "removeOldPlugins" ]);
 
   systemConfigJson = builtins.toJSON systemConfig;
 
   systemConfigFile = pkgs.writeText "jellyfin-system-config.json" systemConfigJson;
 
   baseUrl =
-    if cfg.network.baseUrl == ""
-    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
-    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
-in {
+    if cfg.network.baseUrl == "" then
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+in
+{
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-system-config = {
       description = "Configure Jellyfin System Settings via API";
-      after = ["jellyfin-setup-wizard.service"];
-      requires = ["jellyfin-setup-wizard.service"];
-      wantedBy = ["multi-user.target"];
+      after = [ "jellyfin-setup-wizard.service" ];
+      requires = [ "jellyfin-setup-wizard.service" ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
@@ -43,12 +47,18 @@ in {
 
         source ${authUtil.authScript}
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "$AUTH_HEADER" \
-          -H "Content-Type: application/json" \
-          -d @${systemConfigFile} \
-          -w "\n%{http_code}" \
-          "$BASE_URL/System/Configuration")
+        RESPONSE=$(${
+          mkSecureCurl authUtil.token {
+            method = "POST";
+            url = "$BASE_URL/System/Configuration";
+            apiKeyHeader = "Authorization";
+            headers = {
+              "Content-Type" = "application/json";
+            };
+            data = "@${systemConfigFile}";
+            extraArgs = "-w \"\\n%{http_code}\"";
+          }
+        })
 
         HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
         BODY=$(echo "$RESPONSE" | sed '$d')
