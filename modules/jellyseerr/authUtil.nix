@@ -6,8 +6,8 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
-  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  secrets = import ../../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;

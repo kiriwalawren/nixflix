@@ -9,7 +9,7 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.recyclarr;
-  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 
   buildInstances =
     serviceType: instances:

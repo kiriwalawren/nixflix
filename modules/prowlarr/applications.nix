@@ -5,8 +5,8 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
-  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  secrets = import ../../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 in
 {
   type = mkOption {

@@ -5,7 +5,7 @@
 }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
+  secrets = import ../../../lib/secrets { inherit lib; };
   radarrRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.radarr.enable or false) (
     import ../../recyclarr/radarr-main.nix { inherit config; }
   );
