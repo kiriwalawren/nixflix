@@ -88,7 +88,7 @@ When you add new tests to `tests/vm-tests/default.nix` or `tests/unit-tests/defa
 
 ### Adding a New VM Test
 
-1. Create a new file in `tests/vm-tests/`, e.g., `my-test.nix`:
+Create a new file in `tests/vm-tests/`, e.g., `my-test.nix`:
 
 ```nix
 {
@@ -122,11 +122,11 @@ pkgs.testers.runNixOSTest {
 }
 ```
 
-3. The test will automatically appear in `nix flake check` and GitHub Actions!
+The test will automatically appear in `nix flake check` and GitHub Actions!
 
 ### Adding a New Unit Test
 
-1. Add a new test to `tests/unit-tests/default.nix`:
+Add a new test to `tests/unit-tests/default.nix`:
 
 ```nix
 {

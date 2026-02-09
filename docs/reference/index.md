@@ -1,6 +1,6 @@
-______________________________________________________________________
-
-## title: Options Reference
+---
+title: Options Reference
+---
 
 # Options Reference
 

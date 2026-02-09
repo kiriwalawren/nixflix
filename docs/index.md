@@ -1,12 +1,10 @@
-______________________________________________________________________
-
-## title: Nixflix
+---
+title: Getting Started
+---
 
 !!! tip "Quick Start"
 
-```
-New to Nixflix? Start with the [Installation Guide](getting-started/index.md) or explore the [Basic Setup Example](examples/basic-setup.md).
-```
+    New to Nixflix? Start with the [Installation Guide](getting-started/index.md) or explore the [Basic Setup Example](examples/basic-setup.md).
 
 # README_PLACEHOLDER
 

@@ -1,5 +1,6 @@
 _: {
   projectRootFile = "flake.nix";
+  settings.excludes = [ "**/index.md" ];
   programs.mdformat.enable = true;
   programs.black.enable = true;
   programs.nixfmt.enable = true;
