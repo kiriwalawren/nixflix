@@ -1,6 +1,6 @@
-______________________________________________________________________
-
-## title: Getting Started
+---
+title: Getting Started
+---
 
 # Getting Started
 
