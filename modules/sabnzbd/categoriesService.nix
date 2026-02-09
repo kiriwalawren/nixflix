@@ -32,7 +32,7 @@ in {
         api_call() {
           local mode="$1"
           shift
-          local url="$BASE_URL/api?mode=$mode&apikey=${secrets.toShell cfg.settings.misc.api_key}"
+          local url="$BASE_URL/api?mode=$mode&apikey=${secrets.toShellValue cfg.settings.misc.api_key}"
           for param in "$@"; do
             url="$url&$param"
           done

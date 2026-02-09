@@ -13,12 +13,7 @@ in rec {
   isSecretRef = value:
     (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
-  toShellValue = varName: value:
-    if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
-    then "${varName}=$(cat ${escapeShellArg value._secret})"
-    else "${varName}=${escapeShellArg (toString value)}";
-
-  toShell = value:
+  toShellValue = value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
     then "$(cat ${escapeShellArg value._secret})"
     else "${escapeShellArg (toString value)}";

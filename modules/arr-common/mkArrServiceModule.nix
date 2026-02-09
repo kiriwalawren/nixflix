@@ -428,7 +428,7 @@ in {
 
           script = ''
             mkdir -p /run/${serviceName}
-            echo "${toUpper serviceBase + "__AUTH__APIKEY"}=${secrets.toShell cfg.config.apiKey}" > /run/${serviceName}/env
+            echo "${toUpper serviceBase + "__AUTH__APIKEY"}=${secrets.toShellValue cfg.config.apiKey}" > /run/${serviceName}/env
             chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
             chmod 0400 /run/${serviceName}/env
           '';
