@@ -402,7 +402,7 @@ in
         environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
         after = [
-          "network-online.target"
+          "network.target"
         ]
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
