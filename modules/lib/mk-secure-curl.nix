@@ -16,11 +16,16 @@
   methodArg = lib.optionalString (method != "GET") "-X ${method}";
 
   apiKeyVariable =
-    if secrets.isSecretRef apiKeyValue
+    if apiKeyValue == null
+    then ""
+    else if secrets.isSecretRef apiKeyValue
     then "--variable apiKey@${lib.escapeShellArg (toString apiKeyValue._secret)}"
     else "--variable apiKey=${lib.escapeShellArg (toString apiKeyValue)}";
 
-  apiKeyHeaderArg = ''--expand-header "${apiKeyHeader}: {{apiKey:trim}}"'';
+  apiKeyHeaderArg =
+    if apiKeyValue == null
+    then ""
+    else ''--expand-header "${apiKeyHeader}: {{apiKey:trim}}"'';
 
   otherHeaderArgs = lib.concatStringsSep " " (
     lib.mapAttrsToList (name: value: ''--header "${name}: ${value}"'') headers
