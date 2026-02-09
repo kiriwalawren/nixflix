@@ -4,44 +4,49 @@
   serviceName,
   config,
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
-  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
-  capitalizedName = lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
-in {
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  capitalizedName =
+    lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+in
+{
   options = mkOption {
-    type = types.listOf (types.submodule {
-      freeformType = types.attrsOf types.anything;
-      options = {
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-          description = "Whether or not this download client is enabled.";
+    type = types.listOf (
+      types.submodule {
+        freeformType = types.attrsOf types.anything;
+        options = {
+          enable = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether or not this download client is enabled.";
+          };
+          name = mkOption {
+            type = types.str;
+            description = "User-defined name for the download client instance";
+          };
+          implementationName = mkOption {
+            type = types.str;
+            description = "Type of download client to configure (matches schema implementationName)";
+            example = "SABnzbd";
+          };
+          apiKey = secrets.mkSecretOption {
+            description = "API key for the download client.";
+            nullable = true;
+          };
+          username = secrets.mkSecretOption {
+            description = "Username for the indexer.";
+            nullable = true;
+          };
+          password = secrets.mkSecretOption {
+            description = "Password for the indexer.";
+            nullable = true;
+          };
         };
-        name = mkOption {
-          type = types.str;
-          description = "User-defined name for the download client instance";
-        };
-        implementationName = mkOption {
-          type = types.str;
-          description = "Type of download client to configure (matches schema implementationName)";
-          example = "SABnzbd";
-        };
-        apiKey = secrets.mkSecretOption {
-          description = "API key for the download client.";
-          nullable = true;
-        };
-        username = secrets.mkSecretOption {
-          description = "Username for the indexer.";
-          nullable = true;
-        };
-        password = secrets.mkSecretOption {
-          description = "Password for the indexer.";
-          nullable = true;
-        };
-      };
-    });
-    default = [];
+      }
+    );
+    default = [ ];
     defaultText = literalExpression ''
       lib.optional (nixflix.sabnzbd.enable or false) {
         name = "SABnzbd";
@@ -92,9 +97,15 @@ in {
 
   mkService = serviceConfig: {
     description = "Configure ${serviceName} download clients via API";
-    after = ["${serviceName}-config.service"] ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
-    requires = ["${serviceName}-config.service"] ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
-    wantedBy = ["multi-user.target"];
+    after = [
+      "${serviceName}-config.service"
+    ]
+    ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
+    requires = [
+      "${serviceName}-config.service"
+    ]
+    ++ lib.optional (config.nixflix.sabnzbd.enable or false) "sabnzbd-categories.service";
+    wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -108,17 +119,21 @@ in {
 
       # Fetch all download client schemas
       echo "Fetching download client schemas..."
-      SCHEMAS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/downloadclient/schema";
-        extraArgs = "-S";
-      }})
+      SCHEMAS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/downloadclient/schema";
+          extraArgs = "-S";
+        }
+      })
 
       # Fetch existing download clients
       echo "Fetching existing download clients..."
-      DOWNLOAD_CLIENTS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/downloadclient";
-        extraArgs = "-S";
-      }})
+      DOWNLOAD_CLIENTS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/downloadclient";
+          extraArgs = "-S";
+        }
+      })
 
       # Build list of configured download client names
       CONFIGURED_NAMES=$(cat <<'EOF'
@@ -134,36 +149,44 @@ in {
 
         if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$CLIENT_NAME" 'index($name)' >/dev/null 2>&1; then
           echo "Deleting download client not in config: $CLIENT_NAME (ID: $CLIENT_ID)"
-          ${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/downloadclient/$CLIENT_ID";
-        method = "DELETE";
-        extraArgs = "-Sf";
-      }} >/dev/null || echo "Warning: Failed to delete download client $CLIENT_NAME"
+          ${
+            mkSecureCurl serviceConfig.apiKey {
+              url = "$BASE_URL/downloadclient/$CLIENT_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete download client $CLIENT_NAME"
         fi
       done
 
-      ${concatMapStringsSep "\n" (clientConfig: let
+      ${concatMapStringsSep "\n" (
+        clientConfig:
+        let
           clientName = clientConfig.name;
-          inherit (clientConfig) implementationName apiKey username password;
-          allOverrides = builtins.removeAttrs clientConfig ["implementationName" "apiKey" "username" "password"];
-          fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
+          inherit (clientConfig)
+            implementationName
+            apiKey
+            username
+            password
+            ;
+          allOverrides = builtins.removeAttrs clientConfig [
+            "implementationName"
+            "apiKey"
+            "username"
+            "password"
+          ];
+          fieldOverrides = lib.filterAttrs (
+            name: value: value != null && !lib.hasPrefix "_" name
+          ) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
 
           jqSecrets = secrets.mkJqSecretArgs {
-            apiKey =
-              if apiKey == null
-              then ""
-              else apiKey;
-            username =
-              if username == null
-              then ""
-              else username;
-            password =
-              if password == null
-              then ""
-              else password;
+            apiKey = if apiKey == null then "" else apiKey;
+            username = if username == null then "" else username;
+            password = if password == null then "" else password;
           };
-        in ''
+        in
+        ''
           echo "Processing download client: ${clientName}"
 
           apply_field_overrides() {
@@ -202,13 +225,17 @@ in {
 
             UPDATED_CLIENT=$(apply_field_overrides "$EXISTING_CLIENT" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/downloadclient/$CLIENT_ID";
-            method = "PUT";
-            headers = {"Content-Type" = "application/json";};
-            data = "$UPDATED_CLIENT";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/downloadclient/$CLIENT_ID";
+                method = "PUT";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$UPDATED_CLIENT";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Download client ${clientName} updated"
           else
@@ -223,18 +250,22 @@ in {
 
             NEW_CLIENT=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/downloadclient";
-            method = "POST";
-            headers = {"Content-Type" = "application/json";};
-            data = "$NEW_CLIENT";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/downloadclient";
+                method = "POST";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$NEW_CLIENT";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Download client ${clientName} created"
           fi
-        '')
-        serviceConfig.downloadClients}
+        ''
+      ) serviceConfig.downloadClients}
 
       echo "${capitalizedName} download clients configuration complete"
     '';

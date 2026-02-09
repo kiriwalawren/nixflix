@@ -3,14 +3,16 @@
   lib,
   ...
 }:
-with lib; {
+with lib;
+{
   options.nixflix.jellyfin.branding = {
     customCss = mkOption {
       type = types.lines;
       default =
-        if config.nixflix.theme.enable
-        then ''@import url("https://theme-park.dev/css/base/jellyfin/${config.nixflix.theme.name}.css");''
-        else "";
+        if config.nixflix.theme.enable then
+          ''@import url("https://theme-park.dev/css/base/jellyfin/${config.nixflix.theme.name}.css");''
+        else
+          "";
       defaultText = literalExpression ''
         if config.nixflix.theme.enable
         then '''@import url("https://theme-park.dev/css/base/jellyfin/$${config.nixflix.theme.name}.css");'''

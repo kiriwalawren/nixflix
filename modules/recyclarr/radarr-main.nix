@@ -1,6 +1,8 @@
-{config, ...}: let
+{ config, ... }:
+let
   inherit (config) nixflix;
-in {
+in
+{
   radarr_main = {
     base_url = "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
     api_key = nixflix.radarr.config.apiKey;
@@ -31,17 +33,23 @@ in {
         min_format_score = 0;
         quality_sort = "top";
         qualities = [
-          {name = "Bluray-2160p";}
+          { name = "Bluray-2160p"; }
           {
             name = "WEB-2160p";
-            qualities = ["WEBDL-2160p" "WEBRip-2160p"];
+            qualities = [
+              "WEBDL-2160p"
+              "WEBRip-2160p"
+            ];
           }
-          {name = "Bluray-1080p";}
+          { name = "Bluray-1080p"; }
           {
             name = "WEB-1080p";
-            qualities = ["WEBDL-1080p" "WEBRip-1080p"];
+            qualities = [
+              "WEBDL-1080p"
+              "WEBRip-1080p"
+            ];
           }
-          {name = "Bluray-720p";}
+          { name = "Bluray-720p"; }
         ];
       }
     ];
@@ -84,7 +92,7 @@ in {
         ];
 
         assign_scores_to = [
-          {name = "UHD Bluray + WEB";}
+          { name = "UHD Bluray + WEB"; }
         ];
       }
 
@@ -106,7 +114,7 @@ in {
         ];
 
         assign_scores_to = [
-          {name = "UHD Bluray + WEB";}
+          { name = "UHD Bluray + WEB"; }
         ];
       }
 
@@ -116,7 +124,7 @@ in {
         ];
 
         assign_scores_to = [
-          {name = "UHD Bluray + WEB";}
+          { name = "UHD Bluray + WEB"; }
         ];
       }
     ];

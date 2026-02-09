@@ -4,9 +4,10 @@
   cfg,
   jellyfinCfg,
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
-  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
@@ -18,7 +19,8 @@ with lib; let
 
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
   cookieFile = "/run/jellyseerr/auth-cookie";
-in {
+in
+{
   inherit cookieFile;
 
   authScript = pkgs.writeShellScript "jellyseerr-auth" ''
@@ -71,13 +73,17 @@ in {
           --arg username "${firstAdminName}" \
           '{username: $username, password: ${jqAuthSecrets.refs.password}}' > "$AUTH_PAYLOAD_FILE"
 
-        AUTH_RESPONSE=$(${mkSecureCurl null {
-      method = "POST";
-      url = "$BASE_URL/api/v1/auth/jellyfin";
-      headers = {"Content-Type" = "application/json";};
-      extraArgs = "-X -w '\\n%{http_code}' -c '${cookieFile}'";
-      data = "$AUTH_PAYLOAD_FILE";
-    }} 2>/dev/null || echo -e "\n000")
+        AUTH_RESPONSE=$(${
+          mkSecureCurl null {
+            method = "POST";
+            url = "$BASE_URL/api/v1/auth/jellyfin";
+            headers = {
+              "Content-Type" = "application/json";
+            };
+            extraArgs = "-X -w '\\n%{http_code}' -c '${cookieFile}'";
+            data = "$AUTH_PAYLOAD_FILE";
+          }
+        } 2>/dev/null || echo -e "\n000")
         rm -f "$AUTH_PAYLOAD_FILE"
 
         AUTH_HTTP_CODE=$(echo "$AUTH_RESPONSE" | tail -n1)

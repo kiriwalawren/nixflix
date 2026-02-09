@@ -2,39 +2,43 @@
   lib,
   pkgs,
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
 
-  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
-in {
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+in
+{
   type = mkOption {
-    type = types.listOf (types.submodule {
-      freeformType = types.attrsOf types.anything;
-      options = {
-        name = mkOption {
-          type = types.str;
-          description = "Name of the Prowlarr Indexer Schema";
+    type = types.listOf (
+      types.submodule {
+        freeformType = types.attrsOf types.anything;
+        options = {
+          name = mkOption {
+            type = types.str;
+            description = "Name of the Prowlarr Indexer Schema";
+          };
+          apiKey = secrets.mkSecretOption {
+            description = "API key for the indexer.";
+            nullable = true;
+          };
+          username = secrets.mkSecretOption {
+            description = "Username for the indexer.";
+            nullable = true;
+          };
+          password = secrets.mkSecretOption {
+            description = "Password for the indexer.";
+            nullable = true;
+          };
+          appProfileId = mkOption {
+            type = types.int;
+            default = 1;
+            description = "Application profile ID for the indexer (default: 1)";
+          };
         };
-        apiKey = secrets.mkSecretOption {
-          description = "API key for the indexer.";
-          nullable = true;
-        };
-        username = secrets.mkSecretOption {
-          description = "Username for the indexer.";
-          nullable = true;
-        };
-        password = secrets.mkSecretOption {
-          description = "Password for the indexer.";
-          nullable = true;
-        };
-        appProfileId = mkOption {
-          type = types.int;
-          default = 1;
-          description = "Application profile ID for the indexer (default: 1)";
-        };
-      };
-    });
-    default = [];
+      }
+    );
+    default = [ ];
     description = ''
       List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents).
 
@@ -57,9 +61,9 @@ in {
 
   mkService = serviceConfig: {
     description = "Configure Prowlarr indexers via API";
-    after = ["prowlarr-config.service"];
-    requires = ["prowlarr-config.service"];
-    wantedBy = ["multi-user.target"];
+    after = [ "prowlarr-config.service" ];
+    requires = [ "prowlarr-config.service" ];
+    wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -73,17 +77,21 @@ in {
 
       # Fetch all indexer schemas
       echo "Fetching indexer schemas..."
-      SCHEMAS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/indexer/schema";
-        extraArgs = "-S";
-      }})
+      SCHEMAS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/indexer/schema";
+          extraArgs = "-S";
+        }
+      })
 
       # Fetch existing indexers
       echo "Fetching existing indexers..."
-      INDEXERS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/indexer";
-        extraArgs = "-S";
-      }})
+      INDEXERS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/indexer";
+          extraArgs = "-S";
+        }
+      })
 
       # Build list of configured indexer names
       CONFIGURED_NAMES=$(cat <<'EOF'
@@ -99,36 +107,39 @@ in {
 
         if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
           echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-          ${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/indexer/$INDEXER_ID";
-        method = "DELETE";
-        extraArgs = "-Sf";
-      }} >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
+          ${
+            mkSecureCurl serviceConfig.apiKey {
+              url = "$BASE_URL/indexer/$INDEXER_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
         fi
       done
 
-      ${concatMapStringsSep "\n" (indexerConfig: let
+      ${concatMapStringsSep "\n" (
+        indexerConfig:
+        let
           indexerName = indexerConfig.name;
           inherit (indexerConfig) apiKey username password;
-          allOverrides = builtins.removeAttrs indexerConfig ["name" "apiKey" "username" "password"];
-          fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
+          allOverrides = builtins.removeAttrs indexerConfig [
+            "name"
+            "apiKey"
+            "username"
+            "password"
+          ];
+          fieldOverrides = lib.filterAttrs (
+            name: value: value != null && !lib.hasPrefix "_" name
+          ) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
 
           jqSecrets = secrets.mkJqSecretArgs {
-            apiKey =
-              if apiKey == null
-              then ""
-              else apiKey;
-            username =
-              if username == null
-              then ""
-              else username;
-            password =
-              if password == null
-              then ""
-              else password;
+            apiKey = if apiKey == null then "" else apiKey;
+            username = if username == null then "" else username;
+            password = if password == null then "" else password;
           };
-        in ''
+        in
+        ''
           echo "Processing indexer: ${indexerName}"
 
           apply_field_overrides() {
@@ -167,13 +178,17 @@ in {
 
             UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/indexer/$INDEXER_ID";
-            method = "PUT";
-            headers = {"Content-Type" = "application/json";};
-            data = "$UPDATED_INDEXER";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/indexer/$INDEXER_ID";
+                method = "PUT";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$UPDATED_INDEXER";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Indexer ${indexerName} updated"
           else
@@ -188,18 +203,22 @@ in {
 
             NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/indexer";
-            method = "POST";
-            headers = {"Content-Type" = "application/json";};
-            data = "$NEW_INDEXER";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/indexer";
+                method = "POST";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$NEW_INDEXER";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Indexer ${indexerName} created"
           fi
-        '')
-        serviceConfig.indexers}
+        ''
+      ) serviceConfig.indexers}
 
       echo "Prowlarr indexers configuration complete"
     '';

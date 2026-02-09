@@ -3,13 +3,16 @@
   config,
   ...
 }:
-with lib; let
-  mkStrOption = default: description:
+with lib;
+let
+  mkStrOption =
+    default: description:
     mkOption {
       type = types.str;
       inherit default description;
     };
-in {
+in
+{
   options.nixflix.jellyfin.system = {
     serverName = mkOption {
       type = types.str;
@@ -185,13 +188,17 @@ in {
     };
 
     imageSavingConvention = mkOption {
-      type = types.enum ["Legacy" "Compatible"];
+      type = types.enum [
+        "Legacy"
+        "Compatible"
+      ];
       default = "Legacy";
       description = "Specifies how images are saved. Legacy uses the old format, Compatible uses a more widely compatible format.";
     };
 
     metadataOptions = mkOption {
-      type = with types;
+      type =
+        with types;
         listOf (submodule {
           options = {
             itemType = mkOption {
@@ -200,32 +207,32 @@ in {
             };
             disabledMetadataSavers = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "List of metadata savers to disable for this media type";
             };
             localMetadataReaderOrder = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "Priority order for reading local metadata";
             };
             disabledMetadataFetchers = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "List of metadata fetchers to disable for this media type";
             };
             metadataFetcherOrder = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "Priority order for fetching metadata from remote sources";
             };
             disabledImageFetchers = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "List of image fetchers to disable for this media type";
             };
             imageFetcherOrder = mkOption {
               type = listOf str;
-              default = [];
+              default = [ ];
               description = "Priority order for fetching images from remote sources";
             };
           };
@@ -236,19 +243,19 @@ in {
         }
         {
           itemType = "MusicVideo";
-          disabledMetadataFetchers = ["The Open Movie Database"];
-          disabledImageFetchers = ["The Open Movie Database"];
+          disabledMetadataFetchers = [ "The Open Movie Database" ];
+          disabledImageFetchers = [ "The Open Movie Database" ];
         }
         {
           itemType = "Series";
         }
         {
           itemType = "MusicAlbum";
-          disabledMetadataFetchers = ["TheAudioDB"];
+          disabledMetadataFetchers = [ "TheAudioDB" ];
         }
         {
           itemType = "MusicArtist";
-          disabledMetadataFetchers = ["TheAudioDB"];
+          disabledMetadataFetchers = [ "TheAudioDB" ];
         }
         {
           itemType = "BoxSet";
@@ -279,7 +286,8 @@ in {
     saveMetadataHidden = mkEnableOption "";
 
     contentTypes = mkOption {
-      type = with types;
+      type =
+        with types;
         listOf (submodule {
           options = {
             name = mkOption {
@@ -292,7 +300,7 @@ in {
             };
           };
         });
-      default = [];
+      default = [ ];
     };
 
     remoteClientBitrateLimit = mkOption {
@@ -313,7 +321,7 @@ in {
 
     codecsUsed = mkOption {
       type = with types; listOf str;
-      default = [];
+      default = [ ];
     };
 
     pluginRepositories = mkOption {
@@ -343,7 +351,8 @@ in {
     };
 
     pathSubstitutions = mkOption {
-      type = with types;
+      type =
+        with types;
         listOf (submodule {
           options = {
             from = mkOption {
@@ -356,7 +365,7 @@ in {
             };
           };
         });
-      default = [];
+      default = [ ];
     };
 
     enableSlowResponseWarning = mkOption {
@@ -453,7 +462,8 @@ in {
     };
 
     castReceiverApplications = mkOption {
-      type = with types;
+      type =
+        with types;
         listOf (submodule {
           options = {
             id = mkOption {
@@ -540,7 +550,7 @@ in {
 
       widthResolutions = mkOption {
         type = with types; listOf int;
-        default = [320];
+        default = [ 320 ];
         description = ''
           List of the widths (px) that trickplay images will be generated at.
           All images should generate proportionally to the source, so a width of 320 on a 16:9 video ends up around 320x180.

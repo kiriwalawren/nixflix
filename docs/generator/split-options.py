@@ -6,19 +6,22 @@ from pathlib import Path
 from typing import Dict, List, Any, Set
 from collections import defaultdict
 
+
 def load_options(json_path: Path) -> Dict[str, Any]:
     with open(json_path) as f:
         return json.load(f)
 
+
 def get_option_hierarchy(option_name: str) -> List[str]:
-    parts = option_name.split('.')
-    if len(parts) < 2 or parts[0] != 'nixflix':
+    parts = option_name.split(".")
+    if len(parts) < 2 or parts[0] != "nixflix":
         return []
 
     hierarchy = []
     for i in range(2, len(parts) + 1):
-        hierarchy.append('.'.join(parts[:i]))
+        hierarchy.append(".".join(parts[:i]))
     return hierarchy
+
 
 def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
     """Find which option paths have multiple children (complex objects)"""
@@ -28,7 +31,7 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         if not name.startswith("nixflix."):
             continue
 
-        parts = name.split('.')
+        parts = name.split(".")
         if len(parts) < 4:
             continue
 
@@ -36,9 +39,9 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         # Count how many options exist under each path prefix
         for i in range(3, len(parts)):
             # Skip '*' and '<name>' parts when building the prefix
-            prefix_parts = [p for p in parts[2:i] if p not in ('*', '<name>')]
+            prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
             if prefix_parts:
-                prefix = '.'.join(prefix_parts)
+                prefix = ".".join(prefix_parts)
                 service_paths[service][prefix] += 1
 
     # Paths with multiple children become pages
@@ -50,13 +53,14 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
 
     return complex_groups
 
+
 def discover_services(options: Dict[str, Any]) -> List[str]:
     """Automatically discover all services from the options"""
     services = set()
     for name in options.keys():
         if not name.startswith("nixflix."):
             continue
-        parts = name.split('.')
+        parts = name.split(".")
         if len(parts) >= 2:
             service = parts[1]
             services.add(service)
@@ -64,7 +68,10 @@ def discover_services(options: Dict[str, Any]) -> List[str]:
     # Sort services alphabetically for consistent ordering
     return sorted(services)
 
-def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[str, List[tuple]]]:
+
+def categorize_options_hierarchical(
+    options: Dict[str, Any],
+) -> Dict[str, Dict[str, List[tuple]]]:
     services = discover_services(options)
 
     complex_groups = find_common_parent_groups(options)
@@ -74,7 +81,7 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
         if not name.startswith("nixflix."):
             continue
 
-        parts = name.split('.')
+        parts = name.split(".")
 
         if len(parts) == 2:
             categorized["core"]["index"].append((name, opt))
@@ -88,8 +95,8 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
 
         # Get the option path without the "nixflix.{service}." prefix
         # Filter out '*' and '<name>' parts to match how complex_groups are built
-        option_path_parts = [p for p in parts[2:] if p not in ('*', '<name>')]
-        option_path = '.'.join(option_path_parts) if option_path_parts else None
+        option_path_parts = [p for p in parts[2:] if p not in ("*", "<name>")]
+        option_path = ".".join(option_path_parts) if option_path_parts else None
 
         # Check if this exact option path is a complex group (parent option)
         if option_path and option_path in complex_groups[service]:
@@ -99,9 +106,9 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
             page_key = "index"
             for i in range(3, len(parts)):
                 # Skip '*' and '<name>' parts when building the prefix
-                prefix_parts = [p for p in parts[2:i] if p not in ('*', '<name>')]
+                prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
                 if prefix_parts:
-                    prefix = '.'.join(prefix_parts)
+                    prefix = ".".join(prefix_parts)
                     if prefix in complex_groups[service]:
                         page_key = prefix
 
@@ -112,14 +119,17 @@ def categorize_options_hierarchical(options: Dict[str, Any]) -> Dict[str, Dict[s
 
     return categorized
 
-def render_option_markdown(name: str, opt: Dict[str, Any], is_last: bool = False) -> str:
+
+def render_option_markdown(
+    name: str, opt: Dict[str, Any], is_last: bool = False
+) -> str:
     type_str = opt.get("type", "unspecified")
     default = opt.get("default", {})
     example = opt.get("example", {})
     description = opt.get("description", "")
     declarations = opt.get("declarations", [])
 
-    md = f'## `{name}`\n\n'
+    md = f"## `{name}`\n\n"
 
     if description:
         md += f"{description}\n\n"
@@ -153,6 +163,7 @@ def render_option_markdown(name: str, opt: Dict[str, Any], is_last: bool = False
 
     return md
 
+
 def get_service_title(service: str) -> str:
     """Get the display title for a service. Only special cases need to be listed."""
     special_titles = {
@@ -161,6 +172,7 @@ def get_service_title(service: str) -> str:
         "postgres": "PostgreSQL",
     }
     return special_titles.get(service, special_case_to_title(service))
+
 
 def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     # Service descriptions for index pages
@@ -183,13 +195,21 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         base_title = "Core Options"
 
     if page_key == "index":
-        intro = service_descriptions.get(service, f"Configuration options for {service}.")
+        intro = service_descriptions.get(
+            service, f"Configuration options for {service}."
+        )
         return (base_title, intro)
 
     page_nav_title = get_page_nav_title(page_key)
-    return (f"{base_title} - {page_nav_title}", f"Configuration options for {service} {page_key.replace('.', ' ')}.")
+    return (
+        f"{base_title} - {page_nav_title}",
+        f"Configuration options for {service} {page_key.replace('.', ' ')}.",
+    )
 
-def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[tuple]]]):
+
+def write_service_docs(
+    output_dir: Path, categorized: Dict[str, Dict[str, List[tuple]]]
+):
     for service, pages in categorized.items():
         if not pages:
             continue
@@ -207,26 +227,28 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
                 filepath = service_dir / "index.md"
             else:
                 # Create nested directory structure with index.md files
-                parts = page_key.split('.')
+                parts = page_key.split(".")
                 current_dir = service_dir
                 for part in parts:
                     current_dir = current_dir / part
                 current_dir.mkdir(parents=True, exist_ok=True)
                 filepath = current_dir / "index.md"
 
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 f.write(f"---\n")
                 f.write(f"title: {title}\n")
                 f.write(f"---\n\n")
                 f.write(f"# {title}\n\n")
                 f.write(f"{intro}\n\n")
-                f.write(f"!!! info \"Available Options\"\n")
-                f.write(f"    This page documents {len(options)} configuration options.\n\n")
+                f.write(f'!!! info "Available Options"\n')
+                f.write(
+                    f"    This page documents {len(options)} configuration options.\n\n"
+                )
 
                 def get_sort_key(name: str) -> tuple:
-                    has_star = '.*.' in name or name.endswith('.*')
-                    has_name = '.<name>.' in name or name.endswith('.<name>')
-                    is_enable = name.endswith('.enable')
+                    has_star = ".*." in name or name.endswith(".*")
+                    has_name = ".<name>." in name or name.endswith(".<name>")
+                    is_enable = name.endswith(".enable")
 
                     if page_key == "index":
                         service_enable = f"nixflix.{service}.enable"
@@ -250,20 +272,23 @@ def write_service_docs(output_dir: Path, categorized: Dict[str, Dict[str, List[t
 
                 sorted_options = sorted(options, key=lambda x: get_sort_key(x[0]))
                 for i, (name, opt) in enumerate(sorted_options):
-                    is_last = (i == len(sorted_options) - 1)
+                    is_last = i == len(sorted_options) - 1
                     f.write(render_option_markdown(name, opt, is_last))
+
 
 def special_case_to_title(s: str) -> str:
     """Convert camelCase or snake_case to Title Case"""
     import re
+
     # Handle snake_case
-    s = s.replace('_', ' ')
+    s = s.replace("_", " ")
     # Handle kebab case
-    s = s.replace('-', ' ')
+    s = s.replace("-", " ")
     # Insert space before capital letters
-    s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
+    s = re.sub(r"([a-z])([A-Z])", r"\1 \2", s)
     # Capitalize each word
     return s.title()
+
 
 def get_page_nav_title(page_key: str) -> str:
     """Get human-readable title for navigation"""
@@ -274,12 +299,13 @@ def get_page_nav_title(page_key: str) -> str:
     }
 
     # Handle nested paths like "config.delayProfiles"
-    parts = page_key.split('.')
+    parts = page_key.split(".")
     if len(parts) > 1:
         titles = [special_cases.get(p, special_case_to_title(p)) for p in parts]
-        return ' - '.join(titles)
+        return " - ".join(titles)
 
     return special_cases.get(page_key, special_case_to_title(page_key))
+
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
     """Build a hierarchical tree structure for navigation"""
@@ -289,19 +315,20 @@ def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
         if page_key == "index":
             continue
 
-        parts = page_key.split('.')
+        parts = page_key.split(".")
         current = tree
 
         for i, part in enumerate(parts):
             if part not in current:
-                current[part] = {'_children': {}}
+                current[part] = {"_children": {}}
 
             if i == len(parts) - 1:
-                current[part]['_page_key'] = page_key
+                current[part]["_page_key"] = page_key
 
-            current = current[part]['_children']
+            current = current[part]["_children"]
 
     return tree
+
 
 def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
     """Write navigation tree recursively with explicit file paths"""
@@ -312,22 +339,23 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
         title = get_page_nav_title(key)
         current_path = path + [key]
 
-        if '_page_key' in node:
+        if "_page_key" in node:
             # Build file path
-            file_path = '/'.join(['reference', service] + current_path + ['index.md'])
+            file_path = "/".join(["reference", service] + current_path + ["index.md"])
 
-            if node['_children']:
+            if node["_children"]:
                 # Has children - create expandable section with parent page first
                 f.write(f"{indent_str}- {title}:\n")
                 child_indent = "    " * (indent + 1)
                 f.write(f"{child_indent}- {title}: {file_path}\n")
-                write_nav_tree(f, node['_children'], service, current_path, indent + 1)
+                write_nav_tree(f, node["_children"], service, current_path, indent + 1)
             else:
                 # No children - just a simple page
                 f.write(f"{indent_str}- {title}: {file_path}\n")
-        elif node['_children']:
+        elif node["_children"]:
             # Intermediate node without its own page - just recurse into children
-            write_nav_tree(f, node['_children'], service, current_path, indent)
+            write_nav_tree(f, node["_children"], service, current_path, indent)
+
 
 def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir: Path):
     """Generate navigation with explicit parent pages"""
@@ -339,7 +367,7 @@ def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir
         all_services.remove("core")
         all_services.insert(0, "core")
 
-    with open(nav_file, 'w') as f:
+    with open(nav_file, "w") as f:
         f.write("- Reference:\n")
         f.write("    - reference/index.md\n")
 
@@ -361,6 +389,7 @@ def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir
                 f.write(f"        - {title}: reference/{service}/index.md\n")
                 write_nav_tree(f, tree, service, [], 2)
 
+
 def main():
     if len(sys.argv) != 3:
         print(f"Usage: {sys.argv[0]} <options.json> <output-dir>")
@@ -379,6 +408,7 @@ def main():
     for service, pages in categorized.items():
         total_opts = sum(len(opts) for opts in pages.values())
         print(f"  - {service}: {len(pages)} pages, {total_opts} options")
+
 
 if __name__ == "__main__":
     main()

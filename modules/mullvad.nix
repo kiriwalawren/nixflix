@@ -4,14 +4,13 @@
   lib,
   ...
 }:
-with lib; let
-  secrets = import ./lib/secrets {inherit lib;};
+with lib;
+let
+  secrets = import ./lib/secrets { inherit lib; };
   cfg = config.nixflix.mullvad;
-  mullvadPkg =
-    if cfg.gui.enable
-    then pkgs.mullvad-vpn
-    else pkgs.mullvad;
-in {
+  mullvadPkg = if cfg.gui.enable then pkgs.mullvad-vpn else pkgs.mullvad;
+in
+{
   options.nixflix.mullvad = {
     enable = mkOption {
       default = false;
@@ -113,8 +112,11 @@ in {
 
     location = mkOption {
       type = types.listOf types.str;
-      default = [];
-      example = ["us" "nyc"];
+      default = [ ];
+      example = [
+        "us"
+        "nyc"
+      ];
       description = ''
         Mullvad server location as a list of strings.
 
@@ -136,7 +138,10 @@ in {
         "8.8.4.4"
       ];
       defaultText = literalExpression ''["1.1.1.1" "1.0.0.1" "8.8.8.8" "8.8.4.4"]'';
-      example = ["194.242.2.4" "194.242.2.3"];
+      example = [
+        "194.242.2.4"
+        "194.242.2.3"
+      ];
       description = ''
         DNS servers to use with the VPN.
         Defaults to Cloudflare (1.1.1.1, 1.0.0.1) and Google (8.8.8.8, 8.8.4.4) DNS servers.
@@ -171,9 +176,15 @@ in {
 
     systemd.services.mullvad-config = {
       description = "Configure Mullvad VPN settings";
-      wantedBy = ["multi-user.target"];
-      after = ["mullvad-daemon.service" "network-online.target"];
-      requires = ["mullvad-daemon.service" "network-online.target"];
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "mullvad-daemon.service"
+        "network-online.target"
+      ];
+      requires = [
+        "mullvad-daemon.service"
+        "network-online.target"
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -207,17 +218,13 @@ in {
 
           ${mullvadPkg}/bin/mullvad dns set custom ${concatStringsSep " " cfg.dns}
 
-          ${optionalString (cfg.location != []) ''
+          ${optionalString (cfg.location != [ ]) ''
             ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}
           ''}
 
           ${optionalString cfg.killSwitch.enable ''
             ${mullvadPkg}/bin/mullvad lockdown-mode set on
-            ${mullvadPkg}/bin/mullvad lan set ${
-              if cfg.killSwitch.allowLan
-              then "allow"
-              else "block"
-            }
+            ${mullvadPkg}/bin/mullvad lan set ${if cfg.killSwitch.allowLan then "allow" else "block"}
           ''}
 
           ${optionalString (!cfg.killSwitch.enable) ''

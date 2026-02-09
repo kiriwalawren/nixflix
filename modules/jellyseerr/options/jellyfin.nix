@@ -3,7 +3,8 @@
   lib,
   ...
 }:
-with lib; {
+with lib;
+{
   options.nixflix.jellyseerr.jellyfin = {
     hostname = mkOption {
       type = types.str;
@@ -26,10 +27,7 @@ with lib; {
 
     urlBase = mkOption {
       type = types.str;
-      default =
-        if config.nixflix.nginx.enable
-        then "/jellyfin"
-        else "";
+      default = if config.nixflix.nginx.enable then "/jellyfin" else "";
       defaultText = literalExpression ''if config.nixflix.nginx.enable then "/jellyfin" else ""'';
       description = "Jellyfin URL base";
     };
@@ -37,9 +35,10 @@ with lib; {
     externalHostname = mkOption {
       type = types.str;
       default =
-        if config.nixflix.jellyseerr.externalBaseUrl != ""
-        then "${config.nixflix.jellyseerr.externalBaseUrl}/${config.nixflix.jellyfin.network.baseUrl}"
-        else "";
+        if config.nixflix.jellyseerr.externalBaseUrl != "" then
+          "${config.nixflix.jellyseerr.externalBaseUrl}/${config.nixflix.jellyfin.network.baseUrl}"
+        else
+          "";
       defaultText = literalExpression ''
         if config.nixflix.jellyseerr.externalBaseUrl != ""
         then "$${config.nixflix.jellyseerr.externalBaseUrl}$${config.nixflix.jellyfin.network.baseUrl}"
@@ -63,20 +62,31 @@ with lib; {
       type = types.submodule {
         options = {
           types = mkOption {
-            type = types.listOf (types.enum ["movie" "show"]);
-            default = [];
+            type = types.listOf (
+              types.enum [
+                "movie"
+                "show"
+              ]
+            );
+            default = [ ];
             description = "Only enable libraries of these types (empty = all types)";
-            example = ["movie" "show"];
+            example = [
+              "movie"
+              "show"
+            ];
           };
           names = mkOption {
             type = types.listOf types.str;
-            default = [];
+            default = [ ];
             description = "Only enable libraries matching these names (empty = all names)";
-            example = ["Movies" "TV Shows"];
+            example = [
+              "Movies"
+              "TV Shows"
+            ];
           };
         };
       };
-      default = {};
+      default = { };
       description = "Filter which libraries to enable (only used when enableAllLibraries = false)";
     };
   };
