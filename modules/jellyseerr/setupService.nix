@@ -4,8 +4,9 @@
   pkgs,
   ...
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
   jellyfinCfg = nixflix.jellyfin;
@@ -15,12 +16,20 @@ with lib; let
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
 
-  authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
+  authUtil = import ./authUtil.nix {
+    inherit
+      lib
+      pkgs
+      cfg
+      jellyfinCfg
+      ;
+  };
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs {
     inherit (firstAdminUser) password;
   };
-in {
+in
+{
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
     systemd.tmpfiles.rules = [
       "d '/run/jellyseerr' 0750 ${cfg.user} ${cfg.group} - -"
@@ -28,9 +37,15 @@ in {
 
     systemd.services.jellyseerr-setup = {
       description = "Complete Jellyseerr initial setup with Jellyfin";
-      after = ["jellyseerr.service" "jellyfin-setup-wizard.service"];
-      requires = ["jellyseerr.service" "jellyfin-setup-wizard.service"];
-      wantedBy = ["multi-user.target"];
+      after = [
+        "jellyseerr.service"
+        "jellyfin-setup-wizard.service"
+      ];
+      requires = [
+        "jellyseerr.service"
+        "jellyfin-setup-wizard.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
@@ -115,33 +130,39 @@ in {
 
         # Apply library filters and get IDs to enable
         ${
-          if cfg.jellyfin.enableAllLibraries
-          then ''
-            # Enable all libraries
-            LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[].id' | paste -sd,)
-          ''
-          else let
-            # Build jq filter for library selection
-            typeFilter =
-              if cfg.jellyfin.libraryFilter.types == []
-              then "true"
-              else let
-                typeList = map (t: ''"${t}"'') cfg.jellyfin.libraryFilter.types;
-              in ''[.type] | inside([${concatStringsSep "," typeList}])'';
+          if cfg.jellyfin.enableAllLibraries then
+            ''
+              # Enable all libraries
+              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[].id' | paste -sd,)
+            ''
+          else
+            let
+              # Build jq filter for library selection
+              typeFilter =
+                if cfg.jellyfin.libraryFilter.types == [ ] then
+                  "true"
+                else
+                  let
+                    typeList = map (t: ''"${t}"'') cfg.jellyfin.libraryFilter.types;
+                  in
+                  "[.type] | inside([${concatStringsSep "," typeList}])";
 
-            nameFilter =
-              if cfg.jellyfin.libraryFilter.names == []
-              then "true"
-              else let
-                nameList = map (n: ''"${n}"'') cfg.jellyfin.libraryFilter.names;
-              in ''[.name] | inside([${concatStringsSep "," nameList}])'';
+              nameFilter =
+                if cfg.jellyfin.libraryFilter.names == [ ] then
+                  "true"
+                else
+                  let
+                    nameList = map (n: ''"${n}"'') cfg.jellyfin.libraryFilter.names;
+                  in
+                  "[.name] | inside([${concatStringsSep "," nameList}])";
 
-            libraryFilterExpr = ''select(${typeFilter} and ${nameFilter})'';
-          in ''
-            # Apply filters to select libraries
-            LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-              '.[] | ${libraryFilterExpr} | .id' | paste -sd,)
-          ''
+              libraryFilterExpr = "select(${typeFilter} and ${nameFilter})";
+            in
+            ''
+              # Apply filters to select libraries
+              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
+                '.[] | ${libraryFilterExpr} | .id' | paste -sd,)
+            ''
         }
 
         if [ -n "$LIBRARY_IDS" ]; then

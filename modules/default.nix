@@ -3,10 +3,12 @@
   lib,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config.nixflix) globals;
   cfg = config.nixflix;
-in {
+in
+{
   imports = [
     ./globals.nix
     ./jellyfin
@@ -27,8 +29,11 @@ in {
 
     serviceDependencies = mkOption {
       type = with types; listOf str;
-      default = [];
-      example = ["unlock-raid.service" "tailscale.service"];
+      default = [ ];
+      example = [
+        "unlock-raid.service"
+        "tailscale.service"
+      ];
       description = ''
         List of systemd services that nixflix services should wait for before starting.
         Useful for mounting encrypted drives, starting VPNs, or other prerequisites.
@@ -61,8 +66,8 @@ in {
 
     mediaUsers = mkOption {
       type = with types; listOf str;
-      default = [];
-      example = ["user"];
+      default = [ ];
+      example = [ "user" ];
       description = ''
         Extra users to add to the media group.
       '';

@@ -4,19 +4,34 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
   jellyfinCfg = nixflix.jellyfin;
-  authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
+  authUtil = import ./authUtil.nix {
+    inherit
+      lib
+      pkgs
+      cfg
+      jellyfinCfg
+      ;
+  };
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
-in {
+in
+{
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
     systemd.services.jellyseerr-jellyfin = {
       description = "Configure Jellyfin settings in Jellyseerr";
-      after = ["jellyseerr-setup.service" "jellyseerr-user-settings.service"];
-      requires = ["jellyseerr-setup.service" "jellyseerr-user-settings.service"];
-      wantedBy = ["multi-user.target"];
+      after = [
+        "jellyseerr-setup.service"
+        "jellyseerr-user-settings.service"
+      ];
+      requires = [
+        "jellyseerr-setup.service"
+        "jellyseerr-user-settings.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";

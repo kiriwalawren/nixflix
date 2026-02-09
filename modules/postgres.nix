@@ -4,10 +4,12 @@
   pkgs,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.nixflix.postgres;
   stateDir = "${config.nixflix.stateDir}/postgres";
-in {
+in
+{
   options.nixflix.postgres = {
     enable = mkOption {
       type = types.bool;
@@ -32,9 +34,15 @@ in {
       };
 
       targets.postgresql-ready = {
-        after = ["postgresql.service" "postgresql-setup.service"];
-        requires = ["postgresql.service" "postgresql-setup.service"];
-        wantedBy = ["multi-user.target"];
+        after = [
+          "postgresql.service"
+          "postgresql-setup.service"
+        ];
+        requires = [
+          "postgresql.service"
+          "postgresql-setup.service"
+        ];
+        wantedBy = [ "multi-user.target" ];
       };
     };
   };

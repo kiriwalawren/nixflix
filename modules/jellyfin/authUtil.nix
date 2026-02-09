@@ -3,24 +3,29 @@
   pkgs,
   cfg,
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
-  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
 
   baseUrl =
-    if cfg.network.baseUrl == ""
-    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
-    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+    if cfg.network.baseUrl == "" then
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
   tokenFile = "/run/jellyfin/auth-token";
-  token = {_secret = tokenFile;};
+  token = {
+    _secret = tokenFile;
+  };
   jqTokenSecrets = secrets.mkJqSecretArgs {
     inherit (firstAdminUser) password;
   };
-in {
+in
+{
   inherit token;
 
   authScript = pkgs.writeShellScript "jellyfin-auth" ''
@@ -45,11 +50,13 @@ in {
     TOKEN_PREFIX="MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\""
 
     if [ -f "$TOKEN_FILE" ]; then
-      VALIDATE_RESPONSE=$(${mkSecureCurl token {
-      url = "${baseUrl}/System/Info";
-      extraArgs = "-s -w \"\\n%{http_code}\"";
-      apiKeyHeader = "Authorization";
-    }})
+      VALIDATE_RESPONSE=$(${
+        mkSecureCurl token {
+          url = "${baseUrl}/System/Info";
+          extraArgs = "-s -w \"\\n%{http_code}\"";
+          apiKeyHeader = "Authorization";
+        }
+      })
 
       VALIDATE_HTTP_CODE=$(echo "$VALIDATE_RESPONSE" | tail -n1)
 

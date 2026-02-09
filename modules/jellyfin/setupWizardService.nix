@@ -4,12 +4,13 @@
   pkgs,
   ...
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
-  authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
+  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
   adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
@@ -21,16 +22,18 @@ with lib; let
   };
 
   baseUrl =
-    if cfg.network.baseUrl == ""
-    then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
-    else "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
-in {
+    if cfg.network.baseUrl == "" then
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+    else
+      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+in
+{
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-setup-wizard = {
       description = "Complete Jellyfin Setup Wizard";
-      after = ["jellyfin.service"];
-      requires = ["jellyfin.service"];
-      wantedBy = ["multi-user.target"];
+      after = [ "jellyfin.service" ];
+      requires = [ "jellyfin.service" ];
+      wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";

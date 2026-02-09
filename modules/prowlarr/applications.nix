@@ -3,28 +3,40 @@
   lib,
   pkgs,
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
-  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
-in {
+with lib;
+let
+  secrets = import ../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+in
+{
   type = mkOption {
-    type = types.listOf (types.submodule {
-      freeformType = types.attrsOf types.anything;
-      options = {
-        name = mkOption {
-          type = types.str;
-          description = "User-defined name for the application instance";
+    type = types.listOf (
+      types.submodule {
+        freeformType = types.attrsOf types.anything;
+        options = {
+          name = mkOption {
+            type = types.str;
+            description = "User-defined name for the application instance";
+          };
+          implementationName = mkOption {
+            type = types.enum [
+              "LazyLibrarian"
+              "Lidarr"
+              "Mylar"
+              "Readarr"
+              "Radarr"
+              "Sonarr"
+              "Whisparr"
+            ];
+            description = "Type of application to configure (matches schema implementationName)";
+          };
+          apiKey = secrets.mkSecretOption {
+            description = "Path to file containing the API key for the application";
+          };
         };
-        implementationName = mkOption {
-          type = types.enum ["LazyLibrarian" "Lidarr" "Mylar" "Readarr" "Radarr" "Sonarr" "Whisparr"];
-          description = "Type of application to configure (matches schema implementationName)";
-        };
-        apiKey = secrets.mkSecretOption {
-          description = "Path to file containing the API key for the application";
-        };
-      };
-    });
-    default = [];
+      }
+    );
+    default = [ ];
     defaultText = literalExpression ''
       # Automatically configured for enabled arr services (Sonarr, Radarr, Lidarr)
       # Each enabled service gets an application entry with computed baseUrl and prowlarrUrl
@@ -39,19 +51,21 @@ in {
 
   mkService = serviceConfig: {
     description = "Configure Prowlarr applications via API";
-    after =
-      ["prowlarr-config.service"]
-      ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
-      ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
-      ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
-      ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
-    requires =
-      ["prowlarr-config.service"]
-      ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
-      ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
-      ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
-      ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
-    wantedBy = ["multi-user.target"];
+    after = [
+      "prowlarr-config.service"
+    ]
+    ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
+    ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
+    ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+    ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
+    requires = [
+      "prowlarr-config.service"
+    ]
+    ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
+    ++ lib.optional config.nixflix.sonarr.enable "sonarr-config.service"
+    ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+    ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
+    wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -65,17 +79,21 @@ in {
 
       # Fetch all application schemas
       echo "Fetching application schemas..."
-      SCHEMAS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/applications/schema";
-        extraArgs = "-S";
-      }})
+      SCHEMAS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/applications/schema";
+          extraArgs = "-S";
+        }
+      })
 
       # Fetch existing applications
       echo "Fetching existing applications..."
-      APPLICATIONS=$(${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/applications";
-        extraArgs = "-S";
-      }})
+      APPLICATIONS=$(${
+        mkSecureCurl serviceConfig.apiKey {
+          url = "$BASE_URL/applications";
+          extraArgs = "-S";
+        }
+      })
 
       # Build list of configured application names
       CONFIGURED_NAMES=$(cat <<'EOF'
@@ -91,26 +109,36 @@ in {
 
         if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null; then
           echo "Deleting application not in config: $APPLICATION_NAME (ID: $APPLICATION_ID)"
-          ${mkSecureCurl serviceConfig.apiKey {
-        url = "$BASE_URL/applications/$APPLICATION_ID";
-        method = "DELETE";
-        extraArgs = "-Sf";
-      }} >/dev/null || echo "Warning: Failed to delete application $APPLICATION_NAME"
+          ${
+            mkSecureCurl serviceConfig.apiKey {
+              url = "$BASE_URL/applications/$APPLICATION_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete application $APPLICATION_NAME"
         fi
       done
 
-      ${concatMapStringsSep "\n" (applicationConfig: let
+      ${concatMapStringsSep "\n" (
+        applicationConfig:
+        let
           applicationName = applicationConfig.name;
           inherit (applicationConfig) implementationName;
           inherit (applicationConfig) apiKey;
-          allOverrides = builtins.removeAttrs applicationConfig ["implementationName" "apiKey"];
-          fieldOverrides = lib.filterAttrs (name: value: value != null && !lib.hasPrefix "_" name) allOverrides;
+          allOverrides = builtins.removeAttrs applicationConfig [
+            "implementationName"
+            "apiKey"
+          ];
+          fieldOverrides = lib.filterAttrs (
+            name: value: value != null && !lib.hasPrefix "_" name
+          ) allOverrides;
           fieldOverridesJson = builtins.toJSON fieldOverrides;
 
           jqSecrets = secrets.mkJqSecretArgs {
             inherit apiKey;
           };
-        in ''
+        in
+        ''
           echo "Processing application: ${applicationName}"
 
           apply_field_overrides() {
@@ -143,13 +171,17 @@ in {
 
             UPDATED_APPLICATION=$(apply_field_overrides "$EXISTING_APPLICATION" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/applications/$APPLICATION_ID";
-            method = "PUT";
-            headers = {"Content-Type" = "application/json";};
-            data = "$UPDATED_APPLICATION";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/applications/$APPLICATION_ID";
+                method = "PUT";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$UPDATED_APPLICATION";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Application ${applicationName} updated"
           else
@@ -164,18 +196,22 @@ in {
 
             NEW_APPLICATION=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
-            ${mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/applications";
-            method = "POST";
-            headers = {"Content-Type" = "application/json";};
-            data = "$NEW_APPLICATION";
-            extraArgs = "-Sf";
-          }} >/dev/null
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/applications";
+                method = "POST";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$NEW_APPLICATION";
+                extraArgs = "-Sf";
+              }
+            } >/dev/null
 
             echo "Application ${applicationName} created"
           fi
-        '')
-        serviceConfig.applications}
+        ''
+      ) serviceConfig.applications}
 
       echo "Prowlarr applications configuration complete"
     '';

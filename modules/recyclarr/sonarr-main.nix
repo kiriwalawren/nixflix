@@ -1,6 +1,8 @@
-{config, ...}: let
+{ config, ... }:
+let
   inherit (config) nixflix;
-in {
+in
+{
   sonarr_main = {
     base_url = "http://127.0.0.1:${toString nixflix.sonarr.config.hostConfig.port}${toString nixflix.sonarr.config.hostConfig.urlBase}";
     api_key = nixflix.sonarr.config.apiKey;
@@ -47,8 +49,8 @@ in {
               "WEBRip-1080p"
             ];
           }
-          {name = "Bluray-1080p";}
-          {name = "HDTV-1080p";}
+          { name = "Bluray-1080p"; }
+          { name = "HDTV-1080p"; }
           {
             name = "WEB 720p";
             qualities = [
@@ -56,8 +58,8 @@ in {
               "WEBRip-720p"
             ];
           }
-          {name = "Bluray-720p";}
-          {name = "HDTV-720p";}
+          { name = "Bluray-720p"; }
+          { name = "HDTV-720p"; }
         ];
       }
     ];
@@ -106,7 +108,7 @@ in {
           "d0c516558625b04b363fa6c5c2c7cfd4" # WEB Scene
         ];
         assign_scores_to = [
-          {name = "WEB-1080p";}
+          { name = "WEB-1080p"; }
         ];
       }
     ];
