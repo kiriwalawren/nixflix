@@ -81,7 +81,7 @@ in
               "Content-Type" = "application/json";
             };
             extraArgs = "-w '\\n%{http_code}' -c '${cookieFile}'";
-            data = "$AUTH_PAYLOAD_FILE";
+            data = "@$AUTH_PAYLOAD_FILE";
           }
         } 2>/dev/null || echo -e "\n000")
         rm -f "$AUTH_PAYLOAD_FILE"
