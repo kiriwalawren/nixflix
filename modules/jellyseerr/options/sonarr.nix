@@ -5,7 +5,7 @@
 }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
+  secrets = import ../../../lib/secrets { inherit lib; };
   sonarrRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.sonarr.enable or false) (
     import ../../recyclarr/sonarr-main.nix { inherit config; }
   );

@@ -5,7 +5,7 @@
 }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
+  secrets = import ../../../lib/secrets { inherit lib; };
 in
 {
   options.nixflix.jellyfin.network = {

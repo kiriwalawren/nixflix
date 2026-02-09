@@ -4,7 +4,7 @@
 }:
 let
   inherit (lib) types mkOption;
-  secrets = import ../lib/secrets { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
   cfg = config.nixflix.sabnzbd;
   inherit (config) nixflix;
 

@@ -6,7 +6,7 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 

@@ -7,7 +7,7 @@
 serviceName: extraConfigOptions:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
   inherit (config.nixflix) globals;
   cfg = config.nixflix.${serviceName};
   stateDir = "${config.nixflix.stateDir}/${serviceName}";
