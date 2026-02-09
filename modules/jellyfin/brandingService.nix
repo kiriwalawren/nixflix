@@ -10,7 +10,7 @@ let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix { inherit lib; };
-  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
   # Transform branding config to API format

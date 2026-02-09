@@ -5,7 +5,7 @@
 serviceName: serviceConfig:
 pkgs.writeShellScript "${serviceName}-wait-for-api" (
   let
-    mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+    mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
     capitalizedName =
       lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
   in

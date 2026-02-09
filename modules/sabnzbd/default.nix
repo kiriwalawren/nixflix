@@ -19,7 +19,7 @@ let
   templateIni = iniGenerator.generateSabnzbdIni cfg.settings;
 
   mergeSecretsScript = pkgs.writeScript "merge-secrets.py" (
-    builtins.readFile ../lib/secrets/mergeSecrets.py
+    builtins.readFile ../../lib/secrets/mergeSecrets.py
   );
 in
 {

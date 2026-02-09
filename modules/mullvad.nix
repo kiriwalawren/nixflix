@@ -6,7 +6,7 @@
 }:
 with lib;
 let
-  secrets = import ./lib/secrets { inherit lib; };
+  secrets = import ../lib/secrets { inherit lib; };
   cfg = config.nixflix.mullvad;
   mullvadPkg = if cfg.gui.enable then pkgs.mullvad-vpn else pkgs.mullvad;
 in

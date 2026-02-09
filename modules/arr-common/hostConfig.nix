@@ -5,8 +5,8 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
-  mkSecureCurl = import ../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  secrets = import ../../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
   capitalizedName =
     lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
