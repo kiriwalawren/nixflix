@@ -108,12 +108,11 @@
           ...
         }:
         {
-          default = treefmt.config.build.devShell // {
-            packages = with pkgs; [
-              alejandra
-              statix
-              deadnix
-            ];
+          default = pkgs.mkShell {
+            nativeBuildInputs = [
+              treefmt.config.build.wrapper
+            ]
+            ++ (lib.attrValues treefmt.config.build.programs);
 
             shellHook = ''
               echo "🎬 Nixflix Development Shell"
