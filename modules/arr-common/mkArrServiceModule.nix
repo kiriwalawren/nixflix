@@ -422,7 +422,7 @@ in
           User = cfg.user;
           Group = cfg.group;
           ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
-          ExecStartPost = mkWaitForApiScript serviceName cfg.config;
+          ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
           Restart = "on-failure";
         }
         // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {

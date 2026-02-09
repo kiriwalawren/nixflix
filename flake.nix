@@ -102,9 +102,13 @@
       );
 
       devShells = perSystem (
-        { pkgs, ... }:
         {
-          default = pkgs.mkShell {
+          pkgs,
+          treefmt,
+          ...
+        }:
+        {
+          default = treefmt.config.build.devShell // {
             packages = with pkgs; [
               alejandra
               statix
