@@ -16,6 +16,10 @@ with lib; let
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
 
+  jqUserSecrets = secrets.mkJqSecretArgs {
+    inherit (firstAdminUser) password;
+  };
+
   baseUrl =
     if cfg.network.baseUrl == ""
     then "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
@@ -81,15 +85,14 @@ in {
 
           echo "GET /Startup/User response (HTTP $GET_HTTP_CODE): $GET_BODY"
 
-          ${
-          if firstAdminUser.password != null
-          then secrets.toShellValue "PASSWORD" firstAdminUser.password
-          else ''PASSWORD=""''
-        }
+          USER_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+            ${jqUserSecrets.flagsString} \
+            --arg name "${firstAdminName}" \
+            '{Name: $name, Password: ${jqUserSecrets.refs.password}}')
 
           RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
             -H "Content-Type: application/json" \
-            -d "{\"Name\": \"${firstAdminName}\", \"Password\": \"$PASSWORD\"}" \
+            -d "$USER_PAYLOAD" \
             -w "\n%{http_code}" \
             "$BASE_URL/Startup/User")
 

@@ -9,7 +9,6 @@ pkgs.testers.runNixOSTest {
   nodes.machine = {lib, ...}: {
     imports = [nixosModules];
 
-    networking.useDHCP = true;
     virtualisation = {
       diskSize = 3 * 1024;
       cores = 4;

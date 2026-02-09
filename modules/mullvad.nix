@@ -190,8 +190,7 @@ in {
           ${optionalString (cfg.accountNumber != null) ''
             if ${mullvadPkg}/bin/mullvad account get | grep -q "Not logged in"; then
               echo "Logging in to Mullvad account..."
-              ${secrets.toShellValue "ACCOUNT_NUMBER" cfg.accountNumber}
-              ${mullvadPkg}/bin/mullvad account login "$ACCOUNT_NUMBER"
+              echo "${secrets.toShellValue cfg.accountNumber}" | ${mullvadPkg}/bin/mullvad account login
 
               echo "Waiting for relay list to download..."
               for i in {1..30}; do

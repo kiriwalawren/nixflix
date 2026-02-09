@@ -426,12 +426,9 @@ in {
             RemainAfterExit = true;
           };
 
-          script = let
-            envVar = toUpper serviceBase + "__AUTH__APIKEY";
-          in ''
+          script = ''
             mkdir -p /run/${serviceName}
-            ${secrets.toShellValue envVar cfg.config.apiKey}
-            echo "${envVar}=''${${envVar}}" > /run/${serviceName}/env
+            echo "${toUpper serviceBase + "__AUTH__APIKEY"}=${secrets.toShellValue cfg.config.apiKey}" > /run/${serviceName}/env
             chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
             chmod 0400 /run/${serviceName}/env
           '';

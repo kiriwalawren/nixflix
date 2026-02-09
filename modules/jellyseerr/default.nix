@@ -94,8 +94,7 @@ in {
 
         script = ''
           mkdir -p /run/jellyseerr
-          ${secrets.toShellValue "API_KEY" cfg.apiKey}
-          echo "API_KEY=''${API_KEY}" > /run/jellyseerr/env
+          echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/jellyseerr/env
           chown ${cfg.user}:${cfg.group} /run/jellyseerr/env
           chmod 0400 /run/jellyseerr/env
         '';

@@ -9,6 +9,7 @@ with lib; let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
   # Transform branding config to API format
@@ -46,12 +47,14 @@ in {
         echo "Updating branding configuration..."
 
         # Update branding configuration (customCss, loginDisclaimer, splashscreenEnabled)
-        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "$AUTH_HEADER" \
-          -H "Content-Type: application/json" \
-          -d @${brandingConfigFile} \
-          -w "\n%{http_code}" \
-          "$BASE_URL/System/Configuration/Branding")
+        RESPONSE=$(${mkSecureCurl authUtil.token {
+          method = "POST";
+          url = "$BASE_URL/System/Configuration/Branding";
+          apiKeyHeader = "Authorization";
+          headers = {"Content-Type" = "application/json";};
+          data = "@${brandingConfigFile}";
+          extraArgs = "-w \"\\n%{http_code}\"";
+        }})
 
         HTTP_CODE=$(echo "$RESPONSE" | ${pkgs.coreutils}/bin/tail -n1)
         BODY=$(echo "$RESPONSE" | ${pkgs.gnused}/bin/sed '$d')
@@ -88,12 +91,14 @@ in {
           BASE64_IMAGE=$(${pkgs.coreutils}/bin/base64 -w 0 "$SPLASHSCREEN_FILE")
 
           # Upload the splashscreen
-          SPLASH_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-            -H "$AUTH_HEADER" \
-            -H "Content-Type: $CONTENT_TYPE" \
-            --data-binary "$BASE64_IMAGE" \
-            -w "\n%{http_code}" \
-            "$BASE_URL/Branding/Splashscreen")
+          SPLASH_RESPONSE=$(${mkSecureCurl authUtil.token {
+            method = "POST";
+            url = "$BASE_URL/Branding/Splashscreen";
+            apiKeyHeader = "Authorization";
+            headers = {"Content-Type" = "$CONTENT_TYPE";};
+            data = "$BASE64_IMAGE";
+            extraArgs = "-w \"\\n%{http_code}\"";
+          }})
 
           SPLASH_HTTP_CODE=$(echo "$SPLASH_RESPONSE" | ${pkgs.coreutils}/bin/tail -n1)
           SPLASH_BODY=$(echo "$SPLASH_RESPONSE" | ${pkgs.gnused}/bin/sed '$d')

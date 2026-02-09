@@ -9,14 +9,14 @@ with lib; let
       };
     })
   ];
-in {
+in rec {
   isSecretRef = value:
     (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
-  toShellValue = varName: value:
+  toShellValue = value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
-    then "${varName}=$(cat ${escapeShellArg value._secret})"
-    else "${varName}=${escapeShellArg (toString value)}";
+    then "$(cat ${escapeShellArg value._secret})"
+    else "${escapeShellArg (toString value)}";
 
   processValue = value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__)
@@ -66,4 +66,32 @@ in {
             Plain-text secrets will be visible in the Nix store. Use `{ _secret = path; }` for sensitive data.
       '';
     };
+
+  mkJqSecretArgs = secretFields: let
+    processedFields =
+      lib.mapAttrs (
+        name: value:
+          if value == null
+          then {
+            flag = "--arg ${name} \"\"";
+            ref = "$" + name;
+          }
+          else if isSecretRef value
+          then {
+            flag = "--rawfile ${name}Content ${lib.escapeShellArg (toString value._secret)}";
+            ref = "($" + name + "Content | rtrimstr(\"\\n\"))";
+          }
+          else {
+            flag = "--arg ${name} ${lib.escapeShellArg (toString value)}";
+            ref = "$" + name;
+          }
+      )
+      secretFields;
+
+    flags = lib.mapAttrsToList (_name: field: field.flag) processedFields;
+    refs = lib.mapAttrs (_name: field: field.ref) processedFields;
+  in {
+    inherit refs;
+    flagsString = lib.concatStringsSep " " flags;
+  };
 }

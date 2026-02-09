@@ -9,6 +9,7 @@ with lib; let
   cfg = config.nixflix.jellyfin;
 
   util = import ./util.nix {inherit lib;};
+  mkSecureCurl = import ../lib/mk-secure-curl.nix {inherit lib pkgs;};
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg;};
 
   encodingConfig = util.recursiveTransform cfg.encoding;
@@ -47,12 +48,14 @@ in {
 
         echo "Updating encoding configuration..."
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "$AUTH_HEADER" \
-          -H "Content-Type: application/json" \
-          -d @${encodingConfigFile} \
-          -w "\n%{http_code}" \
-          "$BASE_URL/System/Configuration/encoding")
+        RESPONSE=$(${mkSecureCurl authUtil.token {
+          method = "POST";
+          url = "$BASE_URL/System/Configuration/encoding";
+          apiKeyHeader = "Authorization";
+          headers = {"Content-Type" = "application/json";};
+          data = "@${encodingConfigFile}";
+          extraArgs = "-w \"\\n%{http_code}\"";
+        }})
 
         HTTP_CODE=$(echo "$RESPONSE" | ${pkgs.coreutils}/bin/tail -n1)
 

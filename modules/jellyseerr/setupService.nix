@@ -17,6 +17,9 @@ with lib; let
 
   authUtil = import ./authUtil.nix {inherit lib pkgs cfg jellyfinCfg;};
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
+  jqSetupSecrets = secrets.mkJqSecretArgs {
+    inherit (firstAdminUser) password;
+  };
 in {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
     systemd.tmpfiles.rules = [
@@ -29,18 +32,10 @@ in {
       requires = ["jellyseerr.service" "jellyfin-setup-wizard.service"];
       wantedBy = ["multi-user.target"];
 
-      serviceConfig =
-        {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        }
-        // optionalAttrs (firstAdminUser.password != null) {
-          LoadCredential = "jellyfin-password:${
-            if secrets.isSecretRef firstAdminUser.password
-            then firstAdminUser.password._secret
-            else pkgs.writeText "jellyfin-${firstAdminName}-password" firstAdminUser.password
-          }";
-        };
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
 
       script = ''
         set -euo pipefail
@@ -70,15 +65,9 @@ in {
 
         # Step 1: Connect to Jellyfin (this creates the session cookie)
         # Use Jellyfin's first admin credentials
-        ${
-          if firstAdminUser.password != null
-          then ''JELLYFIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/jellyfin-password")''
-          else ''JELLYFIN_PASSWORD=""''
-        }
-
         SETUP_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+          ${jqSetupSecrets.flagsString} \
           --arg username "${firstAdminName}" \
-          --arg password "$JELLYFIN_PASSWORD" \
           --arg hostname "${cfg.jellyfin.hostname}" \
           --arg port "${toString cfg.jellyfin.port}" \
           --arg useSsl "${boolToString cfg.jellyfin.useSsl}" \
@@ -87,7 +76,7 @@ in {
           --arg serverType "${toString cfg.jellyfin.serverType}" \
           '{
             username: $username,
-            password: $password,
+            password: ${jqSetupSecrets.refs.password},
             hostname: $hostname,
             port: ($port | tonumber),
             useSsl: ($useSsl == "true"),

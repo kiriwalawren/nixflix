@@ -9,7 +9,6 @@ pkgs.testers.runNixOSTest {
   nodes.machine = {...}: {
     imports = [nixosModules];
 
-    networking.useDHCP = true;
     virtualisation = {
       diskSize = 3 * 1024;
       cores = 4;
@@ -333,7 +332,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
-    auth_header = f'"Authorization: MediaBrowser Client=\"nixflix\", Device=\"NixOS\", DeviceId=\"nixflix-auth\", Version=\"1.0.0\", Token=\"{api_token}\""'
+    auth_header = f'"Authorization: {api_token}"'
     base_url = f'http://127.0.0.1:{port}'
 
     # Test API connectivity
