@@ -43,10 +43,10 @@ in {
     # Try to use cached cookie
     NEED_AUTH=true
     if [ -f "${cookieFile}" ]; then
-      VALIDATE_RESPONSE=$(${mkSecureCurl null {
-      url = "$BASE_URL/api/v1/auth/me";
-      extraArgs = "-w '\\n%{http_code}' -b '${cookieFile}'";
-    }} 2>/dev/null || echo -e "\n000")
+
+      VALIDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" \
+        -b "${cookieFile}" \
+        "$BASE_URL/api/v1/auth/me" 2>/dev/null || echo -e "\n000")
 
       VALIDATE_HTTP_CODE=$(echo "$VALIDATE_RESPONSE" | tail -n1)
 

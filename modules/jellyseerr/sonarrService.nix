@@ -14,22 +14,24 @@ with lib; let
 
   sanitizeName = name: builtins.replaceStrings [" " "-"] ["_" "_"] name;
 
-  mkSonarrConfigScript = sonarrName: sonarrCfg: ''
+  mkSonarrConfigScript = sonarrName: sonarrCfg: let
+    jqSonarrSecrets = secrets.mkJqSecretArgs {
+      apiKey = {_secret = "/run/credentials/jellyseerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";};
+    };
+  in ''
     echo "Configuring Sonarr instance: ${sonarrName}"
-
-    SONARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/sonarr-${sanitizeName sonarrName}-apikey")
 
     # Test connection and get profiles
     TEST_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+      ${jqSonarrSecrets.flagsString} \
       --arg hostname "${sonarrCfg.hostname}" \
       --arg port "${toString sonarrCfg.port}" \
-      --arg apiKey "$SONARR_API_KEY" \
       --arg useSsl "${boolToString sonarrCfg.useSsl}" \
       --arg baseUrl "${sonarrCfg.baseUrl}" \
       '{
         hostname: $hostname,
         port: ($port | tonumber),
-        apiKey: $apiKey,
+        apiKey: ${jqSonarrSecrets.refs.apiKey},
         useSsl: ($useSsl == "true"),
         baseUrl: $baseUrl
       }')
@@ -115,10 +117,10 @@ with lib; let
 
     # Build server configuration
     SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \
+      ${jqSonarrSecrets.flagsString} \
       --arg name "${sonarrName}" \
       --arg hostname "${sonarrCfg.hostname}" \
       --arg port "${toString sonarrCfg.port}" \
-      --arg apiKey "$SONARR_API_KEY" \
       --arg useSsl "${boolToString sonarrCfg.useSsl}" \
       --arg baseUrl "${sonarrCfg.baseUrl}" \
       --arg profileId "$PROFILE_ID" \
@@ -139,7 +141,7 @@ with lib; let
         name: $name,
         hostname: $hostname,
         port: ($port | tonumber),
-        apiKey: $apiKey,
+        apiKey: ${jqSonarrSecrets.refs.apiKey},
         useSsl: ($useSsl == "true"),
         baseUrl: $baseUrl,
         activeProfileId: ($profileId | tonumber),

@@ -14,22 +14,24 @@ with lib; let
 
   sanitizeName = name: builtins.replaceStrings [" " "-"] ["_" "_"] name;
 
-  mkRadarrConfigScript = radarrName: radarrCfg: ''
+  mkRadarrConfigScript = radarrName: radarrCfg: let
+    jqRadarrSecrets = secrets.mkJqSecretArgs {
+      apiKey = {_secret = "/run/credentials/jellyseerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";};
+    };
+  in ''
     echo "Configuring Radarr instance: ${radarrName}"
-
-    RADARR_API_KEY=$(cat "$CREDENTIALS_DIRECTORY/radarr-${sanitizeName radarrName}-apikey")
 
     # Test connection and get profiles
     TEST_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+      ${jqRadarrSecrets.flagsString} \
       --arg hostname "${radarrCfg.hostname}" \
       --arg port "${toString radarrCfg.port}" \
-      --arg apiKey "$RADARR_API_KEY" \
       --arg useSsl "${boolToString radarrCfg.useSsl}" \
       --arg baseUrl "${radarrCfg.baseUrl}" \
       '{
         hostname: $hostname,
         port: ($port | tonumber),
-        apiKey: $apiKey,
+        apiKey: ${jqRadarrSecrets.refs.apiKey},
         useSsl: ($useSsl == "true"),
         baseUrl: $baseUrl
       }')
@@ -93,10 +95,10 @@ with lib; let
 
     # Build server configuration
     SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \
+      ${jqRadarrSecrets.flagsString} \
       --arg name "${radarrName}" \
       --arg hostname "${radarrCfg.hostname}" \
       --arg port "${toString radarrCfg.port}" \
-      --arg apiKey "$RADARR_API_KEY" \
       --arg useSsl "${boolToString radarrCfg.useSsl}" \
       --arg baseUrl "${radarrCfg.baseUrl}" \
       --arg profileId "$PROFILE_ID" \
@@ -112,7 +114,7 @@ with lib; let
         name: $name,
         hostname: $hostname,
         port: ($port | tonumber),
-        apiKey: $apiKey,
+        apiKey: ${jqRadarrSecrets.refs.apiKey},
         useSsl: ($useSsl == "true"),
         baseUrl: $baseUrl,
         activeProfileId: ($profileId | tonumber),
