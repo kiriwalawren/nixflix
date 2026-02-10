@@ -147,9 +147,10 @@ let
         default = null;
         description = ''
           Media naming configuration.
-          For Sonarr: configures series, season, and episode naming.
-          For Radarr: configures folder and movie naming.
-          Use 'default' or 'standard' to apply TRaSH guide recommendations.
+
+          - For Sonarr: configures series, season, and episode naming.
+          - For Radarr: configures folder and movie naming.
+          - Use 'default' or 'standard' to apply TRaSH guide recommendations.
         '';
       };
 
@@ -232,7 +233,7 @@ let
                       qualities = mkOption {
                         type = types.nullOr (types.listOf types.str);
                         default = null;
-                        description = "Optional list of specific quality variants (e.g., ['WEBDL-2160p', 'WEBRip-2160p'])";
+                        description = "Optional list of specific quality variants (e.g., `['WEBDL-2160p', 'WEBRip-2160p']`)";
                       };
                     };
                   }
@@ -312,7 +313,7 @@ mkOption {
     }
   );
   default = null;
-  defaultText = literalExpression "Generated from nixflix.recyclarr.sonarr and nixflix.recyclarr.radarr settings";
+  defaultText = literalExpression "Generated from `nixflix.recyclarr.sonarr` and `nixflix.recyclarr.radarr` settings";
   example = literalExpression ''
     {
       sonarr.sonarr_main = {
@@ -356,7 +357,8 @@ mkOption {
     When set, this completely replaces the auto-generated configuration,
     giving you full control over the Recyclarr setup.
 
-    The structure is: { service_type.instance_name = { ... }; }
+    The structure is: `{ service_type.instance_name = { ... }; }`
+
     - service_type: "sonarr" or "radarr" (only these two keys are allowed)
     - instance_name: arbitrary name for the instance (e.g., "sonarr_main", "radarr_4k")
 
