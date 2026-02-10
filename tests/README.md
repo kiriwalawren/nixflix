@@ -45,7 +45,7 @@ nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames
 ### Run Individual Tests
 
 ```bash
-nix build .#checks.x86_64-linux.<test-name> -L
+nix build -L .#checks.x86_64-linux.<test-name>
 ```
 
 The `-L` flag shows detailed logs during the build/test process.
@@ -59,6 +59,11 @@ inside your test and run the test with sandbox disabled:
 ```bash
 nix build .#checks.x86_64-linux.<test-name> -L --option sandbox false
 ```
+
+It should be noted that running tests that require internet access is a big no-no
+because the test is no longer deterministic. It is basically the same as `nix build . --impure`.
+So, you should only use this when absolutely necessary. As soon as you add the internet
+as a dependency, you instantly make your tests more error prone and brittle.
 
 ### Run Tests Locally with Interactive VM
 
@@ -162,10 +167,17 @@ Add a new test to `tests/unit-tests/default.nix`:
    ./result/bin/nixos-test-driver
    ```
 
+1. Start the test suite and watch the magic
+
+   ```python
+   start_all()
+   ```
+
 1. Check service logs in the VM:
 
    ```python
-   >>> machine.succeed("journalctl -u sonarr.service")
+   >>> exit_code, out = machine.execute("journalctl -u sonarr.service")
+   >>> print(out)
    ```
 
 ### Unit Test Failures
@@ -180,4 +192,3 @@ Unit tests will show Nix evaluation errors. Check:
 
 - [NixOS VM Tests Documentation](https://nixos.org/manual/nixos/stable/#sec-nixos-tests)
 - [Testing NixOS Modules](https://nix.dev/tutorials/nixos/integration-testing-using-virtual-machines)
-- [GitHub Actions for Nix](https://github.com/DeterminateSystems/nix-installer)
