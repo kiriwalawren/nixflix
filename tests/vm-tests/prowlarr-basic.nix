@@ -19,21 +19,6 @@ pkgsUnfree.testers.runNixOSTest {
 
       virtualisation.cores = 4;
 
-      services.qbittorrent = {
-        enable = true;
-        webuiPort = 8282;
-        serverConfig = {
-          LegalNotice.Accepted = true;
-          Preferences = {
-            WebUI = {
-              Username = "admin";
-              Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
-            };
-            General.Locale = "en";
-          };
-        };
-      };
-
       systemd.services.prowlarr-downloadclients = {
         after = [ "qbittorrent.service" ];
         requires = [ "qbittorrent.service" ];
@@ -42,10 +27,27 @@ pkgsUnfree.testers.runNixOSTest {
       nixflix = {
         enable = true;
 
+        qbittorrent = {
+          enable = true;
+          webuiPort = 8282;
+          serverConfig = {
+            LegalNotice.Accepted = true;
+            Preferences = {
+              WebUI = {
+                Username = "admin";
+                Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
+              };
+              General.Locale = "en";
+            };
+          };
+        };
+
         prowlarr = {
           enable = true;
           config = {
             downloadClients = [
+              # TODO: automate this so that I don't need to
+              # Declare it here
               {
                 name = "qBittorrent";
                 implementationName = "qBittorrent";
@@ -129,14 +131,12 @@ pkgsUnfree.testers.runNixOSTest {
         f"Expected SABnzbd download client, found {clients_list}"
     assert sabnzbd['implementationName'] == 'SABnzbd', \
         "Expected SABnzbd implementation"
-    print("SABnzbd download client configured successfully!")
 
     qbittorrent = next((c for c in clients_list if c["name"] == "qBittorrent"), None)
     assert qbittorrent is not None, \
         f"Expected qBittorrent download client, found {clients_list}"
     assert qbittorrent['implementationName'] == 'qBittorrent', \
         "Expected qBittorrent implementation"
-    print("qBittorrent download client configured successfully!")
 
     # Verify the service is running
     machine.succeed("pgrep Prowlarr")

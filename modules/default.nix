@@ -17,6 +17,7 @@ in
     ./mullvad.nix
     ./postgres.nix
     ./prowlarr
+    ./qbittorrent.nix
     ./radarr.nix
     ./recyclarr
     ./sabnzbd
