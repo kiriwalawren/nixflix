@@ -20,8 +20,8 @@ in
     ./radarr.nix
     ./recyclarr
     ./sabnzbd
-    ./sonarr.nix
     ./sonarr-anime.nix
+    ./sonarr.nix
   ];
 
   options.nixflix = {

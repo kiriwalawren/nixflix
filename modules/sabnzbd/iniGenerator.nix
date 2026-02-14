@@ -2,12 +2,12 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
-  inherit (secrets) isSecretRef processValue;
+  inherit (secrets) isSecretRef;
 
   toIniValue =
     value:
     if isSecretRef value then
-      processValue value
+      "__SECRET_FILE__${toString value._secret}__"
     else if isBool value then
       if value then "1" else "0"
     else if isList value then

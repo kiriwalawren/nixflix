@@ -24,29 +24,6 @@ rec {
     else
       "${escapeShellArg (toString value)}";
 
-  processValue =
-    value:
-    if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__) then
-      "__SECRET_FILE__${toString value._secret}__"
-    else if isBool value then
-      if value then "1" else "0"
-    else if isList value then
-      concatStringsSep ", " (
-        map (
-          v:
-          if (builtins.isAttrs v) && (v ? _secret) && !(v ? __unfix__) then
-            "__SECRET_FILE__${toString v._secret}__"
-          else
-            toString v
-        ) value
-      )
-    else if isAttrs value then
-      mapAttrs (_name: processValue) value
-    else if isInt value || isFloat value || isString value then
-      toString value
-    else
-      toString value;
-
   mkSecretOption =
     {
       nullable ? false,
