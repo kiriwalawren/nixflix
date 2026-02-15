@@ -9,6 +9,7 @@ let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
+  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
 
   xml = import ./xml.nix { inherit lib; };
 
@@ -250,13 +251,13 @@ in
       ];
     };
 
-    networking.hosts = mkIf nixflix.nginx.enable {
-      "127.0.0.1" = [ "jellyfin.localhost" ];
+    networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
     };
 
     services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts."jellyfin.localhost" = {
-        serverName = "jellyfin.localhost";
+      virtualHosts."${hostname}" = {
+        serverName = hostname;
         listen = [
           {
             addr = "0.0.0.0";

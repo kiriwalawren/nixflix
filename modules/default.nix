@@ -29,7 +29,7 @@ in
     enable = mkEnableOption "Nixflix";
 
     serviceDependencies = mkOption {
-      type = with types; listOf str;
+      type = types.listOf types.str;
       default = [ ];
       example = [
         "unlock-raid.service"
@@ -42,13 +42,19 @@ in
     };
 
     theme = {
-      enable = mkEnableOption "Theme";
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Enables themeing via [theme.park](https://docs.theme-park.dev/).
+          Requires `nixflix.nginx.enable = true;` for all services except Jellyfin.
+        '';
+      };
       name = mkOption {
         type = types.str;
         default = "overseerr";
         description = ''
-          This is powered [theme.park](https://docs.theme-park.dev/).
-
           The name of any official theme or community theme supported by theme.park.
 
           - [Official Themes](https://docs.theme-park.dev/theme-options/)
@@ -62,6 +68,22 @@ in
         type = types.bool;
         default = false;
         description = "Whether to enable nginx reverse proxy for all services";
+      };
+
+      domain = mkOption {
+        type = types.str;
+        default = "internal";
+        description = "Base domain for subdomain-based reverse proxy routing. Each service is accessible at `<subdomain>.<domain>`.";
+      };
+
+      addHostsEntries = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether to add `networking.hosts` entries mapping service subdomains to `127.0.0.1`.
+
+          Enable if you don't have a separate DNS setup.
+        '';
       };
     };
 
@@ -135,13 +157,6 @@ in
       "d '${cfg.stateDir}' 0755 root root - -"
       "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
       "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
-    ];
-
-    assertions = [
-      {
-        assertion = cfg.theme.enable -> cfg.nginx.enable;
-        message = "nixflix.theme.enable requires nixflix.nginx.enable = true, because themes are injected via the reverse proxy.";
-      }
     ];
 
     services.nginx = mkIf cfg.nginx.enable {

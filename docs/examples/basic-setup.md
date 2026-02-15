@@ -44,7 +44,11 @@ This example shows a working media server configuration based on a real producti
       name = "overseerr";
     };
 
-    nginx.enable = true;
+    nginx = {
+      enable = true;
+      addHostsEntries = true; # Disable this is you have your own DNS configuration
+    };
+
     postgres.enable = true;
 
     sonarr = {
@@ -249,14 +253,14 @@ This example shows a working media server configuration based on a real producti
 
 Via nginx reverse proxy:
 
-- Sonarr: http://sonarr.localhost
-- Sonarr Anime: http://sonarr-anime.localhost
-- Radarr: http://radarr.localhost
-- Lidarr: http://lidarr.localhost
-- Prowlarr: http://prowlarr.localhost
-- SABnzbd: http://sabnzbd.localhost
-- Jellyfin: http://jellyfin.localhost
-- Jellyseerr: http://jellyseer.localhost
+- Sonarr: http://sonarr.internal
+- Sonarr Anime: http://sonarr-anime.internal
+- Radarr: http://radarr.internal
+- Lidarr: http://lidarr.internal
+- Prowlarr: http://prowlarr.internal
+- SABnzbd: http://sabnzbd.internal
+- Jellyfin: http://jellyfin.internal
+- Jellyseerr: http://jellyseer.internal
 
 Direct access:
 

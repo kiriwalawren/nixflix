@@ -156,11 +156,11 @@ let
 
       host_whitelist = mkOption {
         type = types.str;
-        default = if nixflix.nginx.enable then "sabnzbd.localhost" else "";
-        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "sabnzbd.localhost" else ""'';
+        default = if nixflix.nginx.enable then "${cfg.subdomain}.${nixflix.nginx.domain}" else "";
+        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "''${cfg.subdomain}.''${nixflix.nginx.domain}" else ""'';
         description = ''
           Hostname verification whitelist. SABnzbd refuses connections from hostnames not in this list.
-          Automatically includes `sabnzbd.localhost` when nginx is enabled.
+          Automatically includes the service hostname when nginx is enabled.
         '';
       };
 

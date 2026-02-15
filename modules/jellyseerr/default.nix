@@ -10,6 +10,7 @@ let
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
+  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
 in
 {
   imports = [
@@ -234,17 +235,17 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    networking.hosts = mkIf nixflix.nginx.enable {
-      "127.0.0.1" = [ "jellyseerr.localhost" ];
+    networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
     };
 
     services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts."jellyseerr.localhost" =
+      virtualHosts."${hostname}" =
         let
           themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
         in
         {
-          serverName = "jellyseerr.localhost";
+          serverName = hostname;
           listen = [
             {
               addr = "0.0.0.0";

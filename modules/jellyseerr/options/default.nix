@@ -67,6 +67,12 @@ in
       description = "Open port in firewall for jellyseerr";
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "jellyseerr";
+      description = "Subdomain prefix for nginx reverse proxy.";
+    };
+
     vpn = {
       enable = mkOption {
         type = types.bool;

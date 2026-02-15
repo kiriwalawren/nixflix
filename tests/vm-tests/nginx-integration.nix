@@ -22,6 +22,7 @@ pkgsUnfree.testers.runNixOSTest {
       nixflix = {
         enable = true;
         nginx.enable = true;
+        nginx.addHostsEntries = true;
 
         prowlarr = {
           enable = true;
@@ -152,35 +153,35 @@ pkgsUnfree.testers.runNixOSTest {
     # Test reverse proxy is proxying to Prowlarr
     print("Testing Prowlarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://prowlarr.localhost/api/v1/system/status "
+        "curl -f http://prowlarr.internal/api/v1/system/status "
         "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
     )
 
     # Test reverse proxy is proxying to Sonarr
     print("Testing Sonarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://sonarr.localhost/api/v3/system/status "
+        "curl -f http://sonarr.internal/api/v3/system/status "
         "-H 'X-Api-Key: sonarr222222222222222222222222222'"
     )
 
     # Test reverse proxy is proxying to Radarr
     print("Testing Radarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://radarr.localhost/api/v3/system/status "
+        "curl -f http://radarr.internal/api/v3/system/status "
         "-H 'X-Api-Key: radarr333333333333333333333333333'"
     )
 
     # Test reverse proxy is proxying to Lidarr
     print("Testing Lidarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://lidarr.localhost/api/v1/system/status "
+        "curl -f http://lidarr.internal/api/v1/system/status "
         "-H 'X-Api-Key: lidarr444444444444444444444444444'"
     )
 
     # Test reverse proxy is proxying to SABnzbd
     print("Testing SABnzbd via reverse proxy...")
     machine.succeed(
-        "curl -f 'http://sabnzbd.localhost/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
+        "curl -f 'http://sabnzbd.internal/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
     )
 
     print("Reverse proxy integration test successful! All services accessible via subdomains.")

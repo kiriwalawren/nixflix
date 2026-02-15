@@ -7,6 +7,7 @@
 with lib;
 let
   cfg = config.nixflix.sabnzbd;
+  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 
   settingsType = import ./settingsType.nix { inherit lib config; };
   iniGenerator = import ./iniGenerator.nix { inherit lib; };
@@ -54,6 +55,12 @@ in
       type = types.bool;
       default = false;
       description = "Open ports in the firewall for the SABnzbd web interface.";
+    };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = "sabnzbd";
+      description = "Subdomain prefix for nginx reverse proxy.";
     };
 
     settings = mkOption {
@@ -171,13 +178,13 @@ in
       allowedTCPPorts = [ cfg.settings.misc.port ];
     };
 
-    networking.hosts = mkIf config.nixflix.nginx.enable {
-      "127.0.0.1" = [ "sabnzbd.localhost" ];
+    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
     };
 
     services.nginx = mkIf config.nixflix.nginx.enable {
-      virtualHosts."sabnzbd.localhost" = {
-        serverName = "sabnzbd.localhost";
+      virtualHosts."${hostname}" = {
+        serverName = hostname;
         listen = [
           {
             addr = "0.0.0.0";
