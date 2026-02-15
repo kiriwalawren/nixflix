@@ -262,7 +262,7 @@ in
                 if nixflix.theme.enable then
                   ''
                     proxy_set_header Accept-Encoding "";
-                    sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                    sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';
                     sub_filter_once on;
                   ''
                 else
