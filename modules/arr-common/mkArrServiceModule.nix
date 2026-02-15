@@ -298,7 +298,7 @@ in
           ];
           locations."/" =
             let
-              themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${config.nixflix.theme.name}.css";
+              themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
             in
             {
               proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
