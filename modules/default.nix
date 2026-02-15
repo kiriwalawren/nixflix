@@ -158,13 +158,18 @@ in
       "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
       "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
     ];
-
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;
-
       recommendedTlsSettings = true;
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
+
+      virtualHosts."_" = {
+        default = true;
+        extraConfig = ''
+          return 444;
+        '';
+      };
     };
   };
 }
