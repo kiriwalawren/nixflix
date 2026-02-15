@@ -149,40 +149,40 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8686, timeout=60)
     machine.wait_for_open_port(8080, timeout=60)
 
-    # Test nginx is proxying to Prowlarr
-    print("Testing Prowlarr via nginx...")
+    # Test reverse proxy is proxying to Prowlarr
+    print("Testing Prowlarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/prowlarr/api/v1/system/status "
+        "curl -f http://prowlarr.localhost/api/v1/system/status "
         "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
     )
 
-    # Test nginx is proxying to Sonarr
-    print("Testing Sonarr via nginx...")
+    # Test reverse proxy is proxying to Sonarr
+    print("Testing Sonarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/sonarr/api/v3/system/status "
+        "curl -f http://sonarr.localhost/api/v3/system/status "
         "-H 'X-Api-Key: sonarr222222222222222222222222222'"
     )
 
-    # Test nginx is proxying to Radarr
-    print("Testing Radarr via nginx...")
+    # Test reverse proxy is proxying to Radarr
+    print("Testing Radarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/radarr/api/v3/system/status "
+        "curl -f http://radarr.localhost/api/v3/system/status "
         "-H 'X-Api-Key: radarr333333333333333333333333333'"
     )
 
-    # Test nginx is proxying to Lidarr
-    print("Testing Lidarr via nginx...")
+    # Test reverse proxy is proxying to Lidarr
+    print("Testing Lidarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/lidarr/api/v1/system/status "
+        "curl -f http://lidarr.localhost/api/v1/system/status "
         "-H 'X-Api-Key: lidarr444444444444444444444444444'"
     )
 
-    # Test nginx is proxying to SABnzbd
-    print("Testing SABnzbd via nginx...")
+    # Test reverse proxy is proxying to SABnzbd
+    print("Testing SABnzbd via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/sabnzbd/api?mode=version&apikey=sabnzbd555555555555555555555555555"
+        "curl -f 'http://sabnzbd.localhost/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
     )
 
-    print("Nginx integration test successful! All services accessible via reverse proxy.")
+    print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';
 }

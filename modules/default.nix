@@ -22,6 +22,7 @@ in
     ./sabnzbd
     ./sonarr-anime.nix
     ./sonarr.nix
+
   ];
 
   options.nixflix = {
@@ -136,23 +137,19 @@ in
       "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
     ];
 
+    assertions = [
+      {
+        assertion = cfg.theme.enable -> cfg.nginx.enable;
+        message = "nixflix.theme.enable requires nixflix.nginx.enable = true, because themes are injected via the reverse proxy.";
+      }
+    ];
+
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;
 
       recommendedTlsSettings = true;
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
-
-      virtualHosts.localhost = {
-        serverName = "localhost";
-        default = true;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = 80;
-          }
-        ];
-      };
     };
   };
 }

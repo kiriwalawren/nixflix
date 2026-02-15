@@ -63,7 +63,7 @@ types.submodule {
     urlBase = mkOption {
       type = types.str;
       default = "";
-      defaultText = literalExpression ''if nixflix.nginx.enable then "/<serviceName>" else ""'';
+      example = "/takeMeThere";
       description = "URL base path";
     };
 

@@ -171,24 +171,37 @@ in
       allowedTCPPorts = [ cfg.settings.misc.port ];
     };
 
-    services.nginx = mkIf config.nixflix.nginx.enable {
-      virtualHosts.localhost.locations."${cfg.settings.misc.url_base}" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_redirect off;
+    networking.hosts = mkIf config.nixflix.nginx.enable {
+      "127.0.0.1" = [ "sabnzbd.localhost" ];
+    };
 
-          ${
-            if config.nixflix.theme.enable then
-              ''
-                proxy_set_header Accept-Encoding "";
-                sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
-                sub_filter_once on;
-              ''
-            else
-              ""
+    services.nginx = mkIf config.nixflix.nginx.enable {
+      virtualHosts."sabnzbd.localhost" = {
+        serverName = "sabnzbd.localhost";
+        listen = [
+          {
+            addr = "0.0.0.0";
+            port = 80;
           }
-        '';
+        ];
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_redirect off;
+
+            ${
+              if config.nixflix.theme.enable then
+                ''
+                  proxy_set_header Accept-Encoding "";
+                  sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
+                  sub_filter_once on;
+                ''
+              else
+                ""
+            }
+          '';
+        };
       };
     };
   };

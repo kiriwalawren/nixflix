@@ -234,52 +234,41 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
+    networking.hosts = mkIf nixflix.nginx.enable {
+      "127.0.0.1" = [ "jellyseerr.localhost" ];
+    };
+
     services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations."^~ /jellyseerr" =
+      virtualHosts."jellyseerr.localhost" =
         let
           themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
         in
         {
-          proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            # Remove /jellyseerr path to pass to the app
-            rewrite ^/jellyseerr/?(.*)$ /$1 break;
-
-            # Redirect location headers
-            proxy_redirect ^ /jellyseerr;
-            proxy_redirect /setup /jellyseerr/setup;
-            proxy_redirect /login /jellyseerr/login;
-
-            # Sub filters to replace hardcoded paths
-            proxy_set_header Accept-Encoding "";
-            sub_filter_once off;
-            sub_filter_types *;
-            sub_filter 'href="/"' 'href="/jellyseerr"';
-            sub_filter 'href="/login"' 'href="/jellyseerr/login"';
-            sub_filter 'href:"/"' 'href:"/jellyseerr"';
-            sub_filter '\/_next' '\/jellyseerr\/_next';
-            sub_filter '/_next' '/jellyseerr/_next';
-            sub_filter '/api/v1' '/jellyseerr/api/v1';
-            sub_filter '/login/plex/loading' '/jellyseerr/login/plex/loading';
-            sub_filter '/images/' '/jellyseerr/images/';
-            sub_filter '/imageproxy/' '/jellyseerr/imageproxy/';
-            sub_filter '/avatarproxy/' '/jellyseerr/avatarproxy/';
-            sub_filter '/android-' '/jellyseerr/android-';
-            sub_filter '/apple-' '/jellyseerr/apple-';
-            sub_filter '/favicon' '/jellyseerr/favicon';
-            sub_filter '/logo_' '/jellyseerr/logo_';
-            sub_filter '/site.webmanifest' '/jellyseerr/site.webmanifest';
-
-            ${
-              if nixflix.theme.enable then
-                ''
-                  sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
-                ''
-              else
-                ""
+          serverName = "jellyseerr.localhost";
+          listen = [
+            {
+              addr = "0.0.0.0";
+              port = 80;
             }
-          '';
+          ];
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            recommendedProxySettings = true;
+            extraConfig = ''
+              proxy_redirect off;
+
+              ${
+                if nixflix.theme.enable then
+                  ''
+                    proxy_set_header Accept-Encoding "";
+                    sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                    sub_filter_once on;
+                  ''
+                else
+                  ""
+              }
+            '';
+          };
         };
     };
   };

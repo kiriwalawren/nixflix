@@ -1,6 +1,5 @@
 {
   lib,
-  config,
   ...
 }:
 with lib;
@@ -17,8 +16,8 @@ in
 
     baseUrl = mkOption {
       type = types.str;
-      default = if config.nixflix.nginx.enable then "jellyfin" else "";
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then "jellyfin" else ""'';
+      default = "";
+      example = "jellyfin";
       description = "Base URL for Jellyfin (URL prefix) http://localhost:8096/<baseUrl>";
     };
 

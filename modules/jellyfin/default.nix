@@ -250,27 +250,40 @@ in
       ];
     };
 
-    services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations = {
-        "/${cfg.network.baseUrl}" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_redirect off;
-            proxy_set_header X-Real-IP $remote_addr;
+    networking.hosts = mkIf nixflix.nginx.enable {
+      "127.0.0.1" = [ "jellyfin.localhost" ];
+    };
 
-            proxy_buffering off;
-          '';
-        };
-        "/${cfg.network.baseUrl}/socket" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header X-Real-IP $remote_addr;
-          '';
+    services.nginx = mkIf nixflix.nginx.enable {
+      virtualHosts."jellyfin.localhost" = {
+        serverName = "jellyfin.localhost";
+        listen = [
+          {
+            addr = "0.0.0.0";
+            port = 80;
+          }
+        ];
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+            recommendedProxySettings = true;
+            extraConfig = ''
+              proxy_redirect off;
+              proxy_set_header X-Real-IP $remote_addr;
+
+              proxy_buffering off;
+            '';
+          };
+          "/socket" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+            recommendedProxySettings = true;
+            extraConfig = ''
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              proxy_set_header X-Real-IP $remote_addr;
+            '';
+          };
         };
       };
     };

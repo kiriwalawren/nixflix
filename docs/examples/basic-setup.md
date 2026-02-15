@@ -249,14 +249,14 @@ This example shows a working media server configuration based on a real producti
 
 Via nginx reverse proxy:
 
-- Sonarr: http://localhost/sonarr
-- Sonarr Anime: http://localhost/sonarr-anime
-- Radarr: http://localhost/radarr
-- Lidarr: http://localhost/lidarr
-- Prowlarr: http://localhost/prowlarr
-- SABnzbd: http://localhost/sabnzbd
-- Jellyfin: http://localhost/jellyfin
-- Jellyseerr: http://localhost/jellyseerr
+- Sonarr: http://sonarr.localhost
+- Sonarr Anime: http://sonarr-anime.localhost
+- Radarr: http://radarr.localhost
+- Lidarr: http://lidarr.localhost
+- Prowlarr: http://prowlarr.localhost
+- SABnzbd: http://sabnzbd.localhost
+- Jellyfin: http://jellyfin.localhost
+- Jellyseerr: http://jellyseer.localhost
 
 Direct access:
 

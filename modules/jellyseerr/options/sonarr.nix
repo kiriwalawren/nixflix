@@ -145,8 +145,7 @@ let
       Sonarr = {
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable then config.nixflix.sonarr.config.hostConfig.urlBase else "";
+        baseUrl = config.nixflix.sonarr.config.hostConfig.urlBase;
         activeProfileName = defaultSonarrProfileName;
         activeAnimeProfileName = defaultSonarrProfileName;
         activeDirectory = head (config.nixflix.sonarr.mediaDirs or [ "/data/media/tv" ]);
@@ -165,8 +164,7 @@ let
       "Sonarr Anime" = {
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable then config.nixflix.sonarr-anime.config.hostConfig.urlBase else "";
+        baseUrl = config.nixflix.sonarr-anime.config.hostConfig.urlBase;
         activeProfileName = defaultSonarrAnimeProfileName;
         activeAnimeProfileName = defaultSonarrAnimeProfileName;
         activeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or [ "/data/media/anime" ]);

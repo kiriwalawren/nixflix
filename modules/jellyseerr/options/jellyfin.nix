@@ -27,8 +27,11 @@ with lib;
 
     urlBase = mkOption {
       type = types.str;
-      default = if config.nixflix.nginx.enable then "/jellyfin" else "";
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then "/jellyfin" else ""'';
+      default =
+        if config.nixflix.jellyfin.network.baseUrl == "" then
+          ""
+        else
+          "/${config.nixflix.jellyfin.network.baseUrl}";
       description = "Jellyfin URL base";
     };
 

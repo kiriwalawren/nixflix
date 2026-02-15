@@ -233,7 +233,6 @@ in
           username = mkDefault serviceBase;
           password = mkDefault null;
           instanceName = mkDefault capitalizedName;
-          urlBase = mkDefault (if config.nixflix.nginx.enable then "/${serviceName}" else "");
         };
         downloadClients = optionals (config.nixflix.sabnzbd.enable or false) [
           (
@@ -282,31 +281,42 @@ in
       };
 
       nginx = mkIf config.nixflix.nginx.enable {
-        virtualHosts.localhost.locations."${
-          if cfg.config.hostConfig.urlBase == "" then "/" else cfg.config.hostConfig.urlBase
-        }" =
-          let
-            themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${config.nixflix.theme.name}.css";
-          in
-          {
-            proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_redirect off;
+        virtualHosts."${serviceName}.localhost" = {
+          serverName = "${serviceName}.localhost";
+          listen = [
+            {
+              addr = "0.0.0.0";
+              port = 80;
+            }
+          ];
+          locations."/" =
+            let
+              themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${config.nixflix.theme.name}.css";
+            in
+            {
+              proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
+              recommendedProxySettings = true;
+              extraConfig = ''
+                proxy_redirect off;
 
-              ${
-                if config.nixflix.theme.enable then
-                  ''
-                    proxy_set_header Accept-Encoding "";
-                    sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
-                    sub_filter_once on;
-                  ''
-                else
-                  ""
-              }
-            '';
-          };
+                ${
+                  if config.nixflix.theme.enable then
+                    ''
+                      proxy_set_header Accept-Encoding "";
+                      sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                      sub_filter_once on;
+                    ''
+                  else
+                    ""
+                }
+              '';
+            };
+        };
       };
+    };
+
+    networking.hosts = mkIf config.nixflix.nginx.enable {
+      "127.0.0.1" = [ "${serviceName}.localhost" ];
     };
 
     users = {
