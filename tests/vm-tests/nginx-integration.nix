@@ -22,7 +22,6 @@ pkgsUnfree.testers.runNixOSTest {
       nixflix = {
         enable = true;
         nginx.enable = true;
-        nginx.addHostsEntries = true;
 
         prowlarr = {
           enable = true;
