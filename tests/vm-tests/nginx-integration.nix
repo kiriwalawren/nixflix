@@ -18,8 +18,9 @@ pkgsUnfree.testers.runNixOSTest {
       imports = [ nixosModules ];
 
       virtualisation = {
-        diskSize = 3 * 1024;
         cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
       };
 
       nixflix = {
@@ -32,7 +33,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         jellyfin = {
           enable = true;
-
           users = {
             admin = {
               password = {
@@ -147,26 +147,22 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(80, timeout=60)
 
     # Wait for all services
+    machine.wait_for_unit("sabnzbd.service", timeout=120)
     machine.wait_for_unit("prowlarr.service", timeout=120)
     machine.wait_for_unit("sonarr.service", timeout=120)
     machine.wait_for_unit("radarr.service", timeout=120)
     machine.wait_for_unit("lidarr.service", timeout=120)
-    machine.wait_for_unit("sabnzbd.service", timeout=120)
-    machine.wait_for_unit("jellyfin.service", timeout=180)
+    machine.wait_for_open_port(8080, timeout=120)
     machine.wait_for_open_port(9696, timeout=120)
     machine.wait_for_open_port(8989, timeout=120)
     machine.wait_for_open_port(7878, timeout=120)
     machine.wait_for_open_port(8686, timeout=120)
-    machine.wait_for_open_port(8080, timeout=120)
-    machine.wait_for_open_port(8096, timeout=180)
-    machine.wait_for_open_port(5055, timeout=300)
 
     # Wait for configuration services
     machine.wait_for_unit("prowlarr-config.service", timeout=60)
     machine.wait_for_unit("sonarr-config.service", timeout=60)
     machine.wait_for_unit("radarr-config.service", timeout=60)
     machine.wait_for_unit("lidarr-config.service", timeout=60)
-    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
 
     # Wait for services to come back up after restart
     machine.wait_for_unit("prowlarr.service", timeout=60)
@@ -180,8 +176,14 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8686, timeout=60)
     machine.wait_for_open_port(8080, timeout=60)
 
+    # Wait for Jellyfin
+    machine.wait_for_unit("jellyfin.service", timeout=180)
+    machine.wait_for_open_port(8096, timeout=180)
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
+
     # Wait for jellyseerr
     machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_open_port(5055, timeout=300)
     machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
 
     # Test reverse proxy is proxying to Prowlarr
