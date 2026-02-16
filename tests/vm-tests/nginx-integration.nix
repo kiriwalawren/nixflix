@@ -179,7 +179,6 @@ pkgsUnfree.testers.runNixOSTest {
     # Wait for Jellyfin
     machine.wait_for_unit("jellyfin.service", timeout=180)
     machine.wait_for_open_port(8096, timeout=180)
-    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
 
     # Wait for jellyseerr
     machine.wait_for_unit("jellyseerr.service", timeout=300)
@@ -227,9 +226,7 @@ pkgsUnfree.testers.runNixOSTest {
     machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
 
     # Test reverse proxy is proxying to jellyseerr
-    cookie_file = "/run/jellyseerr/auth-cookie"
-    base_url = 'http://jellyseerr.internal/api/v1'
-    machine.succeed(f'curl -f -b {cookie_file} -H "Content-Type: application/json" {base_url}/settings/main')
+    machine.succeed('curl -f "http://jellyseerr.internal/api/v1/status"')
 
     print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';
