@@ -78,11 +78,11 @@ in
 
       addHostsEntries = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = ''
           Whether to add `networking.hosts` entries mapping service subdomains to `127.0.0.1`.
 
-          Disable if you have a separate DNS setup.
+          Enable if you don't have a separate DNS setup.
         '';
       };
     };
