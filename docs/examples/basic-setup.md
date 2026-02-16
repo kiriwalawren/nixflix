@@ -1,4 +1,4 @@
-______________________________________________________________________
+---
 
 ## title: Basic Setup Example
 
@@ -253,14 +253,14 @@ This example shows a working media server configuration based on a real producti
 
 Via nginx reverse proxy:
 
-- Sonarr: http://sonarr.internal
-- Sonarr Anime: http://sonarr-anime.internal
-- Radarr: http://radarr.internal
-- Lidarr: http://lidarr.internal
-- Prowlarr: http://prowlarr.internal
-- SABnzbd: http://sabnzbd.internal
-- Jellyfin: http://jellyfin.internal
-- Jellyseerr: http://jellyseer.internal
+- Sonarr: http://sonarr.nixflix
+- Sonarr Anime: http://sonarr-anime.nixflix
+- Radarr: http://radarr.nixflix
+- Lidarr: http://lidarr.nixflix
+- Prowlarr: http://prowlarr.nixflix
+- SABnzbd: http://sabnzbd.nixflix
+- Jellyfin: http://jellyfin.nixflix
+- Jellyseerr: http://jellyseer.nixflix
 
 Direct access:
 

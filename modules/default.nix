@@ -72,7 +72,8 @@ in
 
       domain = mkOption {
         type = types.str;
-        default = "internal";
+        default = "nixflix";
+        example = "internal";
         description = "Base domain for subdomain-based reverse proxy routing. Each service is accessible at `<subdomain>.<domain>`.";
       };
 

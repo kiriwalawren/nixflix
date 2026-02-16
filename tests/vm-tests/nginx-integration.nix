@@ -188,45 +188,45 @@ pkgsUnfree.testers.runNixOSTest {
     # Test reverse proxy is proxying to Prowlarr
     print("Testing Prowlarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://prowlarr.internal/api/v1/system/status "
+        "curl -f http://prowlarr.nixflix/api/v1/system/status "
         "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
     )
 
     # Test reverse proxy is proxying to Sonarr
     print("Testing Sonarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://sonarr.internal/api/v3/system/status "
+        "curl -f http://sonarr.nixflix/api/v3/system/status "
         "-H 'X-Api-Key: sonarr222222222222222222222222222'"
     )
 
     # Test reverse proxy is proxying to Radarr
     print("Testing Radarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://radarr.internal/api/v3/system/status "
+        "curl -f http://radarr.nixflix/api/v3/system/status "
         "-H 'X-Api-Key: radarr333333333333333333333333333'"
     )
 
     # Test reverse proxy is proxying to Lidarr
     print("Testing Lidarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://lidarr.internal/api/v1/system/status "
+        "curl -f http://lidarr.nixflix/api/v1/system/status "
         "-H 'X-Api-Key: lidarr444444444444444444444444444'"
     )
 
     # Test reverse proxy is proxying to SABnzbd
     print("Testing SABnzbd via reverse proxy...")
     machine.succeed(
-        "curl -f 'http://sabnzbd.internal/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
+        "curl -f 'http://sabnzbd.nixflix/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
     )
 
     # Test reverse proxy is proxying to jellyfin
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: {api_token}"'
-    base_url = 'http://jellyfin.internal'
+    base_url = 'http://jellyfin.nixflix'
     machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
 
     # Test reverse proxy is proxying to jellyseerr
-    machine.succeed('curl -f "http://jellyseerr.internal/api/v1/status"')
+    machine.succeed('curl -f "http://jellyseerr.nixflix/api/v1/status"')
 
     print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';
