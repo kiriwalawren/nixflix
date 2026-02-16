@@ -154,8 +154,8 @@ let
         animeSeriesType = "standard";
         isDefault = true;
         externalUrl =
-          if config.nixflix.jellyseerr.externalBaseUrl != "" then
-            "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+          if config.nixflix.nginx.enable then
+            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
@@ -173,8 +173,8 @@ let
         animeSeriesType = "anime";
         isDefault = false;
         externalUrl =
-          if config.nixflix.jellyseerr.externalBaseUrl != "" then
-            "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+          if config.nixflix.nginx.enable then
+            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
           else
             "";
       };

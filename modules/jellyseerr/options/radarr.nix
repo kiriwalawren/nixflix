@@ -113,8 +113,8 @@ let
       activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =
-        if config.nixflix.jellyseerr.externalBaseUrl != "" then
-          "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        if config.nixflix.nginx.enable then
+          "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };

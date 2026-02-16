@@ -26,13 +26,13 @@ in
       description = "API key for Jellyseerr.";
     };
 
-    externalBaseUrl = mkOption {
+    externalUrlScheme = mkOption {
       type = types.str;
-      default = "";
-      example = "https://some.domain.com";
+      default = "http";
+      example = "https";
       description = ''
-        Public accessible domain used for your services.
-        This makes sure linking works when services link to each other.
+        Scheme to use for external linking to other services
+        from within Jellyseerr.
       '';
     };
 
