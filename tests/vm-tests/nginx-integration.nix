@@ -43,6 +43,13 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
+        jellyseerr = {
+          enable = true;
+          apiKey = {
+            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+          };
+        };
+
         prowlarr = {
           enable = true;
           config = {
@@ -152,6 +159,7 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8686, timeout=120)
     machine.wait_for_open_port(8080, timeout=120)
     machine.wait_for_open_port(8096, timeout=180)
+    machine.wait_for_open_port(5055, timeout=300)
 
     # Wait for configuration services
     machine.wait_for_unit("prowlarr-config.service", timeout=60)
@@ -172,11 +180,9 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8686, timeout=60)
     machine.wait_for_open_port(8080, timeout=60)
 
-    # Test reverse proxy is proxying to jellyfin
-    api_token = machine.succeed("cat /run/jellyfin/auth-token")
-    auth_header = f'"Authorization: {api_token}"'
-    base_url = 'http://jellyfin.internal'
-    machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
+    # Wait for jellyseerr
+    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
 
     # Test reverse proxy is proxying to Prowlarr
     print("Testing Prowlarr via reverse proxy...")
@@ -211,6 +217,17 @@ pkgsUnfree.testers.runNixOSTest {
     machine.succeed(
         "curl -f 'http://sabnzbd.internal/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
     )
+
+    # Test reverse proxy is proxying to jellyfin
+    api_token = machine.succeed("cat /run/jellyfin/auth-token")
+    auth_header = f'"Authorization: {api_token}"'
+    base_url = 'http://jellyfin.internal'
+    machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
+
+    # Test reverse proxy is proxying to jellyseerr
+    cookie_file = "/run/jellyseerr/auth-cookie"
+    base_url = 'http://jellyseerr.internal/api/v1'
+    machine.succeed(f'curl -f -b {cookie_file} -H "Content-Type: application/json" {base_url}/settings/main')
 
     print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';
