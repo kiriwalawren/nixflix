@@ -45,7 +45,7 @@ nix eval --json '.#checks.x86_64-linux' --apply builtins.attrNames
 ### Run Individual Tests
 
 ```bash
-nix build .#checks.x86_64-linux.<test-name> -L
+nix build -L .#checks.x86_64-linux.<test-name>
 ```
 
 The `-L` flag shows detailed logs during the build/test process.
@@ -59,6 +59,11 @@ inside your test and run the test with sandbox disabled:
 ```bash
 nix build .#checks.x86_64-linux.<test-name> -L --option sandbox false
 ```
+
+It should be noted that running tests that require internet access is a big no-no
+because the test is no longer deterministic. It is basically the same as `nix build . --impure`.
+So, you should only use this when absolutely necessary. As soon as you add the internet
+as a dependency, you instantly make your tests more error prone and brittle.
 
 ### Run Tests Locally with Interactive VM
 
@@ -88,7 +93,7 @@ When you add new tests to `tests/vm-tests/default.nix` or `tests/unit-tests/defa
 
 ### Adding a New VM Test
 
-1. Create a new file in `tests/vm-tests/`, e.g., `my-test.nix`:
+Create a new file in `tests/vm-tests/`, e.g., `my-test.nix`:
 
 ```nix
 {
@@ -122,11 +127,11 @@ pkgs.testers.runNixOSTest {
 }
 ```
 
-3. The test will automatically appear in `nix flake check` and GitHub Actions!
+The test will automatically appear in `nix flake check` and GitHub Actions!
 
 ### Adding a New Unit Test
 
-1. Add a new test to `tests/unit-tests/default.nix`:
+Add a new test to `tests/unit-tests/default.nix`:
 
 ```nix
 {
@@ -155,16 +160,24 @@ pkgs.testers.runNixOSTest {
    nix build .#checks.x86_64-linux.sonarr-basic -L
    ```
 
-2. Use the interactive driver to explore:
+1. Use the interactive driver to explore:
 
    ```bash
    nix build .#checks.x86_64-linux.sonarr-basic.driverInteractive
    ./result/bin/nixos-test-driver
    ```
 
-3. Check service logs in the VM:
+1. Start the test suite and watch the magic
+
    ```python
-   >>> machine.succeed("journalctl -u sonarr.service")
+   start_all()
+   ```
+
+1. Check service logs in the VM:
+
+   ```python
+   >>> exit_code, out = machine.execute("journalctl -u sonarr.service")
+   >>> print(out)
    ```
 
 ### Unit Test Failures
@@ -179,4 +192,3 @@ Unit tests will show Nix evaluation errors. Check:
 
 - [NixOS VM Tests Documentation](https://nixos.org/manual/nixos/stable/#sec-nixos-tests)
 - [Testing NixOS Modules](https://nix.dev/tutorials/nixos/integration-testing-using-virtual-machines)
-- [GitHub Actions for Nix](https://github.com/DeterminateSystems/nix-installer)

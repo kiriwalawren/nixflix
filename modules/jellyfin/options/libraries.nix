@@ -1,5 +1,6 @@
-{lib, ...}:
-with lib; let
+{ lib, ... }:
+with lib;
+let
   typeOptionsModule = types.submodule {
     options = {
       type = mkOption {
@@ -9,58 +10,60 @@ with lib; let
       };
       metadataFetchers = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of metadata fetchers to enable for this type";
       };
       metadataFetcherOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use metadata fetchers";
       };
       imageFetchers = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of image fetchers to enable for this type";
       };
       imageFetcherOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use image fetchers";
       };
       imageOptions = mkOption {
-        type = types.listOf (types.submodule {
-          options = {
-            type = mkOption {
-              type = types.enum [
-                "Primary"
-                "Art"
-                "Backdrop"
-                "Banner"
-                "Logo"
-                "Thumb"
-                "Disc"
-                "Box"
-                "Screenshot"
-                "Menu"
-                "Chapter"
-                "BoxRear"
-                "Profile"
-              ];
-              description = "The image type";
+        type = types.listOf (
+          types.submodule {
+            options = {
+              type = mkOption {
+                type = types.enum [
+                  "Primary"
+                  "Art"
+                  "Backdrop"
+                  "Banner"
+                  "Logo"
+                  "Thumb"
+                  "Disc"
+                  "Box"
+                  "Screenshot"
+                  "Menu"
+                  "Chapter"
+                  "BoxRear"
+                  "Profile"
+                ];
+                description = "The image type";
+              };
+              limit = mkOption {
+                type = types.int;
+                default = 0;
+                description = "Maximum number of images of this type (0 for unlimited)";
+              };
+              minWidth = mkOption {
+                type = types.int;
+                default = 0;
+                description = "Minimum width for images of this type";
+              };
             };
-            limit = mkOption {
-              type = types.int;
-              default = 0;
-              description = "Maximum number of images of this type (0 for unlimited)";
-            };
-            minWidth = mkOption {
-              type = types.int;
-              default = 0;
-              description = "Minimum width for images of this type";
-            };
-          };
-        });
-        default = [];
+          }
+        );
+        default = [ ];
         description = "Image download options for this type";
       };
     };
@@ -96,7 +99,10 @@ with lib; let
       paths = mkOption {
         type = types.listOf types.str;
         description = "List of media folder paths for this library";
-        example = ["/mnt/movies" "/media/films"];
+        example = [
+          "/mnt/movies"
+          "/media/films"
+        ];
       };
 
       enabled = mkOption {
@@ -205,31 +211,31 @@ with lib; let
 
       metadataSavers = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of metadata savers to enable";
       };
 
       disabledLocalMetadataReaders = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of local metadata readers to disable";
       };
 
       localMetadataReaderOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use local metadata readers";
       };
 
       disabledSubtitleFetchers = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of subtitle fetchers to disable";
       };
 
       subtitleFetcherOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use subtitle fetchers";
       };
 
@@ -247,9 +253,12 @@ with lib; let
 
       subtitleDownloadLanguages = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Languages to download subtitles for";
-        example = ["eng" "fra"];
+        example = [
+          "eng"
+          "fra"
+        ];
       };
 
       requirePerfectSubtitleMatch = mkOption {
@@ -289,25 +298,25 @@ with lib; let
 
       disabledLyricFetchers = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of lyric fetchers to disable";
       };
 
       lyricFetcherOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use lyric fetchers";
       };
 
       disabledMediaSegmentProviders = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of media segment providers to disable";
       };
 
       mediaSegmentProviderOrder = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Order in which to use media segment providers";
       };
 
@@ -331,13 +340,13 @@ with lib; let
 
       customTagDelimiters = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Custom delimiters for parsing tags";
       };
 
       delimiterWhitelist = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Whitelist of delimiters to preserve";
       };
 
@@ -349,19 +358,23 @@ with lib; let
 
       typeOptions = mkOption {
         type = types.listOf typeOptionsModule;
-        default = [];
+        default = [ ];
         description = "Content type-specific metadata and image fetcher configuration";
         example = [
           {
             type = "Movie";
-            metadataFetchers = ["TheMovieDb" "The Open Movie Database"];
-            imageFetchers = ["TheMovieDb"];
+            metadataFetchers = [
+              "TheMovieDb"
+              "The Open Movie Database"
+            ];
+            imageFetchers = [ "TheMovieDb" ];
           }
         ];
       };
     };
   };
-in {
+in
+{
   options.nixflix.jellyfin.libraries = mkOption {
     description = ''
       Jellyfin media libraries to manage declaratively.
@@ -376,23 +389,23 @@ in {
       - nixflix.jellyfin.libraries.Movies = lib.mkForce {};
     '';
     type = types.attrsOf libraryModule;
-    default = {};
+    default = { };
     example = {
       "Movies" = {
         collectionType = "movies";
-        paths = ["/mnt/movies"];
+        paths = [ "/mnt/movies" ];
         preferredMetadataLanguage = "en";
         metadataCountryCode = "US";
         enableRealtimeMonitor = true;
       };
       "Shows" = {
         collectionType = "tvshows";
-        paths = ["/mnt/tv"];
+        paths = [ "/mnt/tv" ];
         seasonZeroDisplayName = "Specials";
       };
       "Family Photos" = {
         collectionType = "homevideos";
-        paths = ["/mnt/photos"];
+        paths = [ "/mnt/photos" ];
         enablePhotos = true;
       };
     };

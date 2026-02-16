@@ -3,16 +3,15 @@
   lib,
   ...
 }:
-with lib; let
-  secrets = import ../../lib/secrets {inherit lib;};
-  radarrRecyclarrConfig =
-    optionalAttrs (config.nixflix.recyclarr.radarr.enable or false)
-    (import ../../recyclarr/radarr-main.nix {inherit config;});
-  firstRadarrProfile = head (radarrRecyclarrConfig.radarr_main.quality_profiles or []);
+with lib;
+let
+  secrets = import ../../../lib/secrets { inherit lib; };
+  radarrRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.radarr.enable or false) (
+    import ../../recyclarr/radarr-main.nix { inherit config; }
+  );
+  firstRadarrProfile = head (radarrRecyclarrConfig.radarr_main.quality_profiles or [ ]);
   defaultRadarrProfileName =
-    if config.nixflix.recyclarr.enable
-    then firstRadarrProfile.name
-    else null;
+    if config.nixflix.recyclarr.enable then firstRadarrProfile.name else null;
 
   radarrServerModule = types.submodule {
     options = {
@@ -58,7 +57,7 @@ with lib; let
 
       activeDirectory = mkOption {
         type = types.str;
-        default = head (config.nixflix.radarr.mediaDirs or ["/movies"]);
+        default = head (config.nixflix.radarr.mediaDirs or [ "/movies" ]);
         defaultText = literalExpression ''head (config.nixflix.radarr.mediaDirs or ["/movies"])'';
         description = "Root folder for movies";
       };
@@ -70,7 +69,11 @@ with lib; let
       };
 
       minimumAvailability = mkOption {
-        type = types.enum ["announced" "inCinemas" "released"];
+        type = types.enum [
+          "announced"
+          "inCinemas"
+          "released"
+        ];
         default = "released";
         description = "Minimum availability for movies";
       };
@@ -106,19 +109,19 @@ with lib; let
       port = config.nixflix.radarr.config.hostConfig.port or 7878;
       inherit (config.nixflix.radarr.config) apiKey;
       baseUrl =
-        if config.nixflix.nginx.enable
-        then config.nixflix.radarr.config.hostConfig.urlBase
-        else "";
+        if config.nixflix.nginx.enable then config.nixflix.radarr.config.hostConfig.urlBase else "";
       activeProfileName = defaultRadarrProfileName;
-      activeDirectory = head (config.nixflix.radarr.mediaDirs or ["/data/media/movies"]);
+      activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =
-        if config.nixflix.jellyseerr.externalBaseUrl != ""
-        then "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
-        else "";
+        if config.nixflix.jellyseerr.externalBaseUrl != "" then
+          "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        else
+          "";
     };
   };
-in {
+in
+{
   options.nixflix.jellyseerr.radarr = mkOption {
     type = types.attrsOf radarrServerModule;
     default = defaultInstance;
@@ -129,12 +132,16 @@ in {
     '';
     example = {
       Radarr = {
-        apiKey = {_secret = "/run/secrets/radarr-apikey";};
+        apiKey = {
+          _secret = "/run/secrets/radarr-apikey";
+        };
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
       };
       "Radarr 4K" = {
-        apiKey = {_secret = "/run/secrets/radarr-4k-apikey";};
+        apiKey = {
+          _secret = "/run/secrets/radarr-4k-apikey";
+        };
         activeProfileName = "UHD-2160p";
         activeDirectory = "/movies-4k";
         is4k = true;

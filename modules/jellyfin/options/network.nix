@@ -3,9 +3,11 @@
   config,
   ...
 }:
-with lib; let
-  secrets = import ../../lib/secrets {inherit lib;};
-in {
+with lib;
+let
+  secrets = import ../../../lib/secrets { inherit lib; };
+in
+{
   options.nixflix.jellyfin.network = {
     autoDiscovery = mkOption {
       type = types.bool;
@@ -15,10 +17,7 @@ in {
 
     baseUrl = mkOption {
       type = types.str;
-      default =
-        if config.nixflix.nginx.enable
-        then "jellyfin"
-        else "";
+      default = if config.nixflix.nginx.enable then "jellyfin" else "";
       defaultText = literalExpression ''if config.nixflix.nginx.enable then "jellyfin" else ""'';
       description = "Base URL for Jellyfin (URL prefix) http://localhost:8096/<baseUrl>";
     };
@@ -29,7 +28,10 @@ in {
     };
 
     certificatePath = mkOption {
-      type = types.oneOf [types.str types.path];
+      type = types.oneOf [
+        types.str
+        types.path
+      ];
       default = "";
       description = "Path to certificate file";
     };
@@ -96,7 +98,7 @@ in {
 
     knownProxies = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       description = "List of known proxies";
     };
 
@@ -108,7 +110,7 @@ in {
 
     localNetworkSubnets = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       description = "List of local network subnets";
     };
 
@@ -126,13 +128,13 @@ in {
 
     publishedServerUriBySubnet = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       description = "List of published server URIs by subnet";
     };
 
     remoteIpFilter = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       description = "Remote IP filter list";
     };
 
@@ -144,7 +146,7 @@ in {
 
     virtualInterfaceNames = mkOption {
       type = types.listOf types.str;
-      default = ["veth"];
+      default = [ "veth" ];
       description = "List of virtual interface names";
     };
   };

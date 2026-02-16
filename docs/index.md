@@ -1,5 +1,5 @@
 ---
-title: Nixflix
+title: Getting Started
 ---
 
 !!! tip "Quick Start"

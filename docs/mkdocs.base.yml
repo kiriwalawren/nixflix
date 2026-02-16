@@ -5,7 +5,6 @@ site_url: https://kiriwalawren.github.io/nixflix
 repo_url: https://github.com/kiriwalawren/nixflix
 repo_name: kiriwalawren/nixflix
 edit_uri: edit/main/docs/
-
 theme:
   name: material
   logo: assets/logo.svg
@@ -17,21 +16,18 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to Frappé
-
     - scheme: frappe
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to Macchiato
-
     - scheme: macchiato
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-partly-cloudy
         name: Switch to Mocha
-
     - scheme: mocha
       media: "(prefers-color-scheme: dark)"
       primary: custom
@@ -39,7 +35,6 @@ theme:
       toggle:
         icon: material/weather-cloudy
         name: Switch to Latte
-
   features:
     - navigation.instant
     - navigation.tracking
@@ -58,32 +53,26 @@ theme:
     - content.code.annotate
     - content.tabs.link
     - content.tooltips
-
   icon:
     repo: fontawesome/brands/github
-
   font:
     text: Roboto
     code: Roboto Mono
-
 plugins:
   - search:
       separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
       lang: en
-
   - minify:
       minify_html: true
       minify_js: true
       minify_css: true
       htmlmin_opts:
         remove_comments: true
-
   - git-revision-date-localized:
       enable_creation_date: true
       type: timeago
       fallback_to_build_date: true
       enabled: !ENV [ENABLE_GIT_REVISION, false]
-
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -117,24 +106,17 @@ markdown_extensions:
       permalink: true
       toc_depth: 3
   - abbr
-
 nav:
   - Home: index.md
-
   - Getting Started:
       - getting-started/index.md
-
   - Examples:
       - Basic Setup: examples/basic-setup.md
-
 # REFERENCE_NAV_PLACEHOLDER
-
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/kiriwalawren/nixflix
-
 extra_css:
   - stylesheets/extra.css
-
 copyright: Copyright &copy; 2024 Kiriwa Lawrence. Licensed under GPLv3.

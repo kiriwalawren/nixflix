@@ -1,26 +1,27 @@
-{lib, ...}:
-with lib; let
-  secrets = import ../../lib/secrets {inherit lib;};
+{ lib, ... }:
+with lib;
+let
+  secrets = import ../../../lib/secrets { inherit lib; };
   configurationOpts = _: {
     options = {
       groupedFolders = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       orderedViews = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       latestItemsExcludes = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       myMediaExcludes = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       audioLanguagePreference = mkOption {
@@ -245,80 +246,84 @@ with lib; let
 
       blockedTags = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       allowedTags = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       blockUnratedItems = mkOption {
-        type = types.listOf (types.enum [
-          "Movie"
-          "Trailer"
-          "Series"
-          "Music"
-          "Book"
-          "LiveTvChannel"
-          "LiveTvProgram"
-          "ChannelContent"
-          "Other"
-        ]);
-        default = [];
+        type = types.listOf (
+          types.enum [
+            "Movie"
+            "Trailer"
+            "Series"
+            "Music"
+            "Book"
+            "LiveTvChannel"
+            "LiveTvProgram"
+            "ChannelContent"
+            "Other"
+          ]
+        );
+        default = [ ];
       };
 
       enabledDevices = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       enabledChannels = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       blockedMediaFolders = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       blockedChannels = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       enableContentDeletionFromFolders = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
 
       accessSchedules = mkOption {
-        type = types.listOf (types.submodule {
-          options = {
-            dayOfWeek = mkOption {
-              type = types.enum [
-                "Sunday"
-                "Monday"
-                "Tuesday"
-                "Wednesday"
-                "Thursday"
-                "Friday"
-                "Saturday"
-                "Everyday"
-                "Weekday"
-                "Weekend"
-              ];
+        type = types.listOf (
+          types.submodule {
+            options = {
+              dayOfWeek = mkOption {
+                type = types.enum [
+                  "Sunday"
+                  "Monday"
+                  "Tuesday"
+                  "Wednesday"
+                  "Thursday"
+                  "Friday"
+                  "Saturday"
+                  "Everyday"
+                  "Weekday"
+                  "Weekend"
+                ];
+              };
+              startHour = mkOption {
+                type = types.ints.between 0 23;
+              };
+              endHour = mkOption {
+                type = types.ints.between 0 23;
+              };
             };
-            startHour = mkOption {
-              type = types.ints.between 0 23;
-            };
-            endHour = mkOption {
-              type = types.ints.between 0 23;
-            };
-          };
-        });
-        default = [];
+          }
+        );
+        default = [ ];
       };
 
       syncPlayAccess = mkOption {
@@ -384,7 +389,7 @@ with lib; let
     options = {
       configuration = mkOption {
         description = "Configuration for this user";
-        default = {};
+        default = { };
         type = with types; submodule configurationOpts;
         example = {
           subtitleMode = "Always";
@@ -393,7 +398,7 @@ with lib; let
       };
       policy = mkOption {
         description = "Policy for this user";
-        default = {};
+        default = { };
         type = with types; submodule policyOpts;
         example = {
           isAdministrator = true;
@@ -444,7 +449,8 @@ with lib; let
       };
     };
   };
-in {
+in
+{
   # Based on: https://github.com/jellyfin/jellyfin/blob/master/MediaBrowser.Model/Configuration/UserConfiguration.cs
   options.nixflix.jellyfin.users = mkOption {
     description = ''
@@ -454,11 +460,13 @@ in {
       This user will be created during the initial setup wizard and used for
       subsequent API operations.
     '';
-    default = {};
+    default = { };
     type = with types; attrsOf (submodule userOpts);
     example = {
       admin = {
-        password = {_secret = "/run/secrets/jellyfin-admin-password";};
+        password = {
+          _secret = "/run/secrets/jellyfin-admin-password";
+        };
         policy = {
           isAdministrator = true;
         };

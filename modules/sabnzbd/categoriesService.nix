@@ -4,19 +4,25 @@
   pkgs,
   ...
 }:
-with lib; let
-  secrets = import ../lib/secrets {inherit lib;};
+with lib;
+let
+  secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.sabnzbd;
-in {
-  config = mkIf (nixflix.enable && cfg.enable && cfg.settings.categories != []) {
+in
+{
+  config = mkIf (nixflix.enable && cfg.enable && cfg.settings.categories != [ ]) {
     systemd.services.sabnzbd-categories = {
       description = "Configure SABnzbd categories";
-      after = ["sabnzbd.service"];
-      requires = ["sabnzbd.service"];
-      wantedBy = ["multi-user.target"];
+      after = [ "sabnzbd.service" ];
+      requires = [ "sabnzbd.service" ];
+      wantedBy = [ "multi-user.target" ];
 
-      path = with pkgs; [curl jq coreutils];
+      path = with pkgs; [
+        curl
+        jq
+        coreutils
+      ];
 
       serviceConfig = {
         Type = "oneshot";
@@ -26,18 +32,19 @@ in {
       script = ''
         set -euo pipefail
 
-        ${secrets.toShellValue "API_KEY" cfg.settings.misc.api_key}
         BASE_URL="http://${cfg.settings.misc.host}:${toString cfg.settings.misc.port}${cfg.settings.misc.url_base}"
 
         # Function to make API calls
         api_call() {
           local mode="$1"
           shift
-          local url="$BASE_URL/api?mode=$mode&apikey=$API_KEY"
+          local url="$BASE_URL/api?mode=$mode&apikey=${secrets.toShellValue cfg.settings.misc.api_key}"
           for param in "$@"; do
             url="$url&$param"
           done
-          curl -s "$url" -H "apikey:$API_KEY"
+          curl -K - -s <<CONFIG
+        url = $url
+        CONFIG
         }
 
         # Wait for SABnzbd API to be ready

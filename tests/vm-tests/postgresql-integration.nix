@@ -1,76 +1,112 @@
 {
   system ? builtins.currentSystem,
-  pkgs ? import <nixpkgs> {inherit system;},
+  pkgs ? import <nixpkgs> { inherit system; },
   nixosModules,
 }:
 pkgs.testers.runNixOSTest {
   name = "postgresql-integration-test";
 
-  nodes.machine = {pkgs, ...}: {
-    imports = [nixosModules];
+  nodes.machine =
+    { pkgs, ... }:
+    {
+      imports = [ nixosModules ];
 
-    virtualisation.cores = 4;
+      virtualisation.cores = 4;
 
-    nixflix = {
-      enable = true;
-      postgres.enable = true;
-      stateDir = "/var/lib/nixflix";
-
-      prowlarr = {
+      nixflix = {
         enable = true;
-        config = {
-          hostConfig = {
-            port = 9696;
-            username = "admin";
-            password = {_secret = pkgs.writeText "prowlarr-password" "testpass";};
+        postgres.enable = true;
+        stateDir = "/var/lib/nixflix";
+
+        prowlarr = {
+          enable = true;
+          config = {
+            hostConfig = {
+              port = 9696;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "prowlarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+            };
           };
-          apiKey = {_secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";};
         };
-      };
 
-      sonarr = {
-        enable = true;
-        user = "sonarr";
-        mediaDirs = ["/media/tv"];
-        config = {
-          hostConfig = {
-            port = 8989;
-            username = "admin";
-            password = {_secret = pkgs.writeText "sonarr-password" "testpass";};
+        sonarr = {
+          enable = true;
+          user = "sonarr";
+          mediaDirs = [ "/media/tv" ];
+          config = {
+            hostConfig = {
+              port = 8989;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "sonarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+            };
           };
-          apiKey = {_secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";};
         };
-      };
 
-      radarr = {
-        enable = true;
-        user = "radarr";
-        mediaDirs = ["/media/movies"];
-        config = {
-          hostConfig = {
-            port = 7878;
-            username = "admin";
-            password = {_secret = pkgs.writeText "radarr-password" "testpass";};
+        sonarr-anime = {
+          enable = true;
+          user = "sonarr-anime";
+          mediaDirs = [ "/media/anime" ];
+          config = {
+            hostConfig = {
+              port = 8990;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "sonarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+            };
           };
-          apiKey = {_secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";};
         };
-      };
 
-      lidarr = {
-        enable = true;
-        user = "lidarr";
-        mediaDirs = ["/media/music"];
-        config = {
-          hostConfig = {
-            port = 8686;
-            username = "admin";
-            password = {_secret = pkgs.writeText "lidarr-password" "testpass";};
+        radarr = {
+          enable = true;
+          user = "radarr";
+          mediaDirs = [ "/media/movies" ];
+          config = {
+            hostConfig = {
+              port = 7878;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "radarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+            };
           };
-          apiKey = {_secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";};
+        };
+
+        lidarr = {
+          enable = true;
+          user = "lidarr";
+          mediaDirs = [ "/media/music" ];
+          config = {
+            hostConfig = {
+              port = 8686;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "lidarr-password" "testpass";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
+            };
+          };
         };
       };
     };
-  };
 
   testScript = ''
     import json
@@ -85,12 +121,14 @@ pkgs.testers.runNixOSTest {
     # Wait for database roles to be ready
     machine.wait_for_unit("prowlarr-wait-for-db.service", timeout=60)
     machine.wait_for_unit("sonarr-wait-for-db.service", timeout=60)
+    machine.wait_for_unit("sonarr-anime-wait-for-db.service", timeout=60)
     machine.wait_for_unit("radarr-wait-for-db.service", timeout=60)
     machine.wait_for_unit("lidarr-wait-for-db.service", timeout=60)
 
     # Wait for all services
     machine.wait_for_unit("prowlarr.service", timeout=120)
     machine.wait_for_unit("sonarr.service", timeout=120)
+    machine.wait_for_unit("sonarr-anime.service", timeout=120)
     machine.wait_for_unit("radarr.service", timeout=120)
     machine.wait_for_unit("lidarr.service", timeout=120)
     machine.wait_for_open_port(9696, timeout=60)
@@ -101,12 +139,14 @@ pkgs.testers.runNixOSTest {
     # Wait for configuration services
     machine.wait_for_unit("prowlarr-config.service", timeout=60)
     machine.wait_for_unit("sonarr-config.service", timeout=60)
+    machine.wait_for_unit("sonarr-anime-config.service", timeout=60)
     machine.wait_for_unit("radarr-config.service", timeout=60)
     machine.wait_for_unit("lidarr-config.service", timeout=60)
 
     # Wait for services to come back up after restart
     machine.wait_for_unit("prowlarr.service", timeout=60)
     machine.wait_for_unit("sonarr.service", timeout=60)
+    machine.wait_for_unit("sonarr-anime.service", timeout=60)
     machine.wait_for_unit("radarr.service", timeout=60)
     machine.wait_for_unit("lidarr.service", timeout=60)
     machine.wait_for_open_port(9696, timeout=60)
@@ -142,6 +182,16 @@ pkgs.testers.runNixOSTest {
     sonarr_data = json.loads(sonarr_status)
     assert sonarr_data.get("databaseType") == "postgreSQL", \
         f"Sonarr not using PostgreSQL: {sonarr_data.get('databaseType')}"
+
+    # Test Sonarr Anime API and verify PostgreSQL database type
+    print("Testing Sonarr AnimeAPI and database type...")
+    sonarr_status = machine.succeed(
+        "curl -f http://localhost:8990/api/v3/system/status "
+        "-H 'X-Api-Key: sonarr222222222222222222222222222'"
+    )
+    sonarr_data = json.loads(sonarr_status)
+    assert sonarr_data.get("databaseType") == "postgreSQL", \
+        f"Sonarr Anime not using PostgreSQL: {sonarr_data.get('databaseType')}"
 
     # Test Radarr API and verify PostgreSQL database type
     print("Testing Radarr API and database type...")

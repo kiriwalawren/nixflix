@@ -4,9 +4,11 @@
   pkgs,
   ...
 }:
-with lib; let
-  secrets = import ../../lib/secrets {inherit lib;};
-in {
+with lib;
+let
+  secrets = import ../../../lib/secrets { inherit lib; };
+in
+{
   imports = [
     ./jellyfin.nix
     ./radarr.nix
@@ -17,7 +19,7 @@ in {
   options.nixflix.jellyseerr = {
     enable = mkEnableOption "Jellyseerr media request manager";
 
-    package = mkPackageOption pkgs "jellyseerr" {};
+    package = mkPackageOption pkgs "jellyseerr" { };
 
     apiKey = secrets.mkSecretOption {
       default = null;
