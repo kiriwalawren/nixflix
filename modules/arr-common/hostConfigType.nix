@@ -7,7 +7,7 @@ types.submodule {
   options = {
     bindAddress = mkOption {
       type = types.str;
-      default = "*";
+      default = "127.0.0.1";
       description = "Address to bind to";
     };
 
