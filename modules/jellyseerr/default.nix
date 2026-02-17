@@ -160,6 +160,7 @@ in
         wantedBy = [ "multi-user.target" ];
 
         environment = {
+          HOST = mkIf config.nixflix.nginx.enable "127.0.0.1";
           PORT = toString cfg.port;
           CONFIG_DIRECTORY = cfg.dataDir;
         }
@@ -239,38 +240,29 @@ in
       "127.0.0.1" = [ hostname ];
     };
 
-    services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts."${hostname}" =
-        let
-          themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
-        in
-        {
-          serverName = hostname;
-          listen = [
-            {
-              addr = "0.0.0.0";
-              port = 80;
-            }
-          ];
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.port}";
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_redirect off;
+    services.nginx.virtualHosts."${hostname}" =
+      let
+        themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
+      in
+      mkIf nixflix.nginx.enable {
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_redirect off;
 
-              ${
-                if nixflix.theme.enable then
-                  ''
-                    proxy_set_header Accept-Encoding "";
-                    sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';
-                    sub_filter_once on;
-                  ''
-                else
-                  ""
-              }
-            '';
-          };
+            ${
+              if nixflix.theme.enable then
+                ''
+                  proxy_set_header Accept-Encoding "";
+                  sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';
+                  sub_filter_once on;
+                ''
+              else
+                ""
+            }
+          '';
         };
-    };
+      };
   };
 }

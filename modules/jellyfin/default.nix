@@ -255,34 +255,24 @@ in
       "127.0.0.1" = [ hostname ];
     };
 
-    services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts."${hostname}" = {
-        serverName = hostname;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = 80;
-          }
-        ];
-        locations = {
-          "/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-            proxyWebsockets = true;
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_set_header X-Real-IP $remote_addr;
+    services.nginx.virtualHosts."${hostname}" = mkIf nixflix.nginx.enable {
+      locations = {
+        "/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_set_header X-Real-IP $remote_addr;
 
-              proxy_buffering off;
-            '';
-          };
-          "/socket" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-            proxyWebsockets = true;
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_set_header X-Real-IP $remote_addr;
-            '';
-          };
+            proxy_buffering off;
+          '';
+        };
+        "/socket" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+          proxyWebsockets = true;
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_set_header X-Real-IP $remote_addr;
+          '';
         };
       };
     };

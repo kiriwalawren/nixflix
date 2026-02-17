@@ -182,33 +182,24 @@ in
       "127.0.0.1" = [ hostname ];
     };
 
-    services.nginx = mkIf config.nixflix.nginx.enable {
-      virtualHosts."${hostname}" = {
-        serverName = hostname;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = 80;
-          }
-        ];
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_redirect off;
+    services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
+        recommendedProxySettings = true;
+        extraConfig = ''
+          proxy_redirect off;
 
-            ${
-              if config.nixflix.theme.enable then
-                ''
-                  proxy_set_header Accept-Encoding "";
-                  sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
-                  sub_filter_once on;
-                ''
-              else
-                ""
-            }
-          '';
-        };
+          ${
+            if config.nixflix.theme.enable then
+              ''
+                proxy_set_header Accept-Encoding "";
+                sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
+                sub_filter_once on;
+              ''
+            else
+              ""
+          }
+        '';
       };
     };
   };

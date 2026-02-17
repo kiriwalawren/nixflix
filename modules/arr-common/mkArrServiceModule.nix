@@ -287,38 +287,29 @@ in
         ];
       };
 
-      nginx = mkIf config.nixflix.nginx.enable {
-        virtualHosts."${hostname}" = {
-          serverName = hostname;
-          listen = [
-            {
-              addr = "0.0.0.0";
-              port = 80;
-            }
-          ];
-          locations."/" =
-            let
-              themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
-            in
-            {
-              proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
-              recommendedProxySettings = true;
-              extraConfig = ''
-                proxy_redirect off;
+      nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
+        locations."/" =
+          let
+            themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
+          in
+          {
+            proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
+            recommendedProxySettings = true;
+            extraConfig = ''
+              proxy_redirect off;
 
-                ${
-                  if config.nixflix.theme.enable then
-                    ''
-                      proxy_set_header Accept-Encoding "";
-                      sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
-                      sub_filter_once on;
-                    ''
-                  else
-                    ""
-                }
-              '';
-            };
-        };
+              ${
+                if config.nixflix.theme.enable then
+                  ''
+                    proxy_set_header Accept-Encoding "";
+                    sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                    sub_filter_once on;
+                  ''
+                else
+                  ""
+              }
+            '';
+          };
       };
     };
 

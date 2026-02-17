@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   ...
 }:
@@ -102,8 +103,9 @@ in
     };
 
     localNetworkAddresses = mkOption {
-      type = types.bool;
-      default = false;
+      type = types.listOf types.str;
+      default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
+      defaultText = literalExpression ''if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ]'';
       description = "Local network addresses";
     };
 
