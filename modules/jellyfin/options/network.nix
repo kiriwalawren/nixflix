@@ -1,6 +1,6 @@
 {
-  lib,
   config,
+  lib,
   ...
 }:
 with lib;
@@ -17,8 +17,8 @@ in
 
     baseUrl = mkOption {
       type = types.str;
-      default = if config.nixflix.nginx.enable then "jellyfin" else "";
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then "jellyfin" else ""'';
+      default = "";
+      example = "jellyfin";
       description = "Base URL for Jellyfin (URL prefix) http://localhost:8096/<baseUrl>";
     };
 
@@ -103,8 +103,9 @@ in
     };
 
     localNetworkAddresses = mkOption {
-      type = types.bool;
-      default = false;
+      type = types.listOf types.str;
+      default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
+      defaultText = literalExpression ''if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ]'';
       description = "Local network addresses";
     };
 

@@ -22,13 +22,14 @@ in
     ./sabnzbd
     ./sonarr-anime.nix
     ./sonarr.nix
+
   ];
 
   options.nixflix = {
     enable = mkEnableOption "Nixflix";
 
     serviceDependencies = mkOption {
-      type = with types; listOf str;
+      type = types.listOf types.str;
       default = [ ];
       example = [
         "unlock-raid.service"
@@ -41,13 +42,19 @@ in
     };
 
     theme = {
-      enable = mkEnableOption "Theme";
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Enables themeing via [theme.park](https://docs.theme-park.dev/).
+          Requires `nixflix.nginx.enable = true;` for all services except Jellyfin.
+        '';
+      };
       name = mkOption {
         type = types.str;
         default = "overseerr";
         description = ''
-          This is powered [theme.park](https://docs.theme-park.dev/).
-
           The name of any official theme or community theme supported by theme.park.
 
           - [Official Themes](https://docs.theme-park.dev/theme-options/)
@@ -61,6 +68,23 @@ in
         type = types.bool;
         default = false;
         description = "Whether to enable nginx reverse proxy for all services";
+      };
+
+      domain = mkOption {
+        type = types.str;
+        default = "nixflix";
+        example = "internal";
+        description = "Base domain for subdomain-based reverse proxy routing. Each service is accessible at `<subdomain>.<domain>`.";
+      };
+
+      addHostsEntries = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether to add `networking.hosts` entries mapping service subdomains to `127.0.0.1`.
+
+          Enable if you don't have a separate DNS setup.
+        '';
       };
     };
 
@@ -135,23 +159,17 @@ in
       "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
       "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
     ];
-
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;
-
       recommendedTlsSettings = true;
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
 
-      virtualHosts.localhost = {
-        serverName = "localhost";
+      virtualHosts."_" = {
         default = true;
-        listen = [
-          {
-            addr = "0.0.0.0";
-            port = 80;
-          }
-        ];
+        extraConfig = ''
+          return 444;
+        '';
       };
     };
   };

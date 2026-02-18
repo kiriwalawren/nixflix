@@ -7,7 +7,7 @@ types.submodule {
   options = {
     bindAddress = mkOption {
       type = types.str;
-      default = "*";
+      default = "127.0.0.1";
       description = "Address to bind to";
     };
 
@@ -63,7 +63,7 @@ types.submodule {
     urlBase = mkOption {
       type = types.str;
       default = "";
-      defaultText = literalExpression ''if nixflix.nginx.enable then "/<serviceName>" else ""'';
+      example = "/takeMeThere";
       description = "URL base path";
     };
 

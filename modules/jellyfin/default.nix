@@ -9,6 +9,7 @@ let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
+  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
 
   xml = import ./xml.nix { inherit lib; };
 
@@ -250,25 +251,26 @@ in
       ];
     };
 
-    services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations = {
-        "/${cfg.network.baseUrl}" = {
+    networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
+    };
+
+    services.nginx.virtualHosts."${hostname}" = mkIf nixflix.nginx.enable {
+      locations = {
+        "/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
           recommendedProxySettings = true;
           extraConfig = ''
-            proxy_redirect off;
             proxy_set_header X-Real-IP $remote_addr;
 
             proxy_buffering off;
           '';
         };
-        "/${cfg.network.baseUrl}/socket" = {
+        "/socket" = {
           proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
+          proxyWebsockets = true;
           recommendedProxySettings = true;
           extraConfig = ''
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
             proxy_set_header X-Real-IP $remote_addr;
           '';
         };

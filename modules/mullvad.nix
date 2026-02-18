@@ -129,6 +129,12 @@ in
       '';
     };
 
+    enableIPv6 = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Wether to enable IPv6 for Mullvad";
+    };
+
     dns = mkOption {
       type = types.listOf types.str;
       default = [
@@ -217,6 +223,8 @@ in
           ''}
 
           ${mullvadPkg}/bin/mullvad dns set custom ${concatStringsSep " " cfg.dns}
+
+          ${mullvadPkg}/bin/mullvad tunnel set ipv6 ${if cfg.enableIPv6 then "on" else "off"}
 
           ${optionalString (cfg.location != [ ]) ''
             ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}

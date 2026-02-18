@@ -17,11 +17,38 @@ pkgsUnfree.testers.runNixOSTest {
     {
       imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+      virtualisation = {
+        cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
+      };
 
       nixflix = {
         enable = true;
-        nginx.enable = true;
+
+        nginx = {
+          enable = true;
+          addHostsEntries = true;
+        };
+
+        jellyfin = {
+          enable = true;
+          users = {
+            admin = {
+              password = {
+                _secret = pkgs.writeText "kiri_password" "321password";
+              };
+              policy.isAdministrator = true;
+            };
+          };
+        };
+
+        jellyseerr = {
+          enable = true;
+          apiKey = {
+            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+          };
+        };
 
         prowlarr = {
           enable = true;
@@ -120,16 +147,16 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(80, timeout=60)
 
     # Wait for all services
+    machine.wait_for_unit("sabnzbd.service", timeout=120)
     machine.wait_for_unit("prowlarr.service", timeout=120)
     machine.wait_for_unit("sonarr.service", timeout=120)
     machine.wait_for_unit("radarr.service", timeout=120)
     machine.wait_for_unit("lidarr.service", timeout=120)
-    machine.wait_for_unit("sabnzbd.service", timeout=120)
+    machine.wait_for_open_port(8080, timeout=120)
     machine.wait_for_open_port(9696, timeout=120)
     machine.wait_for_open_port(8989, timeout=120)
     machine.wait_for_open_port(7878, timeout=120)
     machine.wait_for_open_port(8686, timeout=120)
-    machine.wait_for_open_port(8080, timeout=120)
 
     # Wait for configuration services
     machine.wait_for_unit("prowlarr-config.service", timeout=60)
@@ -149,40 +176,58 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8686, timeout=60)
     machine.wait_for_open_port(8080, timeout=60)
 
-    # Test nginx is proxying to Prowlarr
-    print("Testing Prowlarr via nginx...")
+    # Wait for Jellyfin
+    machine.wait_for_unit("jellyfin.service", timeout=180)
+    machine.wait_for_open_port(8096, timeout=180)
+
+    # Wait for jellyseerr
+    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_open_port(5055, timeout=300)
+    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
+
+    # Test reverse proxy is proxying to Prowlarr
+    print("Testing Prowlarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/prowlarr/api/v1/system/status "
+        "curl -f http://prowlarr.nixflix/api/v1/system/status "
         "-H 'X-Api-Key: prowlarr11111111111111111111111111'"
     )
 
-    # Test nginx is proxying to Sonarr
-    print("Testing Sonarr via nginx...")
+    # Test reverse proxy is proxying to Sonarr
+    print("Testing Sonarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/sonarr/api/v3/system/status "
+        "curl -f http://sonarr.nixflix/api/v3/system/status "
         "-H 'X-Api-Key: sonarr222222222222222222222222222'"
     )
 
-    # Test nginx is proxying to Radarr
-    print("Testing Radarr via nginx...")
+    # Test reverse proxy is proxying to Radarr
+    print("Testing Radarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/radarr/api/v3/system/status "
+        "curl -f http://radarr.nixflix/api/v3/system/status "
         "-H 'X-Api-Key: radarr333333333333333333333333333'"
     )
 
-    # Test nginx is proxying to Lidarr
-    print("Testing Lidarr via nginx...")
+    # Test reverse proxy is proxying to Lidarr
+    print("Testing Lidarr via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/lidarr/api/v1/system/status "
+        "curl -f http://lidarr.nixflix/api/v1/system/status "
         "-H 'X-Api-Key: lidarr444444444444444444444444444'"
     )
 
-    # Test nginx is proxying to SABnzbd
-    print("Testing SABnzbd via nginx...")
+    # Test reverse proxy is proxying to SABnzbd
+    print("Testing SABnzbd via reverse proxy...")
     machine.succeed(
-        "curl -f http://localhost/sabnzbd/api?mode=version&apikey=sabnzbd555555555555555555555555555"
+        "curl -f 'http://sabnzbd.nixflix/api?mode=version&apikey=sabnzbd555555555555555555555555555'"
     )
 
-    print("Nginx integration test successful! All services accessible via reverse proxy.")
+    # Test reverse proxy is proxying to jellyfin
+    api_token = machine.succeed("cat /run/jellyfin/auth-token")
+    auth_header = f'"Authorization: {api_token}"'
+    base_url = 'http://jellyfin.nixflix'
+    machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
+
+    # Test reverse proxy is proxying to jellyseerr
+    machine.succeed('curl -f "http://jellyseerr.nixflix/api/v1/status"')
+
+    print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';
 }

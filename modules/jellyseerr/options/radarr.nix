@@ -108,14 +108,13 @@ let
     Radarr = {
       port = config.nixflix.radarr.config.hostConfig.port or 7878;
       inherit (config.nixflix.radarr.config) apiKey;
-      baseUrl =
-        if config.nixflix.nginx.enable then config.nixflix.radarr.config.hostConfig.urlBase else "";
+      baseUrl = config.nixflix.radarr.config.hostConfig.urlBase;
       activeProfileName = defaultRadarrProfileName;
       activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =
-        if config.nixflix.jellyseerr.externalBaseUrl != "" then
-          "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        if config.nixflix.nginx.enable then
+          "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };

@@ -89,6 +89,12 @@ in
       '';
     };
 
+    subdomain = mkOption {
+      type = types.str;
+      default = "jellyfin";
+      description = "Subdomain prefix for nginx reverse proxy.";
+    };
+
     vpn = {
       enable = mkOption {
         type = types.bool;

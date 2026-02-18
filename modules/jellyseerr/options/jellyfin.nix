@@ -27,24 +27,35 @@ with lib;
 
     urlBase = mkOption {
       type = types.str;
-      default = if config.nixflix.nginx.enable then "/jellyfin" else "";
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then "/jellyfin" else ""'';
+      default =
+        if config.nixflix.jellyfin.network.baseUrl == "" then
+          ""
+        else
+          "/${config.nixflix.jellyfin.network.baseUrl}";
       description = "Jellyfin URL base";
     };
 
-    externalHostname = mkOption {
-      type = types.str;
-      default =
-        if config.nixflix.jellyseerr.externalBaseUrl != "" then
-          "${config.nixflix.jellyseerr.externalBaseUrl}/${config.nixflix.jellyfin.network.baseUrl}"
-        else
-          "";
-      defaultText = literalExpression ''
-        if config.nixflix.jellyseerr.externalBaseUrl != ""
-        then "$${config.nixflix.jellyseerr.externalBaseUrl}$${config.nixflix.jellyfin.network.baseUrl}"
-        else "";
-      '';
-    };
+    externalHostname =
+      let
+        jellyfinBaseUrl =
+          if config.nixflix.jellyfin.network.baseUrl == "" then
+            ""
+          else
+            "/${config.nixflix.jellyfin.network.baseUrl}";
+      in
+      mkOption {
+        type = types.str;
+        default =
+          if config.nixflix.nginx.enable then
+            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.nginx.domain}${jellyfinBaseUrl}"
+          else
+            "";
+        defaultText = literalExpression ''
+          if config.nixflix.nginx.enable != ""
+          then "$${config.nixflix.jellyseerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.nginx.domain}"
+          else "";
+        '';
+      };
 
     serverType = mkOption {
       type = types.int;

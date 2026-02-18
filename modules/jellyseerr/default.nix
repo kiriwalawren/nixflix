@@ -10,6 +10,7 @@ let
   inherit (config) nixflix;
   inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
+  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
 in
 {
   imports = [
@@ -159,6 +160,7 @@ in
         wantedBy = [ "multi-user.target" ];
 
         environment = {
+          HOST = mkIf config.nixflix.nginx.enable "127.0.0.1";
           PORT = toString cfg.port;
           CONFIG_DIRECTORY = cfg.dataDir;
         }
@@ -234,53 +236,33 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.nginx = mkIf nixflix.nginx.enable {
-      virtualHosts.localhost.locations."^~ /jellyseerr" =
-        let
-          themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
-        in
-        {
+    networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
+    };
+
+    services.nginx.virtualHosts."${hostname}" =
+      let
+        themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
+      in
+      mkIf nixflix.nginx.enable {
+        locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
           recommendedProxySettings = true;
           extraConfig = ''
-            # Remove /jellyseerr path to pass to the app
-            rewrite ^/jellyseerr/?(.*)$ /$1 break;
-
-            # Redirect location headers
-            proxy_redirect ^ /jellyseerr;
-            proxy_redirect /setup /jellyseerr/setup;
-            proxy_redirect /login /jellyseerr/login;
-
-            # Sub filters to replace hardcoded paths
-            proxy_set_header Accept-Encoding "";
-            sub_filter_once off;
-            sub_filter_types *;
-            sub_filter 'href="/"' 'href="/jellyseerr"';
-            sub_filter 'href="/login"' 'href="/jellyseerr/login"';
-            sub_filter 'href:"/"' 'href:"/jellyseerr"';
-            sub_filter '\/_next' '\/jellyseerr\/_next';
-            sub_filter '/_next' '/jellyseerr/_next';
-            sub_filter '/api/v1' '/jellyseerr/api/v1';
-            sub_filter '/login/plex/loading' '/jellyseerr/login/plex/loading';
-            sub_filter '/images/' '/jellyseerr/images/';
-            sub_filter '/imageproxy/' '/jellyseerr/imageproxy/';
-            sub_filter '/avatarproxy/' '/jellyseerr/avatarproxy/';
-            sub_filter '/android-' '/jellyseerr/android-';
-            sub_filter '/apple-' '/jellyseerr/apple-';
-            sub_filter '/favicon' '/jellyseerr/favicon';
-            sub_filter '/logo_' '/jellyseerr/logo_';
-            sub_filter '/site.webmanifest' '/jellyseerr/site.webmanifest';
+            proxy_redirect off;
 
             ${
               if nixflix.theme.enable then
                 ''
-                  sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></body>';
+                  proxy_set_header Accept-Encoding "";
+                  sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';
+                  sub_filter_once on;
                 ''
               else
                 ""
             }
           '';
         };
-    };
+      };
   };
 }
