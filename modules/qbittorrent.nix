@@ -7,6 +7,7 @@ with lib;
 let
   secrets = import ../lib/secrets { inherit lib; };
   cfg = config.nixflix.qbittorrent;
+  service = config.services.qbittorrent;
 
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 in
@@ -74,13 +75,22 @@ in
     users = {
       # nixpkgs' `service.qbittorrent.[user|group]` only gets created
       # when the value is "qbittorent", so we create it here
-      users.${cfg.user} = mkForce {
-        inherit (cfg) group;
+      users.${service.user} = mkForce {
+        inherit (service) group;
         isSystemUser = true;
         uid = config.nixflix.globals.uids.qbittorrent;
       };
 
-      groups.${cfg.group} = mkForce { };
+      groups.${service.group} = mkForce { };
+    };
+
+    systemd.tmpfiles = {
+      settings."10-qbittorrent" = {
+        ${service.profileDir}.d = {
+          inherit (service) user group;
+          mode = "0700";
+        };
+      };
     };
 
     networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
@@ -89,7 +99,7 @@ in
 
     services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.webuiPort}";
+        proxyPass = "http://127.0.0.1:${toString service.webuiPort}";
         recommendedProxySettings = true;
         extraConfig = ''
           proxy_http_version 1.1;
