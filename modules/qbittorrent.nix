@@ -7,6 +7,8 @@ with lib;
 let
   secrets = import ../lib/secrets { inherit lib; };
   cfg = config.nixflix.qbittorrent;
+
+  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 in
 {
   options.nixflix.qbittorrent = mkOption {
@@ -22,16 +24,25 @@ in
             Uses all of the same options as [nixpkgs qBittorent](https://search.nixos.org/options?channel=unstable&query=qbittorrent).
           '';
         };
+
         user = mkOption {
           type = types.str;
           default = "qbittorrent";
           description = "User account under which qbittorrent runs.";
         };
+
         group = mkOption {
           type = types.str;
           default = config.nixflix.globals.libraryOwner.group;
           description = "Group under which qbittorrent runs.";
         };
+
+        webuiPort = mkOption {
+          type = types.nullOr types.port;
+          default = 8282;
+          description = "the port passed to qbittorrent via `--webui-port`";
+        };
+
         password = secrets.mkSecretOption {
           description = ''
             The password for qbittorrent. This is for the other services to integrate with qBittorrent.
@@ -43,13 +54,22 @@ in
             to see how to configure it.
           '';
         };
+
+        subdomain = mkOption {
+          type = types.str;
+          default = "sabnzbd";
+          description = "Subdomain prefix for nginx reverse proxy.";
+        };
       };
     };
     default = { };
   };
 
   config = mkIf (config.nixflix.enable && cfg != null && cfg.enable) {
-    services.qbittorrent = builtins.removeAttrs cfg [ "password" ];
+    services.qbittorrent = builtins.removeAttrs cfg [
+      "password"
+      "subdomain"
+    ];
 
     users = {
       # nixpkgs' `service.qbittorrent.[user|group]` only gets created
@@ -63,12 +83,16 @@ in
       groups.${cfg.group} = mkForce { };
     };
 
-    services.nginx = mkIf config.nixflix.nginx.enable {
-      virtualHosts.localhost.locations."${cfg.settings.misc.url_base}" = {
+    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
+    };
+
+    services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
+      locations."/" = {
         proxyPass = "http://127.0.0.1:${toString cfg.webuiPort}";
         recommendedProxySettings = true;
         extraConfig = ''
-          proxy_redirect off;
+          proxy_http_version 1.1;
 
           ${
             if config.nixflix.theme.enable then

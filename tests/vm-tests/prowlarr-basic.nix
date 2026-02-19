@@ -30,6 +30,7 @@ pkgsUnfree.testers.runNixOSTest {
         qbittorrent = {
           enable = true;
           webuiPort = 8282;
+          password = "test123";
           serverConfig = {
             LegalNotice.Accepted = true;
             Preferences = {

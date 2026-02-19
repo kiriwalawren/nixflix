@@ -187,13 +187,8 @@ in
         proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
         recommendedProxySettings = true;
         extraConfig = ''
-          proxy_redirect off;
-
-          proxy_set_header Origin "";
-          proxy_set_header Referer "";
-
+          proxy_http_version 1.1;
           proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "upgrade";
 
           ${
             if config.nixflix.theme.enable then
