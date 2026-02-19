@@ -1,6 +1,6 @@
-______________________________________________________________________
-
+---
 ## title: Basic Setup Example
+---
 
 # Basic Setup Example
 
@@ -44,7 +44,11 @@ This example shows a working media server configuration based on a real producti
       name = "overseerr";
     };
 
-    nginx.enable = true;
+    nginx = {
+      enable = true;
+      addHostsEntries = true; # Disable this is you have your own DNS configuration
+    };
+
     postgres.enable = true;
 
     sonarr = {
@@ -249,14 +253,14 @@ This example shows a working media server configuration based on a real producti
 
 Via nginx reverse proxy:
 
-- Sonarr: http://localhost/sonarr
-- Sonarr Anime: http://localhost/sonarr-anime
-- Radarr: http://localhost/radarr
-- Lidarr: http://localhost/lidarr
-- Prowlarr: http://localhost/prowlarr
-- SABnzbd: http://localhost/sabnzbd
-- Jellyfin: http://localhost/jellyfin
-- Jellyseerr: http://localhost/jellyseerr
+- Sonarr: http://sonarr.nixflix
+- Sonarr Anime: http://sonarr-anime.nixflix
+- Radarr: http://radarr.nixflix
+- Lidarr: http://lidarr.nixflix
+- Prowlarr: http://prowlarr.nixflix
+- SABnzbd: http://sabnzbd.nixflix
+- Jellyfin: http://jellyfin.nixflix
+- Jellyseerr: http://jellyseer.nixflix
 
 Direct access:
 

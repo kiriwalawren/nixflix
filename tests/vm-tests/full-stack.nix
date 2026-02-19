@@ -17,7 +17,11 @@ pkgsUnfree.testers.runNixOSTest {
     {
       imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+      virtualisation = {
+        cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
+      };
 
       nixflix = {
         enable = true;

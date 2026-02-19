@@ -26,6 +26,7 @@ let
   delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
+  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 
   serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
 
@@ -55,7 +56,7 @@ in
         description = ''
           Whether to route ${capitalizedName} traffic through the VPN.
           When false (default), ${capitalizedName} bypasses the VPN to prevent Cloudflare and image provider blocks.
-          When true, ${capitalizedName} routes through the VPN (requires nixflix.mullvad.enable = true).
+          When true, ${capitalizedName} routes through the VPN (requires `nixflix.mullvad.enable = true`).
         '';
       };
     };
@@ -76,6 +77,12 @@ in
       type = types.bool;
       default = false;
       description = "Open ports in the firewall for the Radarr web interface.";
+    };
+
+    subdomain = mkOption {
+      type = types.str;
+      default = serviceName;
+      description = "Subdomain prefix for nginx reverse proxy. Service accessible at `<subdomain>.<domain>`.";
     };
 
     settings = mkOption {
@@ -233,7 +240,6 @@ in
           username = mkDefault serviceBase;
           password = mkDefault null;
           instanceName = mkDefault capitalizedName;
-          urlBase = mkDefault (if config.nixflix.nginx.enable then "/${serviceName}" else "");
         };
         downloadClients = optionals (config.nixflix.sabnzbd.enable or false) [
           (
@@ -281,12 +287,10 @@ in
         ];
       };
 
-      nginx = mkIf config.nixflix.nginx.enable {
-        virtualHosts.localhost.locations."${
-          if cfg.config.hostConfig.urlBase == "" then "/" else cfg.config.hostConfig.urlBase
-        }" =
+      nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
+        locations."/" =
           let
-            themeParkUrl = "https://theme-park.dev/css/base/${serviceName}/${config.nixflix.theme.name}.css";
+            themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
           in
           {
             proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
@@ -307,6 +311,10 @@ in
             '';
           };
       };
+    };
+
+    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
+      "127.0.0.1" = [ hostname ];
     };
 
     users = {

@@ -57,7 +57,7 @@ in
           };
           torrentDelay = mkOption {
             type = types.int;
-            default = 360;
+            default = 0;
             description = "Delay in minutes before grabbing a Torrent release";
           };
           bypassIfHighestQuality = mkOption {

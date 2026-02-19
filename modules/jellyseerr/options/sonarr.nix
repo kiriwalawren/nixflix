@@ -145,8 +145,7 @@ let
       Sonarr = {
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable then config.nixflix.sonarr.config.hostConfig.urlBase else "";
+        baseUrl = config.nixflix.sonarr.config.hostConfig.urlBase;
         activeProfileName = defaultSonarrProfileName;
         activeAnimeProfileName = defaultSonarrProfileName;
         activeDirectory = head (config.nixflix.sonarr.mediaDirs or [ "/data/media/tv" ]);
@@ -155,8 +154,8 @@ let
         animeSeriesType = "standard";
         isDefault = true;
         externalUrl =
-          if config.nixflix.jellyseerr.externalBaseUrl != "" then
-            "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+          if config.nixflix.nginx.enable then
+            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
@@ -165,8 +164,7 @@ let
       "Sonarr Anime" = {
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
-        baseUrl =
-          if config.nixflix.nginx.enable then config.nixflix.sonarr-anime.config.hostConfig.urlBase else "";
+        baseUrl = config.nixflix.sonarr-anime.config.hostConfig.urlBase;
         activeProfileName = defaultSonarrAnimeProfileName;
         activeAnimeProfileName = defaultSonarrAnimeProfileName;
         activeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or [ "/data/media/anime" ]);
@@ -175,8 +173,8 @@ let
         animeSeriesType = "anime";
         isDefault = false;
         externalUrl =
-          if config.nixflix.jellyseerr.externalBaseUrl != "" then
-            "${config.nixflix.jellyseerr.externalBaseUrl}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+          if config.nixflix.nginx.enable then
+            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
           else
             "";
       };

@@ -154,6 +154,16 @@ let
         description = "Address for the Web UI to listen on for incoming connections.";
       };
 
+      host_whitelist = mkOption {
+        type = types.str;
+        default = if nixflix.nginx.enable then "${cfg.subdomain}.${nixflix.nginx.domain}" else "";
+        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "''${cfg.subdomain}.''${nixflix.nginx.domain}" else ""'';
+        description = ''
+          Hostname verification whitelist. SABnzbd refuses connections from hostnames not in this list.
+          Automatically includes the service hostname when nginx is enabled.
+        '';
+      };
+
       api_key = secrets.mkSecretOption {
         description = "API key for SABnzbd.";
       };
@@ -171,8 +181,7 @@ let
 
       url_base = mkOption {
         type = types.str;
-        default = if nixflix.nginx.enable then "/sabnzbd" else "";
-        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "/sabnzbd" else ""'';
+        default = "";
         description = ''
           When using a reverse proxy (or just if you feel like it), you can change the base-URL of SABnzbd that is used during redirects.
           Trailing slash is not allowed. Leading slash is required unless the base URL is an empty string.
