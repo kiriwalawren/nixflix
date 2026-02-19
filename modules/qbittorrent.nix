@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   lib,
   ...
@@ -10,6 +11,9 @@ let
   service = config.services.qbittorrent;
 
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  categoriesJson = builtins.toJSON (lib.mapAttrs (name: path: { save_path = path; }) cfg.categories);
+  categoriesFile = pkgs.writeText "categories.json" categoriesJson;
+  configPath = "${service.profileDir}/qBittorrent/config";
 in
 {
   options.nixflix.qbittorrent = mkOption {
@@ -36,6 +40,44 @@ in
           type = types.str;
           default = config.nixflix.globals.libraryOwner.group;
           description = "Group under which qbittorrent runs.";
+        };
+
+        downloadsDir = mkOption {
+          type = types.str;
+          default = "${config.nixflix.downloadsDir}/torrent";
+          defaultText = literalExpression ''"$${config.nixflix.downloadsDir}/torrent"'';
+          description = "Base directory for qBittorrent downloads";
+        };
+
+        categories = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default =
+            let
+              getCategory =
+                service:
+                lib.optionalString (config.nixflix.${service}.enable or false) "${cfg.downloadsDir}/${service}";
+            in
+            {
+              radarr = getCategory "radarr";
+              sonarr = getCategory "sonarr";
+              sonarr-anime = getCategory "sonarr-anime";
+              lidarr = getCategory "lidarr";
+              prowlarr = getCategory "prowlarr";
+            };
+          defaultText = lib.literalExpression ''
+            {
+              radarr = lib.optionalString (config.nixflix.radarr.enable or false) "${cfg.downloadsDir}/radarr";
+              sonarr = lib.optionalString (config.nixflix.radarr.enable or false) "${cfg.downloadsDir}/sonarr";
+              sonarr-anime = lib.optionalString (config.nixflix.radarr.enable or false) "${cfg.downloadsDir}/sonarr-anime";
+              lidarr = lib.optionalString (config.nixflix.radarr.enable or false) "${cfg.downloadsDir}/lidarr";
+              prowlarr = lib.optionalString (config.nixflix.radarr.enable or false) "${cfg.downloadsDir}/prowlarr";
+            }
+          '';
+          description = "Map of category names to their save paths (relative or absolute).";
+          example = {
+            prowlarr = "games";
+            sonarr = "/mnt/share/movies";
+          };
         };
 
         webuiPort = mkOption {
@@ -70,6 +112,8 @@ in
     services.qbittorrent = builtins.removeAttrs cfg [
       "password"
       "subdomain"
+      "downloadsDir"
+      "categories"
     ];
 
     users = {
@@ -92,6 +136,15 @@ in
         };
       };
     };
+
+    systemd.services.qbittorrent.preStart = lib.mkIf (cfg.categories != { }) (
+      lib.mkAfter ''
+        mkdir -p '${configPath}'
+        cp -f '${categoriesFile}' '${configPath}/categories.json'
+        chmod 640 '${configPath}/categories.json'
+        chown ${service.user}:${service.group} '${configPath}/categories.json'
+      ''
+    );
 
     networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
       "127.0.0.1" = [ hostname ];
