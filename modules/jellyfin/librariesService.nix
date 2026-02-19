@@ -103,33 +103,37 @@ in
         EOF
         )
 
-        echo "Checking for unmanaged libraries to delete..."
-        echo "$LIBRARIES_JSON" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r library; do
-          LIBRARY_NAME=$(echo "$library" | ${pkgs.jq}/bin/jq -r '.Name')
-          LIBRARY_TYPE=$(echo "$library" | ${pkgs.jq}/bin/jq -r '.CollectionType // "unknown"')
+        STATE_FILE="${cfg.dataDir}/nixflix-managed-libraries.json"
 
-          if [ "$LIBRARY_TYPE" = "boxsets" ]; then
-            echo "Skipping auto-created collection library: $LIBRARY_NAME"
-            continue
-          fi
+        if [ -f "$STATE_FILE" ]; then
+          PREVIOUS_MANAGED=$(cat "$STATE_FILE")
+        else
+          PREVIOUS_MANAGED="[]"
+        fi
 
-          if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$LIBRARY_NAME" 'index($name)' >/dev/null 2>&1; then
-            echo "Deleting unmanaged library: $LIBRARY_NAME"
-            DELETE_RESPONSE=$(${
-              mkSecureCurl authUtil.token {
-                method = "DELETE";
-                url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"$LIBRARY_NAME\" '\$n|@uri')";
-                apiKeyHeader = "Authorization";
-                extraArgs = "-w \"\\n%{http_code}\"";
-              }
-            })
+        echo "Checking for removed libraries to delete..."
+        EXISTING_NAMES=$(echo "$LIBRARIES_JSON" | ${pkgs.jq}/bin/jq -c '[.[].Name]')
 
-            DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
+        echo "$PREVIOUS_MANAGED" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r lib_name; do
+          if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
+            if echo "$EXISTING_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
+              echo "Deleting removed library: $lib_name"
+              DELETE_RESPONSE=$(${
+                mkSecureCurl authUtil.token {
+                  method = "DELETE";
+                  url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"$lib_name\" '\$n|@uri')";
+                  apiKeyHeader = "Authorization";
+                  extraArgs = "-w \"\\n%{http_code}\"";
+                }
+              })
 
-            if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
-              echo "Warning: Failed to delete library $LIBRARY_NAME (HTTP $DELETE_HTTP_CODE)" >&2
-            else
-              echo "Successfully deleted library: $LIBRARY_NAME"
+              DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
+
+              if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
+                echo "Warning: Failed to delete library $lib_name (HTTP $DELETE_HTTP_CODE)" >&2
+              else
+                echo "Successfully deleted library: $lib_name"
+              fi
             fi
           fi
         done
@@ -321,6 +325,7 @@ in
           '') cfg.libraries
         )}
 
+        echo "$CONFIGURED_NAMES" > "$STATE_FILE"
         echo "Library configuration completed successfully"
       '';
     };
