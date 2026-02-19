@@ -56,6 +56,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        TimeoutStartSec = 300;
       };
 
       script = ''
@@ -105,6 +106,12 @@ in
         echo "Checking for unmanaged libraries to delete..."
         echo "$LIBRARIES_JSON" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r library; do
           LIBRARY_NAME=$(echo "$library" | ${pkgs.jq}/bin/jq -r '.Name')
+          LIBRARY_TYPE=$(echo "$library" | ${pkgs.jq}/bin/jq -r '.CollectionType // "unknown"')
+
+          if [ "$LIBRARY_TYPE" = "boxsets" ]; then
+            echo "Skipping auto-created collection library: $LIBRARY_NAME"
+            continue
+          fi
 
           if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$LIBRARY_NAME" 'index($name)' >/dev/null 2>&1; then
             echo "Deleting unmanaged library: $LIBRARY_NAME"
