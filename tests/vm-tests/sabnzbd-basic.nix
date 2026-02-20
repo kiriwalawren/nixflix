@@ -55,7 +55,7 @@ pkgsUnfree.testers.runNixOSTest {
                   _secret = pkgs.writeText "eweka-username" "testuser";
                 };
                 password = {
-                  _secret = pkgs.writeText "eweka-password" "testpass123";
+                  _secret = pkgs.writeText "eweka-password" "test,pass'123";
                 };
                 connections = 10;
                 ssl = true;
@@ -145,7 +145,7 @@ pkgsUnfree.testers.runNixOSTest {
     assert "host = news.example.com" in config_content, "Server host not set"
     assert "port = 563" in config_content, "Server port not set"
     assert "testuser" in config_content, "Username not set"
-    assert "testpass123" in config_content, "Password not set"
+    assert "\"test,pass'123\"" in config_content, "Password with special chars not preserved correctly"
     assert "connections = 10" in config_content, "Server connections not set"
     assert "ssl = 1" in config_content, "SSL not enabled"
     assert "priority = 0" in config_content, "Server priority not set"
