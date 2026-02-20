@@ -10,6 +10,7 @@ let
 in
 {
   imports = [
+    ./downloadarr
     ./globals.nix
     ./jellyfin
     ./jellyseerr
@@ -17,13 +18,12 @@ in
     ./mullvad.nix
     ./postgres.nix
     ./prowlarr
-    ./qbittorrent.nix
     ./radarr.nix
     ./recyclarr
-    ./sabnzbd
     ./sonarr-anime.nix
     ./sonarr.nix
-
+    ./torrentClients
+    ./usenetClients
   ];
 
   options.nixflix = {

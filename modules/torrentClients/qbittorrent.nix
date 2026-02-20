@@ -6,17 +6,17 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
-  cfg = config.nixflix.qbittorrent;
+  secrets = import ../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.torrentClients.qbittorrent;
   service = config.services.qbittorrent;
 
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
-  categoriesJson = builtins.toJSON (lib.mapAttrs (name: path: { save_path = path; }) cfg.categories);
+  categoriesJson = builtins.toJSON (lib.mapAttrs (_name: path: { save_path = path; }) cfg.categories);
   categoriesFile = pkgs.writeText "categories.json" categoriesJson;
   configPath = "${service.profileDir}/qBittorrent/config";
 in
 {
-  options.nixflix.qbittorrent = mkOption {
+  options.nixflix.torrentClients.qbittorrent = mkOption {
     type = types.submodule {
       freeformType = types.attrsOf types.anything;
       options = {
@@ -92,7 +92,7 @@ in
             Not for setting the password in qBittorrent
 
             In order to set the password for qBittorrent itself, you will need to configure
-            `nixflix.qbittorrent.serverConfig.Preferences.WebUI.Password_PBKDF2`. Look at the
+            `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Password_PBKDF2`. Look at the
             [serverConfig documentation](https://search.nixos.org/options?channel=unstable&query=qbittorrent&show=services.qbittorrent.serverConfig)
             to see how to configure it.
           '';
@@ -102,6 +102,12 @@ in
           type = types.str;
           default = "sabnzbd";
           description = "Subdomain prefix for nginx reverse proxy.";
+        };
+
+        serverConfig.Preferences.WebUI.Address = mkOption {
+          type = types.str;
+          default = "127.0.0.1";
+          description = "Bind address for the WebUI";
         };
       };
     };

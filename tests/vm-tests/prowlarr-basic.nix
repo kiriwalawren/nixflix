@@ -19,15 +19,26 @@ pkgsUnfree.testers.runNixOSTest {
 
       virtualisation.cores = 4;
 
-      systemd.services.prowlarr-downloadclients = {
-        after = [ "qbittorrent.service" ];
-        requires = [ "qbittorrent.service" ];
-      };
-
       nixflix = {
         enable = true;
 
-        qbittorrent = {
+        prowlarr = {
+          enable = true;
+          config = {
+            hostConfig = {
+              port = 9696;
+              username = "admin";
+              password = {
+                _secret = pkgs.writeText "prowlarr-password" "testpassword123";
+              };
+            };
+            apiKey = {
+              _secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";
+            };
+          };
+        };
+
+        torrentClients.qbittorrent = {
           enable = true;
           webuiPort = 8282;
           password = "test123";
@@ -43,34 +54,7 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        prowlarr = {
-          enable = true;
-          config = {
-            downloadClients = [
-              # TODO: automate this so that I don't need to
-              # Declare it here
-              {
-                name = "qBittorrent";
-                implementationName = "qBittorrent";
-                username = "admin";
-                password = "test123";
-                port = 8282;
-              }
-            ];
-            hostConfig = {
-              port = 9696;
-              username = "admin";
-              password = {
-                _secret = pkgs.writeText "prowlarr-password" "testpassword123";
-              };
-            };
-            apiKey = {
-              _secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";
-            };
-          };
-        };
-
-        sabnzbd = {
+        usenetClients.sabnzbd = {
           enable = true;
           settings = {
             misc = {

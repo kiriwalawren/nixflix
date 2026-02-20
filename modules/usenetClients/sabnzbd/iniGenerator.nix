@@ -1,7 +1,7 @@
 { lib }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
+  secrets = import ../../../lib/secrets { inherit lib; };
   inherit (secrets) isSecretRef;
 
   toIniValue =

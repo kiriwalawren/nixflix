@@ -29,11 +29,12 @@ rec {
       nullable ? false,
       type ? secretOrStrType,
       default ? null,
+      defaultText ? null,
       example ? null,
       description,
     }:
     mkOption {
-      inherit default;
+      inherit default defaultText;
       type = if nullable then types.nullOr type else type;
       example =
         if example != null then

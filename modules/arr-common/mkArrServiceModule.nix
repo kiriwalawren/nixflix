@@ -15,14 +15,6 @@ let
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
   hostConfig = import ./hostConfig.nix { inherit lib pkgs serviceName; };
   rootFolders = import ./rootFolders.nix { inherit lib pkgs serviceName; };
-  downloadClients = import ./downloadClients.nix {
-    inherit
-      lib
-      pkgs
-      serviceName
-      config
-      ;
-  };
   delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
@@ -187,7 +179,6 @@ in
         }
         // extraConfigOptions
         // {
-          downloadClients = downloadClients.options;
           hostConfig = hostConfig.options;
         }
         // optionalAttrs usesMediaDirs {
@@ -241,36 +232,6 @@ in
           password = mkDefault null;
           instanceName = mkDefault capitalizedName;
         };
-        downloadClients = optionals (config.nixflix.sabnzbd.enable or false) [
-          (
-            {
-              name = "SABnzbd";
-              implementationName = "SABnzbd";
-              apiKey = config.nixflix.sabnzbd.settings.misc.api_key;
-              inherit (config.nixflix.sabnzbd.settings.misc) host;
-              inherit (config.nixflix.sabnzbd.settings.misc) port;
-              urlBase = config.nixflix.sabnzbd.settings.misc.url_base;
-            }
-            // optionalAttrs (serviceName == "radarr") {
-              movieCategory = serviceName;
-            }
-            //
-              optionalAttrs
-                (elem serviceName [
-                  "sonarr"
-                  "sonarr-anime"
-                ])
-                {
-                  tvCategory = serviceName;
-                }
-            // optionalAttrs (serviceName == "lidarr") {
-              musicCategory = serviceName;
-            }
-            // optionalAttrs (serviceName == "prowlarr") {
-              category = serviceName;
-            }
-          )
-        ];
       };
     };
 
@@ -476,9 +437,6 @@ in
     }
     // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null) {
       "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
-    }
-    // optionalAttrs (cfg.config.apiKey != null) {
-      "${serviceName}-downloadclients" = downloadClients.mkService cfg.config;
     };
   };
 }

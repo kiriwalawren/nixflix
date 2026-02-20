@@ -91,7 +91,6 @@ pkgs.testers.runNixOSTest {
         };
       };
 
-      # Increase timeout for CI environments where Jellyfin may start slower
       systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
     };
 
