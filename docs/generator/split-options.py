@@ -185,18 +185,19 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     # Service descriptions for index pages
     service_descriptions = {
         "core": "Top-level nixflix configuration options that apply to the entire system.",
-        "sonarr": "Sonarr is a PVR for Usenet and BitTorrent users for TV shows.",
-        "sonarr-anime": "Sonarr is a PVR for Usenet and BitTorrent users for anime TV shows.",
-        "radarr": "Radarr is a PVR for Usenet and BitTorrent users for movies.",
-        "lidarr": "Lidarr is a PVR for Usenet and BitTorrent users for music.",
-        "prowlarr": "Prowlarr is an indexer manager/proxy for Arr applications.",
-        "jellyfin": "Jellyfin is a free media server for managing and streaming media.",
-        "sabnzbd": "SABnzbd is a binary newsreader for Usenet.",
+        "sonarr": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for TV shows.",
+        "sonarr-anime": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for anime TV shows.",
+        "radarr": "[Radarr](https://github.com/Radarr/Radarr) is a PVR for Usenet and BitTorrent users for movies.",
+        "lidarr": "[Lidarr](https://github.com/Lidarr/Lidarr) is a PVR for Usenet and BitTorrent users for music.",
+        "prowlarr": "[Prowlarr](https://github.com/Prowlarr/Prowlarr) is an indexer manager/proxy for Arr applications.",
+        "jellyfin": "[Jellyfin](https://github.com/jellyfin/jellyfin) is a free media server for managing and streaming media.",
+        "jellyseerr": "[Jellyseerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
+        "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
-        "qbittorrent": "qBittorrent is a BitTorrent download client.",
-        "mullvad": "Mullvad VPN configuration for routing traffic through a VPN tunnel.",
-        "postgres": "PostgreSQL database backend for Arr services.",
-        "recyclarr": "Recyclarr automatically syncs TRaSH guides to Arr services.",
+        "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",
+        "mullvad": "[Mullvad VPN](https://mullvad.net/en) configuration for routing traffic through a VPN tunnel.",
+        "postgres": "[PostgreSQL](https://www.postgresql.org/) database backend for Arr services.",
+        "recyclarr": "[Recyclarr](https://github.com/recyclarr/recyclarr) automatically syncs TRaSH guides to Arr services.",
     }
 
     base_title = get_service_title(service)

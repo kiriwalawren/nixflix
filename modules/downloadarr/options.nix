@@ -294,26 +294,36 @@ in
   options.nixflix.downloadarr = mkOption {
     type = types.submodule {
       options = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether to enable Downloadarr.";
+
+        };
         sabnzbd = mkOption {
           type = sabnzbdType;
           default = { };
           description = "SABnzbd download client definition for Starr services.";
         };
+
         qbittorrent = mkOption {
           type = qbittorrentType;
           default = { };
           description = "qBittorrent download client definition for Starr services.";
         };
+
         rtorrent = mkOption {
           type = rtorrentType;
           default = { };
           description = "rTorrent download client definition for Starr services.";
         };
+
         deluge = mkOption {
           type = delugeType;
           default = { };
           description = "Deluge download client definition for Starr services.";
         };
+
         transmission = mkOption {
           type = transmissionType;
           default = { };
@@ -321,14 +331,7 @@ in
         };
 
         extraClients = mkOption {
-          type = types.listOf (
-            types.oneOf [
-              sabnzbdType
-              qbittorrentType
-              rtorrentType
-              delugeType
-            ]
-          );
+          type = types.listOf (types.attrsOf types.anything);
           default = [ ];
           description = "For more clients if you need more than one client.";
         };

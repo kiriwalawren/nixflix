@@ -12,7 +12,13 @@ let
   cfg = config.nixflix.downloadarr;
 
   allClients = filter (c: c.enable) (
-    builtins.attrValues (builtins.removeAttrs cfg [ "extraClients" ]) ++ cfg.extraClients
+    builtins.attrValues (
+      builtins.removeAttrs cfg [
+        "extraClients"
+        "enable"
+      ]
+    )
+    ++ cfg.extraClients
   );
 
   clientDependencies = unique (concatMap (c: c.dependencies) allClients);
@@ -235,7 +241,7 @@ let
   ) arrServices;
 in
 {
-  config = mkIf (config.nixflix.enable && allClients != [ ]) {
+  config = mkIf (config.nixflix.enable && cfg.enable && allClients != [ ]) {
     systemd.services = mkMerge (map mkDownloadClientsService enabledArrServices);
   };
 }
