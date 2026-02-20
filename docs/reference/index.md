@@ -1,7 +1,3 @@
----
-title: Options Reference
----
-
 # Options Reference
 
 This section contains automatically generated documentation for all Nixflix configuration options.
@@ -37,7 +33,15 @@ Each option is documented with:
 
 ### Download Clients
 
-- [SABnzbd](sabnzbd/index.md) - Usenet download client
+- [Downloadarr](downloadarr/index.md).
+
+#### Usenet
+
+- [SABnzbd](usenetClients/sabnzbd/index.md)
+
+#### BitTorrent
+
+- [qBittorrent](torrentClients/qbittorrent/index.md)
 
 ### Infrastructure
 

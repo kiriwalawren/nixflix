@@ -42,12 +42,12 @@ rec {
         else
           literalExpression ''{ _secret = "/run/secrets/secret-file"; }'';
       description = ''
+        ${description}
+
         !!! warning
             Can be a plain string (visible in Nix store) or `{ _secret = /path/to/file; }` for file-based secrets.
 
             Plain-text secrets will be visible in the Nix store. Use `{ _secret = path; }` for sensitive data.
-
-        ${description}
       '';
     };
 

@@ -267,7 +267,7 @@ let
   };
 
   delugeType = mkDownloadClientType {
-    implementationName = "rTorrent";
+    implementationName = "Deluge";
 
     host.default = "localhost";
 
@@ -336,9 +336,11 @@ in
     };
     default = { };
     description = ''
-      Download client configurations for the Starr services. This provides one location where you
-      can declare all of your download clients. They will automatically be configured in each
-      Starr service.
+      Downloadarr is a service that is responsible for configuring Starr services with download clients.
+      When you enable the service for that client to run, Downloadarr integrates it automatically with each Starr service.
+
+      The list is small right now. However, Downloadarr itself supports supports more integrations than Nixflix supports.
+      It just has less magic built in.
 
       Each module is currently only a subset of the options available. You can add more options reqresented
       in the UI if you know their keys.
