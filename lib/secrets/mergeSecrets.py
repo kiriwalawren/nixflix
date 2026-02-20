@@ -24,7 +24,10 @@ def merge_secrets(template_path: str, output_path: str):
 
     def replace_secret(match):
         secret_path = match.group(1)
-        return read_secret_file(secret_path)
+        value = read_secret_file(secret_path)
+        # Triple-double-quote to protect against ConfigObj special chars
+        # (commas trigger list parsing, quotes trigger string parsing)
+        return '"""' + value + '"""'
 
     result = re.sub(pattern, replace_secret, template)
 
