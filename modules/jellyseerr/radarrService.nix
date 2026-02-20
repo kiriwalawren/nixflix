@@ -74,7 +74,7 @@ let
         if radarrCfg.activeProfileName != null then
           ''
             PROFILE_ID=$(echo "$TEST_BODY" | ${pkgs.jq}/bin/jq -r \
-              '.profiles[] | select(.name == "${radarrCfg.activeProfileName}") | .id')
+              --arg name ${escapeShellArg radarrCfg.activeProfileName} '.profiles[] | select(.name == $name) | .id')
             PROFILE_NAME="${radarrCfg.activeProfileName}"
           ''
         else
@@ -103,7 +103,7 @@ let
         "$BASE_URL/api/v1/settings/radarr")
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-        '.[] | select(.name == "${radarrName}") | .id')
+        --arg name ${escapeShellArg radarrName} '.[] | select(.name == $name) | .id')
 
       # Build server configuration
       SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \

@@ -74,7 +74,7 @@ let
         if sonarrCfg.activeProfileName != null then
           ''
             PROFILE_ID=$(echo "$TEST_BODY" | ${pkgs.jq}/bin/jq -r \
-              '.profiles[] | select(.name == "${sonarrCfg.activeProfileName}") | .id')
+              --arg name ${escapeShellArg sonarrCfg.activeProfileName} '.profiles[] | select(.name == $name) | .id')
             PROFILE_NAME="${sonarrCfg.activeProfileName}"
           ''
         else
@@ -101,7 +101,7 @@ let
         if sonarrCfg.activeAnimeProfileName != null then
           ''
             ANIME_PROFILE_ID=$(echo "$TEST_BODY" | ${pkgs.jq}/bin/jq -r \
-              '.profiles[] | select(.name == "${sonarrCfg.activeAnimeProfileName}") | .id')
+              --arg name ${escapeShellArg sonarrCfg.activeAnimeProfileName} '.profiles[] | select(.name == $name) | .id')
             ANIME_PROFILE_NAME="${sonarrCfg.activeAnimeProfileName}"
 
             if [ -z "$ANIME_PROFILE_ID" ] || [ "$ANIME_PROFILE_ID" = "null" ]; then
@@ -126,7 +126,7 @@ let
         "$BASE_URL/api/v1/settings/sonarr")
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-        '.[] | select(.name == "${sonarrName}") | .id')
+        --arg name ${escapeShellArg sonarrName} '.[] | select(.name == $name) | .id')
 
       # Build server configuration
       SERVER_CONFIG=$(${pkgs.jq}/bin/jq -n \

@@ -168,9 +168,9 @@ in
               '
           }
 
-          FIELD_OVERRIDES='${fieldOverridesJson}'
+          FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
 
-          EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+          EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
 
           if [ -n "$EXISTING_INDEXER" ]; then
             echo "Indexer ${indexerName} already exists, updating..."
@@ -194,7 +194,7 @@ in
           else
             echo "Indexer ${indexerName} does not exist, creating..."
 
-            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${indexerName}") | @json' || echo "")
+            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
 
             if [ -z "$SCHEMA" ]; then
               echo "Error: No schema found for indexer ${indexerName}"

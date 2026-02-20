@@ -80,7 +80,7 @@ in
           folderPath = folderConfig.path;
         in
         ''
-          if ! echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -e '.[] | select(.path == "${folderPath}")' >/dev/null 2>&1; then
+          if ! echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -e --arg path ${escapeShellArg folderPath} '.[] | select(.path == $path)' >/dev/null 2>&1; then
             echo "Creating root folder: ${folderPath}"
             ${
               mkSecureCurl serviceConfig.apiKey {

@@ -23,7 +23,13 @@ in
     let
       jqSecrets = secrets.mkJqSecretArgs {
         inherit (serviceConfig) apiKey;
-        inherit (serviceConfig.hostConfig) password;
+        inherit (serviceConfig.hostConfig)
+          username
+          password
+          sslCertPassword
+          proxyUsername
+          proxyPassword
+          ;
       };
     in
     {
@@ -67,42 +73,59 @@ in
         NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
           ${jqSecrets.flagsString} \
           --argjson id "$CONFIG_ID" \
+          --arg bindAddress ${escapeShellArg serviceConfig.hostConfig.bindAddress} \
+          --arg authenticationMethod ${escapeShellArg serviceConfig.hostConfig.authenticationMethod} \
+          --arg authenticationRequired ${escapeShellArg serviceConfig.hostConfig.authenticationRequired} \
+          --arg logLevel ${escapeShellArg serviceConfig.hostConfig.logLevel} \
+          --arg consoleLogLevel ${escapeShellArg serviceConfig.hostConfig.consoleLogLevel} \
+          --arg branch ${escapeShellArg serviceConfig.hostConfig.branch} \
+          --arg sslCertPath ${escapeShellArg serviceConfig.hostConfig.sslCertPath} \
+          --arg urlBase ${escapeShellArg serviceConfig.hostConfig.urlBase} \
+          --arg instanceName ${escapeShellArg serviceConfig.hostConfig.instanceName} \
+          --arg applicationUrl ${escapeShellArg serviceConfig.hostConfig.applicationUrl} \
+          --arg updateMechanism ${escapeShellArg serviceConfig.hostConfig.updateMechanism} \
+          --arg updateScriptPath ${escapeShellArg serviceConfig.hostConfig.updateScriptPath} \
+          --arg proxyType ${escapeShellArg serviceConfig.hostConfig.proxyType} \
+          --arg proxyHostname ${escapeShellArg serviceConfig.hostConfig.proxyHostname} \
+          --arg proxyBypassFilter ${escapeShellArg serviceConfig.hostConfig.proxyBypassFilter} \
+          --arg certificateValidation ${escapeShellArg serviceConfig.hostConfig.certificateValidation} \
+          --arg backupFolder ${escapeShellArg serviceConfig.hostConfig.backupFolder} \
           '{
             id: $id,
-            bindAddress: "${serviceConfig.hostConfig.bindAddress}",
+            bindAddress: $bindAddress,
             port: ${builtins.toString serviceConfig.hostConfig.port},
             sslPort: ${builtins.toString serviceConfig.hostConfig.sslPort},
             enableSsl: ${boolToString serviceConfig.hostConfig.enableSsl},
             launchBrowser: ${boolToString serviceConfig.hostConfig.launchBrowser},
-            authenticationMethod: "${serviceConfig.hostConfig.authenticationMethod}",
-            authenticationRequired: "${serviceConfig.hostConfig.authenticationRequired}",
+            authenticationMethod: $authenticationMethod,
+            authenticationRequired: $authenticationRequired,
             analyticsEnabled: ${boolToString serviceConfig.hostConfig.analyticsEnabled},
-            username: "${serviceConfig.hostConfig.username}",
+            username: ${jqSecrets.refs.username},
             password: ${jqSecrets.refs.password},
             passwordConfirmation: ${jqSecrets.refs.password},
-            logLevel: "${serviceConfig.hostConfig.logLevel}",
+            logLevel: $logLevel,
             logSizeLimit: ${builtins.toString serviceConfig.hostConfig.logSizeLimit},
-            consoleLogLevel: "${serviceConfig.hostConfig.consoleLogLevel}",
-            branch: "${serviceConfig.hostConfig.branch}",
+            consoleLogLevel: $consoleLogLevel,
+            branch: $branch,
             apiKey: ${jqSecrets.refs.apiKey},
-            sslCertPath: "${serviceConfig.hostConfig.sslCertPath}",
-            sslCertPassword: "${serviceConfig.hostConfig.sslCertPassword}",
-            urlBase: "${serviceConfig.hostConfig.urlBase}",
-            instanceName: "${serviceConfig.hostConfig.instanceName}",
-            applicationUrl: "${serviceConfig.hostConfig.applicationUrl}",
+            sslCertPath: $sslCertPath,
+            sslCertPassword: ${jqSecrets.refs.sslCertPassword},
+            urlBase: $urlBase,
+            instanceName: $instanceName,
+            applicationUrl: $applicationUrl,
             updateAutomatically: ${boolToString serviceConfig.hostConfig.updateAutomatically},
-            updateMechanism: "${serviceConfig.hostConfig.updateMechanism}",
-            updateScriptPath: "${serviceConfig.hostConfig.updateScriptPath}",
+            updateMechanism: $updateMechanism,
+            updateScriptPath: $updateScriptPath,
             proxyEnabled: ${boolToString serviceConfig.hostConfig.proxyEnabled},
-            proxyType: "${serviceConfig.hostConfig.proxyType}",
-            proxyHostname: "${serviceConfig.hostConfig.proxyHostname}",
+            proxyType: $proxyType,
+            proxyHostname: $proxyHostname,
             proxyPort: ${builtins.toString serviceConfig.hostConfig.proxyPort},
-            proxyUsername: "${serviceConfig.hostConfig.proxyUsername}",
-            proxyPassword: "${serviceConfig.hostConfig.proxyPassword}",
-            proxyBypassFilter: "${serviceConfig.hostConfig.proxyBypassFilter}",
+            proxyUsername: ${jqSecrets.refs.proxyUsername},
+            proxyPassword: ${jqSecrets.refs.proxyPassword},
+            proxyBypassFilter: $proxyBypassFilter,
             proxyBypassLocalAddresses: ${boolToString serviceConfig.hostConfig.proxyBypassLocalAddresses},
-            certificateValidation: "${serviceConfig.hostConfig.certificateValidation}",
-            backupFolder: "${serviceConfig.hostConfig.backupFolder}",
+            certificateValidation: $certificateValidation,
+            backupFolder: $backupFolder,
             backupInterval: ${builtins.toString serviceConfig.hostConfig.backupInterval},
             backupRetention: ${builtins.toString serviceConfig.hostConfig.backupRetention},
             trustCgnatIpAddresses: ${boolToString serviceConfig.hostConfig.trustCgnatIpAddresses}

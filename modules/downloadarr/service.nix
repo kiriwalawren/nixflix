@@ -175,9 +175,9 @@ let
                   '
               }
 
-              FIELD_OVERRIDES='${fieldOverridesJson}'
+              FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
 
-              EXISTING_CLIENT=$(echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${clientName}") | @json' || echo "")
+              EXISTING_CLIENT=$(echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg clientName} '.[] | select(.name == $name) | @json' || echo "")
 
               if [ -n "$EXISTING_CLIENT" ]; then
                 echo "Download client ${clientName} already exists, updating..."
@@ -201,7 +201,7 @@ let
               else
                 echo "Download client ${clientName} does not exist, creating..."
 
-                SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.implementationName == "${implementationName}") | @json' || echo "")
+                SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg implName ${escapeShellArg implementationName} '.[] | select(.implementationName == $implName) | @json' || echo "")
 
                 if [ -z "$SCHEMA" ]; then
                   echo "Error: No schema found for download client implementationName ${implementationName}"

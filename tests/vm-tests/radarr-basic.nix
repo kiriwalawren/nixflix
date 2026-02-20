@@ -28,6 +28,7 @@ pkgsUnfree.testers.runNixOSTest {
           mediaDirs = [ "/media/movies" ];
           config = {
             hostConfig = {
+              instanceName = "Radarr's Apostrophe Test";
               port = 7878;
               username = "admin";
               password = {
