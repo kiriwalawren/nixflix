@@ -46,7 +46,6 @@ let
     serviceName: client:
     let
       stripped = builtins.removeAttrs client [
-        "enable"
         "categories"
         "dependencies"
       ];
