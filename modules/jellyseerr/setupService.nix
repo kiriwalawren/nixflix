@@ -31,10 +31,6 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
-    systemd.tmpfiles.rules = [
-      "d '/run/jellyseerr' 0750 ${cfg.user} ${cfg.group} - -"
-    ];
-
     systemd.services.jellyseerr-setup = {
       description = "Complete Jellyseerr initial setup with Jellyfin";
       after = [

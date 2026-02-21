@@ -138,7 +138,7 @@ in
       settings."10-qbittorrent" = {
         ${service.profileDir}.d = {
           inherit (service) user group;
-          mode = "0700";
+          mode = "0755";
         };
       };
     };

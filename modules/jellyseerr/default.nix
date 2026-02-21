@@ -74,9 +74,18 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [
-      "d '${cfg.dataDir}' 0750 ${cfg.user} ${cfg.group} - -"
-    ];
+    systemd.tmpfiles.settings."10-jellyseerr" = {
+      "/run/jellyseerr".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.dataDir}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+    };
 
     services.postgresql = mkIf config.services.postgresql.enable {
       ensureDatabases = [ cfg.user ];

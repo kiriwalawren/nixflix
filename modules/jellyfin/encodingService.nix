@@ -25,9 +25,12 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
-    systemd.tmpfiles.rules = mkIf (cfg.encoding.transcodingTempPath != "") [
-      "d '${cfg.encoding.transcodingTempPath}' 0755 ${cfg.user} ${cfg.group} - -"
-    ];
+    systemd.tmpfiles.settings."10-jellyfin" = mkIf (cfg.encoding.transcodingTempPath != "") {
+      "${cfg.encoding.transcodingTempPath}".d = {
+        inherit (cfg) user group;
+        mode = "0755";
+      };
+    };
 
     systemd.services.jellyfin-encoding-config = {
       description = "Configure Jellyfin Encoding via API";

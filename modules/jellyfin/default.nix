@@ -87,15 +87,43 @@ in
       gid = mkForce globals.gids.${cfg.group};
     };
 
-    systemd.tmpfiles.rules = [
-      "d '${cfg.dataDir}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.configDir}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.cacheDir}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.logDir}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.system.metadataPath}' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '${cfg.dataDir}/data' 0750 ${cfg.user} ${cfg.group} - -"
-      "d '/run/jellyfin' 0750 ${cfg.user} ${cfg.group} - -"
-    ];
+    systemd.tmpfiles.settings."10-jellyfin" = {
+      "${cfg.dataDir}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.configDir}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.cacheDir}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.logDir}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.system.metadataPath}".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "${cfg.dataDir}/data".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+      "/run/jellyfin".d = {
+        mode = "0755";
+        user = cfg.user;
+        group = cfg.group;
+      };
+    };
 
     environment.etc = {
       "jellyfin/network.xml.template".text = networkXmlContent;
@@ -103,7 +131,11 @@ in
 
     systemd.services.jellyfin = {
       description = "Jellyfin Media Server";
-      after = [ "network-online.target" ];
+      after = [
+        "network-online.target"
+        "systemd-tmpfiles-setup.service"
+      ];
+      requires = [ "systemd-tmpfiles-setup.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
