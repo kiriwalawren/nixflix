@@ -376,17 +376,20 @@ in
 
         after = [
           "network.target"
+          "nixflix-setup-dirs.service"
         ]
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")
         ++ (optional config.services.postgresql.enable "postgresql-ready.target")
         ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-        requires =
-          (optional (
-            cfg.config.apiKey != null && cfg.config.hostConfig.password != null
-          ) "${serviceName}-env.service")
-          ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ (optional (
+          cfg.config.apiKey != null && cfg.config.hostConfig.password != null
+        ) "${serviceName}-env.service")
+        ++ (optional config.services.postgresql.enable "postgresql-ready.target");
         wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
         wantedBy = [ "multi-user.target" ];
 

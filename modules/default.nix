@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -173,6 +174,22 @@ in
         group = globals.libraryOwner.group;
       };
     };
+
+    systemd.services.nixflix-setup-dirs = {
+      description = "Create tmp files";
+      after = [ "systemd-tmpfiles-setup.service" ];
+      requires = [ "systemd-tmpfiles-setup.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+
+      script = ''
+        ${pkgs.systemd}/bin/systemd-tmpfiles --create
+      '';
+    };
+
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;
       recommendedTlsSettings = true;

@@ -133,10 +133,12 @@ in
       description = "Jellyfin Media Server";
       after = [
         "network-online.target"
-        "systemd-tmpfiles-setup.service"
+        "nixflix-setup-dirs.service"
       ];
-      requires = [ "systemd-tmpfiles-setup.service" ];
-      wants = [ "network-online.target" ];
+      wants = [
+        "network-online.target"
+        "nixflix-setup-dirs.service"
+      ];
       wantedBy = [ "multi-user.target" ];
 
       restartTriggers = [

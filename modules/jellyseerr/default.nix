@@ -150,6 +150,7 @@ in
 
         after = [
           "network-online.target"
+          "nixflix-setup-dirs.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional nixflix.mullvad.enable "mullvad-config.service"
@@ -162,9 +163,11 @@ in
         ++ optional nixflix.mullvad.enable "mullvad-config.service"
         ++ optional nixflix.jellyfin.enable "jellyfin.service";
 
-        requires =
-          optional (cfg.apiKey != null) "jellyseerr-env.service"
-          ++ optional config.services.postgresql.enable "postgresql-ready.target";
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
+        ++ optional config.services.postgresql.enable "postgresql-ready.target";
 
         wantedBy = [ "multi-user.target" ];
 

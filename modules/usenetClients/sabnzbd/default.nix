@@ -132,7 +132,11 @@ in
 
     systemd.services.sabnzbd = {
       description = "SABnzbd Usenet Downloader";
-      after = [ "network-online.target" ];
+      after = [
+        "network-online.target"
+        "nixflix-setup-dirs.service"
+      ];
+      requires = [ "nixflix-setup-dirs.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
       restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
