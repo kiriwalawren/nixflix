@@ -90,38 +90,38 @@ in
     systemd.tmpfiles.settings."10-jellyfin" = {
       "${cfg.dataDir}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.configDir}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.cacheDir}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.logDir}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.system.metadataPath}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.dataDir}/data".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "/run/jellyfin".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
     };
 

@@ -165,13 +165,13 @@ in
       };
       "${cfg.mediaDir}".d = {
         mode = "0774";
-        user = globals.libraryOwner.user;
-        group = globals.libraryOwner.group;
+        inherit (globals.libraryOwner) user;
+        inherit (globals.libraryOwner) group;
       };
       "${cfg.downloadsDir}".d = {
         mode = "0774";
-        user = globals.libraryOwner.user;
-        group = globals.libraryOwner.group;
+        inherit (globals.libraryOwner) user;
+        inherit (globals.libraryOwner) group;
       };
     };
 

@@ -77,13 +77,13 @@ in
     systemd.tmpfiles.settings."10-jellyseerr" = {
       "/run/jellyseerr".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
       "${cfg.dataDir}".d = {
         mode = "0755";
-        user = cfg.user;
-        group = cfg.group;
+        inherit (cfg) user;
+        inherit (cfg) group;
       };
     };
 
