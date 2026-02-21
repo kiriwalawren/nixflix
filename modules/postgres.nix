@@ -35,7 +35,7 @@ in
       tmpfiles.settings."10-postgresql".${stateDir}.d = {
         user = "postgres";
         group = "postgres";
-        mode = "0755";
+        mode = "0700";
       };
 
       targets.postgresql-ready = {
