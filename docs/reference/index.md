@@ -33,7 +33,7 @@ Each option is documented with:
 
 ### Download Clients
 
-- [Downloadarr](downloadarr/index.md).
+- [Downloadarr](downloadarr/index.md)
 
 #### Usenet
 

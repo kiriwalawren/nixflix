@@ -49,7 +49,7 @@ Nixflix is:
 
 - [ ] Jellyfin Plugin Configuration
 - [X] Torrent client integration
-- [X] Qbittorrent Client Configuration
+- [X] qBittorrent Client Configuration
 - [ ] Jellystat configuration
 - [ ] Media Removal Automation
 - [ ] Subtitle Management
@@ -74,7 +74,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 ### Jellyfin
 
 - Basic server management
-- Libraries are automatically configure based on elected media managers
+- Libraries are automatically configured based on elected media managers
 
 ### Jellyseerr
 
@@ -83,6 +83,10 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Automatic integration with Jellyfin libraries
 
 ### SABnzbd
+
+- Automatic integration with Starr services
+
+### qBittorrent
 
 - Automatic integration with Starr services
 
