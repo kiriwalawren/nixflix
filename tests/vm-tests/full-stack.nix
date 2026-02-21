@@ -114,7 +114,7 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        sabnzbd = {
+        usenetClients.sabnzbd = {
           enable = true;
           settings = {
             misc = {

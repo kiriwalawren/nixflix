@@ -19,41 +19,12 @@ pkgsUnfree.testers.runNixOSTest {
 
       virtualisation.cores = 4;
 
-      services.qbittorrent = {
-        enable = true;
-        webuiPort = 8282;
-        serverConfig = {
-          LegalNotice.Accepted = true;
-          Preferences = {
-            WebUI = {
-              Username = "admin";
-              Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
-            };
-            General.Locale = "en";
-          };
-        };
-      };
-
-      systemd.services.prowlarr-downloadclients = {
-        after = [ "qbittorrent.service" ];
-        requires = [ "qbittorrent.service" ];
-      };
-
       nixflix = {
         enable = true;
 
         prowlarr = {
           enable = true;
           config = {
-            downloadClients = [
-              {
-                name = "qBittorrent";
-                implementationName = "qBittorrent";
-                username = "admin";
-                password = "test123";
-                port = 8282;
-              }
-            ];
             hostConfig = {
               port = 9696;
               username = "admin";
@@ -67,7 +38,23 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        sabnzbd = {
+        torrentClients.qbittorrent = {
+          enable = true;
+          webuiPort = 8282;
+          password = "test123";
+          serverConfig = {
+            LegalNotice.Accepted = true;
+            Preferences = {
+              WebUI = {
+                Username = "admin";
+                Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
+              };
+              General.Locale = "en";
+            };
+          };
+        };
+
+        usenetClients.sabnzbd = {
           enable = true;
           settings = {
             misc = {
@@ -129,14 +116,12 @@ pkgsUnfree.testers.runNixOSTest {
         f"Expected SABnzbd download client, found {clients_list}"
     assert sabnzbd['implementationName'] == 'SABnzbd', \
         "Expected SABnzbd implementation"
-    print("SABnzbd download client configured successfully!")
 
     qbittorrent = next((c for c in clients_list if c["name"] == "qBittorrent"), None)
     assert qbittorrent is not None, \
         f"Expected qBittorrent download client, found {clients_list}"
     assert qbittorrent['implementationName'] == 'qBittorrent', \
         "Expected qBittorrent implementation"
-    print("qBittorrent download client configured successfully!")
 
     # Verify the service is running
     machine.succeed("pgrep Prowlarr")

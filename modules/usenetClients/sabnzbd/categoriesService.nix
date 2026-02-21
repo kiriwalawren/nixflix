@@ -6,12 +6,11 @@
 }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
-  inherit (config) nixflix;
-  cfg = nixflix.sabnzbd;
+  secrets = import ../../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.usenetClients.sabnzbd;
 in
 {
-  config = mkIf (nixflix.enable && cfg.enable && cfg.settings.categories != [ ]) {
+  config = mkIf (config.nixflix.enable && cfg.enable && cfg.settings.categories != [ ]) {
     systemd.services.sabnzbd-categories = {
       description = "Configure SABnzbd categories";
       after = [ "sabnzbd.service" ];

@@ -182,7 +182,7 @@ in
         {
           nixflix = {
             enable = true;
-            sabnzbd = {
+            usenetClients.sabnzbd = {
               enable = true;
               downloadsDir = "/downloads/usenet";
               settings = {

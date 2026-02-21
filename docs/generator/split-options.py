@@ -9,7 +9,12 @@ from collections import defaultdict
 
 def load_options(json_path: Path) -> Dict[str, Any]:
     with open(json_path) as f:
-        return json.load(f)
+        all_options = json.load(f)
+    return {
+        name: opt
+        for name, opt in all_options.items()
+        if not opt.get("readOnly", False) and not opt.get("internal", False)
+    }
 
 
 def get_option_hierarchy(option_name: str) -> List[str]:
@@ -168,6 +173,8 @@ def get_service_title(service: str) -> str:
     """Get the display title for a service. Only special cases need to be listed."""
     special_titles = {
         "sabnzbd": "SABnzbd",
+        "qbittorrent": "qBittorrent",
+        "rtorrent": "rTorrent",
         "mullvad": "Mullvad VPN",
         "postgres": "PostgreSQL",
     }
@@ -178,16 +185,19 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     # Service descriptions for index pages
     service_descriptions = {
         "core": "Top-level nixflix configuration options that apply to the entire system.",
-        "sonarr": "Sonarr is a PVR for Usenet and BitTorrent users for TV shows.",
-        "sonarr-anime": "Sonarr is a PVR for Usenet and BitTorrent users for anime TV shows.",
-        "radarr": "Radarr is a PVR for Usenet and BitTorrent users for movies.",
-        "lidarr": "Lidarr is a PVR for Usenet and BitTorrent users for music.",
-        "prowlarr": "Prowlarr is an indexer manager/proxy for Arr applications.",
-        "jellyfin": "Jellyfin is a free media server for managing and streaming media.",
-        "sabnzbd": "SABnzbd is a binary newsreader for Usenet.",
-        "mullvad": "Mullvad VPN configuration for routing traffic through a VPN tunnel.",
-        "postgres": "PostgreSQL database backend for Arr services.",
-        "recyclarr": "Recyclarr automatically syncs TRaSH guides to Arr services.",
+        "sonarr": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for TV shows.",
+        "sonarr-anime": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for anime TV shows.",
+        "radarr": "[Radarr](https://github.com/Radarr/Radarr) is a PVR for Usenet and BitTorrent users for movies.",
+        "lidarr": "[Lidarr](https://github.com/Lidarr/Lidarr) is a PVR for Usenet and BitTorrent users for music.",
+        "prowlarr": "[Prowlarr](https://github.com/Prowlarr/Prowlarr) is an indexer manager/proxy for Arr applications.",
+        "jellyfin": "[Jellyfin](https://github.com/jellyfin/jellyfin) is a free media server for managing and streaming media.",
+        "jellyseerr": "[Jellyseerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
+        "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
+        "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
+        "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",
+        "mullvad": "[Mullvad VPN](https://mullvad.net/en) configuration for routing traffic through a VPN tunnel.",
+        "postgres": "[PostgreSQL](https://www.postgresql.org/) database backend for Arr services.",
+        "recyclarr": "[Recyclarr](https://github.com/recyclarr/recyclarr) automatically syncs TRaSH guides to Arr services.",
     }
 
     base_title = get_service_title(service)
@@ -301,10 +311,10 @@ def get_page_nav_title(page_key: str) -> str:
     # Handle nested paths like "config.delayProfiles"
     parts = page_key.split(".")
     if len(parts) > 1:
-        titles = [special_cases.get(p, special_case_to_title(p)) for p in parts]
+        titles = [special_cases.get(p, get_service_title(p)) for p in parts]
         return " - ".join(titles)
 
-    return special_cases.get(page_key, special_case_to_title(page_key))
+    return special_cases.get(page_key, get_service_title(page_key))
 
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
@@ -343,15 +353,12 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
             # Build file path
             file_path = "/".join(["reference", service] + current_path + ["index.md"])
 
+            # Create section with page as index (navigation.indexes merges it into header)
+            f.write(f"{indent_str}- {title}:\n")
+            child_indent = "    " * (indent + 1)
+            f.write(f"{child_indent}- {title}: {file_path}\n")
             if node["_children"]:
-                # Has children - create expandable section with parent page first
-                f.write(f"{indent_str}- {title}:\n")
-                child_indent = "    " * (indent + 1)
-                f.write(f"{child_indent}- {title}: {file_path}\n")
                 write_nav_tree(f, node["_children"], service, current_path, indent + 1)
-            else:
-                # No children - just a simple page
-                f.write(f"{indent_str}- {title}: {file_path}\n")
         elif node["_children"]:
             # Intermediate node without its own page - just recurse into children
             write_nav_tree(f, node["_children"], service, current_path, indent)
@@ -379,14 +386,20 @@ def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir
             pages = categorized[service]
 
             tree = build_hierarchical_nav(pages)
+            has_index = "index" in pages and len(pages["index"]) > 0
 
-            if len(pages) == 1 and "index" in pages and not tree:
+            if has_index and not tree:
                 # Only index page, no children - still make it a section for consistent styling
                 f.write(f"    - {title}:\n")
                 f.write(f"        - {title}: reference/{service}/index.md\n")
-            else:
+            elif has_index:
+                # Has both index page and sub-pages
                 f.write(f"    - {title}:\n")
                 f.write(f"        - {title}: reference/{service}/index.md\n")
+                write_nav_tree(f, tree, service, [], 2)
+            else:
+                # No index page (parent is a namespace, not an option) - section header only
+                f.write(f"    - {title}:\n")
                 write_nav_tree(f, tree, service, [], 2)
 
 

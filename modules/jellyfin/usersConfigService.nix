@@ -87,7 +87,7 @@ in
               echo "Processing user: ${userName}"
               echo "=========================================="
 
-              USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id' || echo "")
+              USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name == $name) | .Id' || echo "")
               echo "Found USER_ID for ${userName}: $USER_ID"
               IS_NEW_USER=false
 
@@ -129,11 +129,11 @@ in
                     apiKeyHeader = "Authorization";
                   }
                 })
-                USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.Name == "${userName}") | .Id')
+                USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name == $name) | .Id')
               fi
 
               echo "Current user settings from server:"
-              echo "$USERS_JSON" | ${pkgs.jq}/bin/jq ".[] | select(.Name == \"${userName}\")"
+              echo "$USERS_JSON" | ${pkgs.jq}/bin/jq --arg name ${escapeShellArg userName} '.[] | select(.Name == $name)'
 
               echo ""
               echo "Configured payload to send:"

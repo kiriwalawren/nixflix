@@ -4,9 +4,8 @@
 }:
 let
   inherit (lib) types mkOption;
-  secrets = import ../../lib/secrets { inherit lib; };
-  cfg = config.nixflix.sabnzbd;
-  inherit (config) nixflix;
+  secrets = import ../../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.usenetClients.sabnzbd;
 
   enumFromAttrs =
     enum_values:
@@ -149,15 +148,17 @@ let
     options = {
       host = mkOption {
         type = types.str;
-        default = "127.0.0.1";
+        default = if config.nixflix.nginx.enable then "127.0.0.1" else "0.0.0.0";
+        defaultText = lib.literalExpression ''if config.nixflix.nginx.enable then "127.0.0.1" else "0.0.0.0"'';
         example = "0.0.0.0";
         description = "Address for the Web UI to listen on for incoming connections.";
       };
 
       host_whitelist = mkOption {
         type = types.str;
-        default = if nixflix.nginx.enable then "${cfg.subdomain}.${nixflix.nginx.domain}" else "";
-        defaultText = lib.literalExpression ''if nixflix.nginx.enable then "''${cfg.subdomain}.''${nixflix.nginx.domain}" else ""'';
+        default =
+          if config.nixflix.nginx.enable then "${cfg.subdomain}.${config.nixflix.nginx.domain}" else "";
+        defaultText = lib.literalExpression ''if config.nixflix.nginx.enable then "''${cfg.subdomain}.''${config.nixflix.nginx.domain}" else ""'';
         description = ''
           Hostname verification whitelist. SABnzbd refuses connections from hostnames not in this list.
           Automatically includes the service hostname when nginx is enabled.
@@ -182,6 +183,7 @@ let
       url_base = mkOption {
         type = types.str;
         default = "";
+        example = "/sabnzbd";
         description = ''
           When using a reverse proxy (or just if you feel like it), you can change the base-URL of SABnzbd that is used during redirects.
           Trailing slash is not allowed. Leading slash is required unless the base URL is an empty string.
@@ -338,21 +340,21 @@ let
       download_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/incomplete";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/incomplete"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/incomplete"'';
         description = "Incomplete downloads directory";
       };
 
       complete_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/complete";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/complete"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/complete"'';
         description = "Complete downloads directory";
       };
 
       dirscan_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/watch";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/watch"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/watch"'';
         description = "Directory to watch for NZB files";
       };
 
@@ -365,21 +367,21 @@ let
       nzb_backup_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/nzb-backup";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/nzb-backup"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/nzb-backup"'';
         description = "NZB backup directory";
       };
 
       admin_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/admin";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/admin"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/admin"'';
         description = "Admin directory";
       };
 
       log_dir = mkOption {
         type = types.str;
         default = "${cfg.downloadsDir}/logs";
-        defaultText = lib.literalExpression ''nixflix.sabnzbd.downloadsDir + "/logs"'';
+        defaultText = lib.literalExpression ''config.nixflix.usenetClients.sabnzbd.downloadsDir + "/logs"'';
         description = "Log directory";
       };
 
@@ -663,35 +665,35 @@ types.submodule {
     categories = mkOption {
       type = types.listOf categoryType;
       default =
-        lib.optional (nixflix.radarr.enable or false) {
+        lib.optional (config.nixflix.radarr.enable or false) {
           name = "radarr";
           dir = "radarr";
           priority = 0;
           pp = 3;
           script = "None";
         }
-        ++ lib.optional (nixflix.sonarr.enable or false) {
+        ++ lib.optional (config.nixflix.sonarr.enable or false) {
           name = "sonarr";
           dir = "sonarr";
           priority = 0;
           pp = 3;
           script = "None";
         }
-        ++ lib.optional (nixflix.sonarr-anime.enable or false) {
+        ++ lib.optional (config.nixflix.sonarr-anime.enable or false) {
           name = "sonarr-anime";
           dir = "sonarr-anime";
           priority = 0;
           pp = 3;
           script = "None";
         }
-        ++ lib.optional (nixflix.lidarr.enable or false) {
+        ++ lib.optional (config.nixflix.lidarr.enable or false) {
           name = "lidarr";
           dir = "lidarr";
           priority = 0;
           pp = 3;
           script = "None";
         }
-        ++ lib.optional (nixflix.prowlarr.enable or false) {
+        ++ lib.optional (config.nixflix.prowlarr.enable or false) {
           name = "prowlarr";
           dir = "prowlarr";
           priority = 0;
@@ -707,19 +709,19 @@ types.submodule {
           }
         ];
       defaultText = lib.literalExpression ''
-        lib.optional (nixflix.radarr.enable or false) {
+        lib.optional (config.nixflix.radarr.enable or false) {
           name = "radarr"; dir = "radarr"; priority = 0; pp = 3; script = "None";
         }
-        ++ lib.optional (nixflix.sonarr.enable or false) {
+        ++ lib.optional (config.nixflix.sonarr.enable or false) {
           name = "sonarr"; dir = "sonarr"; priority = 0; pp = 3; script = "None";
         }
-        ++ lib.optional (nixflix.sonarr-anime.enable or false) {
+        ++ lib.optional (config.nixflix.sonarr-anime.enable or false) {
           name = "sonarr-anime"; dir = "sonarr-anime"; priority = 0; pp = 3; script = "None";
         }
-        ++ lib.optional (nixflix.lidarr.enable or false) {
+        ++ lib.optional (config.nixflix.lidarr.enable or false) {
           name = "lidarr"; dir = "lidarr"; priority = 0; pp = 3; script = "None";
         }
-        ++ lib.optional (nixflix.prowlarr.enable or false) {
+        ++ lib.optional (config.nixflix.prowlarr.enable or false) {
           name = "prowlarr"; dir = "prowlarr"; priority = 0; pp = 3; script = "None";
         }
         ++ [

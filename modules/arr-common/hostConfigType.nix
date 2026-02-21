@@ -49,14 +49,13 @@ types.submodule {
       description = "Authentication requirement level";
     };
 
-    username = mkOption {
-      type = types.str;
-      default = null;
-      description = "Username";
+    username = secrets.mkSecretOption {
+      nullable = true;
+      description = "Username for web interface authentication.";
     };
 
     password = secrets.mkSecretOption {
-      default = null;
+      nullable = true;
       description = "Password for web interface authentication.";
     };
 
@@ -156,14 +155,12 @@ types.submodule {
       description = "Proxy port";
     };
 
-    proxyUsername = mkOption {
-      type = types.str;
+    proxyUsername = secrets.mkSecretOption {
       default = "";
       description = "Proxy username";
     };
 
-    proxyPassword = mkOption {
-      type = types.str;
+    proxyPassword = secrets.mkSecretOption {
       default = "";
       description = "Proxy password";
     };
@@ -186,8 +183,7 @@ types.submodule {
       description = "SSL certificate path";
     };
 
-    sslCertPassword = mkOption {
-      type = types.str;
+    sslCertPassword = secrets.mkSecretOption {
       default = "";
       description = "SSL certificate password";
     };

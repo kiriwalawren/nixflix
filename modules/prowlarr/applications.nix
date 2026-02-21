@@ -161,9 +161,9 @@ in
               '
           }
 
-          FIELD_OVERRIDES='${fieldOverridesJson}'
+          FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
 
-          EXISTING_APPLICATION=$(echo "$APPLICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | select(.name == "${applicationName}") | @json' || echo "")
+          EXISTING_APPLICATION=$(echo "$APPLICATIONS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg applicationName} '.[] | select(.name == $name) | @json' || echo "")
 
           if [ -n "$EXISTING_APPLICATION" ]; then
             echo "Application ${applicationName} already exists, updating..."
@@ -187,7 +187,7 @@ in
           else
             echo "Application ${applicationName} does not exist, creating..."
 
-            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r '.[] | select(.implementationName == "${implementationName}") | @json' || echo "")
+            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg implName ${escapeShellArg implementationName} '.[] | select(.implementationName == $implName) | @json' || echo "")
 
             if [ -z "$SCHEMA" ]; then
               echo "Error: No schema found for application implementationName ${implementationName}"

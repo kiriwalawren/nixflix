@@ -6,7 +6,7 @@
 }:
 with lib;
 let
-  cfg = config.nixflix.sabnzbd;
+  cfg = config.nixflix.usenetClients.sabnzbd;
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 
   settingsType = import ./settingsType.nix { inherit lib config; };
@@ -22,7 +22,7 @@ in
     ./categoriesService.nix
   ];
 
-  options.nixflix.sabnzbd = {
+  options.nixflix.usenetClients.sabnzbd = {
     enable = mkOption {
       type = types.bool;
       default = false;
@@ -82,16 +82,16 @@ in
     assertions = [
       {
         assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
-        message = "nixflix.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
+        message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
       }
       {
         assertion =
           cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
-        message = "nixflix.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
+        message = "nixflix.usenetClients.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
       }
     ];
 
-    nixflix.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
+    nixflix.usenetClients.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
 
     users.users.${cfg.user} = {
       inherit (cfg) group;
@@ -142,7 +142,7 @@ in
             set -euo pipefail
 
             echo "Merging secrets into SABnzbd configuration..."
-            ${pkgs.python3}/bin/python3 ${../../lib/secrets/mergeSecrets.py} \
+            ${pkgs.python3}/bin/python3 ${../../../lib/secrets/mergeSecrets.py} \
               /etc/sabnzbd/sabnzbd.ini.template \
               ${configFile}
 
@@ -187,7 +187,8 @@ in
         proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
         recommendedProxySettings = true;
         extraConfig = ''
-          proxy_redirect off;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
 
           ${
             if config.nixflix.theme.enable then

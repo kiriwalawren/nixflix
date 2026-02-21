@@ -23,7 +23,7 @@ with lib;
       radarr = 275;
       recyclarr = 269;
       sabnzbd = 38;
-      transmission = 70;
+      qbittorrent = 70;
       cross-seed = 183;
     };
     gids = {

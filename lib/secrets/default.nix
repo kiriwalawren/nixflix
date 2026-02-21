@@ -29,11 +29,12 @@ rec {
       nullable ? false,
       type ? secretOrStrType,
       default ? null,
+      defaultText ? null,
       example ? null,
       description,
     }:
     mkOption {
-      inherit default;
+      inherit default defaultText;
       type = if nullable then types.nullOr type else type;
       example =
         if example != null then
@@ -42,9 +43,10 @@ rec {
           literalExpression ''{ _secret = "/run/secrets/secret-file"; }'';
       description = ''
         ${description}
-        Can be a plain string (visible in Nix store) or `{ _secret = /path/to/file; }` for file-based secrets.
 
         !!! warning
+            Can be a plain string (visible in Nix store) or `{ _secret = /path/to/file; }` for file-based secrets.
+
             Plain-text secrets will be visible in the Nix store. Use `{ _secret = path; }` for sensitive data.
       '';
     };

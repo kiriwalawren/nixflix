@@ -55,7 +55,23 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        sabnzbd = {
+        torrentClients.qbittorrent = {
+          enable = true;
+          webuiPort = 8282;
+          password = "test123";
+          serverConfig = {
+            LegalNotice.Accepted = true;
+            Preferences = {
+              WebUI = {
+                Username = "admin";
+                Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
+              };
+              General.Locale = "en";
+            };
+          };
+        };
+
+        usenetClients.sabnzbd = {
           enable = true;
           settings = {
             misc = {
@@ -116,12 +132,21 @@ pkgsUnfree.testers.runNixOSTest {
         "http://127.0.0.1:8686/api/v1/downloadclient"
     )
     clients_list = json.loads(clients)
+
     print(f"Download clients: {clients}")
-    assert len(clients_list) == 1, f"Expected 1 download client, found {len(clients_list)}"
-    assert clients_list[0]['name'] == 'SABnzbd', \
-        f"Expected SABnzbd download client, found {clients_list[0]['name']}"
-    assert clients_list[0]['implementationName'] == 'SABnzbd', \
+    assert len(clients_list) == 2, f"Expected 2 download client, found {len(clients_list)}"
+
+    sabnzbd = next((c for c in clients_list if c["name"] == "SABnzbd"), None)
+    assert sabnzbd is not None, \
+        f"Expected SABnzbd download client, found {clients_list}"
+    assert sabnzbd['implementationName'] == 'SABnzbd', \
         "Expected SABnzbd implementation"
+
+    qbittorrent = next((c for c in clients_list if c["name"] == "qBittorrent"), None)
+    assert qbittorrent is not None, \
+        f"Expected qBittorrent download client, found {clients_list}"
+    assert qbittorrent['implementationName'] == 'qBittorrent', \
+        "Expected qBittorrent implementation"
 
     # Check that the musicCategory is set to 'lidarr'
     category_field = next((field for field in clients_list[0]['fields'] if field['name'] == 'musicCategory'), None)
