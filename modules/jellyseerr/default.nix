@@ -74,9 +74,18 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [
-      "d '${cfg.dataDir}' 0750 ${cfg.user} ${cfg.group} - -"
-    ];
+    systemd.tmpfiles.settings."10-jellyseerr" = {
+      "/run/jellyseerr".d = {
+        mode = "0755";
+        inherit (cfg) user;
+        inherit (cfg) group;
+      };
+      "${cfg.dataDir}".d = {
+        mode = "0755";
+        inherit (cfg) user;
+        inherit (cfg) group;
+      };
+    };
 
     services.postgresql = mkIf config.services.postgresql.enable {
       ensureDatabases = [ cfg.user ];
@@ -141,6 +150,7 @@ in
 
         after = [
           "network-online.target"
+          "nixflix-setup-dirs.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional nixflix.mullvad.enable "mullvad-config.service"
@@ -153,9 +163,11 @@ in
         ++ optional nixflix.mullvad.enable "mullvad-config.service"
         ++ optional nixflix.jellyfin.enable "jellyfin.service";
 
-        requires =
-          optional (cfg.apiKey != null) "jellyseerr-env.service"
-          ++ optional config.services.postgresql.enable "postgresql-ready.target";
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
+        ++ optional config.services.postgresql.enable "postgresql-ready.target";
 
         wantedBy = [ "multi-user.target" ];
 

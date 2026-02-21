@@ -296,18 +296,22 @@ in
       allowedTCPPorts = [ cfg.config.hostConfig.port ];
     };
 
-    systemd.tmpfiles = {
-      settings."10-${serviceName}".${stateDir}.d = {
+    systemd.tmpfiles.settings."10-${serviceName}" = {
+      "${stateDir}".d = {
         inherit (cfg) user group;
-        mode = "0700";
+        mode = "0755";
       };
-
-      rules = optionals usesMediaDirs (
-        map (
-          mediaDir: "d '${mediaDir}' 0770 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
-        ) cfg.mediaDirs
-      );
-    };
+    }
+    // optionalAttrs usesMediaDirs (
+      lib.mergeAttrsList (
+        map (mediaDir: {
+          "${mediaDir}".d = {
+            inherit (globals.libraryOwner) user group;
+            mode = "0775";
+          };
+        }) cfg.mediaDirs
+      )
+    );
 
     systemd.services = {
       "${serviceName}-setup-logs-db" = mkIf config.services.postgresql.enable {
@@ -372,17 +376,20 @@ in
 
         after = [
           "network.target"
+          "nixflix-setup-dirs.service"
         ]
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")
         ++ (optional config.services.postgresql.enable "postgresql-ready.target")
         ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
-        requires =
-          (optional (
-            cfg.config.apiKey != null && cfg.config.hostConfig.password != null
-          ) "${serviceName}-env.service")
-          ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ (optional (
+          cfg.config.apiKey != null && cfg.config.hostConfig.password != null
+        ) "${serviceName}-env.service")
+        ++ (optional config.services.postgresql.enable "postgresql-ready.target");
         wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
         wantedBy = [ "multi-user.target" ];
 

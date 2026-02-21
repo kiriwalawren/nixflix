@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -155,11 +156,40 @@ in
 
   config = mkIf cfg.enable {
     users.groups.media.members = cfg.mediaUsers;
-    systemd.tmpfiles.rules = [
-      "d '${cfg.stateDir}' 0755 root root - -"
-      "d '${cfg.mediaDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
-      "d '${cfg.downloadsDir}' 0775 ${globals.libraryOwner.user} ${globals.libraryOwner.group} - -"
-    ];
+
+    systemd.tmpfiles.settings."10-nixflix" = {
+      "${cfg.stateDir}".d = {
+        mode = "0755";
+        user = "root";
+        group = "root";
+      };
+      "${cfg.mediaDir}".d = {
+        mode = "0774";
+        inherit (globals.libraryOwner) user;
+        inherit (globals.libraryOwner) group;
+      };
+      "${cfg.downloadsDir}".d = {
+        mode = "0774";
+        inherit (globals.libraryOwner) user;
+        inherit (globals.libraryOwner) group;
+      };
+    };
+
+    systemd.services.nixflix-setup-dirs = {
+      description = "Create tmp files";
+      after = [ "systemd-tmpfiles-setup.service" ];
+      requires = [ "systemd-tmpfiles-setup.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+
+      script = ''
+        ${pkgs.systemd}/bin/systemd-tmpfiles --create
+      '';
+    };
+
     services.nginx = mkIf cfg.nginx.enable {
       enable = true;
       recommendedTlsSettings = true;

@@ -138,19 +138,26 @@ in
       settings."10-qbittorrent" = {
         ${service.profileDir}.d = {
           inherit (service) user group;
-          mode = "0700";
+          mode = "0755";
+        };
+        ${configPath}.d = {
+          inherit (service) user group;
+          mode = "0754";
         };
       };
     };
 
-    systemd.services.qbittorrent.preStart = lib.mkIf (cfg.categories != { }) (
-      lib.mkAfter ''
-        mkdir -p '${configPath}'
-        cp -f '${categoriesFile}' '${configPath}/categories.json'
-        chmod 640 '${configPath}/categories.json'
-        chown ${service.user}:${service.group} '${configPath}/categories.json'
-      ''
-    );
+    systemd.services.qbittorrent = {
+      after = [ "nixflix-setup-dirs.service" ];
+      requires = [ "nixflix-setup-dirs.service" ];
+      preStart = lib.mkIf (cfg.categories != { }) (
+        lib.mkAfter ''
+          cp -f '${categoriesFile}' '${configPath}/categories.json'
+          chmod 640 '${configPath}/categories.json'
+          chown ${service.user}:${service.group} '${configPath}/categories.json'
+        ''
+      );
+    };
 
     networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
       "127.0.0.1" = [ hostname ];

@@ -26,11 +26,16 @@ in
       dataDir = stateDir;
     };
 
+    systemd.services.postgresql = {
+      after = [ "nixflix-setup-dirs.service" ];
+      requires = [ "nixflix-setup-dirs.service" ];
+    };
+
     systemd = {
       tmpfiles.settings."10-postgresql".${stateDir}.d = {
         user = "postgres";
         group = "postgres";
-        mode = "0700";
+        mode = "0755";
       };
 
       targets.postgresql-ready = {

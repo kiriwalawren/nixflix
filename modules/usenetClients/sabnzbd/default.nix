@@ -101,31 +101,42 @@ in
     };
 
     users.groups.${cfg.group} = { };
-
-    systemd.tmpfiles = {
-      settings."10-sabnzbd" = {
-        ${stateDir}.d = {
-          inherit (cfg) user group;
-          mode = "0700";
+    systemd.tmpfiles.settings."10-sabnzbd" =
+      let
+        mkDir = dir: {
+          "${dir}".d = {
+            inherit (cfg) user group;
+            mode = "0775";
+          };
         };
-      };
-
-      rules = map (dir: "d '${dir}' 0775 ${cfg.user} ${cfg.group} - -") [
-        cfg.downloadsDir
-        cfg.settings.misc.download_dir
-        cfg.settings.misc.complete_dir
-        cfg.settings.misc.dirscan_dir
-        cfg.settings.misc.nzb_backup_dir
-        cfg.settings.misc.admin_dir
-        cfg.settings.misc.log_dir
-      ];
-    };
+      in
+      {
+        "${stateDir}".d = {
+          inherit (cfg) user group;
+          mode = "0755";
+        };
+      }
+      // lib.mergeAttrsList (
+        map mkDir [
+          cfg.downloadsDir
+          cfg.settings.misc.download_dir
+          cfg.settings.misc.complete_dir
+          cfg.settings.misc.dirscan_dir
+          cfg.settings.misc.nzb_backup_dir
+          cfg.settings.misc.admin_dir
+          cfg.settings.misc.log_dir
+        ]
+      );
 
     environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
 
     systemd.services.sabnzbd = {
       description = "SABnzbd Usenet Downloader";
-      after = [ "network-online.target" ];
+      after = [
+        "network-online.target"
+        "nixflix-setup-dirs.service"
+      ];
+      requires = [ "nixflix-setup-dirs.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
       restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
