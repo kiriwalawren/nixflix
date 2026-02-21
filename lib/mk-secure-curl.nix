@@ -35,10 +35,13 @@ let
 
   dataHandling = lib.optionalString (data != null || !(lib.hasPrefix "@" data)) ''
     CURL_DATA_FILE=$(mktemp)
-    trap "rm -f $CURL_DATA_FILE" EXIT
     cat > "$CURL_DATA_FILE" <<DATA_EOF
     ${data}
     DATA_EOF
+  '';
+
+  dataCleanup = lib.optionalString (data != null || !(lib.hasPrefix "@" data)) ''
+    rm -f $CURL_DATA_FILE
   '';
 
   dataBinaryArg =
@@ -53,3 +56,6 @@ lib.optionalString (data != null) ''
   ${dataHandling}
 ''
 + "${pkgs.curl}/bin/curl ${apiKeyVariable} ${apiKeyHeaderArg} ${baseArgs} ${methodArg} ${dataBinaryArg} ${otherHeaderArgs} ${extraArgs} \"${url}\""
++ lib.optionalString (data != null) ''
+  ${dataCleanup}
+''
