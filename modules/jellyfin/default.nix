@@ -101,9 +101,27 @@ in
       "jellyfin/network.xml.template".text = networkXmlContent;
     };
 
+    systemd.services.jellyfin-setup-dirs = {
+      description = "Create Jellyfin directories";
+      wantedBy = [ "jellyfin.service" ];
+      before = [ "jellyfin.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+
+      script = ''
+        dirs=('${cfg.dataDir}' '${cfg.configDir}' '${cfg.cacheDir}' '${cfg.logDir}' '${cfg.dataDir}/data' '${cfg.system.metadataPath}' /run/jellyfin)
+        ${pkgs.coreutils}/bin/mkdir -p "''${dirs[@]}"
+        ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} "''${dirs[@]}"
+        ${pkgs.coreutils}/bin/chmod 0750 "''${dirs[@]}"
+      '';
+    };
+
     systemd.services.jellyfin = {
       description = "Jellyfin Media Server";
-      after = [ "network-online.target" ];
+      after = [ "network-online.target" "systemd-tmpfiles-setup.service" "jellyfin-setup-dirs.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
