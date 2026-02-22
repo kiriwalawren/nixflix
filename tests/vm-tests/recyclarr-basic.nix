@@ -79,9 +79,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         recyclarr = {
           enable = true;
-          radarr.enable = true;
-          sonarr.enable = true;
-          sonarr-anime.enable = true;
           cleanupUnmanagedProfiles = true;
         };
       };
