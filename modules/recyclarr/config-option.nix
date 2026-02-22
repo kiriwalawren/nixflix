@@ -372,7 +372,7 @@ in
       - service_type: "sonarr" or "radarr" (only these two keys are allowed)
       - instance_name: arbitrary name for the instance (e.g., "sonarr_main", "radarr_4k")
 
-      Defaults are `sonarr.sonarr`, `sonarr.sonarr-anime`, and `radarr.radarr`.
+      Defaults are `sonarr.sonarr`, `sonarr.sonarr_anime`, and `radarr.radarr`.
 
       Each instance supports quality profiles, custom formats from TRaSH guides,
       media naming configuration, and template includes.
