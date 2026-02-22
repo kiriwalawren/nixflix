@@ -6,6 +6,21 @@
 with lib;
 let
   cfg = config.nixflix.recyclarr;
+
+  removeNulls =
+    v:
+    if builtins.isAttrs v then
+      builtins.foldl' (
+        acc: name:
+        let
+          val = v.${name};
+        in
+        if name == "_module" || val == null then acc else acc // { ${name} = removeNulls val; }
+      ) { } (builtins.attrNames v)
+    else if builtins.isList v then
+      map removeNulls v
+    else
+      v;
 in
 {
   imports = [
@@ -93,7 +108,7 @@ in
     services.recyclarr = {
       enable = true;
       inherit (cfg) user group;
-      configuration = config.nixflix.recyclarr.config;
+      configuration = removeNulls cfg.config;
       schedule = "daily";
     };
 
