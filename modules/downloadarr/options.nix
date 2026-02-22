@@ -94,7 +94,8 @@ let
           {
             type = types.str;
             description = "Host of the download client.";
-            default = "localhost";
+            default = "127.0.0.1";
+            example = "example.com";
           }
           // host
         );
@@ -131,12 +132,6 @@ let
     };
 
     dependencies.default = [ "sabnzbd-categories.service" ];
-
-    host = {
-      default = config.nixflix.usenetClients.sabnzbd.settings.misc.host;
-      defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.settings.misc.host";
-      example = "127.0.0.1";
-    };
 
     port = {
       default = config.nixflix.usenetClients.sabnzbd.settings.misc.port;
@@ -179,11 +174,6 @@ let
 
     dependencies.default = [ "qbittorrent.service" ];
 
-    host = {
-      default = config.services.qbittorrent.serverConfig.Preferences.WebUI.Address;
-      defaultText = literalExpression "config.services.qbittorrent.serverConfig.Preferences.WebUI.Address";
-    };
-
     port = {
       default = config.services.qbittorrent.webuiPort;
       defaultText = literalExpression "config.services.qbittorrent.webuiPort";
@@ -212,8 +202,6 @@ let
   rtorrentType = mkDownloadClientType {
     implementationName = "rTorrent";
 
-    host.default = "localhost";
-
     port = {
       description = "Port of the download client. This competes with SABnzbd.";
     };
@@ -241,12 +229,7 @@ let
   transmissionType = mkDownloadClientType {
     implementationName = "Transmission";
 
-    host.default = "localhost";
-
-    port = {
-      default = 9091;
-      description = "Port of the download client. This competes with SABnzbd.";
-    };
+    port.default = 9091;
 
     urlBase = {
       description = ''
@@ -269,11 +252,7 @@ let
   delugeType = mkDownloadClientType {
     implementationName = "Deluge";
 
-    host.default = "localhost";
-
-    port = {
-      default = 8112;
-    };
+    port.default = 8112;
 
     urlBase = {
       description = ''
