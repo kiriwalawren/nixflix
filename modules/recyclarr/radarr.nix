@@ -1,27 +1,31 @@
-{ config, ... }:
-let
-  inherit (config) nixflix;
-in
+{ config, lib, ... }:
 {
-  radarr_main = {
-    base_url = "http://127.0.0.1:${toString nixflix.radarr.config.hostConfig.port}${toString nixflix.radarr.config.hostConfig.urlBase}";
-    api_key = nixflix.radarr.config.apiKey;
-    delete_old_custom_formats = true;
-    replace_existing_custom_formats = true;
+  assertions = [
+    {
+      assertion = config.nixflix.radarr.enable -> config.nixflix.radarr.config.apiKey != null;
+      message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKey to be set";
+    }
+  ];
+
+  nixflix.recyclarr.config.radarr.radarr = lib.mkIf config.nixflix.radarr.enable {
+    base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
+    api_key = lib.mkDefault config.nixflix.radarr.config.apiKey;
+    delete_old_custom_formats = lib.mkDefault true;
+    replace_existing_custom_formats = lib.mkDefault true;
 
     quality_definition = {
-      type = "series";
+      type = lib.mkDefault "movie";
     };
 
     media_naming = {
-      folder = "default";
+      folder = lib.mkDefault "default";
       movie = {
-        rename = true;
-        standard = "standard";
+        rename = lib.mkDefault true;
+        standard = lib.mkDefault "standard";
       };
     };
 
-    quality_profiles = [
+    quality_profiles = lib.mkDefault [
       {
         name = "UHD Bluray + WEB";
         reset_unmatched_scores.enabled = true;
@@ -54,7 +58,7 @@ in
       }
     ];
 
-    custom_formats = [
+    custom_formats = lib.mkDefault [
       {
         trash_ids = [
           # Unified HDR

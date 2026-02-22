@@ -2,13 +2,11 @@
   config,
   lib,
   pkgs,
-  recyclarrConfig,
   ...
 }:
 with lib;
 let
-  inherit (config) nixflix;
-  cfg = nixflix.recyclarr;
+  cfg = config.nixflix.recyclarr;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 
   buildInstances =
@@ -33,12 +31,12 @@ let
       }
     ) instances;
 
-  sonarrInstances = optionals (recyclarrConfig ? sonarr) (
-    buildInstances "sonarr" recyclarrConfig.sonarr
+  sonarrInstances = optionals (config.nixflix.recyclarr.config ? sonarr) (
+    buildInstances "sonarr" config.nixflix.recyclarr.config.sonarr
   );
 
-  radarrInstances = optionals (recyclarrConfig ? radarr) (
-    buildInstances "radarr" recyclarrConfig.radarr
+  radarrInstances = optionals (config.nixflix.recyclarr.config ? radarr) (
+    buildInstances "radarr" config.nixflix.recyclarr.config.radarr
   );
 
   instancesWithProfiles = flatten (sonarrInstances ++ radarrInstances);
@@ -183,7 +181,7 @@ let
   '';
 in
 {
-  recyclarr-cleanup-profiles = mkIf cfg.cleanupUnmanagedProfiles {
+  systemd.services.recyclarr-cleanup-profiles = mkIf cfg.cleanupUnmanagedProfiles {
     description = "Cleanup unmanaged quality profiles from Sonarr/Radarr";
     after = [ "recyclarr.service" ];
     wants = [ "recyclarr.service" ];

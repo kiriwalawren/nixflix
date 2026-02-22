@@ -1,85 +1,68 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
 let
-  inherit (config) nixflix;
-  inherit (nixflix) globals;
-  cfg = nixflix.recyclarr;
-
-  configOption = import ./config-option.nix { inherit lib; };
-
-  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix { inherit config; });
-  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (
-    import ./sonarr-anime.nix { inherit config; }
-  );
-  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix { inherit config; });
-  effectiveConfiguration =
-    if cfg.config == null then
-      {
-        radarr = radarrMainConfig;
-        sonarr = sonarrMainConfig // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
-      }
-    else
-      cfg.config;
-
-  cleanupProfilesServices = import ./cleanup-profiles.nix {
-    inherit config lib pkgs;
-    recyclarrConfig = effectiveConfiguration;
-  };
+  cfg = config.nixflix.recyclarr;
 in
 {
+  imports = [
+    ./cleanup-profiles.nix
+    ./config-option.nix
+    ./radarr.nix
+    ./sonarr-anime.nix
+    ./sonarr.nix
+  ];
+
   options.nixflix.recyclarr = {
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Whether to enable Recyclarr for automated TRaSH guide syncing";
+      description = "Whether to enable Recyclarr for automated TRaSH guide syncing.";
     };
 
     user = mkOption {
       type = types.str;
       default = "recyclarr";
-      description = "User under which Recyclarr runs";
+      description = "User under which Recyclarr runs.";
     };
 
     group = mkOption {
       type = types.str;
       default = "recyclarr";
-      description = "Group under which Recyclarr runs";
+      description = "Group under which Recyclarr runs.";
     };
 
-    sonarr = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.sonarr.enable;
-        defaultText = literalExpression "nixflix.sonarr.enable";
-        description = "Whether to sync Sonarr configuration via Recyclarr";
-      };
+    radarrQuality = mkOption {
+      type = types.enum [
+        "4K"
+        "1080p"
+      ];
+      default = "1080p";
+      example = "4K";
+      description = ''
+        Allows for easy recyclarr quality profile configuration for the radarr instance.
+
+        Complex configurations can be manually applied using `nixflix.recyclarr.config.radarr.radarr`.
+        If you do, you need to set `nixflix.recyclarr.config.radarr.radarr.include = mkForce [];`.
+      '';
     };
 
-    sonarr-anime = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.sonarr-anime.enable;
-        defaultText = literalExpression "nixflix.sonarr-anime.enable";
-        description = ''
-          Whether to enable anime-specific profiles for Sonarr.
-          When enabled, BOTH normal and anime quality profiles will be configured,
-          following TRaSH Guides' recommendation for single-instance setups.
-        '';
-      };
-    };
+    sonarrQuality = mkOption {
+      type = types.enum [
+        "4K"
+        "1080p"
+      ];
+      default = "1080p";
+      example = "4K";
+      description = ''
+        Allows for easy recyclarr quality profile configuration for the radarr instance.
 
-    radarr = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.radarr.enable;
-        defaultText = literalExpression "nixflix.radarr.enable";
-        description = "Whether to sync Radarr configuration via Recyclarr";
-      };
+        Complex configurations can be manually applied using `nixflix.recyclarr.config.sonarr.sonarr`.
+        If you do, you need to set `nixflix.recyclarr.config.sonarr.sonarr.include = mkForce [];`.
+      '';
     };
 
     cleanupUnmanagedProfiles = mkOption {
@@ -96,34 +79,21 @@ in
         managed profile before deletion.
       '';
     };
-
-    config = configOption;
   };
 
-  config = mkIf (nixflix.enable && cfg.enable) {
-    assertions = [
-      {
-        assertion = cfg.sonarr.enable -> nixflix.sonarr.config.apiKey != null;
-        message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKey to be set";
-      }
-      {
-        assertion = cfg.radarr.enable -> nixflix.radarr.config.apiKey != null;
-        message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKey to be set";
-      }
-    ];
-
-    users.users.${cfg.user} = optionalAttrs (globals.uids ? ${cfg.user}) {
-      uid = mkForce globals.uids.${cfg.user};
+  config = mkIf (config.nixflix.enable && cfg.enable) {
+    users.users.${cfg.user} = optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+      uid = mkForce config.nixflix.globals.uids.${cfg.user};
     };
 
-    users.groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
-      gid = mkForce globals.gids.${cfg.group};
+    users.groups.${cfg.group} = optionalAttrs (config.nixflix.globals.gids ? ${cfg.group}) {
+      gid = mkForce config.nixflix.globals.gids.${cfg.group};
     };
 
     services.recyclarr = {
       enable = true;
       inherit (cfg) user group;
-      configuration = effectiveConfiguration;
+      configuration = config.nixflix.recyclarr.config;
       schedule = "daily";
     };
 
@@ -132,17 +102,16 @@ in
         after = [
           "network-online.target"
         ]
-        ++ optional cfg.radarr.enable "radarr-config.service"
-        ++ optional cfg.sonarr.enable "sonarr-config.service"
-        ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+        ++ optional config.nixflix.radarr.enable "radarr-config.service"
+        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
         requires =
-          optional cfg.radarr.enable "radarr-config.service"
-          ++ optional cfg.sonarr.enable "sonarr-config.service"
-          ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+          optional config.nixflix.radarr.enable "radarr-config.service"
+          ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+          ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
         wants = [ "network-online.target" ];
         wantedBy = mkForce [ "multi-user.target" ];
       };
-    }
-    // cleanupProfilesServices;
+    };
   };
 }
