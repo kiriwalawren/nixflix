@@ -215,19 +215,21 @@ in
       after = [
         "jellyseerr-setup.service"
         "jellyseerr-libraries.service"
+        "jellyseerr-radarr.service"
       ]
       ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
-      ++ optional nixflix.recyclarr.enable "recyclarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+
       requires = [
         "jellyseerr-setup.service"
         "jellyseerr-libraries.service"
+        "jellyseerr-radarr.service"
       ]
       ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
-      ++ optional nixflix.recyclarr.enable "recyclarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {

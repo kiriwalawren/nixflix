@@ -96,46 +96,37 @@ in
     };
   };
 
-  config =
-    mkIf
-      (
-        config.nixflix.enable
-        && cfg.enable
-        && (
-          config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable
-        )
-      )
-      {
-        users.users.${cfg.user} = optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
-          uid = mkForce config.nixflix.globals.uids.${cfg.user};
-        };
+  config = mkIf (config.nixflix.enable && cfg.enable) {
+    users.users.${cfg.user} = optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+      uid = mkForce config.nixflix.globals.uids.${cfg.user};
+    };
 
-        users.groups.${cfg.group} = optionalAttrs (config.nixflix.globals.gids ? ${cfg.group}) {
-          gid = mkForce config.nixflix.globals.gids.${cfg.group};
-        };
+    users.groups.${cfg.group} = optionalAttrs (config.nixflix.globals.gids ? ${cfg.group}) {
+      gid = mkForce config.nixflix.globals.gids.${cfg.group};
+    };
 
-        services.recyclarr = {
-          enable = true;
-          inherit (cfg) user group;
-          configuration = removeNulls cfg.config;
-          schedule = "daily";
-        };
+    services.recyclarr = {
+      enable = true;
+      inherit (cfg) user group;
+      configuration = removeNulls cfg.config;
+      schedule = "daily";
+    };
 
-        systemd.services = {
-          recyclarr = {
-            after = [
-              "network-online.target"
-            ]
-            ++ optional config.nixflix.radarr.enable "radarr-config.service"
-            ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-            ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
-            requires =
-              optional config.nixflix.radarr.enable "radarr-config.service"
-              ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-              ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
-            wants = [ "network-online.target" ];
-            wantedBy = mkForce [ "multi-user.target" ];
-          };
-        };
+    systemd.services = {
+      recyclarr = {
+        after = [
+          "network-online.target"
+        ]
+        ++ optional config.nixflix.radarr.enable "radarr-config.service"
+        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
+        requires =
+          optional config.nixflix.radarr.enable "radarr-config.service"
+          ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+          ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
+        wants = [ "network-online.target" ];
+        wantedBy = mkForce [ "multi-user.target" ];
       };
+    };
+  };
 }

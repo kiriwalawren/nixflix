@@ -157,6 +157,7 @@ pkgsUnfree.testers.runNixOSTest {
 
     # Wait for jellyseerr to complete
     machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_open_port(5055, timeout=300)
     machine.wait_for_unit("jellyseerr.service", timeout=300)
     machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
     machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)

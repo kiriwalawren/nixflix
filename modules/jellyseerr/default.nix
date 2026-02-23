@@ -9,13 +9,6 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
   cfg = config.nixflix.jellyseerr;
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
-
-  recyclarrEnabled =
-    config.nixflix.enable
-    && config.nixflix.recyclarr.enable
-    && (
-      config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable
-    );
 in
 {
   imports = [
@@ -163,27 +156,33 @@ in
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin.service"
+        ++ optionals config.nixflix.jellyfin.enable [
+          "jellyfin.service"
+          "jellyfin-setup-wizard.service"
+        ]
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
-        ++ optional recyclarrEnabled "recyclarr.service"
+        ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
         ++ optional (
-          recyclarrEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles
         ) "recyclarr-cleanup-profiles.service";
 
         wants = [
           "network-online.target"
         ]
         ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin.service";
+        ++ optional config.nixflix.recyclarr.enable "recyclarr.service";
 
         requires = [
           "nixflix-setup-dirs.service"
         ]
+        ++ optionals config.nixflix.jellyfin.enable [
+          "jellyfin.service"
+          "jellyfin-setup-wizard.service"
+        ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
-        ++ optional recyclarrEnabled "recyclarr.service"
         ++ optional (
-          recyclarrEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles
         ) "recyclarr-cleanup-profiles.service";
 
         wantedBy = [ "multi-user.target" ];

@@ -185,13 +185,11 @@ in
         "jellyseerr-setup.service"
         "jellyseerr-libraries.service"
       ]
-      ++ optional nixflix.recyclarr.enable "recyclarr.service"
       ++ optional nixflix.radarr.enable "radarr-config.service";
       requires = [
         "jellyseerr-setup.service"
         "jellyseerr-libraries.service"
       ]
-      ++ optional nixflix.recyclarr.enable "recyclarr.service"
       ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = [ "multi-user.target" ];
 
