@@ -11,6 +11,9 @@ let
   inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
   hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
+
+  videoStarrServiceEnabled =
+    config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable;
 in
 {
   imports = [
@@ -155,7 +158,11 @@ in
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional nixflix.mullvad.enable "mullvad-config.service"
         ++ optional nixflix.jellyfin.enable "jellyfin.service"
-        ++ optional config.services.postgresql.enable "postgresql-ready.target";
+        ++ optional config.services.postgresql.enable "postgresql-ready.target"
+        ++ optional videoStarrServiceEnabled "recyclarr.service"
+        ++ optional (
+          videoStarrServiceEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+        ) "recyclarr-cleanup-profiles.service";
 
         wants = [
           "network-online.target"
@@ -167,7 +174,11 @@ in
           "nixflix-setup-dirs.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
-        ++ optional config.services.postgresql.enable "postgresql-ready.target";
+        ++ optional config.services.postgresql.enable "postgresql-ready.target"
+        ++ optional videoStarrServiceEnabled "recyclarr.service"
+        ++ optional (
+          videoStarrServiceEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+        ) "recyclarr-cleanup-profiles.service";
 
         wantedBy = [ "multi-user.target" ];
 

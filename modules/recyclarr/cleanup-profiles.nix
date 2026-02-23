@@ -181,24 +181,32 @@ let
   '';
 in
 {
-  systemd.services.recyclarr-cleanup-profiles = mkIf cfg.cleanupUnmanagedProfiles {
-    description = "Cleanup unmanaged quality profiles from Sonarr/Radarr";
-    after = [ "recyclarr.service" ];
-    wants = [ "recyclarr.service" ];
-    wantedBy = [ "multi-user.target" ];
+  systemd.services.recyclarr-cleanup-profiles =
+    mkIf
+      (
+        cfg.cleanupUnmanagedProfiles
+        && (
+          config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable
+        )
+      )
+      {
+        description = "Cleanup unmanaged quality profiles from Sonarr/Radarr";
+        after = [ "recyclarr.service" ];
+        wants = [ "recyclarr.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = cleanupScript;
-      User = cfg.user;
-      Group = cfg.group;
-      PrivateTmp = true;
-      NoNewPrivileges = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      PrivateDevices = true;
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = cleanupScript;
+          User = cfg.user;
+          Group = cfg.group;
+          PrivateTmp = true;
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateDevices = true;
 
-      LoadCredential = loadCredentials;
-    };
-  };
+          LoadCredential = loadCredentials;
+        };
+      };
 }
