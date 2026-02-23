@@ -43,6 +43,10 @@ in
       in
       [
         {
+          assertion = config.nixflix.jellyfin.enable;
+          message = "Jellyseerr requires Jellyfin to be enabled. Please set nixflix.jellyfin.enable = true.";
+        }
+        {
           assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
           message = "Cannot enable VPN routing for Jellyseerr (nixflix.jellyseerr.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
         }

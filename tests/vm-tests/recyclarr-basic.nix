@@ -13,19 +13,22 @@ pkgsUnfree.testers.runNixOSTest {
   name = "recyclarr-basic-test";
 
   nodes.machine =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       imports = [ nixosModules ];
 
       networking.useDHCP = true;
-      virtualisation.cores = 4;
+
+      virtualisation = {
+        diskSize = 3 * 1024;
+        cores = 4;
+      };
 
       nixflix = {
         enable = true;
 
         radarr = {
           enable = true;
-          user = "radarr";
           mediaDirs = [ "/media/movies" ];
           config = {
             hostConfig = {
@@ -43,7 +46,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         sonarr = {
           enable = true;
-          user = "sonarr";
           mediaDirs = [ "/media/tv" ];
           config = {
             hostConfig = {
@@ -61,7 +63,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         sonarr-anime = {
           enable = true;
-          user = "sonarr-anime";
           mediaDirs = [ "/media/anime" ];
           config = {
             hostConfig = {
@@ -81,7 +82,29 @@ pkgsUnfree.testers.runNixOSTest {
           enable = true;
           cleanupUnmanagedProfiles = true;
         };
+
+        jellyfin = {
+          enable = true;
+
+          users = {
+            admin = {
+              password = {
+                _secret = pkgs.writeText "kiri_password" "321password";
+              };
+              policy.isAdministrator = true;
+            };
+          };
+        };
+
+        jellyseerr = {
+          enable = true;
+          apiKey = {
+            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+          };
+        };
       };
+
+      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
     };
 
   testScript = ''
@@ -131,6 +154,12 @@ pkgsUnfree.testers.runNixOSTest {
         "systemctl show recyclarr.service -p Result | grep -q 'Result=success'",
         timeout=180
     )
+
+    # Wait for jellyseerr to complete
+    machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
 
     # Check that quality profiles were created by recyclarr for Radarr
     radarr_profiles = machine.succeed(
