@@ -7,13 +7,15 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
-  inherit (config) nixflix;
-  inherit (nixflix) globals;
   cfg = config.nixflix.jellyseerr;
-  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 
-  videoStarrServiceEnabled =
-    config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable;
+  recyclarrEnabled =
+    config.nixflix.enable
+    && config.nixflix.recyclarr.enable
+    && (
+      config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable
+    );
 in
 {
   imports = [
@@ -26,7 +28,7 @@ in
     ./userSettingsService.nix
   ];
 
-  config = mkIf (nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) {
     assertions =
       let
         radarrDefaults = filter (r: r.isDefault) (attrValues cfg.radarr);
@@ -41,7 +43,7 @@ in
       in
       [
         {
-          assertion = cfg.vpn.enable -> nixflix.mullvad.enable;
+          assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
           message = "Cannot enable VPN routing for Jellyseerr (nixflix.jellyseerr.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
         }
         {
@@ -66,14 +68,14 @@ in
 
     users = {
       groups.${cfg.group} = {
-        gid = mkForce globals.gids.jellyseerr;
+        gid = mkForce config.nixflix.globals.gids.jellyseerr;
       };
 
       users.${cfg.user} = {
         inherit (cfg) group;
         home = cfg.dataDir;
         isSystemUser = true;
-        uid = mkForce globals.uids.jellyseerr;
+        uid = mkForce config.nixflix.globals.uids.jellyseerr;
       };
     };
 
@@ -156,28 +158,28 @@ in
           "nixflix-setup-dirs.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
-        ++ optional nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional nixflix.jellyfin.enable "jellyfin.service"
+        ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
+        ++ optional config.nixflix.jellyfin.enable "jellyfin.service"
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
-        ++ optional videoStarrServiceEnabled "recyclarr.service"
+        ++ optional recyclarrEnabled "recyclarr.service"
         ++ optional (
-          videoStarrServiceEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          recyclarrEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
         ) "recyclarr-cleanup-profiles.service";
 
         wants = [
           "network-online.target"
         ]
-        ++ optional nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional nixflix.jellyfin.enable "jellyfin.service";
+        ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
+        ++ optional config.nixflix.jellyfin.enable "jellyfin.service";
 
         requires = [
           "nixflix-setup-dirs.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
-        ++ optional videoStarrServiceEnabled "recyclarr.service"
+        ++ optional recyclarrEnabled "recyclarr.service"
         ++ optional (
-          videoStarrServiceEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          recyclarrEnabled && config.nixflix.recyclarr.cleanupUnmanagedProfiles
         ) "recyclarr-cleanup-profiles.service";
 
         wantedBy = [ "multi-user.target" ];
@@ -203,7 +205,7 @@ in
           Restart = "on-failure";
 
           ExecStart =
-            if (nixflix.mullvad.enable && !cfg.vpn.enable) then
+            if (config.nixflix.mullvad.enable && !cfg.vpn.enable) then
               pkgs.writeShellScript "jellyseerr-vpn-bypass" ''
                 exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package}
               ''
@@ -245,7 +247,7 @@ in
         // optionalAttrs (cfg.apiKey != null) {
           EnvironmentFile = "/run/jellyseerr/env";
         }
-        // optionalAttrs (nixflix.mullvad.enable && !cfg.vpn.enable) {
+        // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
           AmbientCapabilities = "CAP_SYS_ADMIN";
           Delegate = mkForce true;
           SystemCallFilter = mkForce [ ];
@@ -259,15 +261,15 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
+    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
       "127.0.0.1" = [ hostname ];
     };
 
     services.nginx.virtualHosts."${hostname}" =
       let
-        themeParkUrl = "https://theme-park.dev/css/base/overseerr/${nixflix.theme.name}.css";
+        themeParkUrl = "https://theme-park.dev/css/base/overseerr/${config.nixflix.theme.name}.css";
       in
-      mkIf nixflix.nginx.enable {
+      mkIf config.nixflix.nginx.enable {
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
           recommendedProxySettings = true;
@@ -275,7 +277,7 @@ in
             proxy_redirect off;
 
             ${
-              if nixflix.theme.enable then
+              if config.nixflix.theme.enable then
                 ''
                   proxy_set_header Accept-Encoding "";
                   sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';

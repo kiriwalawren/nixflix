@@ -6,19 +6,6 @@
 with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
-  sonarrRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.sonarr.enable or false) (
-    import ../../recyclarr/sonarr-main.nix { inherit config; }
-  );
-  firstSonarrProfile = head (sonarrRecyclarrConfig.sonarr_main.quality_profiles or [ ]);
-  defaultSonarrProfileName =
-    if config.nixflix.recyclarr.enable then firstSonarrProfile.name else null;
-
-  sonarrAnimeRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.sonarr-anime.enable or false) (
-    import ../../recyclarr/sonarr-anime.nix { inherit config; }
-  );
-  firstSonarrAnimeProfile = head (sonarrAnimeRecyclarrConfig.sonarr_anime.quality_profiles or [ ]);
-  defaultSonarrAnimeProfileName =
-    if config.nixflix.recyclarr.enable then firstSonarrAnimeProfile.name else null;
 
   sonarrServerModule = types.submodule (
     { config, ... }:
@@ -55,13 +42,8 @@ let
 
         activeProfileName = mkOption {
           type = types.nullOr types.str;
-          default = defaultSonarrProfileName;
-          defaultText = literalExpression ''
-            if config.nixflix.recyclarr.sonarr.enable
-            then (head (import ../../recyclarr/sonarr-main.nix {inherit config;}).sonarr_main.quality_profiles).name
-            else null
-          '';
-          description = "Quality profile name. Defaults to first recyclarr quality profile if enabled.";
+          default = null;
+          description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
         };
 
         activeDirectory = mkOption {
@@ -146,8 +128,6 @@ let
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl = config.nixflix.sonarr.config.hostConfig.urlBase;
-        activeProfileName = defaultSonarrProfileName;
-        activeAnimeProfileName = defaultSonarrProfileName;
         activeDirectory = head (config.nixflix.sonarr.mediaDirs or [ "/data/media/tv" ]);
         activeAnimeDirectory = head (config.nixflix.sonarr.mediaDirs or [ "/data/media/tv" ]);
         seriesType = "standard";
@@ -165,8 +145,6 @@ let
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl = config.nixflix.sonarr-anime.config.hostConfig.urlBase;
-        activeProfileName = defaultSonarrAnimeProfileName;
-        activeAnimeProfileName = defaultSonarrAnimeProfileName;
         activeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or [ "/data/media/anime" ]);
         activeAnimeDirectory = head (config.nixflix.sonarr-anime.mediaDirs or [ "/data/media/anime" ]);
         seriesType = "standard";

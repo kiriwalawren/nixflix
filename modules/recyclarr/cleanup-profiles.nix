@@ -184,7 +184,9 @@ in
   systemd.services.recyclarr-cleanup-profiles =
     mkIf
       (
-        cfg.cleanupUnmanagedProfiles
+        config.nixflix.enable
+        && cfg.enable
+        && cfg.cleanupUnmanagedProfiles
         && (
           config.nixflix.sonarr.enable || config.nixflix.sonarr-anime.enable || config.nixflix.radarr.enable
         )
