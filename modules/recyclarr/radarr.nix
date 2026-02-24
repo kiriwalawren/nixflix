@@ -33,7 +33,7 @@ in
         { template = "radarr-quality-definition-sqp-streaming"; }
       ]
       ++ (
-        if cfg.sonarrQuality == "4k" then
+        if cfg.radarrQuality == "4k" then
           [
             { template = "radarr-quality-profile-sqp-1-2160p-default"; }
             { template = "radarr-custom-formats-sqp-1-2160p"; }
