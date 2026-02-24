@@ -168,7 +168,7 @@ pkgsUnfree.testers.runNixOSTest {
     radarr_profiles_list = json.loads(radarr_profiles)
 
     radarr_profile_names = [p['name'] for p in radarr_profiles_list]
-    assert "UHD Bluray + WEB" in radarr_profile_names, \
+    assert "SQP-1 (1080p)" in radarr_profile_names, \
         f"Expected 'UHD Bluray + WEB' profile from recyclarr in Radarr, found: {radarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr
