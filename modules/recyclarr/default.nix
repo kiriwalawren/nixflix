@@ -115,14 +115,14 @@ in
       managedProfiles = mkOption {
         type = types.listOf types.str;
         default =
-          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          optional (cfg.radarrQuality == "4K") "SQP-1 (2160p)"
           ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
-          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p"
           ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
         defaultText = literalExpression ''
-          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          optional (cfg.radarrQuality == "4K") "SQP-1 (2160p)"
           ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
-          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p"
           ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
         '';
         example = [ "My Custom Profile" ];

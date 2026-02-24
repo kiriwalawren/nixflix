@@ -36,7 +36,7 @@ in
         { template = "sonarr-quality-definition-series"; }
       ]
       ++ (
-        if cfg.sonarrQuality == "4k" then
+        if cfg.sonarrQuality == "4K" then
           [
             { template = "sonarr-v4-quality-profile-web-2160p-alternative"; }
             { template = "sonarr-v4-custom-formats-web-2160p"; }
