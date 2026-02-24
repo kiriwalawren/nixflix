@@ -87,7 +87,7 @@ in
                     echo "Processing ${instance.serviceType} instance: ${instance.instanceName}"
                     echo "  Base URL: ${instance.baseUrl}"
                     echo "  API Version: ${instance.apiVersion}"
-                    echo "  Managed profiles: ${managedProfilesJson}"
+                    echo "  Managed profiles: ${lib.escapeShellArg managedProfilesJson}"
 
                     # Fetch all quality profiles from the service
                     ALL_PROFILES=$(${
