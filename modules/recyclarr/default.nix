@@ -73,7 +73,8 @@ in
       default = "1080p";
       example = "4K";
       description = ''
-        Allows for easy recyclarr quality profile configuration for the radarr instance.
+        Allows for easy recyclarr quality profile configuration for the sonarr instance.
+        Does not effect `Sonarr Anime`.
 
         Complex configurations can be manually applied using `nixflix.recyclarr.config.sonarr.sonarr`.
         If you do, you need to set `nixflix.recyclarr.config.sonarr.sonarr.include = mkForce [];`.
@@ -88,10 +89,15 @@ in
         that are not managed by Recyclarr.
 
         Only removes profiles from instances matching nixflix.sonarr and nixflix.radarr
-        base URLs, and only when quality_profiles is defined in the Recyclarr configuration.
+        base URLs, and only when `quality_profiles` is defined in the Recyclarr configuration.
 
         Any series/movies using unmanaged profiles will be reassigned to the first
         managed profile before deletion.
+
+        !!! warning
+
+            This is a dangerous option that will remove profiles configured using the `include` option (if you also
+            define `quality_profiles`) because profiles created by `include` cannot be known to Nix at build time.
       '';
     };
   };

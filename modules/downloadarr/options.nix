@@ -334,10 +334,10 @@ in
           type = types.listOf (types.attrsOf types.anything);
           default = [ ];
           description = ''
-            For more clients if you need more than one client.
-            Follows the same schema general schema as the other options.
+            For more clients or if you have more than one instance of a specific client.
+            Follows the same schema general schema as the other options. `implementationName` is a required field.
 
-            A list of `implementationNames` can be acquired with:
+            A list of implementation names can be acquired with:
 
             ```sh
             curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/api_key>)" "http://127.0.0.1:9696/prowlarr/api/v1/downloadclient/schema" | jq '.[].implementationName'`

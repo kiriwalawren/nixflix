@@ -1,4 +1,7 @@
 { config, lib, ... }:
+let
+  cfg = config.nixflix.recyclarr;
+in
 {
   assertions = [
     {
@@ -28,10 +31,22 @@
       };
     };
 
-    include = lib.mkDefault [
-      { template = "sonarr-quality-definition-series"; }
-      { template = "sonarr-v4-quality-profile-web-1080p-alternative"; }
-      { template = "sonarr-v4-custom-formats-web-1080p"; }
-    ];
+    include = lib.mkDefault (
+      [
+        { template = "sonarr-quality-definition-series"; }
+      ]
+      ++ (
+        if cfg.sonarrQuality == "4k" then
+          [
+            { template = "sonarr-v4-quality-profile-web-2160p-alternative"; }
+            { template = "sonarr-v4-custom-formats-web-2160p"; }
+          ]
+        else
+          [
+            { template = "sonarr-v4-quality-profile-web-1080p-alternative"; }
+            { template = "sonarr-v4-custom-formats-web-1080p"; }
+          ]
+      )
+    );
   };
 }
