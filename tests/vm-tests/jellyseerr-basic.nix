@@ -12,8 +12,9 @@ pkgs.testers.runNixOSTest {
       imports = [ nixosModules ];
 
       virtualisation = {
-        diskSize = 3 * 1024;
         cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
       };
 
       nixflix = {

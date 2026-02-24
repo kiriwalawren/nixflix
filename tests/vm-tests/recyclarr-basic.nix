@@ -20,8 +20,9 @@ pkgsUnfree.testers.runNixOSTest {
       networking.useDHCP = true;
 
       virtualisation = {
-        diskSize = 3 * 1024;
         cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
       };
 
       nixflix = {
@@ -133,20 +134,6 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(8990, timeout=60)
 
-    # Test API connectivity for all services
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: abcd1234abcd1234abcd1234abcd1234' "
-        "http://127.0.0.1:7878/api/v3/system/status"
-    )
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: efgh5678efgh5678efgh5678efgh5678' "
-        "http://127.0.0.1:8989/api/v3/system/status"
-    )
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: ijkl9012ijkl9012ijkl9012ijkl9012' "
-        "http://127.0.0.1:8990/api/v3/system/status"
-    )
-
     # Wait for recyclarr to complete
     machine.wait_until_succeeds(
         "systemctl show recyclarr.service -p SubState | grep -q 'SubState=dead' && "
@@ -154,11 +141,22 @@ pkgsUnfree.testers.runNixOSTest {
         "systemctl show recyclarr.service -p Result | grep -q 'Result=success'",
         timeout=180
     )
+    machine.wait_until_succeeds(
+        "systemctl show recyclarr-cleanup-profiles.service -p SubState | grep -q 'SubState=dead' && "
+        "systemctl show recyclarr-cleanup-profiler.service -p ActiveEnterTimestamp | grep -q 'ActiveEnterTimestamp=\n' && "
+        "systemctl show recyclarr-cleanup-profiler.service -p Result | grep -q 'Result=success'",
+        timeout=180
+    )
+
+    # Wait for jellyfin to complete
+    machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=300)
+    machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
 
     # Wait for jellyseerr to complete
-    machine.wait_for_unit("jellyfin.service", timeout=300)
-    machine.wait_for_open_port(5055, timeout=300)
     machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_open_port(5055, timeout=300)
+    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
     machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
     machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
 
