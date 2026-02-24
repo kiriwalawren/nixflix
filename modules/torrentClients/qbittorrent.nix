@@ -100,7 +100,7 @@ in
 
         subdomain = mkOption {
           type = types.str;
-          default = "sabnzbd";
+          default = "qbittorrent";
           description = "Subdomain prefix for nginx reverse proxy.";
         };
 
