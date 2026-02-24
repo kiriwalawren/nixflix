@@ -6,12 +6,6 @@
 with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
-  radarrRecyclarrConfig = optionalAttrs (config.nixflix.recyclarr.radarr.enable or false) (
-    import ../../recyclarr/radarr-main.nix { inherit config; }
-  );
-  firstRadarrProfile = head (radarrRecyclarrConfig.radarr_main.quality_profiles or [ ]);
-  defaultRadarrProfileName =
-    if config.nixflix.recyclarr.enable then firstRadarrProfile.name else null;
 
   radarrServerModule = types.submodule {
     options = {
@@ -46,13 +40,8 @@ let
 
       activeProfileName = mkOption {
         type = types.nullOr types.str;
-        default = defaultRadarrProfileName;
-        defaultText = literalExpression ''
-          if config.nixflix.recyclarr.radarr.enable
-          then (head (import ../../recyclarr/radarr-main.nix {inherit config;}).radarr_main.quality_profiles).name
-          else null
-        '';
-        description = "Quality profile name. Defaults to first recyclarr quality profile if enabled.";
+        default = null;
+        description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
       };
 
       activeDirectory = mkOption {
@@ -109,7 +98,6 @@ let
       port = config.nixflix.radarr.config.hostConfig.port or 7878;
       inherit (config.nixflix.radarr.config) apiKey;
       baseUrl = config.nixflix.radarr.config.hostConfig.urlBase;
-      activeProfileName = defaultRadarrProfileName;
       activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =

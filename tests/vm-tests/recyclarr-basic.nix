@@ -13,19 +13,23 @@ pkgsUnfree.testers.runNixOSTest {
   name = "recyclarr-basic-test";
 
   nodes.machine =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       imports = [ nixosModules ];
 
       networking.useDHCP = true;
-      virtualisation.cores = 4;
+
+      virtualisation = {
+        cores = 4;
+        memorySize = 4096;
+        diskSize = 3 * 1024;
+      };
 
       nixflix = {
         enable = true;
 
         radarr = {
           enable = true;
-          user = "radarr";
           mediaDirs = [ "/media/movies" ];
           config = {
             hostConfig = {
@@ -43,7 +47,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         sonarr = {
           enable = true;
-          user = "sonarr";
           mediaDirs = [ "/media/tv" ];
           config = {
             hostConfig = {
@@ -61,7 +64,6 @@ pkgsUnfree.testers.runNixOSTest {
 
         sonarr-anime = {
           enable = true;
-          user = "sonarr-anime";
           mediaDirs = [ "/media/anime" ];
           config = {
             hostConfig = {
@@ -79,12 +81,31 @@ pkgsUnfree.testers.runNixOSTest {
 
         recyclarr = {
           enable = true;
-          radarr.enable = true;
-          sonarr.enable = true;
-          sonarr-anime.enable = true;
-          cleanupUnmanagedProfiles = true;
+          cleanupUnmanagedProfiles.enable = true;
+        };
+
+        jellyfin = {
+          enable = true;
+
+          users = {
+            admin = {
+              password = {
+                _secret = pkgs.writeText "kiri_password" "321password";
+              };
+              policy.isAdministrator = true;
+            };
+          };
+        };
+
+        jellyseerr = {
+          enable = true;
+          apiKey = {
+            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+          };
         };
       };
+
+      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
     };
 
   testScript = ''
@@ -113,20 +134,6 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(8990, timeout=60)
 
-    # Test API connectivity for all services
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: abcd1234abcd1234abcd1234abcd1234' "
-        "http://127.0.0.1:7878/api/v3/system/status"
-    )
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: efgh5678efgh5678efgh5678efgh5678' "
-        "http://127.0.0.1:8989/api/v3/system/status"
-    )
-    machine.succeed(
-        "curl -f -H 'X-Api-Key: ijkl9012ijkl9012ijkl9012ijkl9012' "
-        "http://127.0.0.1:8990/api/v3/system/status"
-    )
-
     # Wait for recyclarr to complete
     machine.wait_until_succeeds(
         "systemctl show recyclarr.service -p SubState | grep -q 'SubState=dead' && "
@@ -134,6 +141,24 @@ pkgsUnfree.testers.runNixOSTest {
         "systemctl show recyclarr.service -p Result | grep -q 'Result=success'",
         timeout=180
     )
+    machine.wait_until_succeeds(
+        "systemctl show recyclarr-cleanup-profiles.service -p SubState | grep -q 'SubState=dead' && "
+        "systemctl show recyclarr-cleanup-profiles.service -p ActiveEnterTimestamp | grep -q 'ActiveEnterTimestamp=\n' && "
+        "systemctl show recyclarr-cleanup-profiles.service -p Result | grep -q 'Result=success'",
+        timeout=180
+    )
+
+    # Wait for jellyfin to complete
+    machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=300)
+    machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
+
+    # Wait for jellyseerr to complete
+    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_open_port(5055, timeout=300)
+    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
+    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
 
     # Check that quality profiles were created by recyclarr for Radarr
     radarr_profiles = machine.succeed(
@@ -143,7 +168,7 @@ pkgsUnfree.testers.runNixOSTest {
     radarr_profiles_list = json.loads(radarr_profiles)
 
     radarr_profile_names = [p['name'] for p in radarr_profiles_list]
-    assert "UHD Bluray + WEB" in radarr_profile_names, \
+    assert "SQP-1 (1080p)" in radarr_profile_names, \
         f"Expected 'UHD Bluray + WEB' profile from recyclarr in Radarr, found: {radarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr

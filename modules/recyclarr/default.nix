@@ -1,129 +1,154 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
 let
-  inherit (config) nixflix;
-  inherit (nixflix) globals;
-  cfg = nixflix.recyclarr;
+  cfg = config.nixflix.recyclarr;
 
-  configOption = import ./config-option.nix { inherit lib; };
-
-  sonarrMainConfig = optionalAttrs cfg.sonarr.enable (import ./sonarr-main.nix { inherit config; });
-  sonarrAnimeConfig = optionalAttrs cfg.sonarr-anime.enable (
-    import ./sonarr-anime.nix { inherit config; }
-  );
-  radarrMainConfig = optionalAttrs cfg.radarr.enable (import ./radarr-main.nix { inherit config; });
-  effectiveConfiguration =
-    if cfg.config == null then
-      {
-        radarr = radarrMainConfig;
-        sonarr = sonarrMainConfig // optionalAttrs cfg.sonarr-anime.enable sonarrAnimeConfig;
-      }
+  removeNulls =
+    v:
+    if builtins.isAttrs v then
+      builtins.foldl' (
+        acc: name:
+        let
+          val = v.${name};
+        in
+        if name == "_module" || val == null then acc else acc // { ${name} = removeNulls val; }
+      ) { } (builtins.attrNames v)
+    else if builtins.isList v then
+      map removeNulls v
     else
-      cfg.config;
-
-  cleanupProfilesServices = import ./cleanup-profiles.nix {
-    inherit config lib pkgs;
-    recyclarrConfig = effectiveConfiguration;
-  };
+      v;
 in
 {
+  imports = [
+    ./cleanup-profiles.nix
+    ./config-option.nix
+    ./radarr.nix
+    ./sonarr-anime.nix
+    ./sonarr.nix
+  ];
+
   options.nixflix.recyclarr = {
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Whether to enable Recyclarr for automated TRaSH guide syncing";
+      description = ''
+        Whether to enable Recyclarr for automated TRaSH guide syncing.
+
+        Default configurations select profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
+      '';
     };
 
     user = mkOption {
       type = types.str;
       default = "recyclarr";
-      description = "User under which Recyclarr runs";
+      description = "User under which Recyclarr runs.";
     };
 
     group = mkOption {
       type = types.str;
       default = "recyclarr";
-      description = "Group under which Recyclarr runs";
+      description = "Group under which Recyclarr runs.";
     };
 
-    sonarr = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.sonarr.enable;
-        defaultText = literalExpression "nixflix.sonarr.enable";
-        description = "Whether to sync Sonarr configuration via Recyclarr";
-      };
-    };
-
-    sonarr-anime = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.sonarr-anime.enable;
-        defaultText = literalExpression "nixflix.sonarr-anime.enable";
-        description = ''
-          Whether to enable anime-specific profiles for Sonarr.
-          When enabled, BOTH normal and anime quality profiles will be configured,
-          following TRaSH Guides' recommendation for single-instance setups.
-        '';
-      };
-    };
-
-    radarr = {
-      enable = mkOption {
-        type = types.bool;
-        default = nixflix.radarr.enable;
-        defaultText = literalExpression "nixflix.radarr.enable";
-        description = "Whether to sync Radarr configuration via Recyclarr";
-      };
-    };
-
-    cleanupUnmanagedProfiles = mkOption {
-      type = types.bool;
-      default = false;
+    radarrQuality = mkOption {
+      type = types.enum [
+        "4K"
+        "1080p"
+      ];
+      default = "1080p";
+      example = "4K";
       description = ''
-        Whether to automatically remove quality profiles from Sonarr and Radarr
-        that are not managed by Recyclarr.
+        Allows for easy recyclarr quality profile configuration for the radarr instance.
 
-        Only removes profiles from instances matching nixflix.sonarr and nixflix.radarr
-        base URLs, and only when quality_profiles is defined in the Recyclarr configuration.
+        This option selects profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
 
-        Any series/movies using unmanaged profiles will be reassigned to the first
-        managed profile before deletion.
+        - 4k creates a profile named "SQP-1 (2160p)"
+        - 1080p creates a profile named "SQP-1 (1080p)"
+
+        If you want Jellyseerr to use these, you'll have to configure them manually.
+
+        Complex configurations can be manually applied using `nixflix.recyclarr.config.radarr.radarr`.
+        If you do, you need to set `nixflix.recyclarr.config.radarr.radarr.include = mkForce [];`.
       '';
     };
 
-    config = configOption;
-  };
+    sonarrQuality = mkOption {
+      type = types.enum [
+        "4K"
+        "1080p"
+      ];
+      default = "1080p";
+      example = "4K";
+      description = ''
+        Allows for easy recyclarr quality profile configuration for the sonarr instance.
+        Does not effect `Sonarr Anime`.
 
-  config = mkIf (nixflix.enable && cfg.enable) {
-    assertions = [
-      {
-        assertion = cfg.sonarr.enable -> nixflix.sonarr.config.apiKey != null;
-        message = "Recyclarr Sonarr sync requires nixflix.sonarr.config.apiKey to be set";
-      }
-      {
-        assertion = cfg.radarr.enable -> nixflix.radarr.config.apiKey != null;
-        message = "Recyclarr Radarr sync requires nixflix.radarr.config.apiKey to be set";
-      }
-    ];
+        This option selects profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
 
-    users.users.${cfg.user} = optionalAttrs (globals.uids ? ${cfg.user}) {
-      uid = mkForce globals.uids.${cfg.user};
+        - 4k creates a quality profile named "WEB-2160p"
+        - 1080p creates a quality profile named "WEB-1080p"
+
+        If you want Jellyseerr to use these, you'll have to configure them manually.
+
+        Complex configurations can be manually applied using `nixflix.recyclarr.config.sonarr.sonarr`.
+        If you do, you need to set `nixflix.recyclarr.config.sonarr.sonarr.include = mkForce [];`.
+      '';
     };
 
-    users.groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
-      gid = mkForce globals.gids.${cfg.group};
+    cleanupUnmanagedProfiles = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether to automatically remove quality profiles from Sonarr and Radarr
+          that are are unmanaged.
+        '';
+      };
+
+      managedProfiles = mkOption {
+        type = types.listOf types.str;
+        default =
+          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+        defaultText = literalExpression ''
+          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+        '';
+        example = [ "My Custom Profile" ];
+        description = ''
+          List of profiles to keep.
+
+          This list must be manually maintained if you change
+          the default Recyclarr configuration.
+        '';
+      };
+    };
+  };
+
+  config = mkIf (config.nixflix.enable && cfg.enable) {
+    users.users.${cfg.user} = optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+      uid = mkForce config.nixflix.globals.uids.${cfg.user};
+    };
+
+    users.groups.${cfg.group} = optionalAttrs (config.nixflix.globals.gids ? ${cfg.group}) {
+      gid = mkForce config.nixflix.globals.gids.${cfg.group};
     };
 
     services.recyclarr = {
       enable = true;
       inherit (cfg) user group;
-      configuration = effectiveConfiguration;
+      configuration = removeNulls cfg.config;
       schedule = "daily";
     };
 
@@ -132,17 +157,16 @@ in
         after = [
           "network-online.target"
         ]
-        ++ optional cfg.radarr.enable "radarr-config.service"
-        ++ optional cfg.sonarr.enable "sonarr-config.service"
-        ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+        ++ optional config.nixflix.radarr.enable "radarr-config.service"
+        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
         requires =
-          optional cfg.radarr.enable "radarr-config.service"
-          ++ optional cfg.sonarr.enable "sonarr-config.service"
-          ++ optional cfg.sonarr-anime.enable "sonarr-anime-config.service";
+          optional config.nixflix.radarr.enable "radarr-config.service"
+          ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+          ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
         wants = [ "network-online.target" ];
         wantedBy = mkForce [ "multi-user.target" ];
       };
-    }
-    // cleanupProfilesServices;
+    };
   };
 }
