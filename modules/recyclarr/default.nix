@@ -35,7 +35,12 @@ in
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Whether to enable Recyclarr for automated TRaSH guide syncing.";
+      description = ''
+        Whether to enable Recyclarr for automated TRaSH guide syncing.
+
+        Default configurations select profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
+      '';
     };
 
     user = mkOption {
@@ -60,6 +65,14 @@ in
       description = ''
         Allows for easy recyclarr quality profile configuration for the radarr instance.
 
+        This option selects profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
+
+        - 4k creates a profile named "SQP-1 (2160p)"
+        - 1080p creates a profile named "SQP-1 (1080p)"
+
+        If you want Jellyseerr to use these, you'll have to configure them manually.
+
         Complex configurations can be manually applied using `nixflix.recyclarr.config.radarr.radarr`.
         If you do, you need to set `nixflix.recyclarr.config.radarr.radarr.include = mkForce [];`.
       '';
@@ -75,6 +88,14 @@ in
       description = ''
         Allows for easy recyclarr quality profile configuration for the sonarr instance.
         Does not effect `Sonarr Anime`.
+
+        This option selects profiles that prioritize acquisition over quality.
+        Lower quality hits that meet TRaSH standards will be accepted and grabbed.
+
+        - 4k creates a quality profile named "WEB-2160p"
+        - 1080p creates a quality profile named "WEB-1080p"
+
+        If you want Jellyseerr to use these, you'll have to configure them manually.
 
         Complex configurations can be manually applied using `nixflix.recyclarr.config.sonarr.sonarr`.
         If you do, you need to set `nixflix.recyclarr.config.sonarr.sonarr.include = mkForce [];`.
