@@ -81,7 +81,7 @@ pkgsUnfree.testers.runNixOSTest {
 
         recyclarr = {
           enable = true;
-          cleanupUnmanagedProfiles = true;
+          cleanupUnmanagedProfiles.enable = true;
         };
 
         jellyfin = {
@@ -143,8 +143,8 @@ pkgsUnfree.testers.runNixOSTest {
     )
     machine.wait_until_succeeds(
         "systemctl show recyclarr-cleanup-profiles.service -p SubState | grep -q 'SubState=dead' && "
-        "systemctl show recyclarr-cleanup-profiler.service -p ActiveEnterTimestamp | grep -q 'ActiveEnterTimestamp=\n' && "
-        "systemctl show recyclarr-cleanup-profiler.service -p Result | grep -q 'Result=success'",
+        "systemctl show recyclarr-cleanup-profiles.service -p ActiveEnterTimestamp | grep -q 'ActiveEnterTimestamp=\n' && "
+        "systemctl show recyclarr-cleanup-profiles.service -p Result | grep -q 'Result=success'",
         timeout=180
     )
 

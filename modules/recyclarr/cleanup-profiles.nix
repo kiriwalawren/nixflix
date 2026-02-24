@@ -9,16 +9,17 @@ let
   cfg = config.nixflix.recyclarr;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 
+  managedProfilesJson = builtins.toJSON cfg.cleanupUnmanagedProfiles.managedProfiles;
+
   buildInstances =
     serviceType: instances:
     mapAttrsToList (
       instanceName: instanceConfig:
       let
-        hasProfiles = (length instanceConfig.quality_profiles) > 0;
         apiKeyPath = instanceConfig.api_key._secret or instanceConfig.api_key;
         credentialName = "${instanceName}-api_key";
       in
-      optional hasProfiles {
+      {
         inherit
           serviceType
           instanceName
@@ -27,23 +28,18 @@ let
           ;
         apiVersion = instanceConfig.api_version or "v3";
         baseUrl = instanceConfig.base_url;
-        managedProfiles = map (p: p.name) instanceConfig.quality_profiles;
       }
     ) instances;
 
-  sonarrInstances = optionals (config.nixflix.recyclarr.config ? sonarr) (
-    buildInstances "sonarr" config.nixflix.recyclarr.config.sonarr
-  );
+  sonarrInstances = optionals (cfg.config ? sonarr) (buildInstances "sonarr" cfg.config.sonarr);
 
-  radarrInstances = optionals (config.nixflix.recyclarr.config ? radarr) (
-    buildInstances "radarr" config.nixflix.recyclarr.config.radarr
-  );
+  radarrInstances = optionals (cfg.config ? radarr) (buildInstances "radarr" cfg.config.radarr);
 
-  instancesWithProfiles = flatten (sonarrInstances ++ radarrInstances);
+  allInstances = flatten (sonarrInstances ++ radarrInstances);
 in
 {
   systemd.services.recyclarr-cleanup-profiles =
-    mkIf (config.nixflix.enable && cfg.enable && cfg.cleanupUnmanagedProfiles)
+    mkIf (config.nixflix.enable && cfg.enable && cfg.cleanupUnmanagedProfiles.enable)
       {
         description = "Cleanup unmanaged quality profiles from Sonarr/Radarr";
         after = [ "recyclarr.service" ];
@@ -60,7 +56,7 @@ in
           ProtectHome = true;
           PrivateDevices = true;
 
-          LoadCredential = map (i: "${i.credentialName}:${i.apiKeyPath}") instancesWithProfiles;
+          LoadCredential = map (i: "${i.credentialName}:${i.apiKeyPath}") allInstances;
 
           ExecStart = pkgs.writeShellScript "cleanup-quality-profiles.sh" ''
             set -euo pipefail
@@ -68,16 +64,20 @@ in
             echo "Starting quality profile cleanup..."
 
             ${
-              if (length instancesWithProfiles) == 0 then
+              if (length allInstances) == 0 then
                 ''
-                  echo "No instances with managed quality profiles found"
+                  echo "No instances found"
                   exit 0
                 ''
               else
-                lib.concatMapStringsSep "\n" (
+                ''
+                  MANAGED_PROFILES='${managedProfilesJson}'
+                  echo "Managed profiles: $MANAGED_PROFILES"
+
+                ''
+                + lib.concatMapStringsSep "\n" (
                   instance:
                   let
-                    managedProfilesJson = builtins.toJSON instance.managedProfiles;
                     apiKeySecret = {
                       _secret = "/run/credentials/recyclarr-cleanup-profiles.service/${instance.credentialName}";
                     };
@@ -87,7 +87,6 @@ in
                     echo "Processing ${instance.serviceType} instance: ${instance.instanceName}"
                     echo "  Base URL: ${instance.baseUrl}"
                     echo "  API Version: ${instance.apiVersion}"
-                    echo "  Managed profiles: ${lib.escapeShellArg managedProfilesJson}"
 
                     # Fetch all quality profiles from the service
                     ALL_PROFILES=$(${
@@ -100,7 +99,6 @@ in
                       echo "  No quality profiles found in ${instance.instanceName}"
                     else
                       # Find profiles to delete (those not in managed list)
-                      MANAGED_PROFILES='${managedProfilesJson}'
                       PROFILES_TO_DELETE=$(echo "$ALL_PROFILES" | ${pkgs.jq}/bin/jq -c --argjson managed "$MANAGED_PROFILES" '
                         map(select(.name as $name | $managed | index($name) | not))
                       ')
@@ -193,7 +191,7 @@ in
                       fi
                     fi
                   ''
-                ) instancesWithProfiles
+                ) allInstances
             }
 
             echo "Quality profile cleanup completed"

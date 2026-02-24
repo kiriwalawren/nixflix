@@ -163,7 +163,7 @@ in
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
         ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
         ++ optional (
-          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
         ) "recyclarr-cleanup-profiles.service";
 
         wants = [
@@ -182,7 +182,7 @@ in
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
         ++ optional config.services.postgresql.enable "postgresql-ready.target"
         ++ optional (
-          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles
+          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
         ) "recyclarr-cleanup-profiles.service";
 
         wantedBy = [ "multi-user.target" ];

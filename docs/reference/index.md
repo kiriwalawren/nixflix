@@ -1,3 +1,7 @@
+---
+title: Reference
+---
+
 # Options Reference
 
 This section contains automatically generated documentation for all Nixflix configuration options.

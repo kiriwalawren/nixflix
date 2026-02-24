@@ -1,5 +1,5 @@
 ---
-## title: Basic Setup Example
+title: Basic Setup Example
 ---
 
 # Basic Setup Example

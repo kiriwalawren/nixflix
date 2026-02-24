@@ -102,24 +102,37 @@ in
       '';
     };
 
-    cleanupUnmanagedProfiles = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Whether to automatically remove quality profiles from Sonarr and Radarr
-        that are not managed by Recyclarr.
+    cleanupUnmanagedProfiles = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether to automatically remove quality profiles from Sonarr and Radarr
+          that are are unmanaged.
+        '';
+      };
 
-        Only removes profiles from instances matching nixflix.sonarr and nixflix.radarr
-        base URLs, and only when `quality_profiles` is defined in the Recyclarr configuration.
+      managedProfiles = mkOption {
+        type = types.listOf types.str;
+        default =
+          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+        defaultText = literalExpression ''
+          optional (cfg.radarrQuality == "4k") "SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4k") "WEB-2160p"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+        '';
+        example = [ "My Custom Profile" ];
+        description = ''
+          List of profiles to keep.
 
-        Any series/movies using unmanaged profiles will be reassigned to the first
-        managed profile before deletion.
-
-        !!! warning
-
-            This is a dangerous option that will remove profiles configured using the `include` option (if you also
-            define `quality_profiles`) because profiles created by `include` cannot be known to Nix at build time.
-      '';
+          This list must be manually maintained if you change
+          the default Recyclarr configuration.
+        '';
+      };
     };
   };
 
