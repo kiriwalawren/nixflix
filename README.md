@@ -2,16 +2,16 @@
   <img src="https://raw.githubusercontent.com/kiriwalawren/nixflix/refs/heads/main/docs/assets/logo.svg" width="250px"/>
   <div>Nixflix</div>
   <div>
-    <a href="https://github.com/kiriwalawren/dotnix/issues">
+    <a href="https://github.com/kiriwalawren/nixflix/issues">
         <img src="https://img.shields.io/github/issues/kiriwalawren/nixflix?color=f5a97f&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/dotnix/stargazers">
+    <a href="https://github.com/kiriwalawren/nixflix/stargazers">
         <img src="https://img.shields.io/github/stars/kiriwalawren/nixflix?color=c6a0f6&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/dotnix">
+    <a href="https://github.com/kiriwalawren/nixflix">
         <img src="https://img.shields.io/github/repo-size/kiriwalawren/nixflix?color=ea999c&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/dotnix/blob/main/LICENSE">
+    <a href="https://github.com/kiriwalawren/nixflix/blob/main/LICENSE">
         <img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=GPL-3&logoColor=ca9ee6&colorA=313244&colorB=a6da95"/>
     </a>
     <a href="https://nixos.org">
