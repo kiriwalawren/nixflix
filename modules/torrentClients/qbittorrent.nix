@@ -104,10 +104,19 @@ in
           description = "Subdomain prefix for nginx reverse proxy.";
         };
 
-        serverConfig.Preferences.WebUI.Address = mkOption {
-          type = types.str;
-          default = "127.0.0.1";
-          description = "Bind address for the WebUI";
+        serverConfig = {
+          BitTorrent.Session.DefaultSavePath = mkOption {
+            type = types.str;
+            default = "${cfg.downloadsDir}/default";
+            defaultText = literalExpression ''"''${config.nixflix.torrentClients.qbittorrent.downloadsDir}/default"'';
+            description = "Default save path for downloads without a category.";
+          };
+
+          Preferences.WebUI.Address = mkOption {
+            type = types.str;
+            default = "127.0.0.1";
+            description = "Bind address for the WebUI";
+          };
         };
       };
     };
@@ -143,6 +152,10 @@ in
         ${configPath}.d = {
           inherit (service) user group;
           mode = "0754";
+        };
+        ${cfg.serverConfig.BitTorrent.Session.DefaultSavePath}.d = {
+          inherit (service) user group;
+          mode = "0775";
         };
       };
     };
