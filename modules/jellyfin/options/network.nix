@@ -98,21 +98,21 @@ in
 
     knownProxies = mkOption {
       type = types.listOf types.str;
-      default = [ ];
-      description = "List of known proxies";
+      default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
+      description = "List of IP addresses or hostnames of known proxies used when connecting to your Jellyfin instance. This is required to make proper use of 'X-Forwarded-For' headers.";
     };
 
     localNetworkAddresses = mkOption {
       type = types.listOf types.str;
       default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
       defaultText = literalExpression ''if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ]'';
-      description = "Local network addresses";
+      description = "Override the local IP address for the HTTP server. If left empty, the server will bind to all available addresses.";
     };
 
     localNetworkSubnets = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      description = "List of local network subnets";
+      description = "IP addresses or IP/netmask entries for networks that will be considered on local network when enforcing bandwidth and remote access restrictions. If left blank, all RFC1918 addresses are considered local.";
     };
 
     publicHttpPort = mkOption {
