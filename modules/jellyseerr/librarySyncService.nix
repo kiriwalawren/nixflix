@@ -8,31 +8,29 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
-  jellyfinCfg = nixflix.jellyfin;
   authUtil = import ./authUtil.nix {
     inherit
       lib
       pkgs
       cfg
-      jellyfinCfg
       ;
   };
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
 in
 {
-  config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
+  config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyseerr-libraries = {
       description = "Sync Jellyseerr library selections";
       after = [
         "jellyseerr-setup.service"
         "jellyseerr-jellyfin.service"
-        "jellyfin-libraries.service"
-      ];
+      ]
+      ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";
       requires = [
         "jellyseerr-setup.service"
         "jellyseerr-jellyfin.service"
-        "jellyfin-libraries.service"
-      ];
+      ]
+      ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
