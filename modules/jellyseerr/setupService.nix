@@ -9,38 +9,31 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
-  jellyfinCfg = nixflix.jellyfin;
-
-  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
 
   authUtil = import ./authUtil.nix {
     inherit
       lib
       pkgs
       cfg
-      jellyfinCfg
       ;
   };
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs {
-    inherit (firstAdminUser) password;
+    password = cfg.jellyfin.adminPassword;
   };
 in
 {
-  config = mkIf (nixflix.enable && cfg.enable && nixflix.jellyfin.enable) {
+  config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyseerr-setup = {
       description = "Complete Jellyseerr initial setup with Jellyfin";
       after = [
         "jellyseerr.service"
-        "jellyfin-setup-wizard.service"
-      ];
+      ]
+      ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
       requires = [
         "jellyseerr.service"
-        "jellyfin-setup-wizard.service"
-      ];
+      ]
+      ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -75,15 +68,14 @@ in
         echo "Running initial setup..."
 
         # Step 1: Connect to Jellyfin (this creates the session cookie)
-        # Use Jellyfin's first admin credentials
         SETUP_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
           ${jqSetupSecrets.flagsString} \
-          --arg username "${firstAdminName}" \
+          --arg username "${cfg.jellyfin.adminUsername}" \
           --arg hostname "${cfg.jellyfin.hostname}" \
           --arg port "${toString cfg.jellyfin.port}" \
           --arg useSsl "${boolToString cfg.jellyfin.useSsl}" \
           --arg urlBase "${cfg.jellyfin.urlBase}" \
-          --arg email "${firstAdminUser.email or firstAdminName}" \
+          --arg email "${cfg.jellyfin.adminUsername}" \
           --arg serverType "${toString cfg.jellyfin.serverType}" \
           '{
             username: $username,

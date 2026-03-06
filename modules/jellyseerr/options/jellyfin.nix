@@ -4,8 +4,40 @@
   ...
 }:
 with lib;
+let
+  secrets = import ../../../lib/secrets { inherit lib; };
+  jellyfinCfg = config.nixflix.jellyfin;
+  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
+  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
+  hasLocalAdmin = jellyfinCfg.enable && sortedAdminNames != [ ];
+  firstAdminName = if hasLocalAdmin then head sortedAdminNames else null;
+  firstAdminUser = if hasLocalAdmin then adminUsers.${firstAdminName} else null;
+in
 {
   options.nixflix.jellyseerr.jellyfin = {
+    adminUsername = mkOption {
+      type = types.nullOr types.str;
+      default = firstAdminName;
+      defaultText = literalExpression "first admin username from nixflix.jellyfin.users, or null";
+      description = ''
+        Jellyfin admin username for Jellyseerr authentication.
+
+        Auto-derived from `nixflix.jellyfin.users` when Jellyfin is enabled locally.
+        Must be set explicitly when using a remote Jellyfin instance.
+      '';
+    };
+
+    adminPassword = secrets.mkSecretOption {
+      default = if hasLocalAdmin then firstAdminUser.password else null;
+      defaultText = literalExpression "password of first admin from nixflix.jellyfin.users, or null";
+      description = ''
+        Jellyfin admin password for Jellyseerr authentication.
+
+        Auto-derived from `nixflix.jellyfin.users` when Jellyfin is enabled locally.
+        Must be set explicitly when using a remote Jellyfin instance.
+      '';
+    };
+
     hostname = mkOption {
       type = types.str;
       default = "127.0.0.1";
