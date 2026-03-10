@@ -211,7 +211,7 @@ pkgsUnfree.testers.runNixOSTest {
     machine.succeed("pgrep -u sonarr Sonarr")
     machine.succeed("pgrep -u sonarr-anime Sonarr")
     machine.succeed("pgrep -u radarr Radarr")
-    machine.succeed("pgrep -u lidarr dotnet")
+    machine.succeed("pgrep -u lidarr Lidarr")
 
     # Test Prowlarr applications were configured
     print("Testing Prowlarr applications configuration...")

@@ -172,6 +172,6 @@ pkgsUnfree.testers.runNixOSTest {
     assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
     print("Default delay profile configured successfully!")
 
-    machine.succeed("pgrep -u testuser dotnet")
+    machine.succeed("pgrep -u testuser Lidarr")
   '';
 }
