@@ -242,6 +242,36 @@ in
     in
     assertTest "sabnzbd-service-generation" hasAllServices;
 
+  # Test that jellyseerr generates services with a remote Jellyfin (no local jellyfin)
+  jellyseerr-remote-jellyfin =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            jellyseerr = {
+              enable = true;
+              apiKey = {
+                _secret = "/run/secrets/jellyseerr-api";
+              };
+              jellyfin = {
+                adminUsername = "remoteadmin";
+                adminPassword = "remotepassword";
+              };
+            };
+          };
+        }
+      ];
+      systemdUnits = config.config.systemd.services;
+    in
+    assertTest "jellyseerr-remote-jellyfin" (
+      systemdUnits ? jellyseerr
+      && systemdUnits ? jellyseerr-setup
+      && systemdUnits ? jellyseerr-jellyfin
+      && systemdUnits ? jellyseerr-libraries
+      && systemdUnits ? jellyseerr-user-settings
+    );
+
   jellyfin-integration =
     let
       config = evalConfig [

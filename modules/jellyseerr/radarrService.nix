@@ -9,13 +9,11 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.jellyseerr;
-  jellyfinCfg = nixflix.jellyfin;
   authUtil = import ./authUtil.nix {
     inherit
       lib
       pkgs
       cfg
-      jellyfinCfg
       ;
   };
   baseUrl = "http://127.0.0.1:${toString cfg.port}";

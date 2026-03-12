@@ -2,19 +2,15 @@
   lib,
   pkgs,
   cfg,
-  jellyfinCfg,
 }:
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) jellyfinCfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
+  inherit (cfg.jellyfin) adminUsername;
 
   jqAuthSecrets = secrets.mkJqSecretArgs {
-    inherit (firstAdminUser) password;
+    password = cfg.jellyfin.adminPassword;
   };
 
   baseUrl = "http://127.0.0.1:${toString cfg.port}";
@@ -63,14 +59,14 @@ in
 
     # Authenticate if needed
     if [ "$NEED_AUTH" = "true" ]; then
-      echo "Authenticating to Jellyseerr as ${firstAdminName}..."
+      echo "Authenticating to Jellyseerr as ${adminUsername}..."
 
       BACKOFF=1
       for attempt in {1..10}; do
         AUTH_PAYLOAD_FILE=$(mktemp)
         ${pkgs.jq}/bin/jq -n \
           ${jqAuthSecrets.flagsString} \
-          --arg username "${firstAdminName}" \
+          --arg username "${adminUsername}" \
           '{username: $username, password: ${jqAuthSecrets.refs.password}}' > "$AUTH_PAYLOAD_FILE"
 
         AUTH_RESPONSE=$(${

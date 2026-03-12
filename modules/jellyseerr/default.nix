@@ -36,8 +36,8 @@ in
       in
       [
         {
-          assertion = config.nixflix.jellyfin.enable;
-          message = "Jellyseerr requires Jellyfin to be enabled. Please set nixflix.jellyfin.enable = true.";
+          assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
+          message = "Jellyseerr requires Jellyfin admin credentials. Either enable nixflix.jellyfin with an admin user, or set nixflix.jellyseerr.jellyfin.adminUsername and nixflix.jellyseerr.jellyfin.adminPassword.";
         }
         {
           assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
