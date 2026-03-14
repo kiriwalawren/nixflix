@@ -27,8 +27,8 @@ let
       serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
       implementationName = toUpper (substring 0 1 serviceBase) + substring 1 (-1) serviceBase;
 
-      baseUrl = "http://127.0.0.1:${toString serviceConfig.hostConfig.port}";
-      prowlarrUrl = "http://127.0.0.1:${toString serviceConfig.hostConfig.port}";
+      baseUrl = "http://127.0.0.1:${toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}";
+      prowlarrUrl = "http://127.0.0.1:${toString nixflix.prowlarr.config.hostConfig.port}${nixflix.prowlarr.config.hostConfig.urlBase}";
     in
     mkIf (nixflix.${serviceName}.enable or false) {
       name = displayName;

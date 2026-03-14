@@ -175,6 +175,8 @@ in
 
                 UPDATED_APPLICATION=$(apply_field_overrides "$EXISTING_APPLICATION" "$FIELD_OVERRIDES")
 
+                RESPONSE_FILE=$(mktemp)
+                set +e
                 ${
                   mkSecureCurl cfg.config.apiKey {
                     url = "$BASE_URL/applications/$APPLICATION_ID";
@@ -183,9 +185,21 @@ in
                       "Content-Type" = "application/json";
                     };
                     data = "$UPDATED_APPLICATION";
-                    extraArgs = "-Sf";
+                    extraArgs = "-S --fail-with-body";
                   }
-                } >/dev/null
+                } > "$RESPONSE_FILE" 2>&1
+                CURL_EXIT=$?
+                set -e
+                if [ "$CURL_EXIT" -ne 0 ]; then
+                  echo "Error: Updating application ${applicationName} failed (curl exit code: $CURL_EXIT)"
+                  echo "Request body (secrets redacted):"
+                  echo "$UPDATED_APPLICATION" | ${pkgs.jq}/bin/jq '(.fields[]? | select(.name == "apiKey") | .value) = "***"' 2>/dev/null || echo "$UPDATED_APPLICATION"
+                  echo "Response:"
+                  cat "$RESPONSE_FILE"
+                  rm -f "$RESPONSE_FILE"
+                  exit 1
+                fi
+                rm -f "$RESPONSE_FILE"
 
                 echo "Application ${applicationName} updated"
               else
@@ -200,6 +214,8 @@ in
 
                 NEW_APPLICATION=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
+                RESPONSE_FILE=$(mktemp)
+                set +e
                 ${
                   mkSecureCurl cfg.config.apiKey {
                     url = "$BASE_URL/applications";
@@ -208,9 +224,21 @@ in
                       "Content-Type" = "application/json";
                     };
                     data = "$NEW_APPLICATION";
-                    extraArgs = "-Sf";
+                    extraArgs = "-S --fail-with-body";
                   }
-                } >/dev/null
+                } > "$RESPONSE_FILE" 2>&1
+                CURL_EXIT=$?
+                set -e
+                if [ "$CURL_EXIT" -ne 0 ]; then
+                  echo "Error: Creating application ${applicationName} failed (curl exit code: $CURL_EXIT)"
+                  echo "Request body (secrets redacted):"
+                  echo "$NEW_APPLICATION" | ${pkgs.jq}/bin/jq '(.fields[]? | select(.name == "apiKey") | .value) = "***"' 2>/dev/null || echo "$NEW_APPLICATION"
+                  echo "Response:"
+                  cat "$RESPONSE_FILE"
+                  rm -f "$RESPONSE_FILE"
+                  exit 1
+                fi
+                rm -f "$RESPONSE_FILE"
 
                 echo "Application ${applicationName} created"
               fi
