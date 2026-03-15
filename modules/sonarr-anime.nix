@@ -10,7 +10,7 @@ let
 in
 {
   imports = [
-    (import ./arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "sonarr-anime" { })
+    (import ./arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "sonarr-anime")
   ];
 
   config.nixflix.sonarr-anime = {
