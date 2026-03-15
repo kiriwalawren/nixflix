@@ -169,6 +169,23 @@ in
         description = "Allow LAN traffic when VPN is down (only effective with kill switch enabled)";
       };
     };
+
+    persistDevice = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Keep the Mullvad device logged in across service restarts and reboots.
+
+        When false (default), the service logs out and revokes the device on stop,
+        requiring a fresh login on next start. This frees up device slots (Mullvad
+        allows 5 devices per account).
+
+        When true, the service only disconnects on stop without logging out. The
+        device identity persists in `/etc/mullvad-vpn/settings.json`. This is
+        recommended when using the kill switch, as it avoids a deadlock on boot
+        where the kill switch blocks network access before the daemon can log in.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -248,15 +265,21 @@ in
             ${mullvadPkg}/bin/mullvad auto-connect set off
           ''}
         '';
-        ExecStop = pkgs.writeShellScript "logout-mullvad" ''
-          DEVICE_NAME=$(${mullvadPkg}/bin/mullvad account get | grep "Device name:" | sed 's/.*Device name:[[:space:]]*//')
-          if [ -n "$DEVICE_NAME" ]; then
-            echo "Revoking device: $DEVICE_NAME"
-            ${mullvadPkg}/bin/mullvad account revoke-device "$DEVICE_NAME" || true
-          fi
-          ${mullvadPkg}/bin/mullvad account logout  || true
-          ${mullvadPkg}/bin/mullvad disconnect || true
-        '';
+        ExecStop =
+          if cfg.persistDevice then
+            pkgs.writeShellScript "disconnect-mullvad" ''
+              ${mullvadPkg}/bin/mullvad disconnect || true
+            ''
+          else
+            pkgs.writeShellScript "logout-mullvad" ''
+              DEVICE_NAME=$(${mullvadPkg}/bin/mullvad account get | grep "Device name:" | sed 's/.*Device name:[[:space:]]*//')
+              if [ -n "$DEVICE_NAME" ]; then
+                echo "Revoking device: $DEVICE_NAME"
+                ${mullvadPkg}/bin/mullvad account revoke-device "$DEVICE_NAME" || true
+              fi
+              ${mullvadPkg}/bin/mullvad account logout  || true
+              ${mullvadPkg}/bin/mullvad disconnect || true
+            '';
       };
     };
   };
