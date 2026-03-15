@@ -151,7 +151,7 @@ in
         Group = cfg.group;
         WorkingDirectory = cfg.dataDir;
         Restart = "on-failure";
-        TimeoutStartSec = 120;
+        TimeoutStartSec = 300;
         TimeoutStopSec = 15;
         SuccessExitStatus = "0 143";
 

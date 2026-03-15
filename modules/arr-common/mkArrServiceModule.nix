@@ -4,7 +4,7 @@
   pkgs,
   ...
 }:
-serviceName: extraConfigOptions:
+serviceName:
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
@@ -177,7 +177,6 @@ in
             description = "API key for ${capitalizedName}.";
           };
         }
-        // extraConfigOptions
         // {
           hostConfig = hostConfig.options;
         }

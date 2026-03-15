@@ -1,15 +1,18 @@
 {
+  config,
   lib,
   pkgs,
+  ...
 }:
 with lib;
 let
+  cfg = config.nixflix.prowlarr;
   secrets = import ../../lib/secrets { inherit lib; };
 
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 in
 {
-  type = mkOption {
+  options.nixflix.prowlarr.config.indexers = mkOption {
     type = types.listOf (
       types.submodule {
         freeformType = types.attrsOf types.anything;
@@ -59,168 +62,170 @@ in
     '';
   };
 
-  mkService = serviceConfig: {
-    description = "Configure Prowlarr indexers via API";
-    after = [ "prowlarr-config.service" ];
-    requires = [ "prowlarr-config.service" ];
-    wantedBy = [ "multi-user.target" ];
+  config.systemd.services."prowlarr-indexers" =
+    mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null)
+      {
+        description = "Configure Prowlarr indexers via API";
+        after = [ "prowlarr-config.service" ];
+        requires = [ "prowlarr-config.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
 
-    script = ''
-      set -eu
+        script = ''
+          set -eu
 
-      BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
+          BASE_URL="http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
 
-      # Fetch all indexer schemas
-      echo "Fetching indexer schemas..."
-      SCHEMAS=$(${
-        mkSecureCurl serviceConfig.apiKey {
-          url = "$BASE_URL/indexer/schema";
-          extraArgs = "-S";
-        }
-      })
-
-      # Fetch existing indexers
-      echo "Fetching existing indexers..."
-      INDEXERS=$(${
-        mkSecureCurl serviceConfig.apiKey {
-          url = "$BASE_URL/indexer";
-          extraArgs = "-S";
-        }
-      })
-
-      # Build list of configured indexer names
-      CONFIGURED_NAMES=$(cat <<'EOF'
-      ${builtins.toJSON (map (i: i.name) serviceConfig.indexers)}
-      EOF
-      )
-
-      # Delete indexers that are not in the configuration
-      echo "Removing indexers not in configuration..."
-      echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
-        INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
-        INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
-
-        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
-          echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-          ${
-            mkSecureCurl serviceConfig.apiKey {
-              url = "$BASE_URL/indexer/$INDEXER_ID";
-              method = "DELETE";
-              extraArgs = "-Sf";
+          # Fetch all indexer schemas
+          echo "Fetching indexer schemas..."
+          SCHEMAS=$(${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/indexer/schema";
+              extraArgs = "-S";
             }
-          } >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
-        fi
-      done
+          })
 
-      ${concatMapStringsSep "\n" (
-        indexerConfig:
-        let
-          indexerName = indexerConfig.name;
-          inherit (indexerConfig) apiKey username password;
-          allOverrides = builtins.removeAttrs indexerConfig [
-            "name"
-            "apiKey"
-            "username"
-            "password"
-          ];
-          fieldOverrides = lib.filterAttrs (
-            name: value: value != null && !lib.hasPrefix "_" name
-          ) allOverrides;
-          fieldOverridesJson = builtins.toJSON fieldOverrides;
+          # Fetch existing indexers
+          echo "Fetching existing indexers..."
+          INDEXERS=$(${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/indexer";
+              extraArgs = "-S";
+            }
+          })
 
-          jqSecrets = secrets.mkJqSecretArgs {
-            apiKey = if apiKey == null then "" else apiKey;
-            username = if username == null then "" else username;
-            password = if password == null then "" else password;
-          };
-        in
-        ''
-          echo "Processing indexer: ${indexerName}"
+          # Build list of configured indexer names
+          CONFIGURED_NAMES=$(cat <<'EOF'
+          ${builtins.toJSON (map (i: i.name) cfg.config.indexers)}
+          EOF
+          )
 
-          apply_field_overrides() {
-            local indexer_json="$1"
-            local overrides="$2"
+          # Delete indexers that are not in the configuration
+          echo "Removing indexers not in configuration..."
+          echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
+            INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
+            INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
 
-            echo "$indexer_json" | ${pkgs.jq}/bin/jq \
-              ${jqSecrets.flagsString} \
-              --argjson overrides "$overrides" '
-                .fields[] |= (
-                  if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
-                  elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
-                  elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
-                  else .
-                  end
-                )
-                | . + $overrides
-                | .fields[] |= (
-                    . as $field |
-                    if $overrides[$field.name] != null then
-                      .value = $overrides[$field.name]
-                    else
-                      .
-                    end
-                  )
-              '
-          }
-
-          FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
-
-          EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
-
-          if [ -n "$EXISTING_INDEXER" ]; then
-            echo "Indexer ${indexerName} already exists, updating..."
-            INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
-
-            UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
-
-            ${
-              mkSecureCurl serviceConfig.apiKey {
-                url = "$BASE_URL/indexer/$INDEXER_ID";
-                method = "PUT";
-                headers = {
-                  "Content-Type" = "application/json";
-                };
-                data = "$UPDATED_INDEXER";
-                extraArgs = "-Sf";
-              }
-            } >/dev/null
-
-            echo "Indexer ${indexerName} updated"
-          else
-            echo "Indexer ${indexerName} does not exist, creating..."
-
-            SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
-
-            if [ -z "$SCHEMA" ]; then
-              echo "Error: No schema found for indexer ${indexerName}"
-              exit 1
+            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
+              echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
+              ${
+                mkSecureCurl cfg.config.apiKey {
+                  url = "$BASE_URL/indexer/$INDEXER_ID";
+                  method = "DELETE";
+                  extraArgs = "-Sf";
+                }
+              } >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
             fi
+          done
 
-            NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
+          ${concatMapStringsSep "\n" (
+            indexerConfig:
+            let
+              indexerName = indexerConfig.name;
+              inherit (indexerConfig) apiKey username password;
+              allOverrides = builtins.removeAttrs indexerConfig [
+                "name"
+                "apiKey"
+                "username"
+                "password"
+              ];
+              fieldOverrides = lib.filterAttrs (
+                name: value: value != null && !lib.hasPrefix "_" name
+              ) allOverrides;
+              fieldOverridesJson = builtins.toJSON fieldOverrides;
 
-            ${
-              mkSecureCurl serviceConfig.apiKey {
-                url = "$BASE_URL/indexer";
-                method = "POST";
-                headers = {
-                  "Content-Type" = "application/json";
-                };
-                data = "$NEW_INDEXER";
-                extraArgs = "-Sf";
+              jqSecrets = secrets.mkJqSecretArgs {
+                apiKey = if apiKey == null then "" else apiKey;
+                username = if username == null then "" else username;
+                password = if password == null then "" else password;
+              };
+            in
+            ''
+              echo "Processing indexer: ${indexerName}"
+
+              apply_field_overrides() {
+                local indexer_json="$1"
+                local overrides="$2"
+
+                echo "$indexer_json" | ${pkgs.jq}/bin/jq \
+                  ${jqSecrets.flagsString} \
+                  --argjson overrides "$overrides" '
+                    .fields[] |= (
+                      if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                      elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
+                      elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
+                      else .
+                      end
+                    )
+                    | . + $overrides
+                    | .fields[] |= (
+                        . as $field |
+                        if $overrides[$field.name] != null then
+                          .value = $overrides[$field.name]
+                        else
+                          .
+                        end
+                      )
+                  '
               }
-            } >/dev/null
 
-            echo "Indexer ${indexerName} created"
-          fi
-        ''
-      ) serviceConfig.indexers}
+              FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
 
-      echo "Prowlarr indexers configuration complete"
-    '';
-  };
+              EXISTING_INDEXER=$(echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
+
+              if [ -n "$EXISTING_INDEXER" ]; then
+                echo "Indexer ${indexerName} already exists, updating..."
+                INDEXER_ID=$(echo "$EXISTING_INDEXER" | ${pkgs.jq}/bin/jq -r '.id')
+
+                UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
+
+                ${
+                  mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/indexer/$INDEXER_ID";
+                    method = "PUT";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$UPDATED_INDEXER";
+                    extraArgs = "-Sf";
+                  }
+                } >/dev/null
+
+                echo "Indexer ${indexerName} updated"
+              else
+                echo "Indexer ${indexerName} does not exist, creating..."
+
+                SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
+
+                if [ -z "$SCHEMA" ]; then
+                  echo "Error: No schema found for indexer ${indexerName}"
+                  exit 1
+                fi
+
+                NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
+
+                ${
+                  mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/indexer";
+                    method = "POST";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$NEW_INDEXER";
+                    extraArgs = "-Sf";
+                  }
+                } >/dev/null
+
+                echo "Indexer ${indexerName} created"
+              fi
+            ''
+          ) cfg.config.indexers}
+
+          echo "Prowlarr indexers configuration complete"
+        '';
+      };
 }

@@ -66,13 +66,24 @@ let
     {
       "${serviceName}-downloadclients" = {
         description = "Configure ${serviceName} download clients via API";
-        after = [ "${serviceName}-config.service" ] ++ clientDependencies;
-        requires = [ "${serviceName}-config.service" ] ++ clientDependencies;
+        after = [
+          "${serviceName}.service"
+          "${serviceName}-config.service"
+        ]
+        ++ clientDependencies;
+        requires = [
+          "${serviceName}.service"
+          "${serviceName}-config.service"
+        ]
+        ++ clientDependencies;
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          ExecStartPre =
+            "${pkgs.curl}/bin/curl --retry 30 --retry-delay 2 --retry-connrefused -so /dev/null"
+            + " http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
         };
 
         script = ''
