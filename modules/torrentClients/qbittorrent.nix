@@ -98,6 +98,19 @@ in
           '';
         };
 
+        webuiPasswordHash = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = ''
+            PBKDF2-SHA512 hash of the WebUI password in qBittorrent format
+            (`@ByteArray(base64-salt:base64-hash)`).
+
+            Generate with: `qbittorrent-hash-password`
+
+            When null, no WebUI password is configured.
+          '';
+        };
+
         subdomain = mkOption {
           type = types.str;
           default = "qbittorrent";
@@ -124,11 +137,21 @@ in
   };
 
   config = mkIf (config.nixflix.enable && cfg != null && cfg.enable) {
-    services.qbittorrent = builtins.removeAttrs cfg [
-      "password"
-      "subdomain"
-      "downloadsDir"
-      "categories"
+    services.qbittorrent = lib.mkMerge [
+      (builtins.removeAttrs cfg [
+        "password"
+        "webuiPasswordHash"
+        "subdomain"
+        "downloadsDir"
+        "categories"
+      ])
+      (lib.mkIf (cfg.webuiPasswordHash != null) {
+        serverConfig.Preferences.WebUI = {
+          Password_PBKDF2 = cfg.webuiPasswordHash;
+          # Enforce auth for localhost (e.g. nginx reverse proxy) when a password is set
+          LocalHostAuth = lib.mkDefault true;
+        };
+      })
     ];
 
     users = {
@@ -171,6 +194,23 @@ in
         ''
       );
     };
+
+    environment.systemPackages = [
+      (pkgs.writers.writePython3Bin "qbittorrent-hash-password" { } ''
+        import hashlib
+        import os
+        import base64
+        import getpass
+
+        password = getpass.getpass("Password: ")
+        salt = os.urandom(16)
+        dk = hashlib.pbkdf2_hmac("sha512", password.encode(), salt, 100000)
+        print(
+            f"@ByteArray({base64.b64encode(salt).decode()}"
+            f":{base64.b64encode(dk).decode()})"
+        )
+      '')
+    ];
 
     networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
       "127.0.0.1" = [ hostname ];
