@@ -130,7 +130,7 @@ in
           server = {
             inherit (config.nixflix.${serviceName}.config.hostConfig) port urlBase;
           };
-        } // optionalAttrs config.services.postgresql.enable {
+        } // optionalAttrs config.nixflix.postgres.enable {
           log.dbEnabled = true;
           postgres = {
             user = config.nixflix.${serviceName}.user;
@@ -215,7 +215,7 @@ in
         };
         server = { inherit (cfg.config.hostConfig) port urlBase; };
       }
-      // optionalAttrs config.services.postgresql.enable {
+      // optionalAttrs config.nixflix.postgres.enable {
         log.dbEnabled = true;
         postgres = {
           inherit (cfg) user;
@@ -236,7 +236,7 @@ in
     };
 
     services = {
-      postgresql = mkIf config.services.postgresql.enable {
+      postgresql = mkIf config.nixflix.postgres.enable {
         ensureDatabases = [
           cfg.settings.postgres.mainDb
           cfg.settings.postgres.logDb
@@ -314,7 +314,7 @@ in
     );
 
     systemd.services = {
-      "${serviceName}-setup-logs-db" = mkIf config.services.postgresql.enable {
+      "${serviceName}-setup-logs-db" = mkIf config.nixflix.postgres.enable {
         description = "Grant ownership of ${capitalizedName} databases";
         after = [
           "postgresql.service"
@@ -340,7 +340,7 @@ in
         '';
       };
 
-      "${serviceName}-wait-for-db" = mkIf config.services.postgresql.enable {
+      "${serviceName}-wait-for-db" = mkIf config.nixflix.postgres.enable {
         description = "Wait for ${capitalizedName} PostgreSQL databases to be ready";
         after = [
           "postgresql.service"
@@ -381,7 +381,7 @@ in
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")
-        ++ (optional config.services.postgresql.enable "postgresql-ready.target")
+        ++ (optional config.nixflix.postgres.enable "postgresql-ready.target")
         ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
         requires = [
           "nixflix-setup-dirs.service"
@@ -389,7 +389,7 @@ in
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")
-        ++ (optional config.services.postgresql.enable "postgresql-ready.target");
+        ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
         wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
         wantedBy = [ "multi-user.target" ];
 

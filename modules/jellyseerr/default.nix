@@ -89,7 +89,7 @@ in
       };
     };
 
-    services.postgresql = mkIf config.services.postgresql.enable {
+    services.postgresql = mkIf config.nixflix.postgres.enable {
       ensureDatabases = [ cfg.user ];
       ensureUsers = [
         {
@@ -118,7 +118,7 @@ in
         '';
       };
 
-      jellyseerr-wait-for-db = mkIf config.services.postgresql.enable {
+      jellyseerr-wait-for-db = mkIf config.nixflix.postgres.enable {
         description = "Wait for Jellyseerr PostgreSQL database to be ready";
         after = [
           "postgresql.service"
@@ -160,7 +160,7 @@ in
           "jellyfin.service"
           "jellyfin-setup-wizard.service"
         ]
-        ++ optional config.services.postgresql.enable "postgresql-ready.target"
+        ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
         ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
         ++ optional (
           config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
@@ -180,7 +180,7 @@ in
           "jellyfin-setup-wizard.service"
         ]
         ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
-        ++ optional config.services.postgresql.enable "postgresql-ready.target"
+        ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
         ++ optional (
           config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
         ) "recyclarr-cleanup-profiles.service";
@@ -192,7 +192,7 @@ in
           PORT = toString cfg.port;
           CONFIG_DIRECTORY = cfg.dataDir;
         }
-        // optionalAttrs config.services.postgresql.enable {
+        // optionalAttrs config.nixflix.postgres.enable {
           DB_TYPE = "postgres";
           DB_SOCKET_PATH = "/run/postgresql";
           DB_USER = cfg.user;
