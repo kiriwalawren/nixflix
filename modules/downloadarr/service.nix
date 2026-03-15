@@ -66,8 +66,16 @@ let
     {
       "${serviceName}-downloadclients" = {
         description = "Configure ${serviceName} download clients via API";
-        after = [ "${serviceName}.service" "${serviceName}-config.service" ] ++ clientDependencies;
-        requires = [ "${serviceName}.service" "${serviceName}-config.service" ] ++ clientDependencies;
+        after = [
+          "${serviceName}.service"
+          "${serviceName}-config.service"
+        ]
+        ++ clientDependencies;
+        requires = [
+          "${serviceName}.service"
+          "${serviceName}-config.service"
+        ]
+        ++ clientDependencies;
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
