@@ -10,7 +10,7 @@ let
 in
 {
   imports = [
-    (import ./arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "radarr" { })
+    (import ./arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "radarr")
   ];
 
   config.nixflix.radarr = {

@@ -45,6 +45,19 @@ in
 
         BASE_URL="${baseUrl}"
 
+        echo "Waiting for Jellyfin API to be available..."
+        for attempt in {1..90}; do
+          if ${pkgs.curl}/bin/curl -sf "$BASE_URL/System/Info/Public" >/dev/null 2>&1; then
+            echo "Jellyfin API is available"
+            break
+          fi
+          if [[ $attempt -eq 90 ]]; then
+            echo "Jellyfin API did not become available after 90 attempts" >&2
+            exit 1
+          fi
+          sleep 2
+        done
+
         echo "Checking if first admin user needs to be created..."
 
         # Check if startup wizard is already completed via API
