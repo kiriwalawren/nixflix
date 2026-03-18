@@ -184,17 +184,27 @@ let
 
                 UPDATED_CLIENT=$(apply_field_overrides "$EXISTING_CLIENT" "$FIELD_OVERRIDES")
 
-                ${
-                  mkSecureCurl serviceConfig.apiKey {
-                    url = "$BASE_URL/downloadclient/$CLIENT_ID";
-                    method = "PUT";
-                    headers = {
-                      "Content-Type" = "application/json";
-                    };
-                    data = "$UPDATED_CLIENT";
-                    extraArgs = "-Sf";
-                  }
-                } >/dev/null
+                for _retry_attempt in $(seq 1 5); do
+                  if ${
+                    mkSecureCurl serviceConfig.apiKey {
+                      url = "$BASE_URL/downloadclient/$CLIENT_ID";
+                      method = "PUT";
+                      headers = {
+                        "Content-Type" = "application/json";
+                      };
+                      data = "$UPDATED_CLIENT";
+                      extraArgs = "-Sf";
+                    }
+                  } >/dev/null; then
+                    break
+                  fi
+                  if [ "$_retry_attempt" -eq 5 ]; then
+                    echo "Error: Failed to update download client ${clientName} after 5 attempts"
+                    exit 1
+                  fi
+                  echo "Attempt $_retry_attempt to update ${clientName} failed, retrying in 1 second..."
+                  sleep 1
+                done
 
                 echo "Download client ${clientName} updated"
               else
@@ -209,17 +219,27 @@ let
 
                 NEW_CLIENT=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
 
-                ${
-                  mkSecureCurl serviceConfig.apiKey {
-                    url = "$BASE_URL/downloadclient";
-                    method = "POST";
-                    headers = {
-                      "Content-Type" = "application/json";
-                    };
-                    data = "$NEW_CLIENT";
-                    extraArgs = "-Sf";
-                  }
-                } >/dev/null
+                for _retry_attempt in $(seq 1 5); do
+                  if ${
+                    mkSecureCurl serviceConfig.apiKey {
+                      url = "$BASE_URL/downloadclient";
+                      method = "POST";
+                      headers = {
+                        "Content-Type" = "application/json";
+                      };
+                      data = "$NEW_CLIENT";
+                      extraArgs = "-Sf";
+                    }
+                  } >/dev/null; then
+                    break
+                  fi
+                  if [ "$_retry_attempt" -eq 5 ]; then
+                    echo "Error: Failed to create download client ${clientName} after 5 attempts"
+                    exit 1
+                  fi
+                  echo "Attempt $_retry_attempt to create ${clientName} failed, retrying in 1 second..."
+                  sleep 1
+                done
 
                 echo "Download client ${clientName} created"
               fi
