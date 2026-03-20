@@ -14,6 +14,19 @@ in
 
     package = mkPackageOption pkgs "jellystat" { };
 
+    timezone = mkOption {
+      type = types.str;
+      default = config.time.timeZone or "UTC";
+      description = "Timezone for jellystat.";
+    };
+
+    postgres = {
+      password = secrets.mkSecretOption {
+        default = null;
+        description = "PostgreSQL password for Jellystat.";
+      };
+    };
+
     jellyfin = {
       hostname = mkOption {
         type = types.str;
@@ -41,15 +54,26 @@ in
 
       apiKey = secrets.mkSecretOption {
         default = null;
-        description = "Jellyfin API key. If nixflix.jellyfin is enabled, this is auto-detected.";
+        description = "Jellyfin API key for Jellystat.";
+      };
+
+      masterOverrideUser = mkOption {
+        type = types.str;
+        default = null;
+        description = "Master override user (in case username/password for setup is forgotten).";
+      };
+
+      masterOverridePassword = secrets.mkSecretOption {
+        default = null;
+        description = "Master override password.";
       };
     };
 
     database = {
       name = mkOption {
         type = types.str;
-        default = "jellystat";
-        description = "PostgreSQL database name for Jellystat";
+        default = "jfstat";
+        description = "PostgreSQL database name for Jellystat.";
       };
     };
 
@@ -61,39 +85,39 @@ in
     user = mkOption {
       type = types.str;
       default = "jellystat";
-      description = "User under which the service runs";
+      description = "User under which the service runs.";
     };
 
     group = mkOption {
       type = types.str;
       default = "jellystat";
-      description = "Group under which the service runs";
+      description = "Group under which the service runs.";
     };
 
     dataDir = mkOption {
       type = types.path;
       default = "${config.nixflix.stateDir}/jellystat";
       defaultText = literalExpression ''"''${nixflix.stateDir}/jellystat"'';
-      description = "Directory containing jellystat data and configuration";
+      description = "Directory containing jellystat data and configuration.";
     };
 
     backupDir = mkOption {
       type = types.path;
       default = "${config.nixflix.stateDir}/jellystat/backups";
       defaultText = literalExpression ''"''${nixflix.stateDir}/jellystat/backups"'';
-      description = "Directory for Jellystat backup data";
+      description = "Directory for Jellystat backup data.";
     };
 
     port = mkOption {
       type = types.port;
       default = 3000;
-      description = "Port on which jellystat listens";
+      description = "Port on which jellystat listens.";
     };
 
     openFirewall = mkOption {
       type = types.bool;
       default = false;
-      description = "Open port in firewall for jellystat";
+      description = "Open port in firewall for jellystat.";
     };
 
     subdomain = mkOption {
@@ -109,7 +133,9 @@ in
         defaultText = literalExpression "config.nixflix.mullvad.enable";
         description = ''
           Whether to route Jellystat traffic through the VPN.
+
           When true (default), Jellystat routes through the VPN (requires nixflix.mullvad.enable = true).
+
           When false, Jellystat bypasses the VPN.
         '';
       };

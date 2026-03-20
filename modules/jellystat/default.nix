@@ -36,6 +36,8 @@ let
       "${if jellyfinHostname.useSsl then "https" else "http"}://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}"
     else
       "${if jellyfinHostname.useSsl then "https" else "http"}://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}/${jellyfinHostname.urlBase}";
+  generatedPostgresPassword = pkgs.lib.mkStrongPassword;
+  generatedJwtSecret = pkgs.lib.mkStrongPassword;
 in
 {
   imports = [
@@ -100,7 +102,7 @@ in
     };
 
     systemd.services = {
-      jellystat-env = mkIf (cfg.jwtSecret != null || jellyfinApiKey != null) {
+      jellystat-env = mkIf cfg.enable {
         description = "Setup Jellystat environment file";
         wantedBy = [ "jellystat.service" ];
         before = [ "jellystat.service" ];
@@ -112,10 +114,34 @@ in
 
         script = ''
           mkdir -p /run/jellystat
-          ${optionalString (cfg.jwtSecret != null) ''echo "JWT_SECRET=${secrets.toShellValue cfg.jwtSecret}" > /run/jellystat/env''}
+          echo "JWT_SECRET=${secrets.toShellValue (cfg.jwtSecret or generatedJwtSecret)}" > /run/jellystat/env
           ${optionalString (jellyfinApiKey != null) ''echo "JF_API_KEY=${secrets.toShellValue jellyfinApiKey}" >> /run/jellystat/env''}
+          ${optionalString (cfg.jellyfin.masterOverrideUser != null && cfg.jellyfin.masterOverridePassword != null) ''
+            echo "JS_USER=${secrets.toShellValue cfg.jellyfin.masterOverrideUser}" >> /run/jellystat/env
+            echo "JS_PASSWORD=${secrets.toShellValue cfg.jellyfin.masterOverridePassword}" >> /run/jellystat/env
+          ''}
           chown ${cfg.user}:${cfg.group} /run/jellystat/env
           chmod 0400 /run/jellystat/env
+        '';
+      };
+
+      jellystat-setup-db = mkIf config.nixflix.postgres.enable {
+        description = "Setup Jellystat PostgreSQL user password";
+        requiredBy = [ "jellystat-wait-for-db.service" ];
+        after = [
+          "jellystat-env.service"
+          "postgresql-ready.target"
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+
+        script = ''
+          set -e
+          . /run/jellystat/env
+          su postgres -c "psql -c \"ALTER USER ${cfg.user} WITH PASSWORD '$POSTGRES_PASSWORD'\""
         '';
       };
 
@@ -124,6 +150,7 @@ in
         after = [
           "postgresql.service"
           "postgresql-setup.service"
+          "jellystat-setup-db.service"
         ];
         before = [ "postgresql-ready.target" ];
         requiredBy = [ "postgresql-ready.target" ];
@@ -138,7 +165,7 @@ in
 
         script = ''
           while true; do
-            if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.database.name} -c "SELECT 1" > /dev/null 2>&1; then
+            if ${pkgs.postgresql}/bin/psql -h 127.0.0.1 -p ${toString config.services.postgresql.settings.port} -d ${cfg.database.name} -U ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
               echo "Jellystat PostgreSQL database is ready"
               exit 0
             fi
@@ -155,10 +182,12 @@ in
           "network-online.target"
           "nixflix-setup-dirs.service"
         ]
-        ++ optional (cfg.jwtSecret != null || jellyfinApiKey != null) "jellystat-env.service"
-        ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
+        ++ optionals cfg.enable [
+          "jellystat-env.service"
+          "postgresql-ready.target"
+        ]
         ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin.service";
+        ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
 
         wants = [
           "network-online.target"
@@ -168,8 +197,11 @@ in
         requires = [
           "nixflix-setup-dirs.service"
         ]
-        ++ optional (cfg.jwtSecret != null || jellyfinApiKey != null) "jellystat-env.service"
-        ++ optional config.nixflix.postgres.enable "postgresql-ready.target";
+        ++ optionals cfg.enable [
+          "jellystat-env.service"
+          "postgresql-ready.target"
+        ]
+        ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
 
         wantedBy = [ "multi-user.target" ];
 
@@ -178,6 +210,7 @@ in
           PORT = toString cfg.port;
           JS_LISTEN_IP = "0.0.0.0";
           POSTGRES_USER = cfg.user;
+          POSTGRES_PASSWORD = secrets.toShellValue (cfg.postgres.password or generatedPostgresPassword);
           POSTGRES_IP = "127.0.0.1";
           POSTGRES_PORT = toString config.services.postgresql.settings.port;
           POSTGRES_DB = cfg.database.name;
@@ -186,7 +219,7 @@ in
           JF_HOST = jellyfinUrl;
           JF_USE_WEBSOCKETS = if cfg.useWebsockets then "true" else "false";
           IS_EMBY_API = if cfg.isEmby then "true" else "false";
-          TZ = "UTC";
+          TZ = cfg.timezone;
           NEW_WATCH_EVENT_THRESHOLD_HOURS = toString cfg.watchSessionThreshold;
           REJECT_SELF_SIGNED_CERTIFICATES = "false";
         };
@@ -206,6 +239,8 @@ in
               ''
             else
               "${getExe cfg.package}";
+
+          EnvironmentFile = "/run/jellystat/env";
 
           NoNewPrivileges = true;
           PrivateTmp = true;
@@ -240,9 +275,6 @@ in
             "~@privileged"
             "~@resources"
           ];
-        }
-        // optionalAttrs (cfg.jwtSecret != null || jellyfinApiKey != null) {
-          EnvironmentFile = "/run/jellystat/env";
         }
         // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
           AmbientCapabilities = "CAP_SYS_ADMIN";
