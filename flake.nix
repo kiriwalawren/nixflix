@@ -37,6 +37,11 @@
               inherit system;
               config.allowUnfree = true;
               config.allowUnfreePredicate = _: true;
+              overlays = [
+                (self: super: {
+                  jellystat = super.callPackage ./packages/jellystat { };
+                })
+              ];
             };
             treefmt = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
           }
@@ -55,6 +60,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
+          jellystat = pkgs.jellystat;
         }
       );
 

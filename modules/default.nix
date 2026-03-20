@@ -15,6 +15,7 @@ in
     ./globals.nix
     ./jellyfin
     ./jellyseerr
+    ./jellystat
     ./lidarr.nix
     ./mullvad.nix
     ./postgres.nix
