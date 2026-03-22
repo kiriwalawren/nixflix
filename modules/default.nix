@@ -12,6 +12,7 @@ in
 {
   imports = [
     ./downloadarr
+    ./flaresolverr.nix
     ./globals.nix
     ./jellyfin
     ./jellyseerr
