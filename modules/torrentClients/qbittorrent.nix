@@ -153,6 +153,10 @@ in
           inherit (service) user group;
           mode = "0754";
         };
+        ${cfg.downloadsDir}.d = {
+          inherit (service) user group;
+          mode = "0775";
+        };
         ${cfg.serverConfig.BitTorrent.Session.DefaultSavePath}.d = {
           inherit (service) user group;
           mode = "0775";
