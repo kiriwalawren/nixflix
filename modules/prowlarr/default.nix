@@ -43,8 +43,10 @@ in
 {
   imports = [
     (import ../arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "prowlarr")
-    ./indexers.nix
     ./applications.nix
+    ./indexers.nix
+    ./indexerProxies.nix
+    ./tags.nix
   ];
 
   config = {

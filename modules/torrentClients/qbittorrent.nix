@@ -157,7 +157,16 @@ in
           inherit (service) user group;
           mode = "0775";
         };
-      };
+      }
+      // lib.mapAttrs' (
+        _name: path:
+        lib.nameValuePair path {
+          d = {
+            inherit (service) user group;
+            mode = "0775";
+          };
+        }
+      ) (lib.filterAttrs (_name: path: path != "") cfg.categories);
     };
 
     systemd.services.qbittorrent = {
