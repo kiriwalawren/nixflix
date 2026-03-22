@@ -64,7 +64,7 @@ in
     optional (config.nixflix.enable && cfg.enable && config.nixflix.flaresolverr.enable)
       {
         name = "FlareSolverr";
-        host = "http://127.0.0.1:${config.nixflix.flaresolverr.port}";
+        host = "http://127.0.0.1:${toString config.nixflix.flaresolverr.port}";
         tags = [ "flaresolverr" ];
       };
 
@@ -75,11 +75,13 @@ in
         after = [
           "prowlarr-config.service"
           "prowlarr-tags.service"
-        ];
+        ]
+        ++ optional config.nixflix.flaresolverr.enable "flaresolverr.service";
         requires = [
           "prowlarr-config.service"
           "prowlarr-tags.service"
-        ];
+        ]
+        ++ optional config.nixflix.flaresolverr.enable "flaresolverr.service";
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
@@ -149,7 +151,6 @@ in
               indexerName = indexerConfig.name;
               inherit (indexerConfig) username password;
               allOverrides = builtins.removeAttrs indexerConfig [
-                "name"
                 "username"
                 "password"
                 "tags"
@@ -222,7 +223,7 @@ in
               else
                 echo "Indexer proxy ${indexerName} does not exist, creating..."
 
-                SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.name == $name) | @json' || echo "")
+                SCHEMA=$(echo "$SCHEMAS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg indexerName} '.[] | select(.implementationName == $name) | @json' || echo "")
 
                 if [ -z "$SCHEMA" ]; then
                   echo "Error: No schema found for indexer proxy ${indexerName}"
