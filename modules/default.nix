@@ -156,7 +156,10 @@ in
   };
 
   config = mkIf cfg.enable {
-    users.groups.media.members = cfg.mediaUsers;
+    users.groups.media = {
+      gid = globals.gids.media;
+      members = cfg.mediaUsers;
+    };
 
     systemd.tmpfiles.settings."10-nixflix" = {
       "${cfg.stateDir}".d = {
