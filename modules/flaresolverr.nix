@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.nixflix.flaresolverr;
 in
@@ -23,5 +28,17 @@ in
       enable = true;
       inherit (config.nixflix.flaresolverr) port;
     };
+
+    systemd.services.flaresolverr.serviceConfig.ExecStartPost =
+      pkgs.writeShellScript "wait-for-flaresolverr" ''
+        for i in $(seq 1 30); do
+          if ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString cfg.port}/ >/dev/null 2>&1; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "FlareSolverr did not become ready within 30s"
+        exit 1
+      '';
   };
 }
