@@ -100,6 +100,25 @@ in
       };
     };
 
+    persistDevice = mkOption {
+      type = types.bool;
+      default = cfg.killSwitch.enable;
+      defaultText = literalExpression "config.nixflix.mullvad.killSwitch.enable";
+      description = ''
+        Keep the Mullvad device logged in across service restarts and reboots.
+
+        When enabled, the service only disconnects on stop without logging out.
+        The device identity persists in `/etc/mullvad-vpn/settings.json`.
+
+        When disabled, the service logs out and revokes the device on stop,
+        requiring a fresh login on next start. This frees up device slots
+        (Mullvad allows 5 devices per account).
+
+        Defaults to true when the kill switch is enabled, as logging out would
+        cause a deadlock on boot: the kill switch blocks network access before
+        the daemon can log in to a fresh device.
+      '';
+    };
     tailscale = {
       enable = mkOption {
         type = types.bool;
@@ -206,15 +225,21 @@ in
             ${mullvadPkg}/bin/mullvad auto-connect set off
           ''}
         '';
-        ExecStop = pkgs.writeShellScript "logout-mullvad" ''
-          DEVICE_NAME=$(${mullvadPkg}/bin/mullvad account get | grep "Device name:" | sed 's/.*Device name:[[:space:]]*//')
-          if [ -n "$DEVICE_NAME" ]; then
-            echo "Revoking device: $DEVICE_NAME"
-            ${mullvadPkg}/bin/mullvad account revoke-device "$DEVICE_NAME" || true
-          fi
-          ${mullvadPkg}/bin/mullvad account logout  || true
-          ${mullvadPkg}/bin/mullvad disconnect || true
-        '';
+        ExecStop =
+          if cfg.persistDevice then
+            pkgs.writeShellScript "disconnect-mullvad" ''
+              ${mullvadPkg}/bin/mullvad disconnect || true
+            ''
+          else
+            pkgs.writeShellScript "logout-mullvad" ''
+              DEVICE_NAME=$(${mullvadPkg}/bin/mullvad account get | grep "Device name:" | sed 's/.*Device name:[[:space:]]*//')
+              if [ -n "$DEVICE_NAME" ]; then
+                echo "Revoking device: $DEVICE_NAME"
+                ${mullvadPkg}/bin/mullvad account revoke-device "$DEVICE_NAME" || true
+              fi
+              ${mullvadPkg}/bin/mullvad account logout  || true
+              ${mullvadPkg}/bin/mullvad disconnect || true
+            '';
       };
     };
 
