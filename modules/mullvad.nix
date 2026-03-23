@@ -102,21 +102,15 @@ in
 
     persistDevice = mkOption {
       type = types.bool;
-      default = cfg.killSwitch.enable;
-      defaultText = literalExpression "config.nixflix.mullvad.killSwitch.enable";
+      default = false;
       description = ''
         Keep the Mullvad device logged in across service restarts and reboots.
 
-        When enabled, the service only disconnects on stop without logging out.
-        The device identity persists in `/etc/mullvad-vpn/settings.json`.
+        When false (default), the service logs out and revokes the device on stop,
+        requiring a fresh login on next start. This frees up device slots (Mullvad
+        allows 5 devices per account).
 
-        When disabled, the service logs out and revokes the device on stop,
-        requiring a fresh login on next start. This frees up device slots
-        (Mullvad allows 5 devices per account).
-
-        Defaults to true when the kill switch is enabled, as logging out would
-        cause a deadlock on boot: the kill switch blocks network access before
-        the daemon can log in to a fresh device.
+        When true, the service only disconnects on stop without logging out.
       '';
     };
     tailscale = {
