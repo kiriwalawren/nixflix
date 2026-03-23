@@ -20,83 +20,13 @@ in
 
         #### Using Tailscale with Mullvad
 
-        If you want to use Tailscale alongside Mullvad VPN, you'll need to configure nftables rules to route Tailscale traffic around the VPN. Add this to your NixOS configuration:
+        When `services.tailscale.enable` is true, nftables rules are automatically
+        configured to route Tailscale traffic around the VPN tunnel. To disable
+        this behaviour, set `nixflix.mullvad.tailscale.enable = false`.
 
-        ```nix
-        {
-          networking.nftables = {
-            enable = true;
-            tables."mullvad-tailscale" = {
-              family = "inet";
-              content = '''
-                chain prerouting {
-                  type filter hook prerouting priority -100; policy accept;
-                  ip saddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  # Allow incoming UDP on Tailscale port to bypass Mullvad
-                  udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                }
-
-                chain outgoing {
-                  type route hook output priority -100; policy accept;
-                  meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  # Allow outgoing UDP from Tailscale port to bypass Mullvad
-                  udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                }
-              ''';
-            };
-          };
-        }
-        ```
-
-        This ensures Tailscale traffic (100.64.0.0/10) bypasses the Mullvad VPN tunnel.
-
-        If you want tailscale exit node traffic to be routed through mullvad instead of
-        the server's own established internet connection, then you need the following:
-
-        ```nix
-        networking.nftables = {
-          enable = true;
-          tables."mullvad-tailscale" = {
-            family = "inet";
-            content = '''
-              chain prerouting {
-                type filter hook prerouting priority -50; policy accept;
-
-                # Allow Tailscale protocol traffic to bypass Mullvad
-                udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-
-                # Allow direct mesh traffic (Tailscale device to Tailscale device) to bypass Mullvad
-                ip saddr 100.64.0.0/10 ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-
-                # Exit node traffic: DON'T mark it - let it route through VPN without bypass mark
-                # Clear meta mark so it routes through Mullvad (no ct mark means Mullvad won't drop in NAT)
-                iifname "tailscale0" ip daddr != 100.64.0.0/10 meta mark set 0;
-
-                # Return traffic from VPN: Mark it so it routes via Tailscale table
-                # Use bypass mark so it doesn't get routed back through Mullvad
-                iifname "wg0-mullvad" ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              }
-
-              chain outgoing {
-                type route hook output priority -100; policy accept;
-                meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                # Allow outgoing UDP from Tailscale port to bypass Mullvad
-                udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              }
-
-              chain postrouting {
-                type nat hook postrouting priority 100; policy accept;
-
-                # Masquerade exit node traffic going through Mullvad
-                iifname "tailscale0" oifname "wg0-mullvad" masquerade;
-              }
-            ''';
-          };
-        };
-        ```
+        By default, all Tailscale traffic (mesh and exit node) bypasses Mullvad.
+        To route exit node traffic through Mullvad while keeping mesh traffic
+        direct, set `nixflix.mullvad.tailscale.exitNode = true`.
       '';
       type = types.bool;
     };
@@ -167,6 +97,34 @@ in
         type = types.bool;
         default = true;
         description = "Allow LAN traffic when VPN is down (only effective with kill switch enabled)";
+      };
+    };
+
+    tailscale = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.services.tailscale.enable;
+        defaultText = literalExpression "config.services.tailscale.enable";
+        description = ''
+          Automatically configure Tailscale to coexist with Mullvad VPN.
+
+          Adds nftables rules to bypass Mullvad for Tailscale mesh traffic
+          (100.64.0.0/10) and the Tailscale WireGuard port (UDP 41641).
+        '';
+      };
+
+      exitNode = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Route Tailscale exit node traffic through Mullvad.
+
+          When false (default), all Tailscale traffic bypasses Mullvad entirely.
+
+          When true, direct mesh traffic (device to device) and Tailscale protocol
+          traffic still bypass Mullvad, but exit node traffic (internet-bound traffic
+          from Tailscale clients) is routed through the Mullvad VPN tunnel.
+        '';
       };
     };
   };
@@ -258,6 +216,61 @@ in
           ${mullvadPkg}/bin/mullvad disconnect || true
         '';
       };
+    };
+
+    networking.nftables.enable = mkIf cfg.tailscale.enable true;
+
+    networking.nftables.tables."mullvad-tailscale" = mkIf cfg.tailscale.enable {
+      enable = true;
+      family = "inet";
+      content =
+        if cfg.tailscale.exitNode then
+          ''
+            chain prerouting {
+              type filter hook prerouting priority -50; policy accept;
+
+              # Allow Tailscale protocol traffic to bypass Mullvad
+              udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+
+              # Allow direct mesh traffic (Tailscale device to Tailscale device) to bypass Mullvad
+              ip saddr 100.64.0.0/10 ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+
+              # Exit node traffic: DON'T mark it - let it route through VPN without bypass mark
+              iifname "tailscale0" ip daddr != 100.64.0.0/10 meta mark set 0;
+
+              # Return traffic from VPN: Mark it so it routes via Tailscale table
+              iifname "wg0-mullvad" ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+            }
+
+            chain outgoing {
+              type route hook output priority -100; policy accept;
+              meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+              ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+              udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+            }
+
+            chain postrouting {
+              type nat hook postrouting priority 100; policy accept;
+
+              # Masquerade exit node traffic going through Mullvad
+              iifname "tailscale0" oifname "wg0-mullvad" masquerade;
+            }
+          ''
+        else
+          ''
+            chain prerouting {
+              type filter hook prerouting priority -100; policy accept;
+              ip saddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+              udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+            }
+
+            chain outgoing {
+              type route hook output priority -100; policy accept;
+              meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+              ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+              udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+            }
+          '';
     };
   };
 }
