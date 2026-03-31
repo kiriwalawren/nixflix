@@ -101,10 +101,10 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        jellyseerr = {
+        seerr = {
           enable = true;
           apiKey = {
-            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+            _secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
           };
         };
       };
@@ -158,12 +158,12 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=300)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
 
-    # Wait for jellyseerr to complete
-    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    # Wait for seerr to complete
+    machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(5055, timeout=300)
-    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
+    machine.wait_for_unit("seerr-setup.service", timeout=300)
+    machine.wait_for_unit("seerr-radarr.service", timeout=300)
+    machine.wait_for_unit("seerr-sonarr.service", timeout=300)
 
     # Check that quality profiles were created by recyclarr for Radarr
     radarr_profiles = machine.succeed(

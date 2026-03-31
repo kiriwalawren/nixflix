@@ -15,7 +15,7 @@ in
     ./flaresolverr.nix
     ./globals.nix
     ./jellyfin
-    ./jellyseerr
+    ./seerr
     ./lidarr.nix
     ./mullvad.nix
     ./postgres.nix

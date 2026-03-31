@@ -191,7 +191,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         "lidarr": "[Lidarr](https://github.com/Lidarr/Lidarr) is a PVR for Usenet and BitTorrent users for music.",
         "prowlarr": "[Prowlarr](https://github.com/Prowlarr/Prowlarr) is an indexer manager/proxy for Arr applications.",
         "jellyfin": "[Jellyfin](https://github.com/jellyfin/jellyfin) is a free media server for managing and streaming media.",
-        "jellyseerr": "[Jellyseerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
+        "seerr": "[Seerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
         "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
         "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",

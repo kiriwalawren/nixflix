@@ -46,10 +46,10 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
 
-        jellyseerr = {
+        seerr = {
           enable = true;
           apiKey = {
-            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+            _secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
           };
         };
 
@@ -184,10 +184,10 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-api-key.service", timeout=180)
     machine.wait_for_open_port(8096, timeout=180)
 
-    # Wait for jellyseerr
-    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    # Wait for seerr
+    machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(5055, timeout=300)
-    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
+    machine.wait_for_unit("seerr-setup.service", timeout=300)
 
     # Test reverse proxy is proxying to Prowlarr
     print("Testing Prowlarr via reverse proxy...")
@@ -229,8 +229,8 @@ pkgsUnfree.testers.runNixOSTest {
     base_url = 'http://jellyfin.nixflix'
     machine.succeed(f'curl -f -H {auth_header} {base_url}/System/Info')
 
-    # Test reverse proxy is proxying to jellyseerr
-    machine.succeed('curl -f "http://jellyseerr.nixflix/api/v1/status"')
+    # Test reverse proxy is proxying to seerr
+    machine.succeed('curl -f "http://seerr.nixflix/api/v1/status"')
 
     print("Reverse proxy integration test successful! All services accessible via subdomains.")
   '';

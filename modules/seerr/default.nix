@@ -7,7 +7,7 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
-  cfg = config.nixflix.jellyseerr;
+  cfg = config.nixflix.seerr;
   hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
 in
 {
@@ -37,15 +37,15 @@ in
       [
         {
           assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
-          message = "Jellyseerr requires Jellyfin admin credentials. Either enable nixflix.jellyfin with an admin user, or set nixflix.jellyseerr.jellyfin.adminUsername and nixflix.jellyseerr.jellyfin.adminPassword.";
+          message = "Seerr requires Jellyfin admin credentials. Either enable nixflix.jellyfin with an admin user, or set nixflix.seerr.jellyfin.adminUsername and nixflix.seerr.jellyfin.adminPassword.";
         }
         {
           assertion = cfg.vpn.enable -> config.nixflix.mullvad.enable;
-          message = "Cannot enable VPN routing for Jellyseerr (nixflix.jellyseerr.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
+          message = "Cannot enable VPN routing for Seerr (nixflix.seerr.vpn.enable = true) when Mullvad VPN is disabled. Please set nixflix.mullvad.enable = true.";
         }
         {
           assertion = radarrDefaultCount <= 2;
-          message = "Cannot have more than 2 default Radarr instances in jellyseerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
+          message = "Cannot have more than 2 default Radarr instances in seerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
         }
         {
           assertion =
@@ -54,7 +54,7 @@ in
         }
         {
           assertion = sonarrDefaultCount <= 2;
-          message = "Cannot have more than 2 default Sonarr instances in jellyseerr.sonarr. Found ${toString sonarrDefaultCount} instances with isDefault = true.";
+          message = "Cannot have more than 2 default Sonarr instances in seerr.sonarr. Found ${toString sonarrDefaultCount} instances with isDefault = true.";
         }
         {
           assertion =
@@ -65,19 +65,19 @@ in
 
     users = {
       groups.${cfg.group} = {
-        gid = mkForce config.nixflix.globals.gids.jellyseerr;
+        gid = mkForce config.nixflix.globals.gids.seerr;
       };
 
       users.${cfg.user} = {
         inherit (cfg) group;
         home = cfg.dataDir;
         isSystemUser = true;
-        uid = mkForce config.nixflix.globals.uids.jellyseerr;
+        uid = mkForce config.nixflix.globals.uids.seerr;
       };
     };
 
-    systemd.tmpfiles.settings."10-jellyseerr" = {
-      "/run/jellyseerr".d = {
+    systemd.tmpfiles.settings."10-seerr" = {
+      "/run/seerr".d = {
         mode = "0755";
         inherit (cfg) user;
         inherit (cfg) group;
@@ -100,10 +100,10 @@ in
     };
 
     systemd.services = {
-      jellyseerr-env = mkIf (cfg.apiKey != null) {
-        description = "Setup Jellyseerr environment file";
-        wantedBy = [ "jellyseerr.service" ];
-        before = [ "jellyseerr.service" ];
+      seerr-env = mkIf (cfg.apiKey != null) {
+        description = "Setup Seerr environment file";
+        wantedBy = [ "seerr.service" ];
+        before = [ "seerr.service" ];
 
         serviceConfig = {
           Type = "oneshot";
@@ -111,15 +111,15 @@ in
         };
 
         script = ''
-          mkdir -p /run/jellyseerr
-          echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/jellyseerr/env
-          chown ${cfg.user}:${cfg.group} /run/jellyseerr/env
-          chmod 0400 /run/jellyseerr/env
+          mkdir -p /run/seerr
+          echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/seerr/env
+          chown ${cfg.user}:${cfg.group} /run/seerr/env
+          chmod 0400 /run/seerr/env
         '';
       };
 
-      jellyseerr-wait-for-db = mkIf config.nixflix.postgres.enable {
-        description = "Wait for Jellyseerr PostgreSQL database to be ready";
+      seerr-wait-for-db = mkIf config.nixflix.postgres.enable {
+        description = "Wait for Seerr PostgreSQL database to be ready";
         after = [
           "postgresql.service"
           "postgresql-setup.service"
@@ -138,23 +138,23 @@ in
         script = ''
           while true; do
             if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
-              echo "Jellyseerr PostgreSQL database is ready"
+              echo "Seerr PostgreSQL database is ready"
               exit 0
             fi
-            echo "Waiting for PostgreSQL role jellyseerr..."
+            echo "Waiting for PostgreSQL role seerr..."
             sleep 1
           done
         '';
       };
 
-      jellyseerr = {
-        description = "Jellyseerr media request manager";
+      seerr = {
+        description = "Seerr media request manager";
 
         after = [
           "network-online.target"
           "nixflix-setup-dirs.service"
         ]
-        ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
+        ++ optional (cfg.apiKey != null) "seerr-env.service"
         ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
         ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
         ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
@@ -173,7 +173,7 @@ in
           "nixflix-setup-dirs.service"
         ]
         ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
-        ++ optional (cfg.apiKey != null) "jellyseerr-env.service"
+        ++ optional (cfg.apiKey != null) "seerr-env.service"
         ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
         ++ optional (
           config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
@@ -203,7 +203,7 @@ in
 
           ExecStart =
             if (config.nixflix.mullvad.enable && !cfg.vpn.enable) then
-              pkgs.writeShellScript "jellyseerr-vpn-bypass" ''
+              pkgs.writeShellScript "seerr-vpn-bypass" ''
                 exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package}
               ''
             else
@@ -242,7 +242,7 @@ in
           ];
         }
         // optionalAttrs (cfg.apiKey != null) {
-          EnvironmentFile = "/run/jellyseerr/env";
+          EnvironmentFile = "/run/seerr/env";
         }
         // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
           AmbientCapabilities = "CAP_SYS_ADMIN";

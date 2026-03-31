@@ -1,7 +1,7 @@
 { lib, ... }:
 with lib;
 {
-  options.nixflix.jellyseerr.settings = {
+  options.nixflix.seerr.settings = {
     users = mkOption {
       type = types.submodule {
         options = {
@@ -89,7 +89,7 @@ with lib;
           };
         }
       '';
-      description = "Default user settings for Jellyseerr (authentication, permissions, and quotas)";
+      description = "Default user settings for Seerr (authentication, permissions, and quotas)";
     };
   };
 }

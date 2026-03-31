@@ -8,7 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   authUtil = import ./authUtil.nix {
     inherit
       lib
@@ -25,7 +25,7 @@ let
     let
       jqRadarrSecrets = secrets.mkJqSecretArgs {
         apiKey = {
-          _secret = "/run/credentials/jellyseerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
+          _secret = "/run/credentials/seerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
         };
       };
     in
@@ -177,16 +177,16 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != { }) {
-    systemd.services.jellyseerr-radarr = {
-      description = "Configure Jellyseerr Radarr integration";
+    systemd.services.seerr-radarr = {
+      description = "Configure Seerr Radarr integration";
       after = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
+        "seerr-setup.service"
+        "seerr-libraries.service"
       ]
       ++ optional nixflix.radarr.enable "radarr-config.service";
       requires = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
+        "seerr-setup.service"
+        "seerr-libraries.service"
       ]
       ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = [ "multi-user.target" ];
