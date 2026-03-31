@@ -157,13 +157,31 @@ in
         after = [
           "network-online.target"
         ]
-        ++ optional config.nixflix.radarr.enable "radarr-config.service"
-        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
+        ++ optionals config.nixflix.radarr.enable [
+          "radarr.service"
+          "radarr-config.service"
+        ]
+        ++ optionals config.nixflix.sonarr.enable [
+          "sonarr.service"
+          "sonarr-config.service"
+        ]
+        ++ optionals config.nixflix.sonarr.enable [
+          "sonarr-anime.service"
+          "sonarr-anime-config.service"
+        ];
         requires =
-          optional config.nixflix.radarr.enable "radarr-config.service"
-          ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-          ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service";
+          optionals config.nixflix.radarr.enable [
+            "radarr.service"
+            "radarr-config.service"
+          ]
+          ++ optionals config.nixflix.sonarr.enable [
+            "sonarr.service"
+            "sonarr-config.service"
+          ]
+          ++ optionals config.nixflix.sonarr.enable [
+            "sonarr-anime.service"
+            "sonarr-anime-config.service"
+          ];
         wants = [ "network-online.target" ];
         wantedBy = mkForce [ "multi-user.target" ];
       };
