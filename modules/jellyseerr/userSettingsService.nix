@@ -47,7 +47,7 @@ in
 
           # POST user settings (endpoint accepts partial documents)
           SETTINGS_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-            -b "${authUtil.cookieFile}" \
+            ${authUtil.curlAuthArgs} \
             -H "Content-Type: application/json" \
             -d '${userSettingsJson}' \
             -w "\n%{http_code}" \

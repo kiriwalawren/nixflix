@@ -50,7 +50,7 @@ let
       echo "Testing Sonarr connection..."
       TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
         --max-time 30 \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         -H "Content-Type: application/json" \
         -d "$TEST_PAYLOAD" \
         -w "\n%{http_code}" \
@@ -120,7 +120,7 @@ let
 
       # Check if server already exists
       EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         "$BASE_URL/api/v1/settings/sonarr")
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -174,7 +174,7 @@ let
       if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
         echo "Updating existing Sonarr instance (ID: $EXISTING_ID)..."
         UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -190,7 +190,7 @@ let
       else
         echo "Creating new Sonarr instance..."
         CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -259,7 +259,7 @@ in
         CONFIGURED_NAMES="${pkgs.writeText "sonarr-names.json" (builtins.toJSON (attrNames cfg.sonarr))}"
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           "$BASE_URL/api/v1/settings/sonarr")
 
         SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -269,7 +269,7 @@ in
         for server_id in $SERVERS_TO_DELETE; do
           echo "Deleting Sonarr server (ID: $server_id)..."
           ${pkgs.curl}/bin/curl -sf -X DELETE \
-            -b "${authUtil.cookieFile}" \
+            ${authUtil.curlAuthArgs} \
             "$BASE_URL/api/v1/settings/sonarr/$server_id" >/dev/null
         done
 

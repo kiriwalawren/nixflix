@@ -62,7 +62,7 @@ in
           }')
 
         SETTINGS_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SETUP_PAYLOAD" \
           -w "\n%{http_code}" \

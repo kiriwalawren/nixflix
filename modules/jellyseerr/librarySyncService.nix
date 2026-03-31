@@ -71,7 +71,7 @@ in
           # Fetch library list
           echo "Fetching library list from Jellyfin..."
           LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
-            -b "${authUtil.cookieFile}" \
+            ${authUtil.curlAuthArgs} \
             "$BASE_URL/api/v1/settings/jellyfin/library?sync=true")
 
           echo "Available libraries:"
@@ -95,7 +95,7 @@ in
           if [ -n "$LIBRARY_IDS" ]; then
             echo "Enabling libraries: $LIBRARY_IDS"
             ${pkgs.curl}/bin/curl -sf \
-              -b "${authUtil.cookieFile}" \
+              ${authUtil.curlAuthArgs} \
               "$BASE_URL/api/v1/settings/jellyfin/library?enable=$LIBRARY_IDS" >/dev/null
             echo "Libraries enabled successfully"
           else
