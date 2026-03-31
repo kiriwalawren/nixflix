@@ -22,6 +22,10 @@ pkgs.testers.runNixOSTest {
         jellyfin = {
           enable = true;
 
+          apiKey = {
+            _secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+          };
+
           users = {
             admin = {
               password = {
@@ -383,6 +387,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_open_port(port, timeout=180)
 
     # Wait for configuration services to complete
+    machine.wait_for_unit("jellyfin-api-key.service", timeout=180)
     machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)

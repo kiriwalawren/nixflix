@@ -142,8 +142,9 @@ This example shows a working media server configuration based on a real producti
 
     jellyfin = {
       enable = true;
+      apiKey = {_secret = config.sops.secrets."jellyfin/api_key".path;};
       users = {
-        alice = {
+        admin = {
           mutable = false;
           policy.isAdministrator = true;
           password = {_secret = config.sops.secrets."jellyfin/alice_password".path;};
