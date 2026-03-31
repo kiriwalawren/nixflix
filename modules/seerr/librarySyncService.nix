@@ -22,12 +22,10 @@ in
     systemd.services.seerr-libraries = {
       description = "Sync Seerr library selections";
       after = [
-        "seerr-setup.service"
         "seerr-jellyfin.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";
       requires = [
-        "seerr-setup.service"
         "seerr-jellyfin.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";

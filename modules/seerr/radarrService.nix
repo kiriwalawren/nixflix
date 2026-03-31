@@ -179,16 +179,8 @@ in
   config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != { }) {
     systemd.services.seerr-radarr = {
       description = "Configure Seerr Radarr integration";
-      after = [
-        "seerr-setup.service"
-        "seerr-libraries.service"
-      ]
-      ++ optional nixflix.radarr.enable "radarr-config.service";
-      requires = [
-        "seerr-setup.service"
-        "seerr-libraries.service"
-      ]
-      ++ optional nixflix.radarr.enable "radarr-config.service";
+      after = [ "seerr-libraries.service" ] ++ optional nixflix.radarr.enable "radarr-config.service";
+      requires = [ "seerr-libraries.service" ] ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {

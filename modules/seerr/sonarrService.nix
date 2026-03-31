@@ -211,8 +211,6 @@ in
     systemd.services.seerr-sonarr = {
       description = "Configure Seerr Sonarr integration";
       after = [
-        "seerr-setup.service"
-        "seerr-libraries.service"
         "seerr-radarr.service"
       ]
       ++ optional (cfg.radarr != { }) "seerr-radarr.service"
@@ -220,8 +218,6 @@ in
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
 
       requires = [
-        "seerr-setup.service"
-        "seerr-libraries.service"
         "seerr-radarr.service"
       ]
       ++ optional (cfg.radarr != { }) "seerr-radarr.service"
