@@ -24,7 +24,7 @@ Each option is documented with:
 
 ### Media Management
 
-- [Jellyseerr](jellyseerr/index.md) - Requests management
+- [Seerr](seerr/index.md) - Requests management
 - [Sonarr](sonarr/index.md) - TV show management
 - [Sonarr Anime](sonarr-anime/index.md) - Anime management
 - [Radarr](radarr/index.md) - Movie management

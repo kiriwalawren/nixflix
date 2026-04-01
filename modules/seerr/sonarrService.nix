@@ -8,7 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   authUtil = import ./authUtil.nix {
     inherit
       lib
@@ -25,7 +25,7 @@ let
     let
       jqSonarrSecrets = secrets.mkJqSecretArgs {
         apiKey = {
-          _secret = "/run/credentials/jellyseerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
+          _secret = "/run/credentials/seerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
         };
       };
     in
@@ -208,23 +208,19 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != { }) {
-    systemd.services.jellyseerr-sonarr = {
-      description = "Configure Jellyseerr Sonarr integration";
+    systemd.services.seerr-sonarr = {
+      description = "Configure Seerr Sonarr integration";
       after = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-        "jellyseerr-radarr.service"
+        "seerr-radarr.service"
       ]
-      ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
+      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
 
       requires = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-        "jellyseerr-radarr.service"
+        "seerr-radarr.service"
       ]
-      ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
+      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
 

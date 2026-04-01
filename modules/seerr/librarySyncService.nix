@@ -7,7 +7,7 @@
 with lib;
 let
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   authUtil = import ./authUtil.nix {
     inherit
       lib
@@ -19,16 +19,14 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
-    systemd.services.jellyseerr-libraries = {
-      description = "Sync Jellyseerr library selections";
+    systemd.services.seerr-libraries = {
+      description = "Sync Seerr library selections";
       after = [
-        "jellyseerr-setup.service"
-        "jellyseerr-jellyfin.service"
+        "seerr-jellyfin.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";
       requires = [
-        "jellyseerr-setup.service"
-        "jellyseerr-jellyfin.service"
+        "seerr-jellyfin.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-libraries.service";
       wantedBy = [ "multi-user.target" ];

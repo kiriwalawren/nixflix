@@ -23,7 +23,7 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/NZBFinder" = {};
     "indexer-api-keys/NzbPlanet" = {};
     "jellyfin/alice_password" = {};
-    "jellyseerr/api_key" = {};
+    "seerr/api_key" = {};
     "mullvad-account-number" = {};
     "sabnzbd/api_key" = {};
     "sabnzbd/nzb_key" = {};
@@ -152,9 +152,9 @@ This example shows a working media server configuration based on a real producti
       };
     };
 
-    jellyseerr = {
+    seerr = {
       enable = true;
-      apiKey = {_secret = config.sops.secrets."jellyseerr/api_key".path;};
+      apiKey = {_secret = config.sops.secrets."seerr/api_key".path;};
     };
 
     mullvad = {
@@ -187,7 +187,7 @@ This example shows a working media server configuration based on a real producti
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
-- **Jellyseerr** - Requests Management
+- **Seerr** - Requests Management
 - **Mullvad VPN** - Download protection with kill switch
 - **Recyclarr** - TRaSH guides automation
 
@@ -241,11 +241,11 @@ This example shows a working media server configuration based on a real producti
 │       └── incomplete/
 └── .state/
     ├── jellyfin/
-    ├── jellyseerr/
     ├── lidarr/
     ├── postgres/
     ├── prowlarr/
     ├── radarr/
+    ├── seerr/
     ├── sonarr/
     └── sonarr-anime/
 ```
@@ -261,7 +261,7 @@ Via nginx reverse proxy:
 - Prowlarr: http://prowlarr.nixflix
 - SABnzbd: http://sabnzbd.nixflix
 - Jellyfin: http://jellyfin.nixflix
-- Jellyseerr: http://jellyseer.nixflix
+- Seerr: http://seerr.nixflix
 
 Direct access:
 
@@ -272,7 +272,7 @@ Direct access:
 - Prowlarr: http://localhost:9696
 - SABnzbd: http://localhost:8080
 - Jellyfin: http://localhost:8096
-- Jellyseerr: http://localhost:5055
+- Seerr: http://localhost:5055
 
 ## Customization
 

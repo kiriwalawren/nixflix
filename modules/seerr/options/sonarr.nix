@@ -43,7 +43,7 @@ let
         activeProfileName = mkOption {
           type = types.nullOr types.str;
           default = null;
-          description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
+          description = "Quality profile name. Defaults to first available quality profile in Seerr.";
         };
 
         activeDirectory = mkOption {
@@ -116,7 +116,7 @@ let
         preventSearch = mkOption {
           type = types.bool;
           default = false;
-          description = "Prevent Jellyseerr from triggering searches";
+          description = "Prevent Seerr from triggering searches";
         };
       };
     }
@@ -135,7 +135,7 @@ let
         isDefault = true;
         externalUrl =
           if config.nixflix.nginx.enable then
-            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
@@ -152,14 +152,14 @@ let
         isDefault = false;
         externalUrl =
           if config.nixflix.nginx.enable then
-            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
           else
             "";
       };
     });
 in
 {
-  options.nixflix.jellyseerr.sonarr = mkOption {
+  options.nixflix.seerr.sonarr = mkOption {
     type = types.attrsOf sonarrServerModule;
     default = defaultInstances;
     description = ''

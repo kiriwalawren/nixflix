@@ -247,6 +247,17 @@ in
               meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
               ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
               udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+
+              # Fix Tailscale 1.96+ connmark interference with mullvad-exclude:
+              # Tailscale's mangle/OUTPUT rule (priority -150) saves bits 16-23 of the
+              # meta mark into the ct mark for every new connection. The Mullvad bypass
+              # mark 0x6d6f6c65 has those bits set (& 0xff0000 = 0x6f0000), so Tailscale
+              # saves 0x006f0000 into the ct mark. Its mangle/PREROUTING rule then
+              # restores 0x006f0000 as the meta mark on incoming replies, which no longer
+              # equals the full bypass mark 0x6d6f6c65 and is dropped by Mullvad's
+              # INPUT firewall. Setting ct mark to 0x00000f41 here (whose bits 16-23 are
+              # zero) prevents the PREROUTING restore from firing.
+              ct state new meta mark == 0x6d6f6c65 ct mark set 0x00000f41;
             }
 
             chain postrouting {
@@ -269,6 +280,9 @@ in
               meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
               ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
               udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+
+              # Fix Tailscale 1.96+ connmark interference with mullvad-exclude (see exit-node chain above).
+              ct state new meta mark == 0x6d6f6c65 ct mark set 0x00000f41;
             }
           '';
     };
