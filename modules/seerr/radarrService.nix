@@ -8,7 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   authUtil = import ./authUtil.nix {
     inherit
       lib
@@ -25,7 +25,7 @@ let
     let
       jqRadarrSecrets = secrets.mkJqSecretArgs {
         apiKey = {
-          _secret = "/run/credentials/jellyseerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
+          _secret = "/run/credentials/seerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
         };
       };
     in
@@ -50,7 +50,7 @@ let
       echo "Testing Radarr connection..."
       TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
         --max-time 30 \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         -H "Content-Type: application/json" \
         -d "$TEST_PAYLOAD" \
         -w "\n%{http_code}" \
@@ -97,7 +97,7 @@ let
       # Check if server already exists
       EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
         --max-time 30 \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         "$BASE_URL/api/v1/settings/radarr")
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -142,7 +142,7 @@ let
         echo "Updating existing Radarr instance (ID: $EXISTING_ID)..."
         UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
           --max-time 30 \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -159,7 +159,7 @@ let
         echo "Creating new Radarr instance..."
         CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
           --max-time 30 \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -177,18 +177,10 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && cfg.radarr != { }) {
-    systemd.services.jellyseerr-radarr = {
-      description = "Configure Jellyseerr Radarr integration";
-      after = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-      ]
-      ++ optional nixflix.radarr.enable "radarr-config.service";
-      requires = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-      ]
-      ++ optional nixflix.radarr.enable "radarr-config.service";
+    systemd.services.seerr-radarr = {
+      description = "Configure Seerr Radarr integration";
+      after = [ "seerr-libraries.service" ] ++ optional nixflix.radarr.enable "radarr-config.service";
+      requires = [ "seerr-libraries.service" ] ++ optional nixflix.radarr.enable "radarr-config.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -221,7 +213,7 @@ in
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
           --max-time 30 \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           "$BASE_URL/api/v1/settings/radarr")
 
         SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -232,7 +224,7 @@ in
           echo "Deleting Radarr server (ID: $server_id)..."
           ${pkgs.curl}/bin/curl -sf -X DELETE \
             --max-time 30 \
-            -b "${authUtil.cookieFile}" \
+            ${authUtil.curlAuthArgs} \
             "$BASE_URL/api/v1/settings/radarr/$server_id" >/dev/null
         done
 

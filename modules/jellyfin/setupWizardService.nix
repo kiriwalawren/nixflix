@@ -26,37 +26,30 @@ let
       "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
     else
       "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+
+  waitForApiScript = import ./waitForApiScript.nix {
+    inherit pkgs;
+    jellyfinCfg = cfg;
+  };
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-setup-wizard = {
       description = "Complete Jellyfin Setup Wizard";
-      after = [ "jellyfin.service" ];
-      requires = [ "jellyfin.service" ];
+      after = [ "jellyfin-api-key.service" ];
+      requires = [ "jellyfin-api-key.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        ExecStartPre = waitForApiScript;
       };
 
       script = ''
         set -eu
 
         BASE_URL="${baseUrl}"
-
-        echo "Waiting for Jellyfin API to be available..."
-        for attempt in {1..90}; do
-          if ${pkgs.curl}/bin/curl -sf "$BASE_URL/System/Info/Public" >/dev/null 2>&1; then
-            echo "Jellyfin API is available"
-            break
-          fi
-          if [[ $attempt -eq 90 ]]; then
-            echo "Jellyfin API did not become available after 90 attempts" >&2
-            exit 1
-          fi
-          sleep 2
-        done
 
         echo "Checking if first admin user needs to be created..."
 

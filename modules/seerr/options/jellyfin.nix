@@ -14,13 +14,13 @@ let
   firstAdminUser = if hasLocalAdmin then adminUsers.${firstAdminName} else null;
 in
 {
-  options.nixflix.jellyseerr.jellyfin = {
+  options.nixflix.seerr.jellyfin = {
     adminUsername = mkOption {
       type = types.nullOr types.str;
       default = firstAdminName;
       defaultText = literalExpression "first admin username from nixflix.jellyfin.users, or null";
       description = ''
-        Jellyfin admin username for Jellyseerr authentication.
+        Jellyfin admin username for Seerr authentication.
 
         Auto-derived from `nixflix.jellyfin.users` when Jellyfin is enabled locally.
         Must be set explicitly when using a remote Jellyfin instance.
@@ -31,7 +31,7 @@ in
       default = if hasLocalAdmin then firstAdminUser.password else null;
       defaultText = literalExpression "password of first admin from nixflix.jellyfin.users, or null";
       description = ''
-        Jellyfin admin password for Jellyseerr authentication.
+        Jellyfin admin password for Seerr authentication.
 
         Auto-derived from `nixflix.jellyfin.users` when Jellyfin is enabled locally.
         Must be set explicitly when using a remote Jellyfin instance.
@@ -79,12 +79,12 @@ in
         type = types.str;
         default =
           if config.nixflix.nginx.enable then
-            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.nginx.domain}${jellyfinBaseUrl}"
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.nginx.domain}${jellyfinBaseUrl}"
           else
             "";
         defaultText = literalExpression ''
           if config.nixflix.nginx.enable != ""
-          then "$${config.nixflix.jellyseerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.nginx.domain}"
+          then "$${config.nixflix.seerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.nginx.domain}"
           else "";
         '';
       };

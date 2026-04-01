@@ -74,6 +74,10 @@ pkgs.testers.runNixOSTest {
         jellyfin = {
           enable = true;
 
+          apiKey = {
+            _secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+          };
+
           users = {
             admin = {
               password = {
@@ -84,10 +88,10 @@ pkgs.testers.runNixOSTest {
           };
         };
 
-        jellyseerr = {
+        seerr = {
           enable = true;
           apiKey = {
-            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
+            _secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
           };
         };
       };
@@ -100,19 +104,20 @@ pkgs.testers.runNixOSTest {
 
     port = 5055
     machine.wait_for_unit("jellyfin.service", timeout=300)
+    machine.wait_for_unit("jellyfin-api-key.service", timeout=300)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
-    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(port, timeout=300)
 
     # Wait for configuration services to complete
-    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-user-settings.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-libraries.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-jellyfin.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
+    machine.wait_for_unit("seerr-setup.service", timeout=300)
+    machine.wait_for_unit("seerr-user-settings.service", timeout=300)
+    machine.wait_for_unit("seerr-libraries.service", timeout=300)
+    machine.wait_for_unit("seerr-jellyfin.service", timeout=300)
+    machine.wait_for_unit("seerr-radarr.service", timeout=300)
+    machine.wait_for_unit("seerr-sonarr.service", timeout=300)
 
-    cookie_file = "/run/jellyseerr/auth-cookie"
+    cookie_file = "/run/seerr/auth-cookie"
     base_url = f'http://127.0.0.1:{port}/api/v1'
 
     # Test API connectivity

@@ -7,6 +7,7 @@
 with lib;
 let
   stateDir = "${config.nixflix.stateDir}/jellyfin";
+  secrets = import ../../../lib/secrets { inherit lib; };
 in
 {
   imports = [
@@ -22,6 +23,10 @@ in
       type = types.bool;
       default = false;
       description = "Whether to enable Jellyfin media server";
+    };
+
+    apiKey = secrets.mkSecretOption {
+      description = "API key to inject into Jellyfin's database. Used by nixflix management services to authenticate to Jellyfin without relying on admin user passwords.";
     };
 
     package = mkOption {

@@ -41,7 +41,7 @@ let
       activeProfileName = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
+        description = "Quality profile name. Defaults to first available quality profile in Seerr.";
       };
 
       activeDirectory = mkOption {
@@ -88,7 +88,7 @@ let
       preventSearch = mkOption {
         type = types.bool;
         default = false;
-        description = "Prevent Jellyseerr from triggering searches";
+        description = "Prevent Seerr from triggering searches";
       };
     };
   };
@@ -102,14 +102,14 @@ let
       isDefault = true;
       externalUrl =
         if config.nixflix.nginx.enable then
-          "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
+          "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };
   };
 in
 {
-  options.nixflix.jellyseerr.radarr = mkOption {
+  options.nixflix.seerr.radarr = mkOption {
     type = types.attrsOf radarrServerModule;
     default = defaultInstance;
     description = ''

@@ -8,7 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
   authUtil = import ./authUtil.nix {
     inherit
       lib
@@ -25,7 +25,7 @@ let
     let
       jqSonarrSecrets = secrets.mkJqSecretArgs {
         apiKey = {
-          _secret = "/run/credentials/jellyseerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
+          _secret = "/run/credentials/seerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
         };
       };
     in
@@ -50,7 +50,7 @@ let
       echo "Testing Sonarr connection..."
       TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
         --max-time 30 \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         -H "Content-Type: application/json" \
         -d "$TEST_PAYLOAD" \
         -w "\n%{http_code}" \
@@ -120,7 +120,7 @@ let
 
       # Check if server already exists
       EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-        -b "${authUtil.cookieFile}" \
+        ${authUtil.curlAuthArgs} \
         "$BASE_URL/api/v1/settings/sonarr")
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -174,7 +174,7 @@ let
       if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
         echo "Updating existing Sonarr instance (ID: $EXISTING_ID)..."
         UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -190,7 +190,7 @@ let
       else
         echo "Creating new Sonarr instance..."
         CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           -H "Content-Type: application/json" \
           -d "$SERVER_CONFIG" \
           -w "\n%{http_code}" \
@@ -208,23 +208,19 @@ let
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != { }) {
-    systemd.services.jellyseerr-sonarr = {
-      description = "Configure Jellyseerr Sonarr integration";
+    systemd.services.seerr-sonarr = {
+      description = "Configure Seerr Sonarr integration";
       after = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-        "jellyseerr-radarr.service"
+        "seerr-radarr.service"
       ]
-      ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
+      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
 
       requires = [
-        "jellyseerr-setup.service"
-        "jellyseerr-libraries.service"
-        "jellyseerr-radarr.service"
+        "seerr-radarr.service"
       ]
-      ++ optional (cfg.radarr != { }) "jellyseerr-radarr.service"
+      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
       ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
 
@@ -259,7 +255,7 @@ in
         CONFIGURED_NAMES="${pkgs.writeText "sonarr-names.json" (builtins.toJSON (attrNames cfg.sonarr))}"
 
         EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-          -b "${authUtil.cookieFile}" \
+          ${authUtil.curlAuthArgs} \
           "$BASE_URL/api/v1/settings/sonarr")
 
         SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
@@ -269,7 +265,7 @@ in
         for server_id in $SERVERS_TO_DELETE; do
           echo "Deleting Sonarr server (ID: $server_id)..."
           ${pkgs.curl}/bin/curl -sf -X DELETE \
-            -b "${authUtil.cookieFile}" \
+            ${authUtil.curlAuthArgs} \
             "$BASE_URL/api/v1/settings/sonarr/$server_id" >/dev/null
         done
 
