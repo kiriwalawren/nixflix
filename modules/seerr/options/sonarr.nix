@@ -135,7 +135,7 @@ let
         isDefault = true;
         externalUrl =
           if config.nixflix.nginx.enable then
-            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
