@@ -105,11 +105,23 @@ in
         };
 
         serverConfig = {
-          BitTorrent.Session.DefaultSavePath = mkOption {
-            type = types.str;
-            default = "${cfg.downloadsDir}/default";
-            defaultText = literalExpression ''"''${config.nixflix.torrentClients.qbittorrent.downloadsDir}/default"'';
-            description = "Default save path for downloads without a category.";
+          BitTorrent.Session = {
+            DefaultSavePath = mkOption {
+              type = types.str;
+              default = "${cfg.downloadsDir}/default";
+              defaultText = literalExpression ''"''${config.nixflix.torrentClients.qbittorrent.downloadsDir}/default"'';
+              description = "Default save path for downloads without a category.";
+            };
+
+            DisableAutoTMMByDefault = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                Default Torrent Management Mode. Set to false to enable category save paths.
+
+                `true` = `Manual`, `false` = `Automatic`
+              '';
+            };
           };
 
           Preferences.WebUI.Address = mkOption {
