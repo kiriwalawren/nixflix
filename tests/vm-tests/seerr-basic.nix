@@ -28,13 +28,9 @@ pkgs.testers.runNixOSTest {
           config = {
             hostConfig = {
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "sonarr-password" "testpass";
-              };
+              password._secret = pkgs.writeText "sonarr-password" "testpass";
             };
-            apiKey = {
-              _secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
-            };
+            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
           };
         };
 
@@ -45,13 +41,9 @@ pkgs.testers.runNixOSTest {
           config = {
             hostConfig = {
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "sonarr-anime-password" "testpass";
-              };
+              password._secret = pkgs.writeText "sonarr-anime-password" "testpass";
             };
-            apiKey = {
-              _secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
-            };
+            apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
           };
         };
 
@@ -61,28 +53,20 @@ pkgs.testers.runNixOSTest {
           config = {
             hostConfig = {
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "radarr-password" "testpass";
-              };
+              password._secret = pkgs.writeText "radarr-password" "testpass";
             };
-            apiKey = {
-              _secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
-            };
+            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
           };
         };
 
         jellyfin = {
           enable = true;
 
-          apiKey = {
-            _secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-          };
+          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
 
           users = {
             admin = {
-              password = {
-                _secret = pkgs.writeText "kiri_password" "321password";
-              };
+              password._secret = pkgs.writeText "kiri_password" "321password";
               policy.isAdministrator = true;
             };
           };
@@ -90,9 +74,7 @@ pkgs.testers.runNixOSTest {
 
         seerr = {
           enable = true;
-          apiKey = {
-            _secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
-          };
+          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
         };
       };
 

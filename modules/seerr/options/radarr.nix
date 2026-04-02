@@ -119,16 +119,12 @@ in
     '';
     example = {
       Radarr = {
-        apiKey = {
-          _secret = "/run/secrets/radarr-apikey";
-        };
+        apiKey._secret = "/run/secrets/radarr-apikey";
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
       };
       "Radarr 4K" = {
-        apiKey = {
-          _secret = "/run/secrets/radarr-4k-apikey";
-        };
+        apiKey._secret = "/run/secrets/radarr-4k-apikey";
         activeProfileName = "UHD-2160p";
         activeDirectory = "/movies-4k";
         is4k = true;

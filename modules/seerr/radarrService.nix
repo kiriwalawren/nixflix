@@ -24,9 +24,7 @@ let
     radarrName: radarrCfg:
     let
       jqRadarrSecrets = secrets.mkJqSecretArgs {
-        apiKey = {
-          _secret = "/run/credentials/seerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
-        };
+        apiKey._secret = "/run/credentials/seerr-radarr.service/radarr-${sanitizeName radarrName}-apikey";
       };
     in
     ''

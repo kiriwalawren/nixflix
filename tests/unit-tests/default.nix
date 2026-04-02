@@ -49,13 +49,9 @@ in
                 hostConfig = {
                   port = 8989;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/tv"; } ];
               };
             };
@@ -82,13 +78,9 @@ in
                 hostConfig = {
                   port = 8990;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/anime"; } ];
               };
             };
@@ -117,13 +109,9 @@ in
                 hostConfig = {
                   port = 7878;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/radarr-pass";
-                  };
+                  password._secret = "/run/secrets/radarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/radarr-api";
-                };
+                apiKey._secret = "/run/secrets/radarr-api";
                 rootFolders = [ { path = "/media/movies"; } ];
               };
             };
@@ -149,19 +137,13 @@ in
                 hostConfig = {
                   port = 9696;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/prowlarr-pass";
-                  };
+                  password._secret = "/run/secrets/prowlarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/prowlarr-api";
-                };
+                apiKey._secret = "/run/secrets/prowlarr-api";
                 indexers = [
                   {
                     name = "1337x";
-                    apiKey = {
-                      _secret = "/run/secrets/1337x-api";
-                    };
+                    apiKey._secret = "/run/secrets/1337x-api";
                   }
                 ];
               };
@@ -187,12 +169,8 @@ in
               downloadsDir = "/downloads/usenet";
               settings = {
                 misc = {
-                  api_key = {
-                    _secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-                  };
-                  nzb_key = {
-                    _secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
-                  };
+                  api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+                  nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
                   port = 8080;
                   host = "127.0.0.1";
                   url_base = "/sabnzbd";
@@ -205,12 +183,8 @@ in
                     name = "TestServer";
                     host = "news.example.com";
                     port = 563;
-                    username = {
-                      _secret = pkgs.writeText "eweka-username" "testuser";
-                    };
-                    password = {
-                      _secret = pkgs.writeText "eweka-password" "testpass123";
-                    };
+                    username._secret = pkgs.writeText "eweka-username" "testuser";
+                    password._secret = pkgs.writeText "eweka-password" "testpass123";
                     connections = 10;
                     ssl = true;
                     priority = 0;
@@ -251,9 +225,7 @@ in
             enable = true;
             seerr = {
               enable = true;
-              apiKey = {
-                _secret = "/run/secrets/seerr-api";
-              };
+              apiKey._secret = "/run/secrets/seerr-api";
               jellyfin = {
                 adminUsername = "remoteadmin";
                 adminPassword = "remotepassword";
@@ -294,13 +266,9 @@ in
                 hostConfig = {
                   port = 7878;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/radarr-pass";
-                  };
+                  password._secret = "/run/secrets/radarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/radarr-api";
-                };
+                apiKey._secret = "/run/secrets/radarr-api";
                 rootFolders = [ { path = "/media/movies"; } ];
               };
             };
@@ -312,13 +280,9 @@ in
                 hostConfig = {
                   port = 8989;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/shows"; } ];
               };
             };
@@ -330,13 +294,9 @@ in
                 hostConfig = {
                   port = 8990;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-anime-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-anime-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-anime-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-anime-api";
                 rootFolders = [ { path = "/media/anime"; } ];
               };
             };
@@ -348,13 +308,9 @@ in
                 hostConfig = {
                   port = 8686;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/lidarr-pass";
-                  };
+                  password._secret = "/run/secrets/lidarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/lidarr-api";
-                };
+                apiKey._secret = "/run/secrets/lidarr-api";
                 rootFolders = [ { path = "/media/music"; } ];
               };
             };
