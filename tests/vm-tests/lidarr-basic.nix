@@ -30,13 +30,9 @@ pkgsUnfree.testers.runNixOSTest {
             hostConfig = {
               port = 8686;
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "lidarr-password" "testpassword123";
-              };
+              password._secret = pkgs.writeText "lidarr-password" "testpassword123";
             };
-            apiKey = {
-              _secret = pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh";
-            };
+            apiKey._secret = pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh";
             delayProfiles = [
               {
                 enableUsenet = true;
@@ -75,12 +71,8 @@ pkgsUnfree.testers.runNixOSTest {
           enable = true;
           settings = {
             misc = {
-              api_key = {
-                _secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
-              };
-              nzb_key = {
-                _secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
-              };
+              api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
               port = 8080;
               host = "127.0.0.1";
               url_base = "/sabnzbd";

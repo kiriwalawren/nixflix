@@ -79,13 +79,11 @@ in
     systemd.tmpfiles.settings."10-seerr" = {
       "/run/seerr".d = {
         mode = "0755";
-        inherit (cfg) user;
-        inherit (cfg) group;
+        inherit (cfg) user group;
       };
-      "${cfg.dataDir}".d = {
+      ${cfg.dataDir}.d = {
         mode = "0755";
-        inherit (cfg) user;
-        inherit (cfg) group;
+        inherit (cfg) user group;
       };
     };
 

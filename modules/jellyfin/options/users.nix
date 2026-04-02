@@ -464,9 +464,7 @@ in
     type = with types; attrsOf (submodule userOpts);
     example = {
       admin = {
-        password = {
-          _secret = "/run/secrets/jellyfin-admin-password";
-        };
+        password._secret = "/run/secrets/jellyfin-admin-password";
         policy = {
           isAdministrator = true;
         };

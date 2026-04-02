@@ -24,9 +24,7 @@ let
     sonarrName: sonarrCfg:
     let
       jqSonarrSecrets = secrets.mkJqSecretArgs {
-        apiKey = {
-          _secret = "/run/credentials/seerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
-        };
+        apiKey._secret = "/run/credentials/seerr-sonarr.service/sonarr-${sanitizeName sonarrName}-apikey";
       };
     in
     ''
