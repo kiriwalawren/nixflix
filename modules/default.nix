@@ -89,6 +89,24 @@ in
           Enable if you don't have a separate DNS setup.
         '';
       };
+
+      forceSSL = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = "Whether to force SSL.";
+      };
+
+      enableACME = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Whether to enable `useACMEHost` in virtual hosts. Uses `nixflix.nginx.domain` as ACME host.
+
+          You have to configure `security.acme.certs.$${nixflix.nginx.domain}` in order to use this.
+        '';
+      };
     };
 
     mediaUsers = mkOption {
