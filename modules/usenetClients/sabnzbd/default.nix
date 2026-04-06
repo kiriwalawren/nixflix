@@ -194,7 +194,7 @@ in
     };
 
     services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
-      forceSSL = config.nixflix.nginx.forceSSL;
+      inherit (config.nixflix.nginx) forceSSL;
       useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
 
       locations."/" = {
