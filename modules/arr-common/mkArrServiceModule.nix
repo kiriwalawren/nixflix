@@ -14,7 +14,14 @@ let
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
   hostConfig = import ./hostConfig.nix { inherit lib pkgs serviceName; };
-  rootFolders = import ./rootFolders.nix { inherit lib pkgs serviceName; };
+  rootFolders = import ./rootFolders.nix {
+    inherit
+      config
+      lib
+      pkgs
+      serviceName
+      ;
+  };
   delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
@@ -380,6 +387,7 @@ in
           "network.target"
           "nixflix-setup-dirs.service"
         ]
+        ++ config.nixflix.serviceDependencies
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")
@@ -388,6 +396,7 @@ in
         requires = [
           "nixflix-setup-dirs.service"
         ]
+        ++ config.nixflix.serviceDependencies
         ++ (optional (
           cfg.config.apiKey != null && cfg.config.hostConfig.password != null
         ) "${serviceName}-env.service")

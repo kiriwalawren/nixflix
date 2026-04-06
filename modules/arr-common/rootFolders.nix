@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   serviceName,
@@ -26,8 +27,8 @@ in
 
   mkService = serviceConfig: {
     description = "Configure ${serviceName} root folders via API";
-    after = [ "${serviceName}-config.service" ];
-    requires = [ "${serviceName}-config.service" ];
+    after = [ "${serviceName}-config.service" ] ++ config.nixflix.serviceDependencies;
+    requires = [ "${serviceName}-config.service" ] ++ config.nixflix.serviceDependencies;
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {

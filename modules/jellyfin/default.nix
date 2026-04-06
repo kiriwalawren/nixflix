@@ -134,7 +134,9 @@ in
       after = [
         "network-online.target"
         "nixflix-setup-dirs.service"
-      ];
+      ]
+      ++ config.nixflix.serviceDependencies;
+      requires = config.nixflix.serviceDependencies;
       wants = [
         "network-online.target"
         "nixflix-setup-dirs.service"
