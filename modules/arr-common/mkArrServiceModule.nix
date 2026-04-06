@@ -248,6 +248,9 @@ in
       };
 
       nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
+        forceSSL = config.nixflix.nginx.forceSSL;
+        useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
+
         locations."/" =
           let
             themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
