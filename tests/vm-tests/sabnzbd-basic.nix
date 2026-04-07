@@ -32,12 +32,8 @@ pkgsUnfree.testers.runNixOSTest {
           downloadsDir = "/downloads/usenet";
           settings = {
             misc = {
-              api_key = {
-                _secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-              };
-              nzb_key = {
-                _secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
-              };
+              api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
               port = 8080;
               host = "127.0.0.1";
               url_base = "/sabnzbd";
@@ -51,12 +47,8 @@ pkgsUnfree.testers.runNixOSTest {
                 name = "TestServer";
                 host = "news.example.com";
                 port = 563;
-                username = {
-                  _secret = pkgs.writeText "eweka-username" "testuser";
-                };
-                password = {
-                  _secret = pkgs.writeText "eweka-password" "test,pass'123";
-                };
+                username._secret = pkgs.writeText "eweka-username" "testuser";
+                password._secret = pkgs.writeText "eweka-password" "test,pass'123";
                 connections = 10;
                 ssl = true;
                 priority = 0;

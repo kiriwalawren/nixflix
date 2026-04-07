@@ -49,8 +49,8 @@ in
   config = mkIf (nixflix.enable && cfg.enable && cfg.libraries != { }) {
     systemd.services.jellyfin-libraries = {
       description = "Configure Jellyfin Libraries via API";
-      after = [ "jellyfin-setup-wizard.service" ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      after = [ "jellyfin-setup-wizard.service" ] ++ config.nixflix.serviceDependencies;
+      requires = [ "jellyfin-setup-wizard.service" ] ++ config.nixflix.serviceDependencies;
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {

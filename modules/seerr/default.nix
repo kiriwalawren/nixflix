@@ -79,13 +79,11 @@ in
     systemd.tmpfiles.settings."10-seerr" = {
       "/run/seerr".d = {
         mode = "0755";
-        inherit (cfg) user;
-        inherit (cfg) group;
+        inherit (cfg) user group;
       };
-      "${cfg.dataDir}".d = {
+      ${cfg.dataDir}.d = {
         mode = "0755";
-        inherit (cfg) user;
-        inherit (cfg) group;
+        inherit (cfg) user group;
       };
     };
 
@@ -267,6 +265,9 @@ in
         themeParkUrl = "https://theme-park.dev/css/base/overseerr/${config.nixflix.theme.name}.css";
       in
       mkIf config.nixflix.nginx.enable {
+        inherit (config.nixflix.nginx) forceSSL;
+        useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
+
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
           recommendedProxySettings = true;

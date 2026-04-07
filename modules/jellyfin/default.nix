@@ -134,7 +134,9 @@ in
       after = [
         "network-online.target"
         "nixflix-setup-dirs.service"
-      ];
+      ]
+      ++ config.nixflix.serviceDependencies;
+      requires = config.nixflix.serviceDependencies;
       wants = [
         "network-online.target"
         "nixflix-setup-dirs.service"
@@ -252,6 +254,9 @@ in
     };
 
     services.nginx.virtualHosts."${hostname}" = mkIf nixflix.nginx.enable {
+      inherit (config.nixflix.nginx) forceSSL;
+      useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
+
       locations = {
         "/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";

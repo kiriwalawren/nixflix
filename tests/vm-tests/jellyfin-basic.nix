@@ -22,15 +22,11 @@ pkgs.testers.runNixOSTest {
         jellyfin = {
           enable = true;
 
-          apiKey = {
-            _secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-          };
+          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
 
           users = {
             admin = {
-              password = {
-                _secret = pkgs.writeText "kiri_password" "321password";
-              };
+              password._secret = pkgs.writeText "kiri_password" "321password";
               policy.isAdministrator = true;
             };
 
