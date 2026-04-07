@@ -253,6 +253,19 @@ in
                   if [ -z "$PLUGIN_ID" ]; then
                     echo "Warning: Plugin ${pluginName} not found in installed plugins, skipping configuration" >&2
                   else
+                    # Fetch current configuration so we only override declared keys
+                    CURRENT_CONFIG=$(${
+                      mkSecureCurl authUtil.token {
+                        url = "$BASE_URL/Plugins/$PLUGIN_ID/Configuration";
+                        apiKeyHeader = "Authorization";
+                      }
+                    })
+
+                    # Merge: start with current config, overlay declared keys on top
+                    DESIRED_CONFIG=$(${pkgs.coreutils}/bin/cat ${configFile})
+                    MERGED_CONFIG=$(echo "$CURRENT_CONFIG" | \
+                      ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_CONFIG" '. * $desired')
+
                     CONFIG_RESPONSE=$(${
                       mkSecureCurl authUtil.token {
                         method = "POST";
@@ -261,7 +274,7 @@ in
                         headers = {
                           "Content-Type" = "application/json";
                         };
-                        data = "@${configFile}";
+                        data = "$MERGED_CONFIG";
                         extraArgs = "-w \"\\n%{http_code}\"";
                       }
                     })
