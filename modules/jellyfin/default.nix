@@ -28,6 +28,7 @@ in
     ./brandingService.nix
     ./encodingService.nix
     ./librariesService.nix
+    ./pluginSyncService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix
