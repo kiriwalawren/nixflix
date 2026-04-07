@@ -6,11 +6,13 @@ let
 
     options = {
       version = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
+        default = null;
         description = ''
-          Exact version string of the plugin to install (e.g. "14.0.0.0").
-          Must match a version available in the configured plugin repositories.
-          Versions are pinned explicitly; "latest" is not supported.
+          Version of the plugin to install (e.g. "14.0.0.0"). When null
+          (the default), the latest version available in the configured plugin
+          repositories is used automatically. Pin to a specific version for
+          reproducible builds.
         '';
         example = "14.0.0.0";
       };

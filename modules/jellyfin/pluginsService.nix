@@ -160,15 +160,28 @@ in
             exit 1
           fi
 
+          # Resolve version: null means use latest available from the catalog
+          if [ "$plugin_version" = "null" ]; then
+            RESOLVED_VERSION=$(echo "$CATALOG_JSON" | ${pkgs.jq}/bin/jq -r --arg name "$plugin_name" \
+              '[.[] | select(.name == $name)] | .[0].versions[0].version // empty')
+            if [ -z "$RESOLVED_VERSION" ]; then
+              echo "Error: Could not resolve latest version for '$plugin_name' from catalog" >&2
+              exit 1
+            fi
+            echo "Resolved latest version for $plugin_name: $RESOLVED_VERSION"
+          else
+            RESOLVED_VERSION="$plugin_version"
+          fi
+
           INSTALLED_VERSION=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r --arg name "$plugin_name" \
             '.[] | select(.Name == $name) | .Version // empty')
 
           if [ -z "$INSTALLED_VERSION" ]; then
-            echo "Installing plugin: $plugin_name version $plugin_version (guid: $PLUGIN_GUID)"
+            echo "Installing plugin: $plugin_name $RESOLVED_VERSION (guid: $PLUGIN_GUID)"
             INSTALL_RESPONSE=$(${
               mkSecureCurl authUtil.token {
                 method = "POST";
-                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$plugin_version";
+                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
                 apiKeyHeader = "Authorization";
                 extraArgs = "-w \"\\n%{http_code}\"";
               }
@@ -176,18 +189,18 @@ in
             INSTALL_HTTP_CODE=$(echo "$INSTALL_RESPONSE" | tail -n1)
 
             if [ "$INSTALL_HTTP_CODE" -lt 200 ] || [ "$INSTALL_HTTP_CODE" -ge 300 ]; then
-              echo "Failed to install plugin $plugin_name $plugin_version (HTTP $INSTALL_HTTP_CODE)" >&2
+              echo "Failed to install plugin $plugin_name $RESOLVED_VERSION (HTTP $INSTALL_HTTP_CODE)" >&2
               exit 1
             fi
 
-            echo "Successfully queued install: $plugin_name $plugin_version"
+            echo "Successfully queued install: $plugin_name $RESOLVED_VERSION"
             CHANGED=true
-          elif [ "$INSTALLED_VERSION" != "$plugin_version" ]; then
-            echo "Updating plugin: $plugin_name from $INSTALLED_VERSION to $plugin_version"
+          elif [ "$INSTALLED_VERSION" != "$RESOLVED_VERSION" ]; then
+            echo "Updating plugin: $plugin_name from $INSTALLED_VERSION to $RESOLVED_VERSION"
             INSTALL_RESPONSE=$(${
               mkSecureCurl authUtil.token {
                 method = "POST";
-                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$plugin_version";
+                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
                 apiKeyHeader = "Authorization";
                 extraArgs = "-w \"\\n%{http_code}\"";
               }
@@ -195,14 +208,14 @@ in
             INSTALL_HTTP_CODE=$(echo "$INSTALL_RESPONSE" | tail -n1)
 
             if [ "$INSTALL_HTTP_CODE" -lt 200 ] || [ "$INSTALL_HTTP_CODE" -ge 300 ]; then
-              echo "Failed to update plugin $plugin_name to $plugin_version (HTTP $INSTALL_HTTP_CODE)" >&2
+              echo "Failed to update plugin $plugin_name to $RESOLVED_VERSION (HTTP $INSTALL_HTTP_CODE)" >&2
               exit 1
             fi
 
-            echo "Successfully queued update: $plugin_name $plugin_version"
+            echo "Successfully queued update: $plugin_name $RESOLVED_VERSION"
             CHANGED=true
           else
-            echo "Plugin $plugin_name is already at version $plugin_version, skipping"
+            echo "Plugin $plugin_name is already at $RESOLVED_VERSION, skipping"
           fi
         done < <(echo "$CONFIGURED_PLUGINS" | ${pkgs.jq}/bin/jq -r 'to_entries[] | "\(.key)\t\(.value)"')
 

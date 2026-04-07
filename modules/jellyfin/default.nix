@@ -76,8 +76,8 @@ in
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
       }
       {
-        assertion = all (p: p.version != "") (attrValues cfg.plugins);
-        message = "All nixflix.jellyfin.plugins entries must have a non-empty version.";
+        assertion = all (p: p.version == null || p.version != "") (attrValues cfg.plugins);
+        message = "nixflix.jellyfin.plugins: version must be a non-empty string if specified (use null to install the latest version).";
       }
     ];
 
