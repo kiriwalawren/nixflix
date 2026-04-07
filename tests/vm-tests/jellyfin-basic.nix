@@ -3,6 +3,12 @@
   pkgs ? import <nixpkgs> { inherit system; },
   nixosModules,
 }:
+let
+  testPlugin = pkgs.runCommand "test-plugin-1.0.0" { } ''
+    mkdir -p "$out"
+    touch "$out/TestPlugin.dll"
+  '';
+in
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
@@ -23,6 +29,7 @@ pkgs.testers.runNixOSTest {
           enable = true;
 
           apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+          plugins = [ testPlugin ];
 
           users = {
             admin = {
@@ -390,6 +397,10 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-plugin-sync.service", timeout=180)
+
+    machine.succeed("test -d /data/.state/jellyfin/plugins/test-plugin_1.0.0")
+    machine.succeed("test -f /data/.state/jellyfin/plugins/test-plugin_1.0.0/TestPlugin.dll")
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
     auth_header = f'"Authorization: {api_token}"'

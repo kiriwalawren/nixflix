@@ -244,6 +244,72 @@ in
       && systemdUnits ? seerr-user-settings
     );
 
+  jellyfin-plugin-service-generation =
+    let
+      plugin = pkgs.runCommand "test-plugin-1.0.0" { } ''
+        mkdir -p "$out"
+        touch "$out/TestPlugin.dll"
+      '';
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins = [ plugin ];
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      systemdUnits = config.config.systemd.services;
+      tmpfilesSettings = config.config.systemd.tmpfiles.settings;
+      pluginPath = "${config.config.nixflix.jellyfin.dataDir}/plugins";
+      syncService = systemdUnits.jellyfin-plugin-sync;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-service-generation" { } ''
+      ${check "plugin sync service exists" (systemdUnits ? jellyfin-plugin-sync)}
+      ${check "plugin sync runs before jellyfin" (builtins.elem "jellyfin.service" syncService.before)}
+      ${check "plugin sync is required by jellyfin" (
+        builtins.elem "jellyfin.service" syncService.requiredBy
+      )}
+      ${check "plugin sync remains after exit" syncService.serviceConfig.RemainAfterExit}
+      ${check "plugin tmpfiles directory exists" (builtins.hasAttr pluginPath tmpfilesSettings."10-jellyfin")}
+
+      echo 'PASS: jellyfin-plugin-service-generation' > $out
+    '';
+
+  jellyfin-plugin-empty-list-service-generation =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins = [ ];
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      systemdUnits = config.config.systemd.services;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-empty-list-service-generation" { } ''
+      ${check "plugin sync service exists when plugin list is empty" (
+        systemdUnits ? jellyfin-plugin-sync
+      )}
+      echo 'PASS: jellyfin-plugin-empty-list-service-generation' > $out
+    '';
+
   jellyfin-integration =
     let
       config = evalConfig [
