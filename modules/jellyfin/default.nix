@@ -28,6 +28,7 @@ in
     ./brandingService.nix
     ./encodingService.nix
     ./librariesService.nix
+    ./pluginsService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix
@@ -73,6 +74,10 @@ in
       {
         assertion = cfg.system.cacheSize >= 3;
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
+      }
+      {
+        assertion = all (p: p.version != "") (attrValues cfg.plugins);
+        message = "All nixflix.jellyfin.plugins entries must have a non-empty version.";
       }
     ];
 
