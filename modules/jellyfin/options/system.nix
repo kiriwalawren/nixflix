@@ -325,7 +325,33 @@ in
     };
 
     pluginRepositories = mkOption {
-      type = with types; listOf attrs;
+      type =
+        with types;
+        listOf (submodule {
+          options = {
+            tag = mkStrOption "RepositoryInfo" "Repository tag";
+            content = {
+              enabled = mkOption {
+                type = types.bool;
+                default = true;
+                example = false;
+                description = "Whether to enable this plugin repository";
+              };
+
+              name = mkOption {
+                type = types.str;
+                example = "Jellyfin Stable";
+                description = "UI friendly name for the repository manifest";
+              };
+
+              url = mkOption {
+                type = types.str;
+                example = "https://repo.jellyfin.org/files/plugin/manifest.json";
+                description = "URL for the plugin repository manifest";
+              };
+            };
+          };
+        });
       default = [ ];
       defaultText = literalExpression ''
         [
