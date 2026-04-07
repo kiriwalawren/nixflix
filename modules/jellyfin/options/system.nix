@@ -326,17 +326,20 @@ in
 
     pluginRepositories = mkOption {
       type = with types; listOf attrs;
-      default = [
-        {
-          tag = "RepositoryInfo";
-          content = {
-            name = "Jellyfin Stable";
-            url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-            enabled = true;
-          };
-        }
-      ];
-      description = "Configure which plugin repositories you use.";
+      default = [ ];
+      defaultText = literalExpression ''
+        [
+          {
+            tag = "RepositoryInfo";
+            content = {
+              name = "Jellyfin Stable";
+              url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+              enabled = true;
+            };
+          }
+        ]
+      '';
+      description = "Configure which plugin repositories you use. Jellyfin Stable is always in the list. Adding new plugin repositories will not remove it.";
     };
 
     enableExternalContentInSuggestions = mkOption {
@@ -606,4 +609,15 @@ in
       '';
     };
   };
+
+  config.nixflix.jellyfin.system.pluginRepositories = [
+    {
+      tag = "RepositoryInfo";
+      content = {
+        name = "Jellyfin Stable";
+        url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+        enabled = true;
+      };
+    }
+  ];
 }
