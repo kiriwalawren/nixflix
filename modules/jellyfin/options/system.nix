@@ -329,26 +329,32 @@ in
         with types;
         listOf (submodule {
           options = {
-            tag = mkStrOption "RepositoryInfo" "Repository tag";
-            content = {
-              enabled = mkOption {
-                type = types.bool;
-                default = true;
-                example = false;
-                description = "Whether to enable this plugin repository";
-              };
+            enabled = mkOption {
+              type = types.bool;
+              default = true;
+              example = false;
+              description = "Whether to enable this plugin repository";
+            };
 
-              name = mkOption {
-                type = types.str;
-                example = "Jellyfin Stable";
-                description = "UI friendly name for the repository manifest";
-              };
+            name = mkOption {
+              type = types.str;
+              example = "Jellyfin Stable";
+              description = "UI friendly name for the repository manifest";
+            };
 
-              url = mkOption {
-                type = types.str;
-                example = "https://repo.jellyfin.org/files/plugin/manifest.json";
-                description = "URL for the plugin repository manifest";
-              };
+            url = mkOption {
+              type = types.str;
+              example = "https://repo.jellyfin.org/files/plugin/manifest.json";
+              description = "URL for the plugin repository manifest";
+            };
+
+            hash = mkOption {
+              type = types.str;
+              example = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+              description = ''
+                Fixed-output hash for the repository manifest. This pins the
+                manifest used to resolve plugin versions to source URLs.
+              '';
             };
           };
         });
@@ -356,12 +362,10 @@ in
       defaultText = literalExpression ''
         [
           {
-            tag = "RepositoryInfo";
-            content = {
-              name = "Jellyfin Stable";
-              url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-              enabled = true;
-            };
+            name = "Jellyfin Stable";
+            url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+            hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+            enabled = true;
           }
         ]
       '';
@@ -638,12 +642,10 @@ in
 
   config.nixflix.jellyfin.system.pluginRepositories = [
     {
-      tag = "RepositoryInfo";
-      content = {
-        name = "Jellyfin Stable";
-        url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-        enabled = true;
-      };
+      name = "Jellyfin Stable";
+      url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+      hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+      enabled = true;
     }
   ];
 }

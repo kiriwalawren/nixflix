@@ -43,6 +43,9 @@
         );
     in
     {
+      lib.buildJellyfinPlugin = { pkgs }: import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
+      lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit lib; };
+
       nixosModules.default = import ./modules;
       nixosModules.nixflix = import ./modules;
 

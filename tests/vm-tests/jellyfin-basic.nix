@@ -3,6 +3,9 @@
   pkgs ? import <nixpkgs> { inherit system; },
   nixosModules,
 }:
+let
+  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit (pkgs) lib; };
+in
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
@@ -10,8 +13,6 @@ pkgs.testers.runNixOSTest {
     { lib, ... }:
     {
       imports = [ nixosModules ];
-
-      networking.useDHCP = true;
 
       virtualisation = {
         diskSize = 3 * 1024;
@@ -212,12 +213,10 @@ pkgs.testers.runNixOSTest {
             ];
             pluginRepositories = lib.mkForce [
               {
-                tag = "RepositoryInfo";
-                content = {
-                  name = "Jellyfin Stable";
-                  url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-                  enabled = true;
-                };
+                name = "Jellyfin Stable";
+                url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+                hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+                enabled = true;
               }
             ];
             enableLegacyAuthorization = false;
@@ -377,8 +376,11 @@ pkgs.testers.runNixOSTest {
 
           plugins = {
             "Bookshelf" = {
-              Version = "latest";
-              ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
+              package = jellyfinPlugins.fromRepo {
+                version = "latest";
+                hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+              };
+              config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
             };
           };
         };
@@ -848,6 +850,10 @@ pkgs.testers.runNixOSTest {
 
         assert plugin_config.get('ComicVineApiKey') == 'comicvineapikey1111111111111111111', \
             f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
+
+        print("Verifying packaged plugin sync...")
+        machine.succeed("test -d '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0'")
+        machine.succeed("test -f '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
 
         print("All plugin management assertions passed!")
   '';

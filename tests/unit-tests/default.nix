@@ -5,6 +5,14 @@
 }:
 let
   inherit (pkgs) lib;
+  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit lib; };
+  manifestHash =
+    file:
+    builtins.convertHash {
+      hash = builtins.hashFile "sha256" file;
+      hashAlgo = "sha256";
+      toHashFormat = "sri";
+    };
 
   # Helper to evaluate a NixOS configuration without building
   evalConfig =
@@ -243,6 +251,198 @@ in
       && systemdUnits ? seerr-libraries
       && systemdUnits ? seerr-user-settings
     );
+
+  jellyfin-plugin-package-service-generation =
+    let
+      plugin = pkgs.runCommand "test-plugin-1.0.0" { } ''
+        mkdir -p "$out"
+        touch "$out/TestPlugin.dll"
+      '';
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins."Test Plugin".package = plugin;
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      systemdUnits = config.config.systemd.services;
+      tmpfilesSettings = config.config.systemd.tmpfiles.settings;
+      pluginPath = "${config.config.nixflix.jellyfin.dataDir}/plugins";
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-package-service-generation" { } ''
+      ${check "plugin service exists" (systemdUnits ? jellyfin-plugins)}
+      ${check "plugin tmpfiles directory exists" (
+        builtins.hasAttr pluginPath tmpfilesSettings."10-jellyfin"
+      )}
+
+      echo 'PASS: jellyfin-plugin-package-service-generation' > $out
+    '';
+
+  jellyfin-plugin-source-assertion =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+
+                jellyfin = {
+                  enable = true;
+                  plugins."Broken Plugin" = {
+                    package = {
+                      version = "1.0.0.0";
+                    };
+                    config.SomeSetting = true;
+                  };
+                  users.admin = {
+                    password = "testpassword";
+                    policy.isAdministrator = true;
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "jellyfin-plugin-source-assertion" (!result.success);
+
+  jellyfin-plugin-repo-service-generation =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins.Bookshelf = {
+                package = jellyfinPlugins.fromRepo {
+                  version = "latest";
+                  hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                };
+              };
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-repo-service-generation" { } ''
+      ${check "plugin service exists for repo-managed plugin" (
+        config.config.systemd.services ? jellyfin-plugins
+      )}
+      ${check "repo-managed plugins resolve to package sync commands" (
+        lib.hasInfix "Syncing packaged plugin: Bookshelf" pluginService.script
+      )}
+      ${check "resolved plugin directory name appears in service script" (
+        lib.hasInfix "Bookshelf_13.0.0.0" pluginService.script
+      )}
+
+      echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
+    '';
+
+  jellyfin-plugin-repo-ambiguity-warning =
+    let
+      targetAbi = "${pkgs.jellyfin.version}.0";
+      manifestA = pkgs.writeText "jellyfin-plugin-repo-a.json" (
+        builtins.toJSON [
+          {
+            guid = "11111111-1111-1111-1111-111111111111";
+            name = "Collision Plugin";
+            versions = [
+              {
+                version = "1.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://example.invalid/repo-a.zip";
+              }
+            ];
+          }
+        ]
+      );
+      manifestB = pkgs.writeText "jellyfin-plugin-repo-b.json" (
+        builtins.toJSON [
+          {
+            guid = "22222222-2222-2222-2222-222222222222";
+            name = "Collision Plugin";
+            versions = [
+              {
+                version = "1.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://example.invalid/repo-b.zip";
+              }
+            ];
+          }
+        ]
+      );
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              apiKey = "test-api-key";
+              system.pluginRepositories = lib.mkForce [
+                {
+                  name = "Repo A";
+                  url = builtins.unsafeDiscardStringContext "file://${manifestA}";
+                  hash = manifestHash manifestA;
+                  enabled = true;
+                }
+                {
+                  name = "Repo B";
+                  url = builtins.unsafeDiscardStringContext "file://${manifestB}";
+                  hash = manifestHash manifestB;
+                  enabled = true;
+                }
+              ];
+              plugins."Collision Plugin" = {
+                package = jellyfinPlugins.fromRepo {
+                  version = "1.0.0.0";
+                  hash = lib.fakeHash;
+                };
+              };
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+      inherit (config.config) warnings;
+      warningText = builtins.concatStringsSep "\n" warnings;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-repo-ambiguity-warning" { } ''
+      ${check "ambiguity warning emitted" (warnings != [ ])}
+      ${check "warning mentions first repo" (lib.hasInfix "Repo A" warningText)}
+      ${check "warning mentions second repo" (lib.hasInfix "Repo B" warningText)}
+      ${check "warning explains selection" (
+        lib.hasInfix "selecting the first repository in configured order" warningText
+      )}
+      ${check "plugin dir uses plugin identity" (
+        lib.hasInfix "Collision-Plugin_1.0.0.0" pluginService.script
+      )}
+
+      echo 'PASS: jellyfin-plugin-repo-ambiguity-warning' > $out
+    '';
 
   jellyfin-integration =
     let
