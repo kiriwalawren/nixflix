@@ -131,19 +131,20 @@ in
         })
       ];
 
-      plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable (mkDefault {
-        TitlePreference = "Localized";
-        OriginalTitlePreference = "JapaneseRomaji";
-        IgnoreSeason = false;
-        TitleSimilarityThreshold = "50";
-        MaxGenres = "5";
-        TidyGenreList = true;
-        TitleCaseGenres = false;
-        AnimeDefaultGenre = "Anime";
-        AniDbRateLimit = "2000";
-        MaxCacheAge = "7";
-        AniDbReplaceGraves = true;
-      });
+      plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable {
+        version = mkDefault "11.0.0.0";
+        TitlePreference = mkDefault "Localized";
+        OriginalTitlePreference = mkDefault "JapaneseRomaji";
+        IgnoreSeason = mkDefault false;
+        TitleSimilarityThreshold = mkDefault "50";
+        MaxGenres = mkDefault "5";
+        TidyGenreList = mkDefault true;
+        TitleCaseGenres = mkDefaultmkDefault false;
+        AnimeDefaultGenre = mkDefault "Anime";
+        AniDbRateLimit = mkDefault "2000";
+        MaxCacheAge = mkDefault "7";
+        AniDbReplaceGraves = mkDefault true;
+      };
     };
 
     assertions = [
@@ -160,8 +161,8 @@ in
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
       }
       {
-        assertion = all (p: p.version == null || p.version != "") (attrValues cfg.plugins);
-        message = "nixflix.jellyfin.plugins: version must be a non-empty string if specified (use null to install the latest version).";
+        assertion = all (p: p.version != "") (attrValues cfg.plugins);
+        message = "nixflix.jellyfin.plugins: version must be a non-empty string.";
       }
     ];
 

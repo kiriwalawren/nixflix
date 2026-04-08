@@ -377,7 +377,7 @@ pkgs.testers.runNixOSTest {
 
           plugins = {
             "Bookshelf" = {
-              version = null; # Install latest from repo
+              version = "13.0.0.0";
               ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
             };
           };
