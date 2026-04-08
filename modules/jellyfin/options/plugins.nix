@@ -42,22 +42,13 @@ in
       Plugin changes (installs, removals, version updates) cause Jellyfin to
       restart automatically. Plan plugin changes for maintenance windows to
       avoid interrupting active streams.
-
-      Example:
-        nixflix.jellyfin.plugins = {
-          Anime = { version = "14.0.0.0"; };
-          Trakt = { version = "5.0.0.0"; };
-        };
     '';
     type = types.attrsOf pluginModule;
     default = { };
     example = {
-      "Anime" = {
-        version = "14.0.0.0";
-      };
       "Bookshelf" = {
-        version = "14.0.0.0";
         enabled = true;
+        ComicVineApiKey = "test-api-key-nixflix";
       };
     };
   };

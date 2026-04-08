@@ -35,32 +35,116 @@ in
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    nixflix.jellyfin.libraries = mkMerge [
-      (mkIf (nixflix.sonarr.enable or false) {
-        Shows = {
-          collectionType = "tvshows";
-          paths = nixflix.sonarr.mediaDirs;
-        };
-      })
-      (mkIf (nixflix.sonarr-anime.enable or false) {
-        Anime = {
-          collectionType = "tvshows";
-          paths = nixflix.sonarr-anime.mediaDirs;
-        };
-      })
-      (mkIf (nixflix.radarr.enable or false) {
-        Movies = {
-          collectionType = "movies";
-          paths = nixflix.radarr.mediaDirs;
-        };
-      })
-      (mkIf (nixflix.lidarr.enable or false) {
-        Music = {
-          collectionType = "music";
-          paths = nixflix.lidarr.mediaDirs;
-        };
-      })
-    ];
+    nixflix.jellyfin = {
+      libraries = mkMerge [
+        (mkIf (nixflix.sonarr.enable or false) {
+          Shows = {
+            collectionType = "tvshows";
+            paths = nixflix.sonarr.mediaDirs;
+          };
+        })
+        (mkIf (nixflix.sonarr-anime.enable or false) {
+          Anime = {
+            collectionType = "tvshows";
+            paths = nixflix.sonarr-anime.mediaDirs;
+
+            typeOptions = [
+              {
+                type = "Series";
+                imageFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                imageFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+              }
+              {
+                type = "Season";
+                imageFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                imageFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+              }
+              {
+                type = "Episode";
+                imageFetchers = [
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                  "Embedded Image Extractor"
+                  "Screen Grabber"
+                ];
+                imageFetcherOrder = [
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                  "Embedded Image Extractor"
+                  "Screen Grabber"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+              }
+            ];
+          };
+        })
+        (mkIf (nixflix.radarr.enable or false) {
+          Movies = {
+            collectionType = "movies";
+            paths = nixflix.radarr.mediaDirs;
+          };
+        })
+        (mkIf (nixflix.lidarr.enable or false) {
+          Music = {
+            collectionType = "music";
+            paths = nixflix.lidarr.mediaDirs;
+          };
+        })
+      ];
+
+      plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable (mkDefault {
+        TitlePreference = "Localized";
+        OriginalTitlePreference = "JapaneseRomaji";
+        IgnoreSeason = false;
+        TitleSimilarityThreshold = "50";
+        MaxGenres = "5";
+        TidyGenreList = true;
+        TitleCaseGenres = false;
+        AnimeDefaultGenre = "Anime";
+        AniDbRateLimit = "2000";
+        MaxCacheAge = "7";
+        AniDbReplaceGraves = true;
+      });
+    };
 
     assertions = [
       {
