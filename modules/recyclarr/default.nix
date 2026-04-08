@@ -165,7 +165,7 @@ in
           "sonarr.service"
           "sonarr-config.service"
         ]
-        ++ optionals config.nixflix.sonarr.enable [
+        ++ optionals config.nixflix.sonarr-anime.enable [
           "sonarr-anime.service"
           "sonarr-anime-config.service"
         ];
@@ -178,7 +178,7 @@ in
             "sonarr.service"
             "sonarr-config.service"
           ]
-          ++ optionals config.nixflix.sonarr.enable [
+          ++ optionals config.nixflix.sonarr-anime.enable [
             "sonarr-anime.service"
             "sonarr-anime-config.service"
           ];
