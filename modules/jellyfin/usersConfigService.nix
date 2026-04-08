@@ -32,6 +32,11 @@ let
       "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
     else
       "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+
+  waitForApiScript = import ./waitForApiScript.nix {
+    inherit pkgs;
+    jellyfinCfg = cfg;
+  };
 in
 {
   config = mkIf (config.nixflix.enable && cfg.enable) {
@@ -44,6 +49,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        ExecStartPre = waitForApiScript;
       };
 
       script = ''
