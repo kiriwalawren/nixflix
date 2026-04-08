@@ -72,7 +72,7 @@ pkgs.testers.runNixOSTest {
           };
 
           # Disable AniDB to keep test pure
-          plugins.AniDB.enabled = false;
+          plugins.AniDB.enable = false;
           libraries.Anime.typeOptions = lib.mkForce [ ];
         };
 
