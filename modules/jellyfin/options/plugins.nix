@@ -5,7 +5,7 @@ let
     freeformType = types.attrsOf types.anything;
 
     options = {
-      version = mkOption {
+      Version = mkOption {
         type = types.str;
         description = ''
           Version of the plugin to install (e.g. "14.0.0.0"). Must match a

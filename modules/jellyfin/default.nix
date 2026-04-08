@@ -132,7 +132,7 @@ in
       ];
 
       plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable {
-        version = mkDefault "11.0.0.0";
+        Version = mkDefault "11.0.0.0";
         TitlePreference = mkDefault "Localized";
         OriginalTitlePreference = mkDefault "JapaneseRomaji";
         IgnoreSeason = mkDefault false;
@@ -161,8 +161,8 @@ in
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
       }
       {
-        assertion = all (p: p.version != "") (attrValues cfg.plugins);
-        message = "nixflix.jellyfin.plugins: version must be a non-empty string.";
+        assertion = all (p: p.Version != "") (attrValues cfg.plugins);
+        message = "nixflix.jellyfin.plugins: Version must be a non-empty string.";
       }
     ];
 

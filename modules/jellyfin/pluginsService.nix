@@ -26,12 +26,12 @@ let
 
   enabledPlugins = filterAttrs (_name: p: p.enabled) cfg.plugins;
 
-  configuredPluginsJson = builtins.toJSON (mapAttrs (_name: p: p.version) enabledPlugins);
+  configuredPluginsJson = builtins.toJSON (mapAttrs (_name: p: p.Version) enabledPlugins);
 
   pluginsWithConfig = filterAttrs (
     _name: pluginCfg:
     removeAttrs pluginCfg [
-      "version"
+      "Version"
       "enabled"
     ] != { }
   ) enabledPlugins;
@@ -40,7 +40,7 @@ let
     name: pluginCfg:
     let
       rawConfig = removeAttrs pluginCfg [
-        "version"
+        "Version"
         "enabled"
       ];
       plainFields = filterAttrs (_: v: !(secrets.isSecretRef v)) rawConfig;

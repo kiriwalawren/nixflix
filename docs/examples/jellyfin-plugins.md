@@ -21,7 +21,7 @@ This example shows how to setup a plugin.
     ];
 
     plugins."Intro Skipper" = {
-      version = "1.10.11.17";
+      Version = "1.10.11.17";
       ExcludeSeries = "";
       AutoDetectIntros = true;
       AnalyzeSeasonZero = false;
@@ -102,5 +102,5 @@ Here are the steps that I follow:
 1. Uninstall the application
 1. Restart Jellyfin
 1. Add the attribute set to `nixflix.jellyfin.plugins.<name> = { ... }`
-1. Add the plugin version to `nixflilx.jellyfin.plugins.<name>.version`
+1. Add the plugin version to `nixflilx.jellyfin.plugins.<name>.Version`
 1. Rebuild
