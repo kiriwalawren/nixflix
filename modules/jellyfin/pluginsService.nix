@@ -24,7 +24,7 @@ let
     else
       "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 
-  enabledPlugins = filterAttrs (_name: p: p.enabled) cfg.plugins;
+  enabledPlugins = filterAttrs (_name: p: p.enable) cfg.plugins;
 
   configuredPluginsJson = builtins.toJSON (mapAttrs (_name: p: p.Version) enabledPlugins);
 
@@ -32,7 +32,7 @@ let
     _name: pluginCfg:
     removeAttrs pluginCfg [
       "Version"
-      "enabled"
+      "enable"
     ] != { }
   ) enabledPlugins;
 
@@ -41,7 +41,7 @@ let
     let
       rawConfig = removeAttrs pluginCfg [
         "Version"
-        "enabled"
+        "enable"
       ];
       plainFields = filterAttrs (_: v: !(secrets.isSecretRef v)) rawConfig;
       secretFields = filterAttrs (_: v: secrets.isSecretRef v) rawConfig;

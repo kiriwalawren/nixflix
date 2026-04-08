@@ -14,7 +14,7 @@ let
         example = "14.0.0.0";
       };
 
-      enabled = mkOption {
+      enable = mkOption {
         type = types.bool;
         default = true;
         description = ''
