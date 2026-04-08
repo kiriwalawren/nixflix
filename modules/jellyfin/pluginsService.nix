@@ -176,12 +176,14 @@ in
           INSTALLED_VERSION=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r --arg name "$plugin_name" \
             '.[] | select(.Name == $name) | .Version // empty')
 
+          ENCODED_NAME=$(echo "$plugin_name" | ${pkgs.jq}/bin/jq -rR @uri)
+
           if [ -z "$INSTALLED_VERSION" ]; then
             echo "Installing plugin: $plugin_name $RESOLVED_VERSION (guid: $PLUGIN_GUID)"
             INSTALL_RESPONSE=$(${
               mkSecureCurl authUtil.token {
                 method = "POST";
-                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
+                url = "$BASE_URL/Packages/Installed/$ENCODED_NAME?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
                 apiKeyHeader = "Authorization";
                 extraArgs = "-w \"\\n%{http_code}\"";
               }
@@ -200,7 +202,7 @@ in
             INSTALL_RESPONSE=$(${
               mkSecureCurl authUtil.token {
                 method = "POST";
-                url = "$BASE_URL/Packages/Installed?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
+                url = "$BASE_URL/Packages/Installed/$ENCODED_NAME?assemblyGuid=$PLUGIN_GUID&version=$RESOLVED_VERSION";
                 apiKeyHeader = "Authorization";
                 extraArgs = "-w \"\\n%{http_code}\"";
               }
