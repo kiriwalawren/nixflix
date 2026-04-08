@@ -139,7 +139,7 @@ in
         TitleSimilarityThreshold = mkDefault "50";
         MaxGenres = mkDefault "5";
         TidyGenreList = mkDefault true;
-        TitleCaseGenres = mkDefaultmkDefault false;
+        TitleCaseGenres = mkDefault false;
         AnimeDefaultGenre = mkDefault "Anime";
         AniDbRateLimit = mkDefault "2000";
         MaxCacheAge = mkDefault "7";
