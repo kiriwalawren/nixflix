@@ -11,6 +11,7 @@ let
 
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  secrets = import ../../lib/secrets/default.nix { inherit lib; };
 
   waitForApiScript = import ./waitForApiScript.nix {
     inherit pkgs;
@@ -35,16 +36,20 @@ let
     ] != { }
   ) enabledPlugins;
 
-  pluginConfigFiles = mapAttrs (
+  pluginConfigData = mapAttrs (
     name: pluginCfg:
-    pkgs.writeText "jellyfin-plugin-config-${name}.json" (
-      builtins.toJSON (
-        removeAttrs pluginCfg [
-          "version"
-          "enabled"
-        ]
-      )
-    )
+    let
+      rawConfig = removeAttrs pluginCfg [
+        "version"
+        "enabled"
+      ];
+      plainFields = filterAttrs (_: v: !(secrets.isSecretRef v)) rawConfig;
+      secretFields = filterAttrs (_: v: secrets.isSecretRef v) rawConfig;
+    in
+    {
+      plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (builtins.toJSON plainFields);
+      jqSecrets = secrets.mkJqSecretArgs secretFields;
+    }
   ) pluginsWithConfig;
 in
 {
@@ -260,49 +265,61 @@ in
               fi
 
               ${concatStringsSep "\n" (
-                mapAttrsToList (pluginName: configFile: ''
-                  echo "Configuring plugin: ${pluginName}..."
-                  PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
-                    --arg name "${pluginName}" '.[] | select(.Name == $name) | .Id // empty')
+                mapAttrsToList (
+                  pluginName: configData:
+                  let
+                    secretUpdates = concatStringsSep " | " (
+                      mapAttrsToList (name: ref: ''.["${name}"] = ${ref}'') configData.jqSecrets.refs
+                    );
+                    jqFilter = if secretUpdates != "" then ". * \$plain | ${secretUpdates}" else ". * \$plain";
+                  in
+                  ''
+                    echo "Configuring plugin: ${pluginName}..."
+                    PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
+                      --arg name "${pluginName}" '.[] | select(.Name == $name) | .Id // empty')
 
-                  if [ -z "$PLUGIN_ID" ]; then
-                    echo "Warning: Plugin ${pluginName} not found in installed plugins, skipping configuration" >&2
-                  else
-                    # Fetch current configuration so we only override declared keys
-                    CURRENT_CONFIG=$(${
-                      mkSecureCurl authUtil.token {
-                        url = "$BASE_URL/Plugins/$PLUGIN_ID/Configuration";
-                        apiKeyHeader = "Authorization";
-                      }
-                    })
+                    if [ -z "$PLUGIN_ID" ]; then
+                      echo "Warning: Plugin ${pluginName} not found in installed plugins, skipping configuration" >&2
+                    else
+                      # Fetch current configuration so we only override declared keys
+                      CURRENT_CONFIG=$(${
+                        mkSecureCurl authUtil.token {
+                          url = "$BASE_URL/Plugins/$PLUGIN_ID/Configuration";
+                          apiKeyHeader = "Authorization";
+                        }
+                      })
 
-                    # Merge: start with current config, overlay declared keys on top
-                    DESIRED_CONFIG=$(${pkgs.coreutils}/bin/cat ${configFile})
-                    MERGED_CONFIG=$(echo "$CURRENT_CONFIG" | \
-                      ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_CONFIG" '. * $desired')
+                      # Merge: start with current config, overlay declared keys on top.
+                      # Secret values are resolved at runtime via jq --rawfile/--arg flags.
+                      DESIRED_PLAIN=$(${pkgs.coreutils}/bin/cat ${configData.plainFile})
+                      MERGED_CONFIG=$(echo "$CURRENT_CONFIG" | \
+                        ${pkgs.jq}/bin/jq ${configData.jqSecrets.flagsString} \
+                        --argjson plain "$DESIRED_PLAIN" \
+                        '${jqFilter}')
 
-                    CONFIG_RESPONSE=$(${
-                      mkSecureCurl authUtil.token {
-                        method = "POST";
-                        url = "$BASE_URL/Plugins/$PLUGIN_ID/Configuration";
-                        apiKeyHeader = "Authorization";
-                        headers = {
-                          "Content-Type" = "application/json";
-                        };
-                        data = "$MERGED_CONFIG";
-                        extraArgs = "-w \"\\n%{http_code}\"";
-                      }
-                    })
-                    CONFIG_HTTP_CODE=$(echo "$CONFIG_RESPONSE" | tail -n1)
+                      CONFIG_RESPONSE=$(${
+                        mkSecureCurl authUtil.token {
+                          method = "POST";
+                          url = "$BASE_URL/Plugins/$PLUGIN_ID/Configuration";
+                          apiKeyHeader = "Authorization";
+                          headers = {
+                            "Content-Type" = "application/json";
+                          };
+                          data = "$MERGED_CONFIG";
+                          extraArgs = "-w \"\\n%{http_code}\"";
+                        }
+                      })
+                      CONFIG_HTTP_CODE=$(echo "$CONFIG_RESPONSE" | tail -n1)
 
-                    if [ "$CONFIG_HTTP_CODE" -lt 200 ] || [ "$CONFIG_HTTP_CODE" -ge 300 ]; then
-                      echo "Failed to configure plugin ${pluginName} (HTTP $CONFIG_HTTP_CODE)" >&2
-                      exit 1
+                      if [ "$CONFIG_HTTP_CODE" -lt 200 ] || [ "$CONFIG_HTTP_CODE" -ge 300 ]; then
+                        echo "Failed to configure plugin ${pluginName} (HTTP $CONFIG_HTTP_CODE)" >&2
+                        exit 1
+                      fi
+
+                      echo "Successfully configured plugin: ${pluginName}"
                     fi
-
-                    echo "Successfully configured plugin: ${pluginName}"
-                  fi
-                '') pluginConfigFiles
+                  ''
+                ) pluginConfigData
               )}
             ''
           else

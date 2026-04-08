@@ -45,11 +45,15 @@ in
     '';
     type = types.attrsOf pluginModule;
     default = { };
-    example = {
-      "Bookshelf" = {
-        enabled = true;
-        ComicVineApiKey = "test-api-key-nixflix";
-      };
-    };
+    example = literalExpression ''
+      {
+        "Bookshelf" = {
+          # Plain string (visible in Nix store)
+          ComicVineApiKey = "my-api-key";
+          # Or as a secret (read from file at activation time)
+          # ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
+        };
+      }
+    '';
   };
 }
