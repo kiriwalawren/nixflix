@@ -21,6 +21,7 @@ This example shows how to setup a plugin.
     ];
 
     plugins."Intro Skipper" = {
+      version = "1.10.11.17";
       ExcludeSeries = "";
       AutoDetectIntros = true;
       AnalyzeSeasonZero = false;
@@ -87,11 +88,13 @@ This example shows how to setup a plugin.
 
 Individual plugin settings vary greatly and there is no way I could enumerate them all.
 
-I usually configure them via the UI with the following steps:
+I usually configure them first via the UI, then declare them in Nix
+Here are the steps that I follow:
 
 1. Confgure the manifest in `nixflix.jellyfin.system.pluginRepositories`
 1. Rebuild
 1. Install the desired plugin in the UI
+1. Take note of the version of the plugin
 1. Restart Jellyfin
 1. With the network tab of developer tools open, configure the settings of the desired plugin in the UI
 1. Copy the data of the API call
@@ -99,4 +102,5 @@ I usually configure them via the UI with the following steps:
 1. Uninstall the application
 1. Restart Jellyfin
 1. Add the attribute set to `nixflix.jellyfin.plugins.<name> = { ... }`
+1. Add the plugin version to `nixflilx.jellyfin.plugins.<name>.version`
 1. Rebuild
