@@ -104,3 +104,7 @@ Here are the steps that I follow:
 1. Add the attribute set to `nixflix.jellyfin.plugins.<name> = { ... }`
 1. Add the plugin version to `nixflilx.jellyfin.plugins.<name>.Version`
 1. Rebuild
+
+## Secrets
+
+All attributes of `nixflix.jellyfin.plugins.<name>` (except `enable` and `Version`) support the `{ _secret = "/path/to/secret"; }` syntax.
