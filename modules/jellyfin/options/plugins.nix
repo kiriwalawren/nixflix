@@ -8,8 +8,10 @@ let
       Version = mkOption {
         type = types.str;
         description = ''
-          Version of the plugin to install (e.g. "14.0.0.0"). Must match a
-          version available in the configured plugin repositories.
+          Version of the plugin to install. Use "latest" to automatically
+          install the newest version available in the configured plugin
+          repositories, or pin to a specific version (e.g. "14.0.0.0") for
+          reproducible deployments.
         '';
         example = "14.0.0.0";
       };

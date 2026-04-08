@@ -377,7 +377,7 @@ pkgs.testers.runNixOSTest {
 
           plugins = {
             "Bookshelf" = {
-              Version = "13.0.0.0";
+              Version = "latest";
               ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
             };
           };
@@ -847,7 +847,7 @@ pkgs.testers.runNixOSTest {
         plugin_config = json.loads(plugin_config_json)
 
         assert plugin_config.get('ComicVineApiKey') == 'comicvineapikey1111111111111111111', \
-            f"ComicVineApiKey should be 'test-api-key-nixflix', got {plugin_config.get('ComicVineApiKey')}"
+            f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
 
         print("All plugin management assertions passed!")
   '';

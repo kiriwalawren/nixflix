@@ -165,7 +165,17 @@ in
             exit 1
           fi
 
-          RESOLVED_VERSION="$plugin_version"
+          if [ "$plugin_version" = "latest" ]; then
+            RESOLVED_VERSION=$(echo "$CATALOG_JSON" | ${pkgs.jq}/bin/jq -r --arg name "$plugin_name" \
+              '[.[] | select(.name == $name)] | .[0].versions[0].version // empty')
+            if [ -z "$RESOLVED_VERSION" ]; then
+              echo "Error: Could not resolve latest version for '$plugin_name' from catalog" >&2
+              exit 1
+            fi
+            echo "Resolved latest version for $plugin_name: $RESOLVED_VERSION"
+          else
+            RESOLVED_VERSION="$plugin_version"
+          fi
 
           INSTALLED_VERSION=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r --arg name "$plugin_name" \
             '.[] | select(.Name == $name) | .Version // empty')
