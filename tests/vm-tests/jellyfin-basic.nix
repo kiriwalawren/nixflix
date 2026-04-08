@@ -581,7 +581,7 @@ pkgs.testers.runNixOSTest {
         assert system_config['EnableNormalizedItemByNameIds'] == False, \
             f"EnableNormalizedItemByNameIds should be False, got {system_config.get('EnableNormalizedItemByNameIds')}"
         assert system_config['QuickConnectAvailable'] == False, \
-                    f"QuickConnectAvailable should be False, got {system_config.get('QuickConnectAvailable')}"
+            f"QuickConnectAvailable should be False, got {system_config.get('QuickConnectAvailable')}"
         assert system_config['EnableCaseSensitiveItemIds'] == False, \
             f"EnableCaseSensitiveItemIds should be False, got {system_config.get('EnableCaseSensitiveItemIds')}"
         assert system_config['DisableLiveTvChannelUserDataName'] == False, \
