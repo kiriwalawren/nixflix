@@ -93,10 +93,10 @@ I usually configure them via the UI with the following steps:
 1. Rebuild
 1. Install the desired plugin in the UI
 1. Restart Jellyfin
-1. With the network tab of developer console open, configure the settings of the desired plugin in the UI
+1. With the network tab of developer tools open, configure the settings of the desired plugin in the UI
 1. Copy the data of the API call
-1. Convert it to an attribute set
+1. Convert it to a nix attribute set
 1. Uninstall the application
 1. Restart Jellyfin
-1. Add the attribute set to `nixflix.jellyfin.plugins.<name>`
+1. Add the attribute set to `nixflix.jellyfin.plugins.<name> = { ... }`
 1. Rebuild
