@@ -27,41 +27,10 @@
       };
     };
 
-    include = lib.mkDefault [
-      { template = "sonarr-quality-definition-anime"; }
-      { template = "sonarr-v4-quality-profile-anime"; }
-      { template = "sonarr-v4-custom-formats-anime"; }
-    ];
-
-    custom_formats = lib.mkDefault [
+    quality_profiles = lib.mkDefault [
       {
-        trash_ids = [ "026d5aadd1a6b4e550b134cb6c72b3ca" ]; # Uncensored
-        assign_scores_to = [
-          {
-            name = "Remux-1080p - Anime";
-            score = 0;
-          }
-        ];
-      }
-
-      {
-        trash_ids = [ "026d5aadd1a6b4e550b134cb6c72b3ca" ]; # 10bit
-        assign_scores_to = [
-          {
-            name = "Remux-1080p - Anime";
-            score = 0;
-          }
-        ];
-      }
-
-      {
-        trash_ids = [ "026d5aadd1a6b4e550b134cb6c72b3ca" ]; # Anime Dual Audio
-        assign_scores_to = [
-          {
-            name = "Remux-1080p - Anime";
-            score = 0;
-          }
-        ];
+        trash_id = "20e0fc959f1f1704bed501f23bdae76f"; # [Anime] Remux-1080p
+        reset_unmatched_scores.enabled = true;
       }
     ];
   };

@@ -16,7 +16,7 @@ in
     delete_old_custom_formats = lib.mkDefault true;
 
     quality_definition = {
-      type = lib.mkDefault "movie";
+      type = lib.mkDefault "sqp-streaming";
     };
 
     media_naming = {
@@ -27,22 +27,15 @@ in
       };
     };
 
-    include = lib.mkDefault (
-      [
-        { template = "radarr-quality-definition-sqp-streaming"; }
-      ]
-      ++ (
-        if cfg.radarrQuality == "4K" then
-          [
-            { template = "radarr-quality-profile-sqp-1-2160p-default"; }
-            { template = "radarr-custom-formats-sqp-1-2160p"; }
-          ]
-        else
-          [
-            { template = "radarr-quality-profile-sqp-1-1080p"; }
-            { template = "radarr-custom-formats-sqp-1-1080p"; }
-          ]
-      )
-    );
+    quality_profiles = lib.mkDefault [
+      {
+        trash_id =
+          if cfg.radarrQuality == "4K" then
+            "5128baeb2b081b72126bc8482b2a86a0" # [SQP] SQP-1 (2160p)
+          else
+            "0896c29d74de619df168d23b98104b22"; # [SQP] SQP-1 (1080p)
+        reset_unmatched_scores.enabled = true;
+      }
+    ];
   };
 }

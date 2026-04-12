@@ -68,13 +68,14 @@ in
         This option selects profiles that prioritize acquisition over quality.
         Lower quality hits that meet TRaSH standards will be accepted and grabbed.
 
-        - 4k creates a profile named "SQP-1 (2160p)"
-        - 1080p creates a profile named "SQP-1 (1080p)"
+        - 4k creates a profile named "[SQP] SQP-1 (2160p)"
+        - 1080p creates a profile named "[SQP] SQP-1 (1080p)"
 
         If you want Seerr to use these, you'll have to configure them manually.
 
         Complex configurations can be manually applied using `nixflix.recyclarr.config.radarr.radarr`.
-        If you do, you need to set `nixflix.recyclarr.config.radarr.radarr.include = mkForce [];`.
+        If you do, you need to set
+        `nixflix.recyclarr.config.radarr.radarr.quality_profiles = mkForce [];`.
       '';
     };
 
@@ -92,13 +93,14 @@ in
         This option selects profiles that prioritize acquisition over quality.
         Lower quality hits that meet TRaSH standards will be accepted and grabbed.
 
-        - 4k creates a quality profile named "WEB-2160p"
-        - 1080p creates a quality profile named "WEB-1080p"
+        - 4k creates a quality profile named "WEB-2160p (Alternative)"
+        - 1080p creates a quality profile named "WEB-1080p (Alternative)"
 
         If you want Seerr to use these, you'll have to configure them manually.
 
         Complex configurations can be manually applied using `nixflix.recyclarr.config.sonarr.sonarr`.
-        If you do, you need to set `nixflix.recyclarr.config.sonarr.sonarr.include = mkForce [];`.
+        If you do, you need to set
+        `nixflix.recyclarr.config.sonarr.sonarr.quality_profiles = mkForce [];`.
       '';
     };
 
@@ -115,15 +117,17 @@ in
       managedProfiles = mkOption {
         type = types.listOf types.str;
         default =
-          optional (cfg.radarrQuality == "4K") "SQP-1 (2160p)"
-          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
-          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p"
-          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+          optional (cfg.radarrQuality == "4K") "[SQP] SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "[SQP] SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p (Alternative)"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p (Alternative)"
+          ++ optional config.nixflix.sonarr-anime.enable "[Anime] Remux-1080p";
         defaultText = literalExpression ''
-          optional (cfg.radarrQuality == "4K") "SQP-1 (2160p)"
-          ++ optional (cfg.radarrQuality == "1080p") "SQP-1 (1080p)"
-          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p"
-          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p";
+          optional (cfg.radarrQuality == "4K") "[SQP] SQP-1 (2160p)"
+          ++ optional (cfg.radarrQuality == "1080p") "[SQP] SQP-1 (1080p)"
+          ++ optional (cfg.sonarrQuality == "4K") "WEB-2160p (Alternative)"
+          ++ optional (cfg.sonarrQuality == "1080p") "WEB-1080p (Alternative)"
+          ++ optional config.nixflix.sonarr-anime.enable "[Anime] Remux-1080p";
         '';
         example = [ "My Custom Profile" ];
         description = ''
