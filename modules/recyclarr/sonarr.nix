@@ -14,7 +14,6 @@ in
     base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.sonarr.config.apiKey;
     delete_old_custom_formats = lib.mkDefault true;
-    replace_existing_custom_formats = lib.mkDefault true;
 
     quality_definition = {
       type = lib.mkDefault "series";

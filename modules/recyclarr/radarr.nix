@@ -14,7 +14,6 @@ in
     base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.radarr.config.apiKey;
     delete_old_custom_formats = lib.mkDefault true;
-    replace_existing_custom_formats = lib.mkDefault true;
 
     quality_definition = {
       type = lib.mkDefault "movie";
