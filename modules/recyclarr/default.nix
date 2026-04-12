@@ -137,6 +137,57 @@ in
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) {
+    assertions =
+      let
+        cfg' = cfg.config;
+        instances = optionals (cfg' != null) (
+          concatMap (svc: mapAttrsToList (name: inst: { inherit svc name inst; }) (cfg'.${svc} or { })) [
+            "sonarr"
+            "radarr"
+          ]
+        );
+        set = v: v != null;
+        xor = a: b: set a != set b;
+      in
+      concatMap (
+        {
+          svc,
+          name,
+          inst,
+        }:
+        let
+          p = "nixflix.recyclarr.config.${svc}.${name}";
+        in
+        map (qp: {
+          assertion = set (qp.name or null) || set (qp.trash_id or null);
+          message = "${p}.quality_profiles: entry must set at least one of `name` or `trash_id`";
+        }) (inst.quality_profiles or [ ])
+        ++ map (inc: {
+          assertion = xor (inc.template or null) (inc.config or null);
+          message = "${p}.include: entry must set exactly one of `template` or `config`";
+        }) (inst.include or [ ])
+        ++ concatMap (
+          cf:
+          map (ref: {
+            assertion = xor (ref.name or null) (ref.trash_id or null);
+            message = "${p}.custom_formats.assign_scores_to: entry must set exactly one of `name` or `trash_id`";
+          }) (cf.assign_scores_to or [ ])
+        ) (inst.custom_formats or [ ])
+        ++ concatMap (
+          g:
+          [
+            {
+              assertion = !((g.select_all or false) && set (g.select or null));
+              message = "${p}.custom_format_groups.add: `select_all` and `select` are mutually exclusive";
+            }
+          ]
+          ++ map (ref: {
+            assertion = xor (ref.name or null) (ref.trash_id or null);
+            message = "${p}.custom_format_groups.add.assign_scores_to: entry must set exactly one of `name` or `trash_id`";
+          }) (g.assign_scores_to or [ ])
+        ) ((inst.custom_format_groups or { }).add or [ ])
+      ) instances;
+
     users.users.${cfg.user} = optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
       uid = mkForce config.nixflix.globals.uids.${cfg.user};
     };
