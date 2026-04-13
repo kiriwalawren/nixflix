@@ -14,7 +14,6 @@ in
     base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.sonarr.config.apiKey;
     delete_old_custom_formats = lib.mkDefault true;
-    replace_existing_custom_formats = lib.mkDefault true;
 
     quality_definition = {
       type = lib.mkDefault "series";
@@ -31,22 +30,15 @@ in
       };
     };
 
-    include = lib.mkDefault (
-      [
-        { template = "sonarr-quality-definition-series"; }
-      ]
-      ++ (
-        if cfg.sonarrQuality == "4K" then
-          [
-            { template = "sonarr-v4-quality-profile-web-2160p-alternative"; }
-            { template = "sonarr-v4-custom-formats-web-2160p"; }
-          ]
-        else
-          [
-            { template = "sonarr-v4-quality-profile-web-1080p-alternative"; }
-            { template = "sonarr-v4-custom-formats-web-1080p"; }
-          ]
-      )
-    );
+    quality_profiles = lib.mkDefault [
+      {
+        trash_id =
+          if cfg.sonarrQuality == "4K" then
+            "dfa5eaae7894077ad6449169b6eb03e0" # WEB-2160p (Alternative)
+          else
+            "9d142234e45d6143785ac55f5a9e8dc9"; # WEB-1080p (Alternative)
+        reset_unmatched_scores.enabled = true;
+      }
+    ];
   };
 }
