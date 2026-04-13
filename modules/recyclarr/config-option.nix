@@ -288,7 +288,8 @@ let
                         options = {
                           name = mkOption {
                             type = types.str;
-                            description = "Quality name (e.g., 'WEB 2160p', 'Bluray-1080p').";
+                            description = "Quality name.";
+                            example = "WEB 2160p";
                           };
 
                           enabled = mkOption {
@@ -300,7 +301,11 @@ let
                           qualities = mkOption {
                             type = types.nullOr (types.listOf types.str);
                             default = null;
-                            description = "Optional list of specific quality variants (e.g., `['WEBDL-2160p', 'WEBRip-2160p']`).";
+                            description = "Optional list of specific quality variants.";
+                            example = [
+                              "WEBDL-2160p"
+                              "WEBRip-2160p"
+                            ];
                           };
                         };
                       }
