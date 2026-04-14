@@ -75,7 +75,15 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "seerr";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose Seerr via the reverse proxy.";
+      };
     };
 
     vpn = {

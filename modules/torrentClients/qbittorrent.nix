@@ -7,10 +7,11 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.torrentClients.qbittorrent;
   service = config.services.qbittorrent;
 
-  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
   categoriesJson = builtins.toJSON (lib.mapAttrs (_name: path: { save_path = path; }) cfg.categories);
   categoriesFile = pkgs.writeText "categories.json" categoriesJson;
   configPath = "${service.profileDir}/qBittorrent/config";
@@ -116,7 +117,15 @@ in
         subdomain = mkOption {
           type = types.str;
           default = "qbittorrent";
-          description = "Subdomain prefix for nginx reverse proxy.";
+          description = "Subdomain prefix for reverse proxy.";
+        };
+
+        reverseProxy = {
+          expose = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether to expose qBittorrent via the reverse proxy.";
+          };
         };
 
         serverConfig = {
@@ -154,19 +163,33 @@ in
     default = { };
   };
 
-  config = mkMerge [
-    (mkIf (config.nixflix.enable && cfg != null && cfg.enable) {
-      assertions = [
-        {
-          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for qBittorrent (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
-        }
+  config = mkIf (config.nixflix.enable && cfg != null && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      port = service.webuiPort;
+      themeParkService = "qbittorrent";
+      stripHeaders = [
+        "x-webkit-csp"
+        "content-security-policy"
+        "X-Frame-Options"
       ];
+    })
+    {
+    # Kept: upstream's VPN assertion
+    assertions = [
+      {
+        assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+        message = "Cannot enable VPN routing for qBittorrent (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+      }
+    ];
 
+      # Merged: both caddy's "reverseProxy" and upstream's "vpn" in removeAttrs
       services.qbittorrent = builtins.removeAttrs cfg [
         "categories"
         "downloadsDir"
         "password"
+        "reverseProxy"
         "subdomain"
         "vpn"
       ];
@@ -225,40 +248,10 @@ in
         );
       };
 
-      networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
-        "127.0.0.1" = [ hostname ];
-      };
-
-      services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
-        inherit (config.nixflix.nginx) forceSSL;
-        useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
-
-        locations."/" = {
-          proxyPass = "http://${cfg.serverConfig.Preferences.WebUI.Address}:${toString service.webuiPort}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_http_version 1.1;
-
-            ${
-              if config.nixflix.theme.enable then
-                ''
-                  proxy_set_header Accept-Encoding "";
-                  proxy_hide_header "x-webkit-csp";
-                  proxy_hide_header "content-security-policy";
-                  proxy_hide_header "X-Frame-Options";
-
-                  sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/qbittorrent/${config.nixflix.theme.name}.css"></body>';
-                  sub_filter_once on;
-                ''
-              else
-                ""
-            }
-          '';
-        };
-      };
-
-    })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
+    # Removed: networking.hosts and services.nginx.virtualHosts — mkVirtualHost handles these
+    }
+    # Kept: upstream's VPN confinement block
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.qbittorrent.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
@@ -271,5 +264,5 @@ in
         }
       ];
     })
-  ];
+  ]);
 }

@@ -8,8 +8,9 @@ with lib;
 let
   inherit (config) nixflix;
   inherit (config.nixflix) globals;
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.jellyfin;
-  hostname = "${cfg.subdomain}.${nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${nixflix.reverseProxy.domain}";
 
   xml = import ./xml.nix { inherit lib; };
 
@@ -53,9 +54,17 @@ in
     ./usersConfigService.nix
   ];
 
-  config = mkMerge [
-    (mkIf (nixflix.enable && cfg.enable) {
-      warnings = pluginResolution.resolutionWarnings;
+  config = mkIf (nixflix.enable && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      port = cfg.network.internalHttpPort;
+      disableBuffering = true;
+      websocketUpgrade = true;
+    })
+    {
+    # Added: upstream's plugin resolution warnings
+    warnings = pluginResolution.resolutionWarnings;
 
       nixflix.jellyfin = {
         libraries = mkMerge [
@@ -282,7 +291,18 @@ in
             ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
           '';
 
-          ExecStart = "${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}'";
+          # Changed: conditional mullvad-exclude bypass from caddy branch
+          ExecStart =
+            if (config.nixflix.mullvad.enable && !cfg.vpn.enable) then
+              pkgs.writeShellScript "jellyfin-vpn-bypass" ''
+                exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package} \
+                  --datadir '${cfg.dataDir}' \
+                  --configdir '${cfg.configDir}' \
+                  --cachedir '${cfg.cacheDir}' \
+                  --logdir '${cfg.logDir}'
+              ''
+            else
+              "${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}'";
 
           ExecStartPost = waitForApiScript;
 
@@ -332,6 +352,14 @@ in
           ];
           SystemCallErrorNumber = "EPERM";
         }
+        # Added: mullvad bypass serviceConfig overrides from caddy branch
+        // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
+          AmbientCapabilities = "CAP_SYS_ADMIN";
+          Delegate = mkForce true;
+          SystemCallFilter = mkForce [ ];
+          NoNewPrivileges = mkForce false;
+          ProtectControlGroups = mkForce false;
+        }
         // optionalAttrs cfg.encoding.enableHardwareEncoding {
           SupplementaryGroups = [
             "video"
@@ -351,40 +379,10 @@ in
         ];
       };
 
-      networking.hosts = mkIf (nixflix.nginx.enable && nixflix.nginx.addHostsEntries) {
-        "127.0.0.1" = [ hostname ];
-      };
-
-      services.nginx.virtualHosts."${hostname}" = mkIf nixflix.nginx.enable {
-        inherit (config.nixflix.nginx) forceSSL;
-        useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
-
-        locations =
-          let
-            proxyHost = if cfg.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1";
-          in
-          {
-            "/" = {
-              proxyPass = "http://${proxyHost}:${toString cfg.network.internalHttpPort}";
-              recommendedProxySettings = true;
-              extraConfig = ''
-                proxy_set_header X-Real-IP $remote_addr;
-
-                proxy_buffering off;
-              '';
-            };
-            "/socket" = {
-              proxyPass = "http://${proxyHost}:${toString cfg.network.internalHttpPort}";
-              proxyWebsockets = true;
-              recommendedProxySettings = true;
-              extraConfig = ''
-                proxy_set_header X-Real-IP $remote_addr;
-              '';
-            };
-          };
-      };
-    })
-    (mkIf (nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
+      # Removed: networking.hosts and services.nginx.virtualHosts — mkVirtualHost handles these
+    }
+    # Kept: upstream's VPN confinement block
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.jellyfin.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
@@ -397,5 +395,5 @@ in
         }
       ];
     })
-  ];
+  ]);
 }

@@ -102,8 +102,8 @@ let
       activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =
-        if config.nixflix.nginx.enable then
-          "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        if config.nixflix.reverseProxy.enable then
+          "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };

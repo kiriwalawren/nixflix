@@ -106,7 +106,15 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "jellyfin";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose Jellyfin via the reverse proxy.";
+      };
     };
 
     vpn = {

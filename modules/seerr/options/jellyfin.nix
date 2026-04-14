@@ -78,13 +78,13 @@ in
       mkOption {
         type = types.str;
         default =
-          if config.nixflix.nginx.enable then
-            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.nginx.domain}${jellyfinBaseUrl}"
+          if config.nixflix.reverseProxy.enable then
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.reverseProxy.domain}${jellyfinBaseUrl}"
           else
             "";
         defaultText = literalExpression ''
-          if config.nixflix.nginx.enable != ""
-          then "$${config.nixflix.seerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.nginx.domain}"
+          if config.nixflix.reverseProxy.enable != ""
+          then "$${config.nixflix.seerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.reverseProxy.domain}"
           else "";
         '';
       };
