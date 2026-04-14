@@ -357,7 +357,7 @@ in
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
     '';
 
-  jellyfin-plugin-repo-ambiguity-warning =
+  jellyfin-plugin-repo-ambiguity-assertion =
     let
       targetAbi = "${pkgs.jellyfin.version}.0";
       manifestA = pkgs.writeText "jellyfin-plugin-repo-a.json" (
@@ -390,59 +390,47 @@ in
           }
         ]
       );
-      config = evalConfig [
-        {
-          nixflix = {
-            enable = true;
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
 
-            jellyfin = {
-              enable = true;
-              apiKey = "test-api-key";
-              system.pluginRepositories = lib.mkForce [
-                {
-                  name = "Repo A";
-                  url = builtins.unsafeDiscardStringContext "file://${manifestA}";
-                  hash = manifestHash manifestA;
-                  enabled = true;
-                }
-                {
-                  name = "Repo B";
-                  url = builtins.unsafeDiscardStringContext "file://${manifestB}";
-                  hash = manifestHash manifestB;
-                  enabled = true;
-                }
-              ];
-              plugins."Collision Plugin" = {
-                package = jellyfinPlugins.fromRepo {
-                  version = "1.0.0.0";
-                  hash = lib.fakeHash;
+                jellyfin = {
+                  enable = true;
+                  apiKey = "test-api-key";
+                  system.pluginRepositories = lib.mkForce {
+                    "Repo A" = {
+                      url = builtins.unsafeDiscardStringContext "file://${manifestA}";
+                      hash = manifestHash manifestA;
+                      enabled = true;
+                    };
+                    "Repo B" = {
+                      url = builtins.unsafeDiscardStringContext "file://${manifestB}";
+                      hash = manifestHash manifestB;
+                      enabled = true;
+                    };
+                  };
+                  plugins."Collision Plugin" = {
+                    package = jellyfinPlugins.fromRepo {
+                      version = "1.0.0.0";
+                      hash = lib.fakeHash;
+                    };
+                  };
+                  users.admin = {
+                    password = "testpassword";
+                    policy.isAdministrator = true;
+                  };
                 };
               };
-              users.admin = {
-                password = "testpassword";
-                policy.isAdministrator = true;
-              };
-            };
-          };
-        }
-      ];
-      pluginService = config.config.systemd.services.jellyfin-plugins;
-      inherit (config.config) warnings;
-      warningText = builtins.concatStringsSep "\n" warnings;
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
     in
-    pkgs.runCommand "unit-test-jellyfin-plugin-repo-ambiguity-warning" { } ''
-      ${check "ambiguity warning emitted" (warnings != [ ])}
-      ${check "warning mentions first repo" (lib.hasInfix "Repo A" warningText)}
-      ${check "warning mentions second repo" (lib.hasInfix "Repo B" warningText)}
-      ${check "warning explains selection" (
-        lib.hasInfix "selecting the first repository in configured order" warningText
-      )}
-      ${check "plugin dir uses plugin identity" (
-        lib.hasInfix "Collision-Plugin_1.0.0.0" pluginService.script
-      )}
-
-      echo 'PASS: jellyfin-plugin-repo-ambiguity-warning' > $out
-    '';
+    assertTest "jellyfin-plugin-repo-ambiguity-assertion" (!result.success);
 
   jellyfin-integration =
     let

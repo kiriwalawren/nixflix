@@ -13,7 +13,18 @@ let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
-  systemConfig = util.recursiveTransform (removeAttrs cfg.system [ "removeOldPlugins" ]);
+  systemConfig = util.recursiveTransform (
+    (removeAttrs cfg.system [ "removeOldPlugins" ])
+    // {
+      pluginRepositories = lib.mapAttrsToList (
+        name: repo:
+        repo
+        // {
+          inherit name;
+        }
+      ) cfg.system.pluginRepositories;
+    }
+  );
 
   systemConfigJson = builtins.toJSON systemConfig;
 

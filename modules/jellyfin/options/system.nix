@@ -327,19 +327,13 @@ in
     pluginRepositories = mkOption {
       type =
         with types;
-        listOf (submodule {
+        attrsOf (submodule {
           options = {
             enabled = mkOption {
               type = types.bool;
               default = true;
               example = false;
               description = "Whether to enable this plugin repository";
-            };
-
-            name = mkOption {
-              type = types.str;
-              example = "Jellyfin Stable";
-              description = "UI friendly name for the repository manifest";
             };
 
             url = mkOption {
@@ -358,18 +352,17 @@ in
             };
           };
         });
-      default = [ ];
+      default = { };
       defaultText = literalExpression ''
-        [
-          {
-            name = "Jellyfin Stable";
+        {
+          "Jellyfin Stable" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
             hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
             enabled = true;
-          }
-        ]
+          };
+        }
       '';
-      description = "Configure which plugin repositories you use. Jellyfin Stable is always in the list. Adding new plugin repositories will not remove it.";
+      description = "Configure which plugin repositories you use. Jellyfin Stable is always present in the set. Adding new plugin repositories will not remove it.";
     };
 
     enableExternalContentInSuggestions = mkOption {
@@ -640,12 +633,11 @@ in
     };
   };
 
-  config.nixflix.jellyfin.system.pluginRepositories = [
-    {
-      name = "Jellyfin Stable";
+  config.nixflix.jellyfin.system.pluginRepositories = {
+    "Jellyfin Stable" = {
       url = "https://repo.jellyfin.org/files/plugin/manifest.json";
       hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
       enabled = true;
-    }
-  ];
+    };
+  };
 }

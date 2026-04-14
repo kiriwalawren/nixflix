@@ -35,7 +35,11 @@ let
   repoPluginDirName =
     pluginName: pluginVersion: "${lib.strings.sanitizeDerivationName pluginName}_${pluginVersion}";
 
-  enabledPluginRepositories = lib.filter (repo: repo.enabled) pluginRepositories;
+  namedPluginRepositories = lib.mapAttrsToList (
+    name: repo: repo // { inherit name; }
+  ) pluginRepositories;
+
+  enabledPluginRepositories = lib.filter (repo: repo.enabled) namedPluginRepositories;
 
   repositoriesWithManifest = map (
     repo:
@@ -105,16 +109,9 @@ let
       selectedCompatibleMatches =
         if lib.length matchingAbi > 0 then matchingAbi else highestByTargetAbi compatibleAbi;
 
-      ambiguityWarning =
-        if repositoryName == null && lib.length selectedCompatibleMatches > 1 then
-          let
-            matchingRepositoriesSummary = lib.concatStringsSep ", " (
-              lib.unique (map (match: match.name) selectedCompatibleMatches)
-            );
-          in
-          "nixflix.jellyfin.plugins.\"${pluginName}\": version '${pluginVersion}' matched multiple repositories (${matchingRepositoriesSummary}) for Jellyfin ${jellyfinVersion}; selecting the first repository in configured order. Set `package = nixflix.lib.jellyfinPlugins.fromRepo { repository = \"...\"; ...; }` to disambiguate."
-        else
-          null;
+      matchingRepositoriesSummary = lib.concatStringsSep ", " (
+        lib.unique (map (match: match.name) selectedCompatibleMatches)
+      );
     in
     if repositoryName != null && matchingRepositories == [ ] then
       throw "nixflix.jellyfin.plugins.\"${pluginName}\": repository '${repositoryName}' was not found in nixflix.jellyfin.system.pluginRepositories"
@@ -122,23 +119,14 @@ let
       throw "nixflix.jellyfin.plugins.\"${pluginName}\": version '${pluginVersion}' was not found in any configured plugin repository"
     else if selectedCompatibleMatches == [ ] then
       throw "nixflix.jellyfin.plugins.\"${pluginName}\": version '${pluginVersion}' did not have a compatible release for Jellyfin ${jellyfinVersion}"
-    else if ambiguityWarning != null then
-      {
-        match = lib.head selectedCompatibleMatches;
-        warning = ambiguityWarning;
-      }
+    else if repositoryName == null && lib.length selectedCompatibleMatches > 1 then
+      throw "nixflix.jellyfin.plugins.\"${pluginName}\": version '${pluginVersion}' matched multiple repositories (${matchingRepositoriesSummary}) for Jellyfin ${jellyfinVersion}. Set `package = nixflix.lib.jellyfinPlugins.fromRepo { repository = \"...\"; ...; }` to disambiguate."
     else if lib.length selectedCompatibleMatches == 1 then
-      {
-        match = lib.head selectedCompatibleMatches;
-        warning = ambiguityWarning;
-      }
+      { match = lib.head selectedCompatibleMatches; }
     else if lib.length selectedMatches > 1 then
       throw "nixflix.jellyfin.plugins.\"${pluginName}\": version '${pluginVersion}' matched multiple releases. Add `repository` or update the resolver to disambiguate the target ABI for Jellyfin ${jellyfinVersion}."
     else
-      {
-        match = lib.head selectedMatches;
-        warning = ambiguityWarning;
-      };
+      { match = lib.head selectedMatches; };
 
   packagePluginDirName =
     plugin:
@@ -154,7 +142,6 @@ let
     if pluginCfg.package == null || lib.isDerivation pluginCfg.package then
       {
         inherit pluginCfg;
-        warning = null;
       }
     else
       let
@@ -176,7 +163,6 @@ let
             passthru.pluginDirName = pluginDirName;
           };
         };
-        inherit (resolution) warning;
       };
 
   resolvedPluginResults = lib.mapAttrs resolvePluginResult (
@@ -188,7 +174,5 @@ in
 
   resolvedEnabledPlugins = lib.mapAttrs (_name: result: result.pluginCfg) resolvedPluginResults;
 
-  resolutionWarnings = lib.filter (warning: warning != null) (
-    lib.mapAttrsToList (_name: result: result.warning) resolvedPluginResults
-  );
+  resolutionWarnings = [ ];
 }

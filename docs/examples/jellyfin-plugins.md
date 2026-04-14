@@ -13,14 +13,13 @@ let
   fromRepo = nixflix.lib.jellyfinPlugins.fromRepo;
 in {
   nixflix.jellyfin = {
-    system.pluginRepositories = [
-      {
-        name = "Intro Skipper";
+    system.pluginRepositories = {
+      "Intro Skipper" = {
         url = "https://raw.githubusercontent.com/intro-skipper/manifest/main/10.11/manifest.json";
         hash = "sha256-<manifest-hash>";
         enabled = true;
-      }
-    ];
+      };
+    };
 
     plugins."Intro Skipper" = {
       package = fromRepo {
@@ -98,7 +97,7 @@ Individual plugin settings vary greatly and there is no way I could enumerate th
 I usually configure them first via the UI, then declare them in Nix
 Here are the steps that I follow:
 
-1. Confgure the manifest in `nixflix.jellyfin.system.pluginRepositories`
+1. Configure the manifest in `nixflix.jellyfin.system.pluginRepositories`
 1. Rebuild
 1. Install the desired plugin in the UI
 1. Take note of the version of the plugin

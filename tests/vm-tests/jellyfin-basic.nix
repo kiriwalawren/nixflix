@@ -211,14 +211,13 @@ pkgs.testers.runNixOSTest {
               "h264"
               "hevc"
             ];
-            pluginRepositories = lib.mkForce [
-              {
-                name = "Jellyfin Stable";
+            pluginRepositories = lib.mkForce {
+              "Jellyfin Stable" = {
                 url = "https://repo.jellyfin.org/files/plugin/manifest.json";
                 hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
                 enabled = true;
-              }
-            ];
+              };
+            };
             enableLegacyAuthorization = false;
           };
 
