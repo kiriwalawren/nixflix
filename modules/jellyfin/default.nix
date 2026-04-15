@@ -64,10 +64,6 @@ in
 
       assertions = [
         {
-          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.enable = true.";
-        }
-        {
           assertion = any (user: user.policy.isAdministrator) (attrValues cfg.users);
           message = "At least one Jellyfin user must have policy.isAdministrator = true.";
         }

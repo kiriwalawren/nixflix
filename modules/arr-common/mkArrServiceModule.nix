@@ -54,8 +54,12 @@ in
         default = false;
         description = ''
           Whether to route ${capitalizedName} traffic through the VPN.
-          When false (default), ${capitalizedName} bypasses the VPN to prevent Cloudflare and image provider blocks.
-          When true, ${capitalizedName} routes through the VPN (requires `nixflix.vpn.enable = true`).
+
+          When `false` (default), ${capitalizedName} bypasses the VPN to prevent Cloudflare and image provider blocks.
+          When `true`, ${capitalizedName} routes through the VPN (requires `nixflix.vpn.enable = true`).
+
+          [TRaSH Guides](https://trash-guides.info/Prowlarr/prowlarr-setup-proxy/?h=vpn#setup-proxy-for-certain-indexers)
+          recommend leaving this `false`.
         '';
       };
     };
@@ -210,7 +214,7 @@ in
       assertions = [
         {
           assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.enable = true.";
+          message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
         }
       ];
 

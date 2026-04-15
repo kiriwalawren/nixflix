@@ -79,10 +79,18 @@ in
         defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Seerr traffic through the VPN.
-          When true (default), Seerr is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
-          When false, Seerr bypasses the VPN.
+
+          When `false`, Seerr bypasses the VPN.
+          When `true`, Seerr is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
     };
   };
+
+  config.assertions = [
+    {
+      assertion = config.nixflix.seerr.vpn.enable -> config.nixflix.vpn.enable;
+      message = "Cannot enable VPN routing for Seerr (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+    }
+  ];
 }

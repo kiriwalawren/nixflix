@@ -41,10 +41,6 @@ in
             message = "Seerr requires Jellyfin admin credentials. Either enable nixflix.jellyfin with an admin user, or set nixflix.seerr.jellyfin.adminUsername and nixflix.seerr.jellyfin.adminPassword.";
           }
           {
-            assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-            message = "Cannot enable VPN routing for Seerr (nixflix.seerr.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.enable = true.";
-          }
-          {
             assertion = radarrDefaultCount <= 2;
             message = "Cannot have more than 2 default Radarr instances in seerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
           }

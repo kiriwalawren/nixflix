@@ -76,11 +76,29 @@ in
       description = "Computed API key path for *arr service integration. Automatically set from settings.misc.api_key._secret";
       internal = true;
     };
+
+    vpn = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.nixflix.vpn.enable;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
+        description = ''
+          Whether to route SABnzbd traffic through the VPN.
+
+          When `false`, SABnzbd bypasses the VPN.
+          When `true`, SABnzbd is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+        '';
+      };
+    };
   };
 
   config = mkMerge [
     (mkIf (config.nixflix.enable && cfg.enable) {
       assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for SABnzbd (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
         {
           assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
           message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
@@ -222,7 +240,7 @@ in
       };
 
     })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable) {
+    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.sabnzbd.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";

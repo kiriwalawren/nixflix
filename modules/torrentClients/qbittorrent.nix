@@ -49,6 +49,20 @@ in
           description = "Base directory for qBittorrent downloads";
         };
 
+        vpn = {
+          enable = mkOption {
+            type = types.bool;
+            default = config.nixflix.vpn.enable;
+            defaultText = literalExpression "config.nixflix.vpn.enable";
+            description = ''
+              Whether to route qBittorrent traffic through the VPN.
+
+              When `false`, qBittorrent bypasses the VPN.
+              When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+            '';
+          };
+        };
+
         categories = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
           default =
@@ -137,11 +151,19 @@ in
 
   config = mkMerge [
     (mkIf (config.nixflix.enable && cfg != null && cfg.enable) {
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for qBittorrent (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
+      ];
+
       services.qbittorrent = builtins.removeAttrs cfg [
+        "categories"
+        "downloadsDir"
         "password"
         "subdomain"
-        "downloadsDir"
-        "categories"
+        "vpn"
       ];
 
       users = {
@@ -233,7 +255,7 @@ in
       };
 
     })
-    (mkIf (config.nixflix.enable && cfg != null && cfg.enable && config.nixflix.vpn.enable) {
+    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cgf.vpn.enable) {
       systemd.services.qbittorrent.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
