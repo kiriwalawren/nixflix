@@ -20,10 +20,7 @@ let
   };
 
   proxyService =
-    if (proxyConfig ? caddy && proxyConfig.caddy.enable or false) then
-      "caddy"
-    else
-      "nginx";
+    if (proxyConfig ? caddy && proxyConfig.caddy.enable or false) then "caddy" else "nginx";
 in
 pkgsUnfree.testers.runNixOSTest {
   name = testName;
@@ -128,7 +125,8 @@ pkgsUnfree.testers.runNixOSTest {
             };
           };
         };
-      } // proxyConfig;
+      }
+      // proxyConfig;
     };
 
   testScript = ''

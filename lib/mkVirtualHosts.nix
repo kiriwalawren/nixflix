@@ -119,9 +119,9 @@ in
       };
     in
     {
-      services.nginx.virtualHosts.${hostname} = lib.mkIf expose (mkNginxVirtualHost (
-        proxyArgs // { inherit websocketUpgrade; }
-      ));
+      services.nginx.virtualHosts.${hostname} = lib.mkIf expose (
+        mkNginxVirtualHost (proxyArgs // { inherit websocketUpgrade; })
+      );
 
       services.caddy.virtualHosts."${caddyHostPrefix}${hostname}" = lib.mkIf expose (
         mkCaddyVirtualHost proxyArgs
