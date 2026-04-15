@@ -108,7 +108,7 @@ in
         description = ''
           Whether to route Jellyfin traffic through the VPN.
           When false (default), Jellyfin bypasses the VPN.
-          When true, Jellyfin routes through the VPN (requires nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable).
+          When true, Jellyfin is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
     };

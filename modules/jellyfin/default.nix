@@ -65,7 +65,7 @@ in
       assertions = [
         {
           assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable.";
+          message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.enable = true.";
         }
         {
           assertion = any (user: user.policy.isAdministrator) (attrValues cfg.users);
@@ -136,14 +136,12 @@ in
           "network-online.target"
           "nixflix-setup-dirs.service"
         ]
-        ++ config.nixflix.serviceDependencies
-        ++ (optional config.nixflix.vpn.mullvad.enable "mullvad-config.service");
+        ++ config.nixflix.serviceDependencies;
         requires = config.nixflix.serviceDependencies;
         wants = [
           "network-online.target"
           "nixflix-setup-dirs.service"
-        ]
-        ++ (optional config.nixflix.vpn.mullvad.enable "mullvad-config.service");
+        ];
         wantedBy = [ "multi-user.target" ];
 
         restartTriggers = [
@@ -166,17 +164,7 @@ in
             ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
           '';
 
-          ExecStart =
-            if config.nixflix.vpn.mullvad.enable && !cfg.vpn.enable then
-              pkgs.writeShellScript "jellyfin-vpn" ''
-                exec ${getExe config.nixflix.vpn.bypassWrapper} ${getExe cfg.package} \
-                  --datadir '${cfg.dataDir}' \
-                  --configdir '${cfg.configDir}' \
-                  --cachedir '${cfg.cacheDir}' \
-                  --logdir '${cfg.logDir}'
-              ''
-            else
-              "${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}'";
+          ExecStart = "${getExe cfg.package} --datadir '${cfg.dataDir}' --configdir '${cfg.configDir}' --cachedir '${cfg.cacheDir}' --logdir '${cfg.logDir}'";
 
           ExecStartPost = waitForApiScript;
 
@@ -226,13 +214,6 @@ in
           ];
           SystemCallErrorNumber = "EPERM";
         }
-        // optionalAttrs (config.nixflix.vpn.mullvad.enable && !cfg.vpn.enable) {
-          AmbientCapabilities = "CAP_SYS_ADMIN";
-          Delegate = mkForce true;
-          SystemCallFilter = mkForce [ ];
-          NoNewPrivileges = mkForce false;
-          ProtectControlGroups = mkForce false;
-        }
         // optionalAttrs cfg.encoding.enableHardwareEncoding {
           SupplementaryGroups = [
             "video"
@@ -260,28 +241,32 @@ in
         inherit (config.nixflix.nginx) forceSSL;
         useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
 
-        locations = {
-          "/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_set_header X-Real-IP $remote_addr;
+        locations =
+          let
+            proxyHost = if cfg.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1";
+          in
+          {
+            "/" = {
+              proxyPass = "http://${proxyHost}:${toString cfg.network.internalHttpPort}";
+              recommendedProxySettings = true;
+              extraConfig = ''
+                proxy_set_header X-Real-IP $remote_addr;
 
-              proxy_buffering off;
-            '';
+                proxy_buffering off;
+              '';
+            };
+            "/socket" = {
+              proxyPass = "http://${proxyHost}:${toString cfg.network.internalHttpPort}";
+              proxyWebsockets = true;
+              recommendedProxySettings = true;
+              extraConfig = ''
+                proxy_set_header X-Real-IP $remote_addr;
+              '';
+            };
           };
-          "/socket" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.network.internalHttpPort}";
-            proxyWebsockets = true;
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_set_header X-Real-IP $remote_addr;
-            '';
-          };
-        };
       };
     })
-    (mkIf (nixflix.enable && cfg.enable && config.nixflix.vpn.wireguard.enable && cfg.vpn.enable) {
+    (mkIf (nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.jellyfin.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";

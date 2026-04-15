@@ -24,7 +24,7 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/NzbPlanet" = {};
     "jellyfin/alice_password" = {};
     "seerr/api_key" = {};
-    "mullvad-account-number" = {};
+    "wireguard/conf" = {};
     "sabnzbd/api_key" = {};
     "sabnzbd/nzb_key" = {};
     "usenet/eweka/username" = {};
@@ -156,20 +156,10 @@ This example shows a working media server configuration based on a real producti
       apiKey._secret = config.sops.secrets."seerr/api_key".path;
     };
 
-    mullvad = {
+    vpn = {
       enable = true;
-      accountNumber._secret = config.sops.secrets.mullvad-account-number.path;
-      location = ["us" "nyc"];
-      dns = [
-        "94.140.14.14"
-        "94.140.15.15"
-        "76.76.2.2"
-        "76.76.10.2"
-      ];
-      killSwitch = {
-        enable = true;
-        allowLan = true;
-      };
+      wgConfFile = config.sops.secrets."wireguard/conf".path;
+      accessibleFrom = [ "192.168.1.0/24" ];
     };
   };
 }
@@ -187,7 +177,7 @@ This example shows a working media server configuration based on a real producti
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
 - **Seerr** - Requests Management
-- **Mullvad VPN** - Download protection with kill switch
+- **WireGuard VPN** - Download protection via network namespace confinement
 - **Recyclarr** - TRaSH guides automation
 
 ### Infrastructure
@@ -218,10 +208,8 @@ This example shows a working media server configuration based on a real producti
 
 **VPN Setup**:
 
-- Download services route through Mullvad (NYC location)
-- Custom DNS for ad-blocking (AdGuard and Control D)
-- Kill switch prevents leaks if VPN disconnects
-- LAN access still works
+- Download services are confined to a WireGuard network namespace
+- Local network (`192.168.1.0/24`) can still reach confined services via nginx
 
 **Recyclarr**: Automatically manages quality profiles with anime support
 
@@ -279,9 +267,9 @@ Replace these with your own values:
 
 - **Indexers**: Change `DrunkenSlug`, `NZBFinder`, `NzbPlanet` to your indexers
 - **Usenet providers**: Update server details for your providers
-- **VPN location**: Change `["us" "nyc"]` to your preferred location
+- **VPN**: Replace `wireguard/conf` with the sops path to your wg-quick `.conf` file
+- **Accessible from**: Update `192.168.1.0/24` to your local network subnet
 - **Theme**: Change `"plex"` to another theme.park theme
-- **DNS servers**: Use your preferred DNS providers
 - **Jellyfin user**: Change `alice` to your username
 
 ## Next Steps
@@ -289,4 +277,4 @@ Replace these with your own values:
 - Access Prowlarr to verify indexer connections
 - Add content through Sonarr/Radarr/Lidarr
 - Access Jellyfin - libraries are already configured!
-- Verify VPN: `mullvad status` should show "Connected"
+- Verify VPN: `ip netns list` should show the `wg` namespace

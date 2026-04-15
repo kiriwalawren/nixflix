@@ -175,7 +175,7 @@ def get_service_title(service: str) -> str:
         "sabnzbd": "SABnzbd",
         "qbittorrent": "qBittorrent",
         "rtorrent": "rTorrent",
-        "mullvad": "Mullvad VPN",
+        "vpn": "VPN",
         "postgres": "PostgreSQL",
     }
     return special_titles.get(service, special_case_to_title(service))
@@ -195,7 +195,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
         "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",
-        "mullvad": "[Mullvad VPN](https://mullvad.net/en) configuration for routing traffic through a VPN tunnel.",
+        "vpn": "WireGuard VPN configuration for confining services to a network namespace.",
         "postgres": "[PostgreSQL](https://www.postgresql.org/) database backend for Arr services.",
         "recyclarr": "[Recyclarr](https://github.com/recyclarr/recyclarr) automatically syncs TRaSH guides to Arr services.",
     }

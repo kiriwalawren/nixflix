@@ -5,33 +5,11 @@
 }:
 with lib;
 let
-  cfg = config.nixflix.vpn.wireguard;
-  vpnCfg = config.nixflix.vpn;
+  cfg = config.nixflix.vpn;
 in
 {
-  options.nixflix.vpn.wireguard = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      example = true;
-      description = ''
-        Whether to enable generic WireGuard VPN.
-
-        Accepts any WireGuard provider's wg-quick configuration file.
-        Compatible with AirVPN, ProtonVPN, IVPN, Mullvad (wireguard mode),
-        and any other provider that issues wg-quick `.conf` files.
-
-        Services with `vpn.enable = true` are confined to a network namespace
-        that routes all traffic through the WireGuard tunnel. Services with
-        `vpn.enable = false` run normally and bypass the tunnel.
-
-        #### Using Tailscale with WireGuard
-
-        When `services.tailscale.enable` is true, nftables rules are automatically
-        configured to route Tailscale traffic around the VPN tunnel. To disable
-        this behaviour, set `nixflix.vpn.tailscale.enable = false`.
-      '';
-    };
+  options.nixflix.vpn = {
+    enable = mkEnableOption "WireGuard VPN";
 
     wgConfFile = mkOption {
       type = types.path;
@@ -51,7 +29,7 @@ in
 
     accessibleFrom = mkOption {
       type = types.listOf types.str;
-      default = [ ];
+      default = [ "192.168.1.0/24" ];
       example = [ "192.168.1.0/24" ];
       description = ''
         List of subnets or addresses in the default network namespace that
@@ -94,6 +72,33 @@ in
         provided by the VPN provider (AirVPN, IVPN, etc.).
       '';
     };
+
+    tailscale = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.services.tailscale.enable;
+        defaultText = literalExpression "config.services.tailscale.enable";
+        description = ''
+          Automatically configure Tailscale to coexist with the VPN.
+
+          Adds nftables rules to bypass the VPN for Tailscale mesh traffic
+          (100.64.0.0/10) and the Tailscale WireGuard port (UDP 41641).
+        '';
+      };
+
+      exitNode = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Route Tailscale exit node traffic through the VPN.
+
+          When false (default), all Tailscale traffic bypasses the VPN entirely.
+
+          When true, direct mesh traffic and Tailscale protocol traffic still bypass
+          the VPN, but exit node traffic is routed through the VPN tunnel.
+        '';
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -104,13 +109,13 @@ in
       inherit (cfg) openVPNPorts;
     };
 
-    networking.nftables.enable = mkIf vpnCfg.tailscale.enable true;
+    networking.nftables.enable = mkIf cfg.tailscale.enable true;
 
-    networking.nftables.tables."wg-tailscale" = mkIf vpnCfg.tailscale.enable {
+    networking.nftables.tables."wg-tailscale" = mkIf cfg.tailscale.enable {
       enable = true;
       family = "inet";
       content =
-        if vpnCfg.tailscale.exitNode then
+        if cfg.tailscale.exitNode then
           ''
             chain prerouting {
               type filter hook prerouting priority -50; policy accept;

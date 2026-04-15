@@ -49,6 +49,6 @@ Each option is documented with:
 
 ### Infrastructure
 
-- [Mullvad VPN](mullvad/index.md) - VPN configuration
+- [VPN](vpn/index.md) - WireGuard VPN configuration
 - [PostgreSQL](postgres/index.md) - Database configuration
 - [Recyclarr](recyclarr/index.md) - TRaSH guides automation

@@ -210,7 +210,7 @@ in
       assertions = [
         {
           assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable.";
+          message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when no VPN provider is enabled. Please set nixflix.vpn.enable = true.";
         }
       ];
 
@@ -262,9 +262,10 @@ in
           locations."/" =
             let
               themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
+              proxyHost = if cfg.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1";
             in
             {
-              proxyPass = "http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}";
+              proxyPass = "http://${proxyHost}:${builtins.toString cfg.config.hostConfig.port}";
               recommendedProxySettings = true;
               extraConfig = ''
                 proxy_redirect off;
@@ -392,8 +393,7 @@ in
           ++ (optional (
             cfg.config.apiKey != null && cfg.config.hostConfig.password != null
           ) "${serviceName}-env.service")
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target")
-          ++ (optional config.nixflix.vpn.mullvad.enable "mullvad-config.service");
+          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
           requires = [
             "nixflix-setup-dirs.service"
           ]
@@ -402,7 +402,7 @@ in
             cfg.config.apiKey != null && cfg.config.hostConfig.password != null
           ) "${serviceName}-env.service")
           ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
-          wants = optional config.nixflix.vpn.mullvad.enable "mullvad-config.service";
+          wants = [ ];
           wantedBy = [ "multi-user.target" ];
 
           serviceConfig = {
@@ -415,16 +415,6 @@ in
           }
           // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
             EnvironmentFile = "/run/${serviceName}/env";
-          }
-          // optionalAttrs (config.nixflix.vpn.mullvad.enable && !cfg.vpn.enable) {
-            ExecStart = mkForce (
-              pkgs.writeShellScript "${serviceName}-vpn" ''
-                exec ${getExe config.nixflix.vpn.bypassWrapper} ${getExe cfg.package} \
-                  -nobrowser -data='${stateDir}'
-              ''
-            );
-            AmbientCapabilities = "CAP_SYS_ADMIN";
-            Delegate = mkForce true;
           };
         };
       }
@@ -458,20 +448,19 @@ in
         "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
       };
     })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.wireguard.enable && cfg.vpn.enable)
-      {
-        systemd.services.${serviceName}.vpnConfinement = {
-          enable = true;
-          vpnNamespace = "wg";
-        };
-        vpnNamespaces.wg.portMappings = [
-          {
-            from = cfg.config.hostConfig.port;
-            to = cfg.config.hostConfig.port;
-            protocol = "tcp";
-          }
-        ];
-      }
-    )
+    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
+      nixflix.${serviceName}.config.hostConfig.bindAddress = config.vpnNamespaces.wg.namespaceAddress;
+      systemd.services.${serviceName}.vpnConfinement = {
+        enable = true;
+        vpnNamespace = "wg";
+      };
+      vpnNamespaces.wg.portMappings = [
+        {
+          from = cfg.config.hostConfig.port;
+          to = cfg.config.hostConfig.port;
+          protocol = "tcp";
+        }
+      ];
+    })
   ];
 }

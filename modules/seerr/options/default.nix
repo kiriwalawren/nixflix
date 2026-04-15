@@ -79,7 +79,7 @@ in
         defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Seerr traffic through the VPN.
-          When true (default), Seerr routes through the VPN (requires nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable).
+          When true (default), Seerr is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
           When false, Seerr bypasses the VPN.
         '';
       };

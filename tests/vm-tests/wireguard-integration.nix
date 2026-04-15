@@ -42,7 +42,7 @@ pkgs.testers.runNixOSTest {
         nixflix = {
           enable = true;
 
-          vpn.wireguard = {
+          vpn = {
             enable = true;
             wgConfFile = pkgs.writeText "wg0.conf" ''
               [Interface]
