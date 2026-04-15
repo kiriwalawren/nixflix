@@ -75,11 +75,11 @@ in
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.mullvad.enable;
-        defaultText = literalExpression "config.nixflix.mullvad.enable";
+        default = config.nixflix.vpn.enable;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Seerr traffic through the VPN.
-          When true (default), Seerr routes through the VPN (requires nixflix.mullvad.enable = true).
+          When true (default), Seerr routes through the VPN (requires nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable).
           When false, Seerr bypasses the VPN.
         '';
       };

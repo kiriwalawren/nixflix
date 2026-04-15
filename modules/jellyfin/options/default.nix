@@ -103,12 +103,12 @@ in
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.mullvad.enable;
-        defaultText = literalExpression "config.nixflix.mullvad.enable";
+        default = config.nixflix.vpn.enable;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Jellyfin traffic through the VPN.
           When false (default), Jellyfin bypasses the VPN.
-          When true, Jellyfin routes through the VPN (requires nixflix.mullvad.enable = true).
+          When true, Jellyfin routes through the VPN (requires nixflix.vpn.mullvad.enable or nixflix.vpn.wireguard.enable).
         '';
       };
     };

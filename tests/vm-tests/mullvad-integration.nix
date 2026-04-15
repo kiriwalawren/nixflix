@@ -15,10 +15,12 @@ pkgs.testers.runNixOSTest {
 
       nixflix = {
         enable = true;
-        mullvad = {
-          enable = true;
-          accountNumber = "";
-          autoConnect = false; # Don't auto-connect in tests
+        vpn = {
+          mullvad = {
+            enable = true;
+            accountNumber = "";
+            autoConnect = false; # Don't auto-connect in tests
+          };
           killSwitch = {
             enable = true;
             allowLan = true;

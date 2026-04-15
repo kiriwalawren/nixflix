@@ -6,12 +6,13 @@
 }:
 with lib;
 let
-  secrets = import ../lib/secrets { inherit lib; };
-  cfg = config.nixflix.mullvad;
+  secrets = import ../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.vpn.mullvad;
+  vpnCfg = config.nixflix.vpn;
   mullvadPkg = if cfg.gui.enable then pkgs.mullvad-vpn else pkgs.mullvad;
 in
 {
-  options.nixflix.mullvad = {
+  options.nixflix.vpn.mullvad = {
     enable = mkOption {
       default = false;
       example = true;
@@ -22,11 +23,11 @@ in
 
         When `services.tailscale.enable` is true, nftables rules are automatically
         configured to route Tailscale traffic around the VPN tunnel. To disable
-        this behaviour, set `nixflix.mullvad.tailscale.enable = false`.
+        this behaviour, set `nixflix.vpn.tailscale.enable = false`.
 
         By default, all Tailscale traffic (mesh and exit node) bypasses Mullvad.
         To route exit node traffic through Mullvad while keeping mesh traffic
-        direct, set `nixflix.mullvad.tailscale.exitNode = true`.
+        direct, set `nixflix.vpn.tailscale.exitNode = true`.
       '';
       type = types.bool;
     };
@@ -62,42 +63,13 @@ in
     enableIPv6 = mkOption {
       type = types.bool;
       default = false;
-      description = "Wether to enable IPv6 for Mullvad";
-    };
-
-    dns = mkOption {
-      type = types.listOf types.str;
-      default = [
-        "1.1.1.1"
-        "1.0.0.1"
-        "8.8.8.8"
-        "8.8.4.4"
-      ];
-      defaultText = literalExpression ''["1.1.1.1" "1.0.0.1" "8.8.8.8" "8.8.4.4"]'';
-      example = [
-        "194.242.2.4"
-        "194.242.2.3"
-      ];
-      description = ''
-        DNS servers to use with the VPN.
-        Defaults to Cloudflare (1.1.1.1, 1.0.0.1) and Google (8.8.8.8, 8.8.4.4) DNS servers.
-      '';
+      description = "Whether to enable IPv6 for Mullvad";
     };
 
     autoConnect = mkOption {
       type = types.bool;
       default = true;
       description = "Automatically connect to VPN on startup";
-    };
-
-    killSwitch = {
-      enable = mkEnableOption "VPN kill switch (lockdown mode) - blocks all traffic when VPN is down";
-
-      allowLan = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Allow LAN traffic when VPN is down (only effective with kill switch enabled)";
-      };
     };
 
     persistDevice = mkOption {
@@ -112,33 +84,6 @@ in
 
         When true, the service only disconnects on stop without logging out.
       '';
-    };
-    tailscale = {
-      enable = mkOption {
-        type = types.bool;
-        default = config.services.tailscale.enable;
-        defaultText = literalExpression "config.services.tailscale.enable";
-        description = ''
-          Automatically configure Tailscale to coexist with Mullvad VPN.
-
-          Adds nftables rules to bypass Mullvad for Tailscale mesh traffic
-          (100.64.0.0/10) and the Tailscale WireGuard port (UDP 41641).
-        '';
-      };
-
-      exitNode = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Route Tailscale exit node traffic through Mullvad.
-
-          When false (default), all Tailscale traffic bypasses Mullvad entirely.
-
-          When true, direct mesh traffic (device to device) and Tailscale protocol
-          traffic still bypass Mullvad, but exit node traffic (internet-bound traffic
-          from Tailscale clients) is routed through the Mullvad VPN tunnel.
-        '';
-      };
     };
   };
 
@@ -193,7 +138,7 @@ in
             fi
           ''}
 
-          ${mullvadPkg}/bin/mullvad dns set custom ${concatStringsSep " " cfg.dns}
+          ${mullvadPkg}/bin/mullvad dns set custom ${concatStringsSep " " vpnCfg.dns}
 
           ${mullvadPkg}/bin/mullvad tunnel set ipv6 ${if cfg.enableIPv6 then "on" else "off"}
 
@@ -201,12 +146,12 @@ in
             ${mullvadPkg}/bin/mullvad relay set location ${escapeShellArgs cfg.location}
           ''}
 
-          ${optionalString cfg.killSwitch.enable ''
+          ${optionalString vpnCfg.killSwitch.enable ''
             ${mullvadPkg}/bin/mullvad lockdown-mode set on
-            ${mullvadPkg}/bin/mullvad lan set ${if cfg.killSwitch.allowLan then "allow" else "block"}
+            ${mullvadPkg}/bin/mullvad lan set ${if vpnCfg.killSwitch.allowLan then "allow" else "block"}
           ''}
 
-          ${optionalString (!cfg.killSwitch.enable) ''
+          ${optionalString (!vpnCfg.killSwitch.enable) ''
             ${mullvadPkg}/bin/mullvad lockdown-mode set off
           ''}
 
@@ -237,13 +182,13 @@ in
       };
     };
 
-    networking.nftables.enable = mkIf cfg.tailscale.enable true;
+    networking.nftables.enable = mkIf vpnCfg.tailscale.enable true;
 
-    networking.nftables.tables."mullvad-tailscale" = mkIf cfg.tailscale.enable {
+    networking.nftables.tables."mullvad-tailscale" = mkIf vpnCfg.tailscale.enable {
       enable = true;
       family = "inet";
       content =
-        if cfg.tailscale.exitNode then
+        if vpnCfg.tailscale.exitNode then
           ''
             chain prerouting {
               type filter hook prerouting priority -50; policy accept;

@@ -17,7 +17,7 @@ in
     ./jellyfin
     ./seerr
     ./lidarr.nix
-    ./mullvad.nix
+    ./vpn
     ./postgres.nix
     ./prowlarr
     ./radarr.nix
