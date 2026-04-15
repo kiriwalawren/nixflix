@@ -132,9 +132,9 @@ pkgsUnfree.testers.runNixOSTest {
   testScript = ''
     start_all()
 
-    # Wait for reverse proxy
-    machine.wait_for_unit("${proxyService}.service", timeout=60)
-    machine.wait_for_open_port(80, timeout=60)
+    # Wait for reverse proxy (Caddy may need longer in resource-constrained CI)
+    machine.wait_for_unit("${proxyService}.service", timeout=120)
+    machine.wait_for_open_port(80, timeout=120)
 
     # Wait for all services
     machine.wait_for_unit("sabnzbd.service", timeout=120)
