@@ -154,9 +154,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     radarr_profiles_list = json.loads(radarr_profiles)
 
-    radarr_profile_names = [p['name'] for p in radarr_profiles_list]
-    assert "SQP-1 (1080p)" in radarr_profile_names, \
-        f"Expected 'UHD Bluray + WEB' profile from recyclarr in Radarr, found: {radarr_profile_names}"
+    radarr_profile_names = {p['name'] for p in radarr_profiles_list}
+    assert radarr_profile_names == {"[SQP] SQP-1 (1080p)"}, \
+        f"Expected only '[SQP] SQP-1 (1080p)' in Radarr after cleanup, found: {radarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr
     sonarr_profiles = machine.succeed(
@@ -165,12 +165,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     sonarr_profiles_list = json.loads(sonarr_profiles)
 
-    sonarr_profile_names = [p['name'] for p in sonarr_profiles_list]
-    # Sonarr should have both normal and anime profiles when sonarr-anime is enabled
-    assert "WEB-1080p" in sonarr_profile_names, \
-        f"Expected 'WEB-1080p' profile from recyclarr in Sonarr, found: {sonarr_profile_names}"
-    assert len(sonarr_profiles_list) > 1, \
-        f"Expected multiple quality profiles in Sonarr, found: {len(sonarr_profiles_list)}"
+    sonarr_profile_names = {p['name'] for p in sonarr_profiles_list}
+    assert sonarr_profile_names == {"WEB-1080p (Alternative)"}, \
+        f"Expected only 'WEB-1080p (Alternative)' in Sonarr after cleanup, found: {sonarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr-Anime
     sonarr_anime_profiles = machine.succeed(
@@ -179,9 +176,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     sonarr_anime_profiles_list = json.loads(sonarr_anime_profiles)
 
-    sonarr_anime_profile_names = [p['name'] for p in sonarr_anime_profiles_list]
-    assert "Remux-1080p - Anime" in sonarr_anime_profile_names, \
-        f"Expected 'Remux-1080p - Anime' profile from recyclarr in Sonarr-Anime, found: {sonarr_anime_profile_names}"
+    sonarr_anime_profile_names = {p['name'] for p in sonarr_anime_profiles_list}
+    assert sonarr_anime_profile_names == {"[Anime] Remux-1080p"}, \
+        f"Expected only '[Anime] Remux-1080p' in Sonarr-Anime after cleanup, found: {sonarr_anime_profile_names}"
 
     # Wait for cleanup-profiles service to complete
     machine.wait_until_succeeds(
