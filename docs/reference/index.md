@@ -49,6 +49,8 @@ Each option is documented with:
 
 ### Infrastructure
 
+- [Nginx](nginx/index.md) - Nginx reverse proxy
+- [Caddy](caddy/index.md) - Caddy reverse proxy
 - [VPN](vpn/index.md) - WireGuard VPN configuration
 - [PostgreSQL](postgres/index.md) - Database configuration
 - [Recyclarr](recyclarr/index.md) - TRaSH guides automation

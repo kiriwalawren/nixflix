@@ -44,10 +44,15 @@ This example shows a working media server configuration based on a real producti
       name = "overseerr";
     };
 
+    # Reverse proxy (choose nginx or caddy, not both)
     nginx = {
       enable = true;
-      addHostsEntries = true; # Disable this is you have your own DNS configuration
+      addHostsEntries = true; # Disable this if you have your own DNS configuration
     };
+    # caddy = {
+    #   enable = true;
+    #   addHostsEntries = true;
+    # };
 
     postgres.enable = true;
 
@@ -183,7 +188,7 @@ This example shows a working media server configuration based on a real producti
 ### Infrastructure
 
 - **PostgreSQL** - Database backend for better performance
-- **Nginx** - Reverse proxy for all services
+- **Nginx** (or **Caddy**) - Reverse proxy for all services
 - **theme.park** - UI theming (set to "plex" theme)
 
 ### Automatic Integration
@@ -239,7 +244,7 @@ This example shows a working media server configuration based on a real producti
 
 ## Service Access
 
-Via nginx reverse proxy:
+Via reverse proxy (nginx or Caddy):
 
 - Sonarr: http://sonarr.nixflix
 - Sonarr Anime: http://sonarr-anime.nixflix
