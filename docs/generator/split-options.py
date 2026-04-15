@@ -267,7 +267,11 @@ def write_service_docs(
                     else:
                         prefix = f"nixflix.{service}.{page_key}"
 
-                    hoisted = [f"{prefix}.enable", f"{prefix}.apiKey", f"{prefix}.package"]
+                    hoisted = [
+                        f"{prefix}.enable",
+                        f"{prefix}.apiKey",
+                        f"{prefix}.package",
+                    ]
                     if name in hoisted:
                         return (0, hoisted.index(name), name)
                     return (1, 0, name)
