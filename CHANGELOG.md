@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Generic WireGuard VPN support via `nixflix.vpn` (#164)
 - Mullvad first-class Tailscale coexistence option (`nixflix.mullvad.tailscale`) (#141).
 - Mullvad `persistDevice` option to keep login across reboots (#133).
 - Prowlarr indexer proxy support (#139).
@@ -25,6 +26,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Prowlarr applications configuration (#5).
 
 ### Changed
+
+- **Breaking:** `nixflix.mullvad.*` options have been replaced by
+  `nixflix.vpn.*`. Update your configuration accordingly.
+
+- `nixflix.radarr.vpn`, `nixflix.sonarr.vpn`, etc. per-service VPN options now
+  reference the generic `nixflix.vpn` namespace rather than Mullvad.
 
 - **Breaking:** `nixflix.mullvad.*` options have been replaced by
   `nixflix.vpn.*`. Update your configuration accordingly.
