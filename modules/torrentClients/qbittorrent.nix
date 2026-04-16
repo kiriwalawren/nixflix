@@ -255,7 +255,7 @@ in
       };
 
     })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cgf.vpn.enable) {
+    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.qbittorrent.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
