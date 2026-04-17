@@ -104,24 +104,10 @@ pkgs.testers.runNixOSTest {
             vpn.enable = true; # confined to WG netns
             config = {
               hostConfig = {
-                port = 7878;
                 username = "admin";
                 password._secret = pkgs.writeText "radarr-password" "testpass";
               };
-              apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
-            };
-          };
-
-          prowlarr = {
-            enable = true;
-            vpn.enable = false; # bypasses VPN (runs outside netns)
-            config = {
-              hostConfig = {
-                port = 9696;
-                username = "admin";
-                password._secret = pkgs.writeText "prowlarr-password" "testpass";
-              };
-              apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+              apiKey._secret = pkgs.writeText "radarr-apikey" "radarr11111111111111111111111111";
             };
           };
         };
@@ -144,19 +130,12 @@ pkgs.testers.runNixOSTest {
     client.wait_for_unit("radarr.service", timeout=120)
     client.wait_for_open_port(7878, addr="192.168.15.1", timeout=60)
 
-    # Bypass service (Prowlarr) starts and its port is reachable on localhost
-    client.wait_for_unit("prowlarr.service", timeout=120)
-    client.wait_for_open_port(9696, timeout=60)
-
-    # Services are stable (no crash loops) — give them a moment then check restart counts
+    # Service is stable (no crash loop) — give it a moment then check restart count
     import time
     time.sleep(5)
 
     radarr_restarts = client.succeed("systemctl show radarr.service -p NRestarts --value")
     assert radarr_restarts.strip() == "0", f"Radarr has restarted {radarr_restarts.strip()} times"
-
-    prowlarr_restarts = client.succeed("systemctl show prowlarr.service -p NRestarts --value")
-    assert prowlarr_restarts.strip() == "0", f"Prowlarr has restarted {prowlarr_restarts.strip()} times"
 
     # Verify Radarr is running inside the WG network namespace.
     # readlink /proc/<pid>/ns/net returns "net:[<namespace-id>]" — compare with the wg netns.
@@ -164,14 +143,6 @@ pkgs.testers.runNixOSTest {
     wg_ns = client.succeed("ip netns exec wg readlink /proc/self/ns/net").strip()
     radarr_ns = client.succeed(f"readlink /proc/{radarr_pid}/ns/net").strip()
     assert wg_ns == radarr_ns, f"Radarr (PID {radarr_pid}) is not in the wg namespace (expected {wg_ns}, got {radarr_ns})"
-
-    # Verify Prowlarr is NOT in the WG namespace (running in the host netns)
-    prowlarr_pid = client.succeed("systemctl show prowlarr -p MainPID --value").strip()
-    prowlarr_ns = client.succeed(f"readlink /proc/{prowlarr_pid}/ns/net").strip()
-    assert wg_ns != prowlarr_ns, f"Prowlarr (PID {prowlarr_pid}) is unexpectedly confined to the wg namespace"
-
-    # Bypass service can reach the host network
-    client.succeed("ping -c1 -W5 server")
 
     # --- DNS leak tests ---
     server.wait_for_unit("dnsmasq.service")

@@ -2,6 +2,8 @@
   lib,
   pkgs,
   serviceName,
+  config,
+  serviceConfig,
 }:
 with lib;
 let
@@ -13,7 +15,7 @@ let
 in
 {
   options = mkOption {
-    type = import ./hostConfigType.nix { inherit lib; };
+    type = import ./hostConfigType.nix { inherit lib config serviceConfig; };
     default = { };
     description = "Host configuration options that will be set via the API /config/host endpoint";
   };

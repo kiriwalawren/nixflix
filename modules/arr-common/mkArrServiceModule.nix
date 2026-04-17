@@ -13,7 +13,15 @@ let
   stateDir = "${config.nixflix.stateDir}/${serviceName}";
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
-  hostConfig = import ./hostConfig.nix { inherit lib pkgs serviceName; };
+  hostConfig = import ./hostConfig.nix {
+    inherit
+      lib
+      pkgs
+      serviceName
+      config
+      ;
+    serviceConfig = cfg;
+  };
   rootFolders = import ./rootFolders.nix {
     inherit
       config
@@ -214,7 +222,19 @@ in
       assertions = [
         {
           assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for ${capitalizedName} (config.nixflix.${serviceName}.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+          message = "Cannot enable VPN routing for ${capitalizedName} (`config.nixflix.${serviceName}.vpn.enable = true`) when VPN is not enabled. Please set `nixflix.vpn.enable` = true.";
+        }
+        {
+          assertion = (cfg.vpn.enable && config.nixflix.torrentClients.qbittorrent.enable) -> config.nixflix.torrentClients.qbittorrent.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but qBittorrent is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.torrentClients.qbittorrent.vpn.enable = true` or disable VPN for ${capitalizedName}.";
+        }
+        {
+          assertion = (cfg.vpn.enable && config.nixflix.usenetClients.sabnzbd.enable) -> config.nixflix.usenetClients.sabnzbd.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but SABnzbd is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.usenetClients.sabnzbd.vpn.enable = true` or disable VPN for ${capitalizedName}.";
+        }
+        {
+          assertion = (usesMediaDirs && cfg.vpn.enable && config.nixflix.prowlarr.enable) -> config.nixflix.prowlarr.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but Prowlarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.prowlarr.vpn.enable = true` or disable VPN for ${capitalizedName}.";
         }
       ];
 
@@ -266,10 +286,9 @@ in
           locations."/" =
             let
               themeParkUrl = "https://theme-park.dev/css/base/${serviceBase}/${config.nixflix.theme.name}.css";
-              proxyHost = if cfg.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1";
             in
             {
-              proxyPass = "http://${proxyHost}:${builtins.toString cfg.config.hostConfig.port}";
+              proxyPass = "http://${cfg.config.hostConfig.bindAddress}:${builtins.toString cfg.config.hostConfig.port}";
               recommendedProxySettings = true;
               extraConfig = ''
                 proxy_redirect off;
@@ -453,7 +472,6 @@ in
       };
     })
     (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
-      nixflix.${serviceName}.config.hostConfig.bindAddress = config.vpnNamespaces.wg.namespaceAddress;
       systemd.services.${serviceName}.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";

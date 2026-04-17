@@ -101,6 +101,7 @@ in
         };
 
         password = secrets.mkSecretOption {
+          nullable = true;
           description = ''
             The password for qbittorrent. This is for the other services to integrate with qBittorrent.
             Not for setting the password in qBittorrent
@@ -140,7 +141,11 @@ in
 
           Preferences.WebUI.Address = mkOption {
             type = types.str;
-            default = "127.0.0.1";
+            default =
+              if config.nixflix.vpn.enable && cfg.vpn.enable then
+                config.vpnNamespaces.wg.namespaceAddress
+              else
+                "127.0.0.1";
             description = "Bind address for the WebUI";
           };
         };
@@ -229,9 +234,7 @@ in
         useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
 
         locations."/" = {
-          proxyPass = "http://${
-            if config.nixflix.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1"
-          }:${toString service.webuiPort}";
+          proxyPass = "http://${cfg.serverConfig.Preferences.WebUI.Address}:${toString service.webuiPort}";
           recommendedProxySettings = true;
           extraConfig = ''
             proxy_http_version 1.1;

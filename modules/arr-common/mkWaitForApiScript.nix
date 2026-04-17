@@ -10,7 +10,7 @@ pkgs.writeShellScript "${serviceName}-wait-for-api" (
       lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
   in
   ''
-    BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
+    BASE_URL="http://${serviceConfig.hostConfig.bindAddress}:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
     echo "Waiting for ${capitalizedName} API to be available..."
     for i in {1..90}; do

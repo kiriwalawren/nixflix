@@ -1,4 +1,8 @@
-{ lib }:
+{
+  lib,
+  config,
+  serviceConfig,
+}:
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
@@ -7,7 +11,11 @@ types.submodule {
   options = {
     bindAddress = mkOption {
       type = types.str;
-      default = "127.0.0.1";
+      default =
+        if config.nixflix.vpn.enable && serviceConfig.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
       description = "Address to bind to";
     };
 

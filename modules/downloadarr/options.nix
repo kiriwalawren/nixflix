@@ -133,6 +133,11 @@ let
 
     dependencies.default = [ "sabnzbd-categories.service" ];
 
+    host = {
+      default = config.nixflix.usenetClients.sabnzbd.settings.misc.host;
+      defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.settings.misc.host";
+    };
+
     port = {
       default = config.nixflix.usenetClients.sabnzbd.settings.misc.port;
       defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.settings.misc.port";
@@ -174,6 +179,11 @@ let
 
     dependencies.default = [ "qbittorrent.service" ];
 
+    host = {
+      default = config.nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address;
+      defaultText = literalExpression "config.nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address";
+    };
+
     port = {
       default = config.services.qbittorrent.webuiPort;
       defaultText = literalExpression "config.services.qbittorrent.webuiPort";
@@ -186,14 +196,16 @@ let
 
     extraOptions = {
       username = secrets.mkSecretOption {
+        nullable = true;
         description = "Username key for the download client.";
-        default = config.services.qbittorrent.serverConfig.Preferences.WebUI.Username;
+        default = config.services.qbittorrent.serverConfig.Preferences.WebUI.Username or null;
         defaultText = literalExpression "config.services.qbittorrent.serverConfig.Preferences.WebUI.Username";
       };
 
       password = secrets.mkSecretOption {
+        nullable = true;
         description = "Password for the download client.";
-        default = config.nixflix.torrentClients.qbittorrent.password;
+        default = config.nixflix.torrentClients.qbittorrent.password or null;
         defaultText = literalExpression "config.nixflix.torrentClients.qbittorrent.password";
       };
     };

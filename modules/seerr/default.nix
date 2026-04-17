@@ -38,7 +38,7 @@ in
         [
           {
             assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
-            message = "Seerr requires Jellyfin admin credentials. Either enable nixflix.jellyfin with an admin user, or set nixflix.seerr.jellyfin.adminUsername and nixflix.seerr.jellyfin.adminPassword.";
+            message = "Seerr requires Jellyfin admin credentials. Either enable `nixflix.jellyfin` with an admin user, or set `nixflix.seerr.jellyfin.adminUsername` and `nixflix.seerr.jellyfin.adminPassword`.";
           }
           {
             assertion = radarrDefaultCount <= 2;
@@ -57,6 +57,24 @@ in
             assertion =
               sonarrDefaultCount != 2 || (length sonarrDefault4k == 1 && length sonarrDefaultNon4k == 1);
             message = "When there are 2 default Sonarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
+          }
+          {
+            assertion =
+              (cfg.vpn.enable && config.nixflix.jellyfin.enable) -> config.nixflix.jellyfin.vpn.enable;
+            message = "Seerr is VPN-confined but Jellyfin is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.jellyfin.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion = (cfg.vpn.enable && config.nixflix.radarr.enable) -> config.nixflix.radarr.vpn.enable;
+            message = "Seerr is VPN-confined but Radarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.radarr.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion = (cfg.vpn.enable && config.nixflix.sonarr.enable) -> config.nixflix.sonarr.vpn.enable;
+            message = "Seerr is VPN-confined but Sonarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion =
+              (cfg.vpn.enable && config.nixflix.sonarr-anime.enable) -> config.nixflix.sonarr-anime.vpn.enable;
+            message = "Seerr is VPN-confined but Sonarr Anime is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr-anime.vpn.enable = true` or disable VPN for Seerr.";
           }
         ];
 
