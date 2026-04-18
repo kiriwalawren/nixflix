@@ -40,10 +40,10 @@ in
     systemd.services.jellyfin-encoding-config = {
       description = "Configure Jellyfin Encoding via API";
       after = [
-        "jellyfin-setup-wizard.service"
+        "jellyfin-plugins.service"
         "systemd-tmpfiles-setup.service"
       ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      requires = [ "jellyfin-plugins.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {

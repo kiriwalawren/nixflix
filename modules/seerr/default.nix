@@ -168,7 +168,7 @@ in
             "nixflix-setup-dirs.service"
           ]
           ++ optional (cfg.apiKey != null) "seerr-env.service"
-          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
           ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
           ++ optional (
@@ -183,7 +183,7 @@ in
           requires = [
             "nixflix-setup-dirs.service"
           ]
-          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
           ++ optional (cfg.apiKey != null) "seerr-env.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
           ++ optional (

@@ -70,6 +70,10 @@ pkgs.testers.runNixOSTest {
               policy.isAdministrator = true;
             };
           };
+
+          # Disable AniDB to keep test pure
+          plugins.AniDB.enable = false;
+          libraries.Anime.typeOptions = lib.mkForce [ ];
         };
 
         seerr = {
@@ -87,6 +91,9 @@ pkgs.testers.runNixOSTest {
     port = 5055
     machine.wait_for_unit("jellyfin.service", timeout=300)
     machine.wait_for_unit("jellyfin-api-key.service", timeout=300)
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
+    machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-plugins.service", timeout=360)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
     machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(port, timeout=300)

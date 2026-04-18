@@ -15,6 +15,7 @@ in
     ./branding.nix
     ./encoding.nix
     ./libraries.nix
+    ./plugins.nix
     ./system.nix
     ./users.nix
   ];

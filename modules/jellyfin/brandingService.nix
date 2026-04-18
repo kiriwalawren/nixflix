@@ -34,8 +34,8 @@ in
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-branding-config = {
       description = "Configure Jellyfin Branding via API";
-      after = [ "jellyfin-setup-wizard.service" ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      after = [ "jellyfin-plugins.service" ];
+      requires = [ "jellyfin-plugins.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
