@@ -96,6 +96,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 
 - `modules/mullvad.nix` and all `nixflix.mullvad.*` options.
+- Tailscale coexistence. It is not necessary because of the VPN namespace.
 
 ### Fixed
 

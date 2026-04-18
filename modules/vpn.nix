@@ -73,32 +73,6 @@ in
       '';
     };
 
-    tailscale = {
-      enable = mkOption {
-        type = types.bool;
-        default = config.services.tailscale.enable;
-        defaultText = literalExpression "config.services.tailscale.enable";
-        description = ''
-          Automatically configure Tailscale to coexist with the VPN.
-
-          Adds nftables rules to bypass the VPN for Tailscale mesh traffic
-          (100.64.0.0/10) and the Tailscale WireGuard port (UDP 41641).
-        '';
-      };
-
-      exitNode = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Route Tailscale exit node traffic through the VPN.
-
-          When false (default), all Tailscale traffic bypasses the VPN entirely.
-
-          When true, direct mesh traffic and Tailscale protocol traffic still bypass
-          the VPN, but exit node traffic is routed through the VPN tunnel.
-        '';
-      };
-    };
   };
 
   config = mkIf cfg.enable {
@@ -107,63 +81,6 @@ in
       wireguardConfigFile = cfg.wgConfFile;
       inherit (cfg) accessibleFrom;
       inherit (cfg) openVPNPorts;
-    };
-
-    networking.nftables.enable = mkIf cfg.tailscale.enable true;
-
-    networking.nftables.tables."wg-tailscale" = mkIf cfg.tailscale.enable {
-      enable = true;
-      family = "inet";
-      content =
-        if cfg.tailscale.exitNode then
-          ''
-            chain prerouting {
-              type filter hook prerouting priority -50; policy accept;
-
-              # Allow Tailscale protocol traffic to bypass WireGuard
-              udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-
-              # Allow direct mesh traffic (Tailscale device to Tailscale device) to bypass WireGuard
-              ip saddr 100.64.0.0/10 ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-
-              # Exit node traffic: DON'T mark it - let it route through VPN without bypass mark
-              iifname "tailscale0" ip daddr != 100.64.0.0/10 meta mark set 0;
-
-              # Return traffic from VPN: Mark it so it routes via Tailscale table
-              iifname "wg0" ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-            }
-
-            chain outgoing {
-              type route hook output priority -100; policy accept;
-              meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              ct state new meta mark == 0x6d6f6c65 ct mark set 0x00000f41;
-            }
-
-            chain postrouting {
-              type nat hook postrouting priority 100; policy accept;
-
-              # Masquerade exit node traffic going through WireGuard
-              iifname "tailscale0" oifname "wg0" masquerade;
-            }
-          ''
-        else
-          ''
-            chain prerouting {
-              type filter hook prerouting priority -100; policy accept;
-              ip saddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              udp dport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-            }
-
-            chain outgoing {
-              type route hook output priority -100; policy accept;
-              meta mark 0x80000 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              udp sport 41641 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-              ct state new meta mark == 0x6d6f6c65 ct mark set 0x00000f41;
-            }
-          '';
     };
   };
 }
