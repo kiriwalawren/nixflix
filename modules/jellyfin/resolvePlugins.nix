@@ -32,8 +32,7 @@ let
       in
       lib.filter (match: normalizeTargetAbi match.targetAbi == highestTargetAbi) matches;
 
-  repoPluginDirName =
-    pluginName: pluginVersion: "${pluginName}_${pluginVersion}";
+  repoPluginDirName = pluginName: pluginVersion: "${pluginName}_${pluginVersion}";
 
   namedPluginRepositories = lib.mapAttrsToList (
     name: repo: repo // { inherit name; }
