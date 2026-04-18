@@ -93,6 +93,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - SABnzbd refactored with updated options ([#46](https://github.com/kiriwalawren/nixflix/pull/46)).
 
+### Removed
+
+- `modules/mullvad.nix` and all `nixflix.mullvad.*` options.
+
 ### Fixed
 
 - qBittorrent category save path now correctly used ([#148](https://github.com/kiriwalawren/nixflix/pull/148)).
