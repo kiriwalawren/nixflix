@@ -225,15 +225,21 @@ in
           message = "Cannot enable VPN routing for ${capitalizedName} (`config.nixflix.${serviceName}.vpn.enable = true`) when VPN is not enabled. Please set `nixflix.vpn.enable` = true.";
         }
         {
-          assertion = (cfg.vpn.enable && config.nixflix.torrentClients.qbittorrent.enable) -> config.nixflix.torrentClients.qbittorrent.vpn.enable;
+          assertion =
+            (cfg.vpn.enable && config.nixflix.torrentClients.qbittorrent.enable)
+            -> config.nixflix.torrentClients.qbittorrent.vpn.enable;
           message = "${capitalizedName} is VPN-confined but qBittorrent is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.torrentClients.qbittorrent.vpn.enable = true` or disable VPN for ${capitalizedName}.";
         }
         {
-          assertion = (cfg.vpn.enable && config.nixflix.usenetClients.sabnzbd.enable) -> config.nixflix.usenetClients.sabnzbd.vpn.enable;
+          assertion =
+            (cfg.vpn.enable && config.nixflix.usenetClients.sabnzbd.enable)
+            -> config.nixflix.usenetClients.sabnzbd.vpn.enable;
           message = "${capitalizedName} is VPN-confined but SABnzbd is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.usenetClients.sabnzbd.vpn.enable = true` or disable VPN for ${capitalizedName}.";
         }
         {
-          assertion = (usesMediaDirs && cfg.vpn.enable && config.nixflix.prowlarr.enable) -> config.nixflix.prowlarr.vpn.enable;
+          assertion =
+            (usesMediaDirs && cfg.vpn.enable && config.nixflix.prowlarr.enable)
+            -> config.nixflix.prowlarr.vpn.enable;
           message = "${capitalizedName} is VPN-confined but Prowlarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.prowlarr.vpn.enable = true` or disable VPN for ${capitalizedName}.";
         }
       ];

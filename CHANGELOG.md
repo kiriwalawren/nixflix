@@ -35,9 +35,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Breaking ([#162](https://github.com/kiriwalawren/nixflix/pull/162)):** `nixflix.mullvad.*` options have been replaced by
   `nixflix.vpn.*`. Update your configuration accordingly.
-   - If you had `nixflix.mullvad.killSwitch.enable = true`, you need to disable it before updating.
-      This can be done without rebuilding by running `mullvad lockdown-mode set off`, then run `mullvad disconnect`.
-  `nixflix.vpn.*`. Update your configuration accordingly.
+
+  - If you had `nixflix.mullvad.killSwitch.enable = true`, you need to disable it before updating.
+    This can be done without rebuilding by running `mullvad lockdown-mode set off`, then run `mullvad disconnect`.
+    `nixflix.vpn.*`. Update your configuration accordingly.
 
 - `nixflix.radarr.vpn`, `nixflix.sonarr.vpn`, etc. per-service VPN options now
   reference the generic `nixflix.vpn` namespace rather than Mullvad.
