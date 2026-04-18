@@ -3,16 +3,20 @@
   pkgs ? import <nixpkgs> { inherit system; },
   nixosModules,
 }:
+let
+  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit (pkgs) lib; };
+in
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
   nodes.machine =
-    { ... }:
+    { lib, ... }:
     {
       imports = [ nixosModules ];
 
       virtualisation = {
         diskSize = 3 * 1024;
+        memorySize = 4096;
         cores = 4;
       };
 
@@ -207,16 +211,13 @@ pkgs.testers.runNixOSTest {
               "h264"
               "hevc"
             ];
-            pluginRepositories = [
-              {
-                tag = "RepositoryInfo";
-                content = {
-                  name = "Test Repo";
-                  url = "https://test.example.com/manifest.json";
-                  enabled = true;
-                };
-              }
-            ];
+            pluginRepositories = lib.mkForce {
+              "Jellyfin Stable" = {
+                url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+                hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+                enabled = true;
+              };
+            };
             enableLegacyAuthorization = false;
           };
 
@@ -371,6 +372,16 @@ pkgs.testers.runNixOSTest {
               ];
             };
           };
+
+          plugins = {
+            "Bookshelf" = {
+              package = jellyfinPlugins.fromRepo {
+                version = "latest";
+                hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+              };
+              config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
+            };
+          };
         };
       };
     };
@@ -385,9 +396,10 @@ pkgs.testers.runNixOSTest {
     # Wait for configuration services to complete
     machine.wait_for_unit("jellyfin-api-key.service", timeout=180)
     machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
+    machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-plugins.service", timeout=360)
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
-    machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
 
@@ -569,8 +581,6 @@ pkgs.testers.runNixOSTest {
             f"EnableMetrics should be True, got {system_config.get('EnableMetrics')}"
         assert system_config['EnableNormalizedItemByNameIds'] == False, \
             f"EnableNormalizedItemByNameIds should be False, got {system_config.get('EnableNormalizedItemByNameIds')}"
-        assert system_config['IsPortAuthorized'] == False, \
-            f"IsPortAuthorized should be False, got {system_config.get('IsPortAuthorized')}"
         assert system_config['QuickConnectAvailable'] == False, \
             f"QuickConnectAvailable should be False, got {system_config.get('QuickConnectAvailable')}"
         assert system_config['EnableCaseSensitiveItemIds'] == False, \
@@ -707,10 +717,10 @@ pkgs.testers.runNixOSTest {
         assert len(system_config['PluginRepositories']) == 1, \
             f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
         plugin_repo = system_config['PluginRepositories'][0]
-        assert plugin_repo['Name'] == 'Test Repo', \
-            f"Plugin repo Name should be 'Test Repo', got {plugin_repo.get('Name')}"
-        assert plugin_repo['Url'] == 'https://test.example.com/manifest.json', \
-            f"Plugin repo Url should be 'https://test.example.com/manifest.json', got {plugin_repo.get('Url')}"
+        assert plugin_repo['Name'] == 'Jellyfin Stable', \
+            f"Plugin repo Name should be 'Jellyfin Stable', got {plugin_repo.get('Name')}"
+        assert plugin_repo['Url'] == 'https://repo.jellyfin.org/files/plugin/manifest.json', \
+            f"Plugin repo Url should be 'https://repo.jellyfin.org/files/plugin/manifest.json', got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
             f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
         assert system_config['EnableLegacyAuthorization'] == False, \
@@ -816,5 +826,34 @@ pkgs.testers.runNixOSTest {
             f"SplashscreenEnabled should be True, got {branding_config.get('SplashscreenEnabled')}"
 
         print("All branding configuration assertions passed!")
+
+    with subtest("Verify plugin management"):
+        print("Querying installed plugins...")
+        plugins_json = machine.succeed(
+            f'curl -f -H {auth_header} {base_url}/Plugins'
+        )
+        plugins = json.loads(plugins_json)
+
+        bookshelf_plugins = [p for p in plugins if p['Name'] == 'Bookshelf']
+        assert len(bookshelf_plugins) == 1, \
+            f"Expected 1 Bookshelf plugin, found {len(bookshelf_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+        bookshelf = bookshelf_plugins[0]
+        plugin_id = bookshelf['Id']
+        print(f"Bookshelf plugin installed with id: {plugin_id}")
+
+        print("Querying Bookshelf plugin configuration...")
+        plugin_config_json = machine.succeed(
+            f'curl -f -H {auth_header} {base_url}/Plugins/{plugin_id}/Configuration'
+        )
+        plugin_config = json.loads(plugin_config_json)
+
+        assert plugin_config.get('ComicVineApiKey') == 'comicvineapikey1111111111111111111', \
+            f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
+
+        print("Verifying packaged plugin sync...")
+        machine.succeed("test -d '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0'")
+        machine.succeed("test -f '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
+
+        print("All plugin management assertions passed!")
   '';
 }

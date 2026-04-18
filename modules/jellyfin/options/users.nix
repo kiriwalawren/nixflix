@@ -60,11 +60,11 @@ let
           "Smart"
         ];
         description = ''
-          Default: The default subtitle playback mode.
-          Always: Always show subtitles.
-          OnlyForced: Only show forced subtitles.
-          None: Don't show subtitles.
-          Smart: Only show subtitles when the current audio stream is in a different language.
+          - Default: The default subtitle playback mode.
+          - Always: Always show subtitles.
+          - OnlyForced: Only show forced subtitles.
+          - None: Don't show subtitles.
+          - Smart: Only show subtitles when the current audio stream is in a different language.
         '';
         default = "Default";
       };

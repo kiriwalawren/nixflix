@@ -15,10 +15,29 @@ let
 
   networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
 
+  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit lib; };
+
   waitForApiScript = import ./waitForApiScript.nix {
     inherit pkgs;
     jellyfinCfg = cfg;
   };
+
+  pluginResolution = import ./resolvePlugins.nix {
+    inherit lib pkgs;
+    jellyfinVersion = cfg.package.version;
+    inherit (cfg.system) pluginRepositories;
+    inherit (cfg) plugins;
+  };
+
+  enabledPlugins = pluginResolution.resolvedEnabledPlugins;
+
+  configuredEnabledPlugins = filterAttrs (_name: pluginCfg: pluginCfg.enable) cfg.plugins;
+
+  inherit (pluginResolution) packagePluginDirName;
+
+  packagePluginDirNames = mapAttrsToList (_name: pluginCfg: packagePluginDirName pluginCfg.package) (
+    filterAttrs (_name: pluginCfg: pluginCfg.package != null) enabledPlugins
+  );
 in
 {
   imports = [
@@ -28,38 +47,133 @@ in
     ./brandingService.nix
     ./encodingService.nix
     ./librariesService.nix
+    ./pluginsService.nix
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    nixflix.jellyfin.libraries = mkMerge [
-      (mkIf (nixflix.sonarr.enable or false) {
-        Shows = {
-          collectionType = "tvshows";
-          paths = nixflix.sonarr.mediaDirs;
+    warnings = pluginResolution.resolutionWarnings;
+
+    nixflix.jellyfin = {
+      libraries = mkMerge [
+        (mkIf (nixflix.sonarr.enable or false) {
+          Shows = {
+            collectionType = "tvshows";
+            paths = nixflix.sonarr.mediaDirs;
+          };
+        })
+        (mkIf (nixflix.sonarr-anime.enable or false) {
+          Anime = {
+            collectionType = "tvshows";
+            paths = nixflix.sonarr-anime.mediaDirs;
+
+            typeOptions = [
+              {
+                type = "Series";
+                imageFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                imageFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+              }
+              {
+                type = "Season";
+                imageFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                imageFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                ];
+              }
+              {
+                type = "Episode";
+                imageFetchers = [
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                  "Embedded Image Extractor"
+                  "Screen Grabber"
+                ];
+                imageFetcherOrder = [
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                  "Embedded Image Extractor"
+                  "Screen Grabber"
+                ];
+                metadataFetchers = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+                metadataFetcherOrder = [
+                  "AniDB"
+                  "TheMovieDb"
+                  "The Open Movie Database"
+                ];
+              }
+            ];
+          };
+        })
+        (mkIf (nixflix.radarr.enable or false) {
+          Movies = {
+            collectionType = "movies";
+            paths = nixflix.radarr.mediaDirs;
+          };
+        })
+        (mkIf (nixflix.lidarr.enable or false) {
+          Music = {
+            collectionType = "music";
+            paths = nixflix.lidarr.mediaDirs;
+          };
+        })
+      ];
+
+      plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable {
+        package = mkDefault (
+          jellyfinPlugins.fromRepo {
+            version = "11.0.0.0";
+            hash = "sha256-Rtvxq6NxQSrRyhYdsyWXY+SoDPW4S0471gmiLTUjaSk=";
+          }
+        );
+        config = {
+          TitlePreference = mkDefault "Localized";
+          OriginalTitlePreference = mkDefault "JapaneseRomaji";
+          IgnoreSeason = mkDefault false;
+          TitleSimilarityThreshold = mkDefault "50";
+          MaxGenres = mkDefault "5";
+          TidyGenreList = mkDefault true;
+          TitleCaseGenres = mkDefault false;
+          AnimeDefaultGenre = mkDefault "Anime";
+          AniDbRateLimit = mkDefault "2000";
+          MaxCacheAge = mkDefault "7";
+          AniDbReplaceGraves = mkDefault true;
         };
-      })
-      (mkIf (nixflix.sonarr-anime.enable or false) {
-        Anime = {
-          collectionType = "tvshows";
-          paths = nixflix.sonarr-anime.mediaDirs;
-        };
-      })
-      (mkIf (nixflix.radarr.enable or false) {
-        Movies = {
-          collectionType = "movies";
-          paths = nixflix.radarr.mediaDirs;
-        };
-      })
-      (mkIf (nixflix.lidarr.enable or false) {
-        Music = {
-          collectionType = "music";
-          paths = nixflix.lidarr.mediaDirs;
-        };
-      })
-    ];
+      };
+    };
 
     assertions = [
       {
@@ -73,6 +187,14 @@ in
       {
         assertion = cfg.system.cacheSize >= 3;
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
+      }
+      {
+        assertion = all (pluginCfg: pluginCfg.package != null) (attrValues configuredEnabledPlugins);
+        message = "nixflix.jellyfin.plugins: enabled plugins must define `package`. Use `nixflix.lib.jellyfinPlugins.fromRepo` for repository-backed plugins.";
+      }
+      {
+        assertion = length packagePluginDirNames == length (unique packagePluginDirNames);
+        message = "nixflix.jellyfin.plugins contains duplicate package-managed plugin directory names.";
       }
     ];
 

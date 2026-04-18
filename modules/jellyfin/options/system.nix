@@ -325,18 +325,44 @@ in
     };
 
     pluginRepositories = mkOption {
-      type = with types; listOf attrs;
-      default = [
+      type =
+        with types;
+        attrsOf (submodule {
+          options = {
+            enabled = mkOption {
+              type = types.bool;
+              default = true;
+              example = false;
+              description = "Whether to enable this plugin repository";
+            };
+
+            url = mkOption {
+              type = types.str;
+              example = "https://repo.jellyfin.org/files/plugin/manifest.json";
+              description = "URL for the plugin repository manifest";
+            };
+
+            hash = mkOption {
+              type = types.str;
+              example = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+              description = ''
+                Fixed-output hash for the repository manifest. This pins the
+                manifest used to resolve plugin versions to source URLs.
+              '';
+            };
+          };
+        });
+      default = { };
+      defaultText = literalExpression ''
         {
-          tag = "RepositoryInfo";
-          content = {
-            name = "Jellyfin Stable";
+          "Jellyfin Stable" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+            hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
             enabled = true;
           };
         }
-      ];
-      description = "Configure which plugin repositories you use.";
+      '';
+      description = "Configure which plugin repositories you use. Jellyfin Stable is always present in the set. Adding new plugin repositories will not remove it.";
     };
 
     enableExternalContentInSuggestions = mkOption {
@@ -604,6 +630,14 @@ in
       description = ''
         Enable legacy authorization mode for backwards compatibility.
       '';
+    };
+  };
+
+  config.nixflix.jellyfin.system.pluginRepositories = {
+    "Jellyfin Stable" = {
+      url = "https://repo.jellyfin.org/files/plugin/manifest.json";
+      hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+      enabled = true;
     };
   };
 }

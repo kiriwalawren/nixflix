@@ -112,6 +112,7 @@ nav:
       - getting-started/index.md
   - Examples:
       - Basic Setup: examples/basic-setup.md
+      - Jellyfin Plugins: examples/jellyfin-plugins.md
 # REFERENCE_NAV_PLACEHOLDER
 extra:
   social:
