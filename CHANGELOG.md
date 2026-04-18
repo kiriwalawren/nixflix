@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Jellyfin Plugin management ([#156](https://github.com/kiriwalawren/nixflix/pull/156)).
 - Mullvad first-class Tailscale coexistence option (`nixflix.mullvad.tailscale`) ([#141](https://github.com/kiriwalawren/nixflix/pull/141)).
 - Mullvad `persistDevice` option to keep login across reboots ([#133](https://github.com/kiriwalawren/nixflix/pull/133)).
 - Prowlarr indexer proxy support ([#139](https://github.com/kiriwalawren/nixflix/pull/139)).
@@ -80,12 +81,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `_secrets` pattern adopted for all secret paths ([#56](https://github.com/kiriwalawren/nixflix/pull/56)).
 
 - SABnzbd refactored with updated options ([#46](https://github.com/kiriwalawren/nixflix/pull/46)).
-
-### Removed
-
-- `modules/mullvad.nix` and all `nixflix.mullvad.*` options.
-- Mullvad CLI integration (`mullvad-vpn` service management).
-- `tests/vm-tests/mullvad-integration.nix` (replaced by `vpn-integration.nix`).
 
 ### Fixed
 
