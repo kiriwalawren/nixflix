@@ -31,7 +31,7 @@ in
         script = ''
           set -eu
 
-          BASE_URL="http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
+          BASE_URL="http://${cfg.config.hostConfig.bindAddress}:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
 
           # Fetch existing tags
           echo "Fetching existing tags..."

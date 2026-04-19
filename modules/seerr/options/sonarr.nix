@@ -125,6 +125,7 @@ let
   defaultInstances =
     (optionalAttrs (config.nixflix.sonarr.enable or false) {
       Sonarr = {
+        hostname = config.nixflix.sonarr.config.hostConfig.bindAddress;
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl = config.nixflix.sonarr.config.hostConfig.urlBase;
@@ -142,6 +143,7 @@ let
     })
     // (optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
       "Sonarr Anime" = {
+        hostname = config.nixflix.sonarr-anime.config.hostConfig.bindAddress;
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl = config.nixflix.sonarr-anime.config.hostConfig.urlBase;

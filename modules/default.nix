@@ -17,7 +17,6 @@ in
     ./jellyfin
     ./seerr
     ./lidarr.nix
-    ./mullvad.nix
     ./postgres.nix
     ./prowlarr
     ./radarr.nix
@@ -26,6 +25,7 @@ in
     ./sonarr.nix
     ./torrentClients
     ./usenetClients
+    ./vpn.nix
   ];
 
   options.nixflix = {

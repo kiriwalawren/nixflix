@@ -8,7 +8,7 @@
   ];
 
   nixflix.recyclarr.config.sonarr.sonarr_anime = lib.mkIf config.nixflix.sonarr-anime.enable {
-    base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.sonarr-anime.config.hostConfig.port}${toString config.nixflix.sonarr-anime.config.hostConfig.urlBase}";
+    base_url = lib.mkDefault "http://${config.nixflix.sonarr-anime.config.hostConfig.bindAddress}:${toString config.nixflix.sonarr-anime.config.hostConfig.port}${toString config.nixflix.sonarr-anime.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.sonarr-anime.config.apiKey;
     delete_old_custom_formats = lib.mkDefault true;
 

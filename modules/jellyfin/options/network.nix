@@ -104,8 +104,16 @@ in
 
     localNetworkAddresses = mkOption {
       type = types.listOf types.str;
-      default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
-      defaultText = literalExpression ''if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ]'';
+      default =
+        if (config.nixflix.nginx.enable && !config.nixflix.jellyfin.vpn.enable) then
+          [ "127.0.0.1" ]
+        else
+          [ ];
+      defaultText = literalExpression ''
+        if (config.nixflix.nginx.enable && !config.nixflix.jellyfin.vpn.enable)
+        then [ "127.0.0.1" ]
+        else [ ]
+      '';
       description = "Override the local IP address for the HTTP server. If left empty, the server will bind to all available addresses.";
     };
 

@@ -41,13 +41,18 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
             continue
 
         service = parts[1]
-        # Count how many options exist under each path prefix
+        # Count how many options exist under each path prefix.
+        # Track seen prefixes per option so that wildcard segments ("*", "<name>")
+        # collapsing multiple depths to the same prefix don't inflate the count.
+        seen_prefixes: set[str] = set()
         for i in range(3, len(parts)):
             # Skip '*' and '<name>' parts when building the prefix
             prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
             if prefix_parts:
                 prefix = ".".join(prefix_parts)
-                service_paths[service][prefix] += 1
+                if prefix not in seen_prefixes:
+                    service_paths[service][prefix] += 1
+                    seen_prefixes.add(prefix)
 
     # Paths with multiple children become pages
     complex_groups = defaultdict(set)
@@ -175,7 +180,7 @@ def get_service_title(service: str) -> str:
         "sabnzbd": "SABnzbd",
         "qbittorrent": "qBittorrent",
         "rtorrent": "rTorrent",
-        "mullvad": "Mullvad VPN",
+        "vpn": "VPN",
         "postgres": "PostgreSQL",
     }
     return special_titles.get(service, special_case_to_title(service))
@@ -195,7 +200,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
         "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",
-        "mullvad": "[Mullvad VPN](https://mullvad.net/en) configuration for routing traffic through a VPN tunnel.",
+        "vpn": "WireGuard VPN configuration for confining services to a network namespace.",
         "postgres": "[PostgreSQL](https://www.postgresql.org/) database backend for Arr services.",
         "recyclarr": "[Recyclarr](https://github.com/recyclarr/recyclarr) automatically syncs TRaSH guides to Arr services.",
     }
@@ -256,29 +261,20 @@ def write_service_docs(
                 )
 
                 def get_sort_key(name: str) -> tuple:
-                    has_star = ".*." in name or name.endswith(".*")
-                    has_name = ".<name>." in name or name.endswith(".<name>")
-                    is_enable = name.endswith(".enable")
-
+                    # Determine the hoisted options for this page
                     if page_key == "index":
-                        service_enable = f"nixflix.{service}.enable"
-                        is_service_enable = name == service_enable
+                        prefix = f"nixflix.{service}"
                     else:
-                        page_enable = f"nixflix.{service}.{page_key}.enable"
-                        is_service_enable = name == page_enable
+                        prefix = f"nixflix.{service}.{page_key}"
 
-                    is_star_or_name_enable = (has_star or has_name) and is_enable
-
-                    if is_service_enable:
-                        return (0, name)
-                    elif not has_star and not has_name and not is_enable:
-                        return (1, name)
-                    elif is_star_or_name_enable:
-                        return (2, name)
-                    elif has_star or has_name:
-                        return (3, name)
-                    else:
-                        return (4, name)
+                    hoisted = [
+                        f"{prefix}.enable",
+                        f"{prefix}.apiKey",
+                        f"{prefix}.package",
+                    ]
+                    if name in hoisted:
+                        return (0, hoisted.index(name), name)
+                    return (1, 0, name)
 
                 sorted_options = sorted(options, key=lambda x: get_sort_key(x[0]))
                 for i, (name, opt) in enumerate(sorted_options):
@@ -287,17 +283,20 @@ def write_service_docs(
 
 
 def special_case_to_title(s: str) -> str:
-    """Convert camelCase or snake_case to Title Case"""
+    """Convert camelCase or snake_case to Title Case, preserving initialisms."""
     import re
 
     # Handle snake_case
     s = s.replace("_", " ")
     # Handle kebab case
     s = s.replace("-", " ")
-    # Insert space before capital letters
+    # Insert space at lowercase→uppercase boundary (e.g. openVPN → open VPN)
     s = re.sub(r"([a-z])([A-Z])", r"\1 \2", s)
-    # Capitalize each word
-    return s.title()
+    # Insert space before the last capital of an initialism run followed by lowercase
+    # e.g. VPNPorts → VPN Ports, HTTPSEnabled → HTTPS Enabled
+    s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", s)
+    # Capitalize only the first letter of each word, preserving initialism casing
+    return " ".join(word[0].upper() + word[1:] for word in s.split() if word)
 
 
 def get_page_nav_title(page_key: str) -> str:

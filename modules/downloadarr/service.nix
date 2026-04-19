@@ -83,13 +83,13 @@ let
           RemainAfterExit = true;
           ExecStartPre =
             "${pkgs.curl}/bin/curl --retry 30 --retry-delay 2 --retry-connrefused -so /dev/null"
-            + " http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
+            + " http://${serviceConfig.hostConfig.bindAddress}:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
         };
 
         script = ''
           set -eu
 
-          BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
+          BASE_URL="http://${serviceConfig.hostConfig.bindAddress}:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
           # Fetch all download client schemas
           echo "Fetching download client schemas..."

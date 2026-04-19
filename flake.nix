@@ -11,6 +11,7 @@
       url = "github:ruslanlap/mkdocs-catppuccin";
       flake = false;
     };
+    vpn-confinement.url = "github:Maroka-chan/VPN-Confinement";
   };
 
   outputs =
@@ -18,6 +19,7 @@
       self,
       nixpkgs,
       treefmt-nix,
+      vpn-confinement,
       ...
     }@inputs:
     let
@@ -46,8 +48,13 @@
       lib.buildJellyfinPlugin = { pkgs }: import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
       lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit lib; };
 
-      nixosModules.default = import ./modules;
-      nixosModules.nixflix = import ./modules;
+      nixosModules.default = {
+        imports = [
+          (import ./modules)
+          vpn-confinement.nixosModules.default
+        ];
+      };
+      nixosModules.nixflix = self.nixosModules.default;
 
       packages = perSystem (
         {

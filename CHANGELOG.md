@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Generic WireGuard VPN support via `nixflix.vpn` ([#164](https://github.com/kiriwalawren/nixflix/pull/164))
 - Jellyfin Plugin management ([#156](https://github.com/kiriwalawren/nixflix/pull/156)).
 - Mullvad first-class Tailscale coexistence option (`nixflix.mullvad.tailscale`) ([#141](https://github.com/kiriwalawren/nixflix/pull/141)).
 - Mullvad `persistDevice` option to keep login across reboots ([#133](https://github.com/kiriwalawren/nixflix/pull/133)).
@@ -29,6 +30,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Breaking:** `nixflix.mullvad.*` options have been replaced by
   `nixflix.vpn.*`. Update your configuration accordingly.
+
+- `nixflix.radarr.vpn`, `nixflix.sonarr.vpn`, etc. per-service VPN options now
+  reference the generic `nixflix.vpn` namespace rather than Mullvad.
+
+- **Breaking ([#162](https://github.com/kiriwalawren/nixflix/pull/162)):** `nixflix.mullvad.*` options have been replaced by
+  `nixflix.vpn.*`. Update your configuration accordingly.
+
+  - If you had `nixflix.mullvad.killSwitch.enable = true`, you need to disable it before updating.
+    This can be done without rebuilding by running `mullvad lockdown-mode set off`, then run `mullvad disconnect`.
+    `nixflix.vpn.*`. Update your configuration accordingly.
 
 - `nixflix.radarr.vpn`, `nixflix.sonarr.vpn`, etc. per-service VPN options now
   reference the generic `nixflix.vpn` namespace rather than Mullvad.
@@ -81,6 +92,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `_secrets` pattern adopted for all secret paths ([#56](https://github.com/kiriwalawren/nixflix/pull/56)).
 
 - SABnzbd refactored with updated options ([#46](https://github.com/kiriwalawren/nixflix/pull/46)).
+
+### Removed
+
+- `modules/mullvad.nix` and all `nixflix.mullvad.*` options.
+- Tailscale coexistence. It is not necessary because of the VPN namespace.
 
 ### Fixed
 

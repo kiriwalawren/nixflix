@@ -148,8 +148,19 @@ let
     options = {
       host = mkOption {
         type = types.str;
-        default = if config.nixflix.nginx.enable then "127.0.0.1" else "0.0.0.0";
-        defaultText = lib.literalExpression ''if config.nixflix.nginx.enable then "127.0.0.1" else "0.0.0.0"'';
+        default =
+          if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable then
+            config.vpnNamespaces.wg.namespaceAddress
+          else if config.nixflix.nginx.enable then
+            "127.0.0.1"
+          else
+            "0.0.0.0";
+        defaultText = lib.literalExpression ''
+          if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable
+          then config.vpnNamespaces.wg.namespaceAddress
+          else if config.nixflix.nginx.enable then "127.0.0.1"
+          else "0.0.0.0"
+        '';
         example = "0.0.0.0";
         description = "Address for the Web UI to listen on for incoming connections.";
       };

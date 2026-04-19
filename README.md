@@ -55,7 +55,7 @@ Nixflix is:
 - **Media Server Stack**: Pre-configured modules for Sonarr, Radarr, Lidarr, and Prowlarr
 - **Declarative API Configuration**: Configure services declaratively via NixOS options, automatically applied through their REST APIs
 - **PostgreSQL Integration**: Optional PostgreSQL backend for all Arr services
-- **Mullvad VPN Integration**: Built-in support for Mullvad VPN with kill switch and custom DNS
+- **WireGuard VPN Integration**: Built-in support for Wireguard VPN with kill switch and custom DNS
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
 - **Optional Nginx Reverse Proxy**: Configurable nginx integration for all services
@@ -107,7 +107,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - Automatic integration with Starr services
 
-### Mullvad VPN
+### WireGuard VPN
 
 - Automatic authentication
 - Custom DNS servers

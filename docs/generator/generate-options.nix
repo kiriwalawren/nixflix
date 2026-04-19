@@ -44,6 +44,10 @@ let
         type = lib.types.attrs;
         default = { };
       };
+      vpnNamespaces = lib.mkOption {
+        type = lib.types.attrs;
+        default = { };
+      };
     };
   };
 

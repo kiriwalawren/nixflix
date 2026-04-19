@@ -2,6 +2,8 @@
   lib,
   pkgs,
   serviceName,
+  config,
+  serviceConfig,
 }:
 with lib;
 let
@@ -13,7 +15,7 @@ let
 in
 {
   options = mkOption {
-    type = import ./hostConfigType.nix { inherit lib; };
+    type = import ./hostConfigType.nix { inherit lib config serviceConfig; };
     default = { };
     description = "Host configuration options that will be set via the API /config/host endpoint";
   };
@@ -49,7 +51,7 @@ in
       script = ''
         set -eu
 
-        BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
+        BASE_URL="http://${serviceConfig.hostConfig.bindAddress}:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
         # Get current host configuration
         echo "Fetching current host configuration..."

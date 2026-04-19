@@ -104,14 +104,22 @@ in
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.mullvad.enable;
-        defaultText = literalExpression "config.nixflix.mullvad.enable";
+        default = false;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Jellyfin traffic through the VPN.
-          When false (default), Jellyfin bypasses the VPN.
-          When true, Jellyfin routes through the VPN (requires nixflix.mullvad.enable = true).
+
+          When `false`, Jellyfin bypasses the VPN.
+          When `true`, Jellyfin is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
     };
   };
+
+  config.assertions = [
+    {
+      assertion = config.nixflix.jellyfin.vpn.enable -> config.nixflix.vpn.enable;
+      message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+    }
+  ];
 }

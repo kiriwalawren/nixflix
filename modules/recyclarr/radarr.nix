@@ -11,7 +11,7 @@ in
   ];
 
   nixflix.recyclarr.config.radarr.radarr = lib.mkIf config.nixflix.radarr.enable {
-    base_url = lib.mkDefault "http://127.0.0.1:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
+    base_url = lib.mkDefault "http://${config.nixflix.radarr.config.hostConfig.bindAddress}:${toString config.nixflix.radarr.config.hostConfig.port}${toString config.nixflix.radarr.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.radarr.config.apiKey;
     delete_old_custom_formats = lib.mkDefault true;
 
