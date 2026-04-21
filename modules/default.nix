@@ -125,14 +125,19 @@ in
       description = ''
         The location of the media directory for the services.
 
-        > **Warning:** Setting this to any path, where the subpath is not
-        > owned by root, will fail! For example:
-        >
-        > ```nix
-        > mediaDir = /home/user/data
-        > ```
-        >
-        > Is not supported, because `/home/user` is owned by `user`.
+        !!! warning
+
+            All parent directories must have execute permissions for everyone.
+
+        !!! warning
+
+            Setting this to any path, where the subpath is not owned by root, will fail! For example:
+
+            ```nix
+            mediaDir = /home/user/data
+            ```
+
+            Is not supported, because `/home/user` is owned by `user`.
       '';
     };
 
@@ -143,14 +148,19 @@ in
       description = ''
         The location of the downloads directory for download clients.
 
-        > **Warning:** Setting this to any path, where the subpath is not
-        > owned by root, will fail! For example:
-        >
-        > ```nix
-        > downloadsDir = /home/user/downloads
-        > ```
-        >
-        > Is not supported, because `/home/user` is owned by `user`.
+        !!! warning
+
+            All parent directories must have execute permissions for everyone.
+
+        !!! warning
+
+            Setting this to any path, where the subpath is not owned by root, will fail! For example:
+
+            ```nix
+            mediaDir = /home/user/data
+            ```
+
+            Is not supported, because `/home/user` is owned by `user`.
       '';
     };
 
@@ -161,14 +171,19 @@ in
       description = ''
         The location of the state directory for the services.
 
-        > **Warning:** Setting this to any path, where the subpath is not
-        > owned by root, will fail! For example:
-        >
-        > ```nix
-        > stateDir = /home/user/data/.state
-        > ```
-        >
-        > Is not supported, because `/home/user` is owned by `user`.
+        !!! warning
+
+            All parent directories must have execute permissions for everyone.
+
+        !!! warning
+
+            Setting this to any path, where the subpath is not owned by root, will fail! For example:
+
+            ```nix
+            mediaDir = /home/user/data
+            ```
+
+            Is not supported, because `/home/user` is owned by `user`.
       '';
     };
   };
@@ -186,12 +201,12 @@ in
         group = "root";
       };
       "${cfg.mediaDir}".d = {
-        mode = "0774";
+        mode = "0775";
         inherit (globals.libraryOwner) user;
         inherit (globals.libraryOwner) group;
       };
       "${cfg.downloadsDir}".d = {
-        mode = "0774";
+        mode = "0775";
         inherit (globals.libraryOwner) user;
         inherit (globals.libraryOwner) group;
       };

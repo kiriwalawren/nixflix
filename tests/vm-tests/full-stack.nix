@@ -26,6 +26,10 @@ pkgsUnfree.testers.runNixOSTest {
       nixflix = {
         enable = true;
 
+        # Verify that folders can be nested
+        mediaDir = "/srv/media";
+        stateDir = "/srv/media/.state";
+
         prowlarr = {
           enable = true;
           config = {
