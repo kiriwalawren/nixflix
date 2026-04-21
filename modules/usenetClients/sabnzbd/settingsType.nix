@@ -177,7 +177,13 @@ let
       };
 
       api_key = secrets.mkSecretOption {
-        description = "API key for SABnzbd.";
+        description = ''
+          API key for SABnzbd. Can be created with the following:
+
+          ```bash
+          openssl rand -hex 16
+          ```
+        '';
       };
 
       nzb_key = secrets.mkSecretOption {

@@ -193,7 +193,13 @@ in
 
           apiKey = secrets.mkSecretOption {
             default = null;
-            description = "API key for ${capitalizedName}.";
+            description = ''
+              API key for ${capitalizedName}. Can be created by running:
+
+              ```bash
+              openssl rand -hex 16
+              ```
+            '';
           };
         }
         // {

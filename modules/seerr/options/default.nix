@@ -22,7 +22,13 @@ in
     package = mkPackageOption pkgs "seerr" { };
 
     apiKey = secrets.mkSecretOption {
-      description = "API key for Seerr.";
+      description = ''
+        API key for Seerr. Can be created with:
+
+        ```bash
+        uuidgen | base64
+        ```
+      '';
     };
 
     externalUrlScheme = mkOption {
