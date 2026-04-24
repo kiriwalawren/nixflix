@@ -28,266 +28,244 @@ in
       inherit (cfg.reverseProxy) expose;
       inherit (cfg) port;
       themeParkService = "overseerr";
-      themeParkTag = "</head>";
     })
     {
-    assertions =
-      let
-        radarrDefaults = filter (r: r.isDefault) (attrValues cfg.radarr);
-        radarrDefaultCount = length radarrDefaults;
-        radarrDefault4k = filter (r: r.is4k) radarrDefaults;
-        radarrDefaultNon4k = filter (r: !r.is4k) radarrDefaults;
+      assertions =
+        let
+          radarrDefaults = filter (r: r.isDefault) (attrValues cfg.radarr);
+          radarrDefaultCount = length radarrDefaults;
+          radarrDefault4k = filter (r: r.is4k) radarrDefaults;
+          radarrDefaultNon4k = filter (r: !r.is4k) radarrDefaults;
 
-        sonarrDefaults = filter (s: s.isDefault) (attrValues cfg.sonarr);
-        sonarrDefaultCount = length sonarrDefaults;
-        sonarrDefault4k = filter (s: s.is4k) sonarrDefaults;
-        sonarrDefaultNon4k = filter (s: !s.is4k) sonarrDefaults;
-      in
-      [
-        {
-          assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
-          message = "Seerr requires Jellyfin admin credentials. Either enable `nixflix.jellyfin` with an admin user, or set `nixflix.seerr.jellyfin.adminUsername` and `nixflix.seerr.jellyfin.adminPassword`.";
-        }
-        {
-          assertion = radarrDefaultCount <= 2;
-          message = "Cannot have more than 2 default Radarr instances in seerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
-        }
-        {
-          assertion =
-            radarrDefaultCount != 2 || (length radarrDefault4k == 1 && length radarrDefaultNon4k == 1);
-          message = "When there are 2 default Radarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
-        }
-        {
-          assertion = sonarrDefaultCount <= 2;
-          message = "Cannot have more than 2 default Sonarr instances in seerr.sonarr. Found ${toString sonarrDefaultCount} instances with isDefault = true.";
-        }
-        {
-          assertion =
-            sonarrDefaultCount != 2 || (length sonarrDefault4k == 1 && length sonarrDefaultNon4k == 1);
-          message = "When there are 2 default Sonarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
-        }
-        # Kept: upstream's VPN cross-check assertions
-        {
-          assertion =
-            (cfg.vpn.enable && config.nixflix.jellyfin.enable) -> config.nixflix.jellyfin.vpn.enable;
-          message = "Seerr is VPN-confined but Jellyfin is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.jellyfin.vpn.enable = true` or disable VPN for Seerr.";
-        }
-        {
-          assertion = (cfg.vpn.enable && config.nixflix.radarr.enable) -> config.nixflix.radarr.vpn.enable;
-          message = "Seerr is VPN-confined but Radarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.radarr.vpn.enable = true` or disable VPN for Seerr.";
-        }
-        {
-          assertion = (cfg.vpn.enable && config.nixflix.sonarr.enable) -> config.nixflix.sonarr.vpn.enable;
-          message = "Seerr is VPN-confined but Sonarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr.vpn.enable = true` or disable VPN for Seerr.";
-        }
-        {
-          assertion =
-            (cfg.vpn.enable && config.nixflix.sonarr-anime.enable) -> config.nixflix.sonarr-anime.vpn.enable;
-          message = "Seerr is VPN-confined but Sonarr Anime is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr-anime.vpn.enable = true` or disable VPN for Seerr.";
-        }
-      ];
-
-    users = {
-      groups.${cfg.group} = {
-        gid = mkForce config.nixflix.globals.gids.seerr;
-      };
-
-      users.${cfg.user} = {
-        inherit (cfg) group;
-        home = cfg.dataDir;
-        isSystemUser = true;
-        uid = mkForce config.nixflix.globals.uids.seerr;
-      };
-    };
-
-    systemd.tmpfiles.settings."10-seerr" = {
-      "/run/seerr".d = {
-        mode = "0755";
-        inherit (cfg) user group;
-      };
-      ${cfg.dataDir}.d = {
-        mode = "0755";
-        inherit (cfg) user group;
-      };
-    };
-
-    services.postgresql = mkIf config.nixflix.postgres.enable {
-      ensureDatabases = [ cfg.user ];
-      ensureUsers = [
-        {
-          name = cfg.user;
-          ensureDBOwnership = true;
-        }
-      ];
-    };
-
-    systemd.services = {
-      seerr-env = mkIf (cfg.apiKey != null) {
-        description = "Setup Seerr environment file";
-        wantedBy = [ "seerr.service" ];
-        before = [ "seerr.service" ];
-
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-
-        script = ''
-          mkdir -p /run/seerr
-          echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/seerr/env
-          chown ${cfg.user}:${cfg.group} /run/seerr/env
-          chmod 0400 /run/seerr/env
-        '';
-      };
-
-      seerr-wait-for-db = mkIf config.nixflix.postgres.enable {
-        description = "Wait for Seerr PostgreSQL database to be ready";
-        after = [
-          "postgresql.service"
-          "postgresql-setup.service"
+          sonarrDefaults = filter (s: s.isDefault) (attrValues cfg.sonarr);
+          sonarrDefaultCount = length sonarrDefaults;
+          sonarrDefault4k = filter (s: s.is4k) sonarrDefaults;
+          sonarrDefaultNon4k = filter (s: !s.is4k) sonarrDefaults;
+        in
+        [
+          {
+            assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
+            message = "Seerr requires Jellyfin admin credentials. Either enable `nixflix.jellyfin` with an admin user, or set `nixflix.seerr.jellyfin.adminUsername` and `nixflix.seerr.jellyfin.adminPassword`.";
+          }
+          {
+            assertion = radarrDefaultCount <= 2;
+            message = "Cannot have more than 2 default Radarr instances in seerr.radarr. Found ${toString radarrDefaultCount} instances with isDefault = true.";
+          }
+          {
+            assertion =
+              radarrDefaultCount != 2 || (length radarrDefault4k == 1 && length radarrDefaultNon4k == 1);
+            message = "When there are 2 default Radarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
+          }
+          {
+            assertion = sonarrDefaultCount <= 2;
+            message = "Cannot have more than 2 default Sonarr instances in seerr.sonarr. Found ${toString sonarrDefaultCount} instances with isDefault = true.";
+          }
+          {
+            assertion =
+              sonarrDefaultCount != 2 || (length sonarrDefault4k == 1 && length sonarrDefaultNon4k == 1);
+            message = "When there are 2 default Sonarr instances, one must be 4K (is4k = true) and one must be non-4K (is4k = false).";
+          }
+          {
+            assertion =
+              (cfg.vpn.enable && config.nixflix.jellyfin.enable) -> config.nixflix.jellyfin.vpn.enable;
+            message = "Seerr is VPN-confined but Jellyfin is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.jellyfin.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion = (cfg.vpn.enable && config.nixflix.radarr.enable) -> config.nixflix.radarr.vpn.enable;
+            message = "Seerr is VPN-confined but Radarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.radarr.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion = (cfg.vpn.enable && config.nixflix.sonarr.enable) -> config.nixflix.sonarr.vpn.enable;
+            message = "Seerr is VPN-confined but Sonarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr.vpn.enable = true` or disable VPN for Seerr.";
+          }
+          {
+            assertion =
+              (cfg.vpn.enable && config.nixflix.sonarr-anime.enable) -> config.nixflix.sonarr-anime.vpn.enable;
+            message = "Seerr is VPN-confined but Sonarr Anime is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.sonarr-anime.vpn.enable = true` or disable VPN for Seerr.";
+          }
         ];
-        before = [ "postgresql-ready.target" ];
-        requiredBy = [ "postgresql-ready.target" ];
 
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          TimeoutStartSec = "5min";
-          User = cfg.user;
-          Group = cfg.group;
+      users = {
+        groups.${cfg.group} = {
+          gid = mkForce config.nixflix.globals.gids.seerr;
         };
 
-        script = ''
-          while true; do
-            if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
-              echo "Seerr PostgreSQL database is ready"
-              exit 0
-            fi
-            echo "Waiting for PostgreSQL role seerr..."
-            sleep 1
-          done
-        '';
-      };
-
-      seerr = {
-        description = "Seerr media request manager";
-
-        # Merged: both upstream's jellyfin-plugins.service and caddy's mullvad/setup-wizard deps
-        after = [
-          "network-online.target"
-          "nixflix-setup-dirs.service"
-        ]
-        ++ optional (cfg.apiKey != null) "seerr-env.service"
-        ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
-        ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
-        ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
-        ++ optional (
-          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
-        ) "recyclarr-cleanup-profiles.service";
-
-        wants = [
-          "network-online.target"
-        ]
-        ++ optional config.nixflix.mullvad.enable "mullvad-config.service"
-        ++ optional config.nixflix.recyclarr.enable "recyclarr.service";
-
-        requires = [
-          "nixflix-setup-dirs.service"
-        ]
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
-        ++ optional (cfg.apiKey != null) "seerr-env.service"
-        ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
-        ++ optional (
-          config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
-        ) "recyclarr-cleanup-profiles.service";
-
-        wantedBy = [ "multi-user.target" ];
-
-        environment = {
-          HOST = mkIf config.nixflix.reverseProxy.enable "127.0.0.1";
-          PORT = toString cfg.port;
-          CONFIG_DIRECTORY = cfg.dataDir;
-        }
-        // optionalAttrs config.nixflix.postgres.enable {
-          DB_TYPE = "postgres";
-          DB_SOCKET_PATH = "/run/postgresql";
-          DB_USER = cfg.user;
-          DB_NAME = cfg.user;
-          DB_LOG_QUERIES = "false";
-        };
-
-        serviceConfig = {
-          Type = "simple";
-          User = cfg.user;
-          Group = cfg.group;
-          WorkingDirectory = cfg.dataDir;
-          Restart = "on-failure";
-
-          # Added: conditional mullvad-exclude bypass from caddy branch
-          ExecStart =
-            if (config.nixflix.mullvad.enable && !cfg.vpn.enable) then
-              pkgs.writeShellScript "seerr-vpn-bypass" ''
-                exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package}
-              ''
-            else
-              "${getExe cfg.package}";
-
-          # Security hardening
-          NoNewPrivileges = true;
-          PrivateTmp = true;
-          PrivateDevices = true;
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          ReadWritePaths = cfg.dataDir;
-          RestrictAddressFamilies = [
-            "AF_UNIX"
-            "AF_INET"
-            "AF_INET6"
-          ];
-          LockPersonality = true;
-          ProtectControlGroups = true;
-          ProtectKernelLogs = true;
-          ProtectKernelModules = true;
-          ProtectKernelTunables = true;
-          RestrictNamespaces = true;
-          RestrictRealtime = true;
-          RestrictSUIDSGID = true;
-          SystemCallArchitectures = "native";
-          SystemCallFilter = [
-            "~@clock"
-            "~@debug"
-            "~@module"
-            "~@mount"
-            "~@reboot"
-            "~@swap"
-            "~@privileged"
-            "~@resources"
-          ];
-        }
-        // optionalAttrs (cfg.apiKey != null) {
-          EnvironmentFile = "/run/seerr/env";
-        }
-        # Added: mullvad bypass serviceConfig overrides from caddy branch
-        // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
-          AmbientCapabilities = "CAP_SYS_ADMIN";
-          Delegate = mkForce true;
-          SystemCallFilter = mkForce [ ];
-          NoNewPrivileges = mkForce false;
-          ProtectControlGroups = mkForce false;
+        users.${cfg.user} = {
+          inherit (cfg) group;
+          home = cfg.dataDir;
+          isSystemUser = true;
+          uid = mkForce config.nixflix.globals.uids.seerr;
         };
       };
-    };
 
-    networking.firewall = mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.port ];
-    };
+      systemd.tmpfiles.settings."10-seerr" = {
+        "/run/seerr".d = {
+          mode = "0755";
+          inherit (cfg) user group;
+        };
+        ${cfg.dataDir}.d = {
+          mode = "0755";
+          inherit (cfg) user group;
+        };
+      };
 
-    # Removed: networking.hosts and services.nginx.virtualHosts — mkVirtualHost handles these
+      services.postgresql = mkIf config.nixflix.postgres.enable {
+        ensureDatabases = [ cfg.user ];
+        ensureUsers = [
+          {
+            name = cfg.user;
+            ensureDBOwnership = true;
+          }
+        ];
+      };
+
+      systemd.services = {
+        seerr-env = mkIf (cfg.apiKey != null) {
+          description = "Setup Seerr environment file";
+          wantedBy = [ "seerr.service" ];
+          before = [ "seerr.service" ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+
+          script = ''
+            mkdir -p /run/seerr
+            echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/seerr/env
+            chown ${cfg.user}:${cfg.group} /run/seerr/env
+            chmod 0400 /run/seerr/env
+          '';
+        };
+
+        seerr-wait-for-db = mkIf config.nixflix.postgres.enable {
+          description = "Wait for Seerr PostgreSQL database to be ready";
+          after = [
+            "postgresql.service"
+            "postgresql-setup.service"
+          ];
+          before = [ "postgresql-ready.target" ];
+          requiredBy = [ "postgresql-ready.target" ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            TimeoutStartSec = "5min";
+            User = cfg.user;
+            Group = cfg.group;
+          };
+
+          script = ''
+            while true; do
+              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
+                echo "Seerr PostgreSQL database is ready"
+                exit 0
+              fi
+              echo "Waiting for PostgreSQL role seerr..."
+              sleep 1
+            done
+          '';
+        };
+
+        seerr = {
+          description = "Seerr media request manager";
+
+          after = [
+            "network-online.target"
+            "nixflix-setup-dirs.service"
+          ]
+          ++ optional (cfg.apiKey != null) "seerr-env.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
+          ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
+          ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
+          ++ optional (
+            config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
+          ) "recyclarr-cleanup-profiles.service";
+
+          wants = [
+            "network-online.target"
+          ]
+          ++ optional config.nixflix.recyclarr.enable "recyclarr.service";
+
+          requires = [
+            "nixflix-setup-dirs.service"
+          ]
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
+          ++ optional (cfg.apiKey != null) "seerr-env.service"
+          ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
+          ++ optional (
+            config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
+          ) "recyclarr-cleanup-profiles.service";
+
+          wantedBy = [ "multi-user.target" ];
+
+          environment = {
+            HOST = mkIf config.nixflix.reverseProxy.enable "127.0.0.1";
+            PORT = toString cfg.port;
+            CONFIG_DIRECTORY = cfg.dataDir;
+          }
+          // optionalAttrs config.nixflix.postgres.enable {
+            DB_TYPE = "postgres";
+            DB_SOCKET_PATH = "/run/postgresql";
+            DB_USER = cfg.user;
+            DB_NAME = cfg.user;
+            DB_LOG_QUERIES = "false";
+          };
+
+          serviceConfig = {
+            Type = "simple";
+            User = cfg.user;
+            Group = cfg.group;
+            WorkingDirectory = cfg.dataDir;
+            Restart = "on-failure";
+
+            ExecStart = "${getExe cfg.package}";
+
+            # Security hardening
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            ReadWritePaths = cfg.dataDir;
+            RestrictAddressFamilies = [
+              "AF_UNIX"
+              "AF_INET"
+              "AF_INET6"
+            ];
+            LockPersonality = true;
+            ProtectControlGroups = true;
+            ProtectKernelLogs = true;
+            ProtectKernelModules = true;
+            ProtectKernelTunables = true;
+            RestrictNamespaces = true;
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            SystemCallArchitectures = "native";
+            SystemCallFilter = [
+              "~@clock"
+              "~@debug"
+              "~@module"
+              "~@mount"
+              "~@reboot"
+              "~@swap"
+              "~@privileged"
+              "~@resources"
+            ];
+          }
+          // optionalAttrs (cfg.apiKey != null) {
+            EnvironmentFile = "/run/seerr/env";
+          };
+        };
+      };
+
+      networking.firewall = mkIf cfg.openFirewall {
+        allowedTCPPorts = [ cfg.port ];
+      };
+
     }
-    # Kept: upstream's VPN confinement block
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.seerr.vpnConfinement = {
         enable = true;

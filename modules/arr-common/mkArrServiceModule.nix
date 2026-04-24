@@ -240,30 +240,30 @@ in
       themeParkService = serviceBase;
     })
     {
-    assertions = [
-      {
-        assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-        message = "Cannot enable VPN routing for ${capitalizedName} (`config.nixflix.${serviceName}.vpn.enable = true`) when VPN is not enabled. Please set `nixflix.vpn.enable` = true.";
-      }
-      {
-        assertion =
-          (cfg.vpn.enable && config.nixflix.torrentClients.qbittorrent.enable)
-          -> config.nixflix.torrentClients.qbittorrent.vpn.enable;
-        message = "${capitalizedName} is VPN-confined but qBittorrent is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.torrentClients.qbittorrent.vpn.enable = true` or disable VPN for ${capitalizedName}.";
-      }
-      {
-        assertion =
-          (cfg.vpn.enable && config.nixflix.usenetClients.sabnzbd.enable)
-          -> config.nixflix.usenetClients.sabnzbd.vpn.enable;
-        message = "${capitalizedName} is VPN-confined but SABnzbd is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.usenetClients.sabnzbd.vpn.enable = true` or disable VPN for ${capitalizedName}.";
-      }
-      {
-        assertion =
-          (usesMediaDirs && cfg.vpn.enable && config.nixflix.prowlarr.enable)
-          -> config.nixflix.prowlarr.vpn.enable;
-        message = "${capitalizedName} is VPN-confined but Prowlarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.prowlarr.vpn.enable = true` or disable VPN for ${capitalizedName}.";
-      }
-    ];
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for ${capitalizedName} (`config.nixflix.${serviceName}.vpn.enable = true`) when VPN is not enabled. Please set `nixflix.vpn.enable` = true.";
+        }
+        {
+          assertion =
+            (cfg.vpn.enable && config.nixflix.torrentClients.qbittorrent.enable)
+            -> config.nixflix.torrentClients.qbittorrent.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but qBittorrent is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.torrentClients.qbittorrent.vpn.enable = true` or disable VPN for ${capitalizedName}.";
+        }
+        {
+          assertion =
+            (cfg.vpn.enable && config.nixflix.usenetClients.sabnzbd.enable)
+            -> config.nixflix.usenetClients.sabnzbd.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but SABnzbd is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.usenetClients.sabnzbd.vpn.enable = true` or disable VPN for ${capitalizedName}.";
+        }
+        {
+          assertion =
+            (usesMediaDirs && cfg.vpn.enable && config.nixflix.prowlarr.enable)
+            -> config.nixflix.prowlarr.vpn.enable;
+          message = "${capitalizedName} is VPN-confined but Prowlarr is not. Services inside the VPN namespace cannot reach services outside it. Set `nixflix.prowlarr.vpn.enable = true` or disable VPN for ${capitalizedName}.";
+        }
+      ];
 
       nixflix.${serviceName} = {
         settings = {
@@ -293,7 +293,6 @@ in
         };
       };
 
-      # Removed: nginx.virtualHosts and networking.hosts — mkVirtualHost handles these
       services.postgresql = mkIf config.nixflix.postgres.enable {
         ensureDatabases = [
           cfg.settings.postgres.mainDb
@@ -402,7 +401,6 @@ in
           description = capitalizedName;
           environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
-          # Added: mullvad-config.service dependency from caddy branch
           after = [
             "network.target"
             "nixflix-setup-dirs.service"
@@ -411,8 +409,7 @@ in
           ++ (optional (
             cfg.config.apiKey != null && cfg.config.hostConfig.password != null
           ) "${serviceName}-env.service")
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target")
-          ++ (optional config.nixflix.mullvad.enable "mullvad-config.service");
+          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
           requires = [
             "nixflix-setup-dirs.service"
           ]
@@ -421,8 +418,7 @@ in
             cfg.config.apiKey != null && cfg.config.hostConfig.password != null
           ) "${serviceName}-env.service")
           ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
-          # Changed: from empty list to mullvad wants
-          wants = optional config.nixflix.mullvad.enable "mullvad-config.service";
+          wants = [ ];
           wantedBy = [ "multi-user.target" ];
 
           serviceConfig = {
@@ -435,18 +431,6 @@ in
           }
           // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
             EnvironmentFile = "/run/${serviceName}/env";
-          }
-          # Added: mullvad VPN bypass from caddy branch — wraps ExecStart
-          # with mullvad-exclude when mullvad is enabled but this service opts out
-          // optionalAttrs (config.nixflix.mullvad.enable && !cfg.vpn.enable) {
-            ExecStart = mkForce (
-              pkgs.writeShellScript "${serviceName}-vpn-bypass" ''
-                exec /run/wrappers/bin/mullvad-exclude ${getExe cfg.package} \
-                  -nobrowser -data='${stateDir}'
-              ''
-            );
-            AmbientCapabilities = "CAP_SYS_ADMIN";
-            Delegate = mkForce true;
           };
         };
       }
@@ -480,7 +464,6 @@ in
         "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
       };
     }
-    # Kept: upstream's VPN confinement block (simplified guard since outer mkIf checks enable)
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.${serviceName}.vpnConfinement = {
         enable = true;

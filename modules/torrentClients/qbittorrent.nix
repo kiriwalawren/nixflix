@@ -176,15 +176,13 @@ in
       ];
     })
     {
-    # Kept: upstream's VPN assertion
-    assertions = [
-      {
-        assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-        message = "Cannot enable VPN routing for qBittorrent (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
-      }
-    ];
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for qBittorrent (nixflix.torrentClients.qbittorrent.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
+      ];
 
-      # Merged: both caddy's "reverseProxy" and upstream's "vpn" in removeAttrs
       services.qbittorrent = builtins.removeAttrs cfg [
         "categories"
         "downloadsDir"
@@ -248,9 +246,7 @@ in
         );
       };
 
-    # Removed: networking.hosts and services.nginx.virtualHosts — mkVirtualHost handles these
     }
-    # Kept: upstream's VPN confinement block
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.qbittorrent.vpnConfinement = {
         enable = true;

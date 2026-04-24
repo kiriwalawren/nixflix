@@ -86,7 +86,6 @@ in
       internal = true;
     };
 
-    # Kept: upstream's VPN option
     vpn = {
       enable = mkOption {
         type = types.bool;
@@ -108,128 +107,124 @@ in
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.settings.misc) port;
       themeParkService = "sabnzbd";
-      themeParkTag = "</head>";
       websocketUpgrade = true;
     })
     {
-    assertions = [
-      # Kept: upstream's VPN assertion
-      {
-        assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-        message = "Cannot enable VPN routing for SABnzbd (nixflix.usenetClients.sabnzbd.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
-      }
-      {
-        assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
-        message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
-      }
-      {
-        assertion =
-          cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
-        message = "nixflix.usenetClients.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
-      }
-    ];
-
-    nixflix.usenetClients.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
-
-    users.users.${cfg.user} = {
-      inherit (cfg) group;
-      uid = mkForce config.nixflix.globals.uids.sabnzbd;
-      home = stateDir;
-      isSystemUser = true;
-    };
-
-    users.groups.${cfg.group} = { };
-    systemd.tmpfiles.settings."10-sabnzbd" =
-      let
-        mkDir = dir: {
-          "${dir}".d = {
-            inherit (cfg) user group;
-            mode = "0775";
-          };
-        };
-      in
-      {
-        "${stateDir}".d = {
-          inherit (cfg) user group;
-          mode = "0755";
-        };
-      }
-      // lib.mergeAttrsList (
-        map mkDir [
-          cfg.downloadsDir
-          cfg.settings.misc.download_dir
-          cfg.settings.misc.complete_dir
-          cfg.settings.misc.dirscan_dir
-          cfg.settings.misc.nzb_backup_dir
-          cfg.settings.misc.admin_dir
-          cfg.settings.misc.log_dir
-        ]
-      );
-
-    environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
-
-    systemd.services.sabnzbd = {
-      description = "SABnzbd Usenet Downloader";
-      after = [
-        "network-online.target"
-        "nixflix-setup-dirs.service"
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for SABnzbd (nixflix.usenetClients.sabnzbd.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
+        {
+          assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
+          message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
+        }
+        {
+          assertion =
+            cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
+          message = "nixflix.usenetClients.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
+        }
       ];
-      requires = [ "nixflix-setup-dirs.service" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-      restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
 
-      serviceConfig = {
-        Type = "simple";
-        User = cfg.user;
-        Group = cfg.group;
+      nixflix.usenetClients.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
 
-        # Run with root privileges ('+' prefix) to read secrets owned by root
-        ExecStartPre =
-          "+"
-          + pkgs.writeShellScript "sabnzbd-prestart" ''
-            set -euo pipefail
-
-            echo "Merging secrets into SABnzbd configuration..."
-            ${pkgs.python3}/bin/python3 ${../../../lib/secrets/mergeSecrets.py} \
-              /etc/sabnzbd/sabnzbd.ini.template \
-              ${configFile}
-
-            ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
-            ${pkgs.coreutils}/bin/chmod 600 ${configFile}
-
-            echo "Configuration ready"
-          '';
-
-        ExecStart = "${getExe cfg.package} -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
-
-        Restart = "on-failure";
-        RestartSec = "5s";
-
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ReadWritePaths = [
-          stateDir
-          cfg.downloadsDir
-          cfg.settings.misc.download_dir
-          cfg.settings.misc.complete_dir
-          cfg.settings.misc.dirscan_dir
-          cfg.settings.misc.nzb_backup_dir
-          cfg.settings.misc.admin_dir
-          cfg.settings.misc.log_dir
-        ];
+      users.users.${cfg.user} = {
+        inherit (cfg) group;
+        uid = mkForce config.nixflix.globals.uids.sabnzbd;
+        home = stateDir;
+        isSystemUser = true;
       };
-    };
 
-    networking.firewall = mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.settings.misc.port ];
-    };
+      users.groups.${cfg.group} = { };
+      systemd.tmpfiles.settings."10-sabnzbd" =
+        let
+          mkDir = dir: {
+            "${dir}".d = {
+              inherit (cfg) user group;
+              mode = "0775";
+            };
+          };
+        in
+        {
+          "${stateDir}".d = {
+            inherit (cfg) user group;
+            mode = "0755";
+          };
+        }
+        // lib.mergeAttrsList (
+          map mkDir [
+            cfg.downloadsDir
+            cfg.settings.misc.download_dir
+            cfg.settings.misc.complete_dir
+            cfg.settings.misc.dirscan_dir
+            cfg.settings.misc.nzb_backup_dir
+            cfg.settings.misc.admin_dir
+            cfg.settings.misc.log_dir
+          ]
+        );
 
-    # Removed: networking.hosts and services.nginx.virtualHosts — mkVirtualHost handles these
+      environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
+
+      systemd.services.sabnzbd = {
+        description = "SABnzbd Usenet Downloader";
+        after = [
+          "network-online.target"
+          "nixflix-setup-dirs.service"
+        ];
+        requires = [ "nixflix-setup-dirs.service" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
+
+        serviceConfig = {
+          Type = "simple";
+          User = cfg.user;
+          Group = cfg.group;
+
+          # Run with root privileges ('+' prefix) to read secrets owned by root
+          ExecStartPre =
+            "+"
+            + pkgs.writeShellScript "sabnzbd-prestart" ''
+              set -euo pipefail
+
+              echo "Merging secrets into SABnzbd configuration..."
+              ${pkgs.python3}/bin/python3 ${../../../lib/secrets/mergeSecrets.py} \
+                /etc/sabnzbd/sabnzbd.ini.template \
+                ${configFile}
+
+              ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
+              ${pkgs.coreutils}/bin/chmod 600 ${configFile}
+
+              echo "Configuration ready"
+            '';
+
+          ExecStart = "${getExe cfg.package} -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
+
+          Restart = "on-failure";
+          RestartSec = "5s";
+
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ReadWritePaths = [
+            stateDir
+            cfg.downloadsDir
+            cfg.settings.misc.download_dir
+            cfg.settings.misc.complete_dir
+            cfg.settings.misc.dirscan_dir
+            cfg.settings.misc.nzb_backup_dir
+            cfg.settings.misc.admin_dir
+            cfg.settings.misc.log_dir
+          ];
+        };
+      };
+
+      networking.firewall = mkIf cfg.openFirewall {
+        allowedTCPPorts = [ cfg.settings.misc.port ];
+      };
+
     }
-    # Kept: upstream's VPN confinement block
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.sabnzbd.vpnConfinement = {
         enable = true;

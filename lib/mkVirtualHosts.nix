@@ -13,20 +13,27 @@ let
   # automatically enabling HTTPS. "tls off" is not valid Caddyfile syntax.
   caddyHostPrefix = if !tls.enable then "http://" else "";
 
-  # --- Shared theme.park URL builder ---
+  # --- Shared theme.park helpers ---
   themeParkUrl = service: "https://theme-park.dev/css/base/${service}/${cfg.theme.name}.css";
+
+  # Services that inject the stylesheet into <head> instead of <body>
+  themeParkTags = {
+    overseerr = "</head>";
+    sabnzbd = "</head>";
+  };
 
   mkNginxVirtualHost =
     {
       port,
       themeParkService ? null,
-      themeParkTag ? "</body>",
       extraConfig ? "",
       stripHeaders ? [ ],
       websocketUpgrade ? false,
       disableBuffering ? false,
     }:
     let
+      themeParkTag =
+        if themeParkService == null then "</body>" else themeParkTags.${themeParkService} or "</body>";
       themeConfig = lib.optionalString (themeParkService != null && cfg.theme.enable) ''
         proxy_set_header Accept-Encoding "";
         sub_filter '${themeParkTag}' '<link rel="stylesheet" type="text/css" href="${themeParkUrl themeParkService}">${themeParkTag}';
@@ -63,11 +70,14 @@ let
     {
       port,
       themeParkService ? null,
-      themeParkTag ? "</body>",
       extraConfig ? "",
       stripHeaders ? [ ],
       disableBuffering ? false,
     }:
+    let
+      themeParkTag =
+        if themeParkService == null then "</body>" else themeParkTags.${themeParkService} or "</body>";
+    in
     lib.mkIf cfg.caddy.enable {
       extraConfig = ''
         ${tlsDirective}
@@ -100,7 +110,6 @@ in
       expose,
       port,
       themeParkService ? null,
-      themeParkTag ? "</body>",
       extraConfig ? "",
       stripHeaders ? [ ],
       websocketUpgrade ? false,
@@ -111,7 +120,6 @@ in
         inherit
           port
           themeParkService
-          themeParkTag
           extraConfig
           stripHeaders
           disableBuffering
