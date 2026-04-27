@@ -68,7 +68,10 @@ Here's a minimal configuration to get started:
     mediaDir = "/data/media";
     stateDir = "/data/.state";
 
+    # Reverse proxy: choose one
     nginx.enable = true;
+    # caddy.enable = true;
+
     postgres.enable = true;
 
     sonarr = {

@@ -7,8 +7,9 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.seerr;
-  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
   imports = [
@@ -21,8 +22,14 @@ in
     ./userSettingsService.nix
   ];
 
-  config = mkMerge [
-    (mkIf (config.nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      inherit (cfg) port;
+      themeParkService = "overseerr";
+    })
+    {
       assertions =
         let
           radarrDefaults = filter (r: r.isDefault) (attrValues cfg.radarr);
@@ -168,6 +175,7 @@ in
             "nixflix-setup-dirs.service"
           ]
           ++ optional (cfg.apiKey != null) "seerr-env.service"
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
           ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
           ++ optional config.nixflix.recyclarr.enable "recyclarr.service"
@@ -183,6 +191,7 @@ in
           requires = [
             "nixflix-setup-dirs.service"
           ]
+          ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
           ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
           ++ optional (cfg.apiKey != null) "seerr-env.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
@@ -193,7 +202,7 @@ in
           wantedBy = [ "multi-user.target" ];
 
           environment = {
-            HOST = mkIf (config.nixflix.nginx.enable && !cfg.vpn.enable) "127.0.0.1";
+            HOST = mkIf config.nixflix.reverseProxy.enable "127.0.0.1";
             PORT = toString cfg.port;
             CONFIG_DIRECTORY = cfg.dataDir;
           }
@@ -256,40 +265,8 @@ in
         allowedTCPPorts = [ cfg.port ];
       };
 
-      networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
-        "127.0.0.1" = [ hostname ];
-      };
-
-      services.nginx.virtualHosts."${hostname}" =
-        let
-          themeParkUrl = "https://theme-park.dev/css/base/overseerr/${config.nixflix.theme.name}.css";
-          proxyHost = if cfg.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1";
-        in
-        mkIf config.nixflix.nginx.enable {
-          inherit (config.nixflix.nginx) forceSSL;
-          useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
-
-          locations."/" = {
-            proxyPass = "http://${proxyHost}:${toString cfg.port}";
-            recommendedProxySettings = true;
-            extraConfig = ''
-              proxy_redirect off;
-
-              ${
-                if config.nixflix.theme.enable then
-                  ''
-                    proxy_set_header Accept-Encoding "";
-                    sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="${themeParkUrl}"></head>';
-                    sub_filter_once on;
-                  ''
-                else
-                  ""
-              }
-            '';
-          };
-        };
-    })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
+    }
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.seerr.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
@@ -302,5 +279,5 @@ in
         }
       ];
     })
-  ];
+  ]);
 }

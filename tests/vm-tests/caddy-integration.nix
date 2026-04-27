@@ -5,9 +5,9 @@
 }:
 import ../lib/mk-reverse-proxy-test.nix {
   inherit system pkgs nixosModules;
-  testName = "nginx-integration-test";
+  testName = "caddy-integration-test";
   proxyConfig = {
-    nginx = {
+    caddy = {
       enable = true;
       addHostsEntries = true;
     };
