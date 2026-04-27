@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.nixflix.postgres;
-  stateDir = "${config.nixflix.stateDir}/postgres";
 in
 {
   options.nixflix.postgres = {
@@ -15,7 +14,32 @@ in
       type = types.bool;
       default = false;
       example = true;
-      description = "Whether or not to enable postgresql for the entire stack";
+      description = ''
+        Whether or not to enable postgresql for the entire stack.
+
+        !!! warning
+
+            If you already have `services.postgresql.enable = true;`, then enabling this will break your current
+            configuration because `nixflix.postgresql.stateDir` changes the value of `services.postgresql.dataDir`.
+
+            Make sure to update `nixflix.postgresql.stateDir` accordingly.
+      '';
+    };
+
+    stateDir = mkOption {
+      type = types.path;
+      default = "${config.nixflix.stateDir}/postgres";
+      example = literalExpression ''"/var/lib/postgresql/$${config.services.postgresql.package.psqlSchema}"'';
+      description = ''
+        Path to store the PostgreSQL data.
+
+        !!! warning
+
+            If you already have `services.postgresql.enable = true;`, then `nixflix.postgresql.enable = true;` will break your current
+            configuration because `nixflix.postgresql.stateDir` changes the value of `services.postgresql.dataDir`.
+
+            Make sure to update this option accordingly.
+      '';
     };
   };
 
@@ -23,7 +47,7 @@ in
     services.postgresql = {
       enable = true;
       package = pkgs.postgresql_16;
-      dataDir = stateDir;
+      dataDir = mkDefault config.nixflix.postgresql.stateDir;
     };
 
     systemd.services.postgresql = {
@@ -32,7 +56,7 @@ in
     };
 
     systemd = {
-      tmpfiles.settings."10-postgresql".${stateDir}.d = {
+      tmpfiles.settings."10-postgresql".${config.nixflix.postgresql.stateDir}.d = {
         user = "postgres";
         group = "postgres";
         mode = "0700";
