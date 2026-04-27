@@ -87,6 +87,8 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          Restart = "on-failure";
+          RestartSec = 30;
         };
 
         script = ''
@@ -175,13 +177,16 @@ in
                 echo "$indexer_json" | ${pkgs.jq}/bin/jq \
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" '
-                    .fields[] |= (
+                    # Apply name override at top level if present
+                    (if $overrides.name then .name = $overrides.name else . end)
+                    # Apply username/password to fields
+                    | .fields[] |= (
                       if .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
                       elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
                       else .
                       end
                     )
-                    | . + $overrides
+                    # Apply remaining overrides to fields by name
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then
