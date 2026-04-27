@@ -151,14 +151,14 @@ let
         default =
           if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable then
             config.vpnNamespaces.wg.namespaceAddress
-          else if config.nixflix.nginx.enable then
+          else if config.nixflix.reverseProxy.enable then
             "127.0.0.1"
           else
             "0.0.0.0";
         defaultText = lib.literalExpression ''
           if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable
           then config.vpnNamespaces.wg.namespaceAddress
-          else if config.nixflix.nginx.enable then "127.0.0.1"
+          else if config.nixflix.reverseProxy.enable then "127.0.0.1"
           else "0.0.0.0"
         '';
         example = "0.0.0.0";
@@ -168,11 +168,14 @@ let
       host_whitelist = mkOption {
         type = types.str;
         default =
-          if config.nixflix.nginx.enable then "${cfg.subdomain}.${config.nixflix.nginx.domain}" else "";
-        defaultText = lib.literalExpression ''if config.nixflix.nginx.enable then "''${cfg.subdomain}.''${config.nixflix.nginx.domain}" else ""'';
+          if config.nixflix.reverseProxy.enable then
+            "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}"
+          else
+            "";
+        defaultText = lib.literalExpression ''if config.nixflix.reverseProxy.enable then "''${cfg.subdomain}.''${config.nixflix.reverseProxy.domain}" else ""'';
         description = ''
           Hostname verification whitelist. SABnzbd refuses connections from hostnames not in this list.
-          Automatically includes the service hostname when nginx is enabled.
+          Automatically includes the service hostname when a reverse proxy is enabled.
         '';
       };
 

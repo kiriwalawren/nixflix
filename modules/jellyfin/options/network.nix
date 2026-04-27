@@ -98,19 +98,19 @@ in
 
     knownProxies = mkOption {
       type = types.listOf types.str;
-      default = if config.nixflix.nginx.enable then [ "127.0.0.1" ] else [ ];
+      default = if config.nixflix.reverseProxy.enable then [ "127.0.0.1" ] else [ ];
       description = "List of IP addresses or hostnames of known proxies used when connecting to your Jellyfin instance. This is required to make proper use of 'X-Forwarded-For' headers.";
     };
 
     localNetworkAddresses = mkOption {
       type = types.listOf types.str;
       default =
-        if (config.nixflix.nginx.enable && !config.nixflix.jellyfin.vpn.enable) then
+        if (config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable) then
           [ "127.0.0.1" ]
         else
           [ ];
       defaultText = literalExpression ''
-        if (config.nixflix.nginx.enable && !config.nixflix.jellyfin.vpn.enable)
+        if (config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable)
         then [ "127.0.0.1" ]
         else [ ]
       '';

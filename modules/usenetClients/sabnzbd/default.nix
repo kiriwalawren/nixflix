@@ -6,8 +6,9 @@
 }:
 with lib;
 let
+  inherit (import ../../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.usenetClients.sabnzbd;
-  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
   settingsType = import ./settingsType.nix { inherit lib config; };
   iniGenerator = import ./iniGenerator.nix { inherit lib; };
@@ -60,7 +61,15 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "sabnzbd";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose SABnzbd via the reverse proxy.";
+      };
     };
 
     settings = mkOption {
@@ -92,12 +101,19 @@ in
     };
   };
 
-  config = mkMerge [
-    (mkIf (config.nixflix.enable && cfg.enable) {
+  config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      inherit (cfg.settings.misc) port;
+      themeParkService = "sabnzbd";
+      websocketUpgrade = true;
+    })
+    {
       assertions = [
         {
           assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
-          message = "Cannot enable VPN routing for SABnzbd (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+          message = "Cannot enable VPN routing for SABnzbd (nixflix.usenetClients.sabnzbd.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
         }
         {
           assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
@@ -208,39 +224,8 @@ in
         allowedTCPPorts = [ cfg.settings.misc.port ];
       };
 
-      networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
-        "127.0.0.1" = [ hostname ];
-      };
-
-      services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
-        inherit (config.nixflix.nginx) forceSSL;
-        useACMEHost = if config.nixflix.nginx.enableACME then config.nixflix.nginx.domain else null;
-
-        locations."/" = {
-          proxyPass = "http://${
-            if config.nixflix.vpn.enable then config.vpnNamespaces.wg.namespaceAddress else "127.0.0.1"
-          }:${toString cfg.settings.misc.port}";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-
-            ${
-              if config.nixflix.theme.enable then
-                ''
-                  proxy_set_header Accept-Encoding "";
-                  sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
-                  sub_filter_once on;
-                ''
-              else
-                ""
-            }
-          '';
-        };
-      };
-
-    })
-    (mkIf (config.nixflix.enable && cfg.enable && config.nixflix.vpn.enable && cfg.vpn.enable) {
+    }
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.sabnzbd.vpnConfinement = {
         enable = true;
         vpnNamespace = "wg";
@@ -253,5 +238,5 @@ in
         }
       ];
     })
-  ];
+  ]);
 }

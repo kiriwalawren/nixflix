@@ -58,7 +58,7 @@ Nixflix is:
 - **WireGuard VPN Integration**: Built-in support for Wireguard VPN with kill switch and custom DNS
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
-- **Optional Nginx Reverse Proxy**: Configurable nginx integration for all services
+- **Reverse Proxy Support**: Configurable nginx or Caddy integration for all services, with per-service opt-out
 - **Unified Theming**: All supported services can be themed to look the same, powered by [theme.park](https://docs.theme-park.dev/)
 - [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines
 
@@ -83,7 +83,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - API-based configuration
 - PostgreSQL integration
-- Nginx reverse proxy
+- Reverse proxy (nginx or Caddy)
 - Automatic directory creation
 - Root folder management
 - Custom media directories
