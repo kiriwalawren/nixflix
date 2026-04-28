@@ -382,6 +382,7 @@ in
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
+            UMask = "0002";
           };
 
           script = ''
