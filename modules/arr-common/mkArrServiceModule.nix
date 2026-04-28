@@ -382,7 +382,6 @@ in
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
-            UMask = "0002";
           };
 
           script = ''
@@ -429,6 +428,7 @@ in
             ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
             ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
             Restart = "on-failure";
+            UMask = "0002";
           }
           // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
             EnvironmentFile = "/run/${serviceName}/env";
