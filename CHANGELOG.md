@@ -102,6 +102,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Starr services UMask was `0022`, needs to be `0002` to allow group writes ([#178](https://github.com/kiriwalawren/nixflix/pull/178)).
 - Default matadata providers, anime providers were used for TV Shows and Movies ([#177](https://github.com/kiriwalawren/nixflix/pull/177)).
 - Services failing when changing `nixflix.mediaDir` or `nixflix.stateDir` to nested structures ([#170](https://github.com/kiriwalawren/nixflix/pull/170)).
 - qBittorrent category save path now correctly used ([#148](https://github.com/kiriwalawren/nixflix/pull/148)).
