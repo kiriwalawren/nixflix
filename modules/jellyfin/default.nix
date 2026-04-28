@@ -71,6 +71,64 @@ in
             Shows = {
               collectionType = "tvshows";
               paths = nixflix.sonarr.mediaDirs;
+
+              typeOptions = [
+                {
+                  type = "Series";
+                  imageFetchers = [
+                    "TheMovieDb"
+                  ];
+                  imageFetcherOrder = [
+                    "TheMovieDb"
+                  ];
+                  metadataFetchers = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                  metadataFetcherOrder = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                }
+                {
+                  type = "Season";
+                  imageFetchers = [
+                    "TheMovieDb"
+                  ];
+                  imageFetcherOrder = [
+                    "TheMovieDb"
+                  ];
+                  metadataFetchers = [
+                    "TheMovieDb"
+                  ];
+                  metadataFetcherOrder = [
+                    "TheMovieDb"
+                  ];
+                }
+                {
+                  type = "Episode";
+                  imageFetchers = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                    "Embedded Image Extractor"
+                    "Screen Grabber"
+                  ];
+                  imageFetcherOrder = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                    "Embedded Image Extractor"
+                    "Screen Grabber"
+                  ];
+                  metadataFetchers = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                  metadataFetcherOrder = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                }
+              ];
             };
           })
           (mkIf (nixflix.sonarr-anime.enable or false) {
@@ -83,19 +141,23 @@ in
                   type = "Series";
                   imageFetchers = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                   ];
                   imageFetcherOrder = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                   ];
                   metadataFetchers = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                     "The Open Movie Database"
                   ];
                   metadataFetcherOrder = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                     "The Open Movie Database"
                   ];
@@ -104,10 +166,12 @@ in
                   type = "Season";
                   imageFetchers = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                   ];
                   imageFetcherOrder = [
                     "AniDB"
+                    "AniSearch"
                     "TheMovieDb"
                   ];
                   metadataFetchers = [
@@ -151,6 +215,32 @@ in
             Movies = {
               collectionType = "movies";
               paths = nixflix.radarr.mediaDirs;
+
+              typeOptions = [
+                {
+                  type = "Movies";
+                  imageFetchers = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                    "Embedded Image Extractor"
+                    "Screen Grabber"
+                  ];
+                  imageFetcherOrder = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                    "Embedded Image Extractor"
+                    "Screen Grabber"
+                  ];
+                  metadataFetchers = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                  metadataFetcherOrder = [
+                    "TheMovieDb"
+                    "The Open Movie Database"
+                  ];
+                }
+              ];
             };
           })
           (mkIf (nixflix.lidarr.enable or false) {
