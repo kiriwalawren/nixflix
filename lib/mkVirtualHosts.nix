@@ -25,6 +25,7 @@ let
   mkNginxVirtualHost =
     {
       port,
+      upstreamHost ? "127.0.0.1",
       themeParkService ? null,
       extraConfig ? "",
       stripHeaders ? [ ],
@@ -53,7 +54,7 @@ let
       useACMEHost = if cfg.nginx.enableACME then cfg.nginx.domain else null;
 
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString port}";
+        proxyPass = "http://${upstreamHost}:${toString port}";
         recommendedProxySettings = true;
         extraConfig = ''
           proxy_redirect off;
@@ -69,6 +70,7 @@ let
   mkCaddyVirtualHost =
     {
       port,
+      upstreamHost ? "127.0.0.1",
       themeParkService ? null,
       extraConfig ? "",
       stripHeaders ? [ ],
@@ -82,7 +84,7 @@ let
       extraConfig = ''
         ${tlsDirective}
 
-        reverse_proxy http://127.0.0.1:${toString port} ${lib.optionalString disableBuffering ''
+        reverse_proxy http://${upstreamHost}:${toString port} ${lib.optionalString disableBuffering ''
           {
             flush_interval -1
           }
@@ -109,6 +111,7 @@ in
       hostname,
       expose,
       port,
+      upstreamHost ? "127.0.0.1",
       themeParkService ? null,
       extraConfig ? "",
       stripHeaders ? [ ],
@@ -119,6 +122,7 @@ in
       proxyArgs = {
         inherit
           port
+          upstreamHost
           themeParkService
           extraConfig
           stripHeaders

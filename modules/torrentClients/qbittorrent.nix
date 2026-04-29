@@ -168,6 +168,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       port = service.webuiPort;
+      upstreamHost = cfg.serverConfig.Preferences.WebUI.Address;
       themeParkService = "qbittorrent";
       stripHeaders = [
         "x-webkit-csp"
