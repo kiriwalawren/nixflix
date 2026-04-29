@@ -237,6 +237,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.config.hostConfig) port;
+      upstreamHost = cfg.config.hostConfig.bindAddress;
       themeParkService = serviceBase;
     })
     {

@@ -59,6 +59,11 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       port = cfg.network.internalHttpPort;
+      upstreamHost =
+        if config.nixflix.vpn.enable && cfg.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
       disableBuffering = true;
       websocketUpgrade = true;
     })
