@@ -42,7 +42,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Breaking:** unpin PostgreSQL version.
 
-  - If you're `stateVersion` is `25.11`, you will need to update your database version to 17 manually using `pg_upgrade` from `pkgs.postgresql_17`.
+  - If you're `stateVersion` is `25.11`, you will need to update your database version to 17 manually using `pg_upgrade` from `pkgs.postgresql_17`. You should probably stop the services that depend on PostgreSQL first. Perform the following steps:
+
+    1. ```bash
+       sudo -su postgres
+       ```
+    1. ```bash
+       cd /var/lib/postgresql/
+       ```
+    1. ```bash
+       old=16
+       new=17
+       ```
+    1. ```bash
+       pg_old=$(nix-build --no-out-link -E "with import <nixpkgs> {}; \
+               postgresql_${old:?}.withPackages (p: [ p.pgvector p.vectorchord ])")
+       pg_new=$(nix-build --no-out-link -E "with import <nixpkgs> {}; \
+               postgresql_${new:?}.withPackages (p: [ p.pgvector p.vectorchord ])")
+       ```
+    1. ```bash
+       # Init the new database
+       $pg_new/bin/initdb -D /var/lib/postgresql/$new || exit 1
+       ```
+    1. ```bash
+       # Check the upgrade
+       $pg_new/bin/pg_upgrade \
+         --socketdir=/var/run/postgresql \
+         --old-bindir=$pg_old/bin \
+         --new-bindir=$pg_new/bin \
+         --old-datadir=/var/lib/postgresql/${old:?} \
+         --new-datadir=/var/lib/postgresql/${new:?} \
+         --old-options "-c shared_preload_libraries='vchord.so'" \
+         --new-options "-c shared_preload_libraries='vchord.so'" \
+         --check # remove when ready to migrate
+       ```
+    1. ```bash
+       # Perform the upgrade
+       $pg_new/bin/pg_upgrade \
+         --socketdir=/var/run/postgresql \
+         --old-bindir=$pg_old/bin \
+         --new-bindir=$pg_new/bin \
+         --old-datadir=/var/lib/postgresql/${old:?} \
+         --new-datadir=/var/lib/postgresql/${new:?} \
+         --old-options "-c shared_preload_libraries='vchord.so'" \
+         --new-options "-c shared_preload_libraries='vchord.so'"
+       ```
 
 - **Breaking:** `nixflix.mullvad.*` options have been replaced by
   `nixflix.vpn.*`. Update your configuration accordingly.
