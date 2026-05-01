@@ -11,7 +11,6 @@ let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.${serviceName};
-  stateDir = "${config.nixflix.stateDir}/${serviceName}";
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
   hostConfig = import ./hostConfig.nix {
@@ -83,6 +82,13 @@ in
       type = types.str;
       default = serviceName;
       description = "Group under which the service runs";
+    };
+
+    dataDir = mkOption {
+      type = types.path;
+      default = "${config.nixflix.stateDir}/${serviceName}";
+      defaultText = literalExpression ''"''${config.nixflix.stateDir}/''${serviceName}"'';
+      description = "Directory containing Seerr data and configuration";
     };
 
     openFirewall = mkOption {
@@ -312,7 +318,7 @@ in
         };
         users.${cfg.user} = {
           inherit (cfg) group;
-          home = stateDir;
+          home = cfg.dataDir;
           isSystemUser = true;
         }
         // optionalAttrs (globals.uids ? ${cfg.user}) {
@@ -325,7 +331,7 @@ in
       };
 
       systemd.tmpfiles.settings."10-${serviceName}" = {
-        "${stateDir}".d = {
+        "${cfg.dataDir}".d = {
           inherit (cfg) user group;
           mode = "0755";
         };
@@ -426,7 +432,7 @@ in
             Type = "simple";
             User = cfg.user;
             Group = cfg.group;
-            ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
+            ExecStart = "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
             ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
             Restart = "on-failure";
             UMask = "0002";
