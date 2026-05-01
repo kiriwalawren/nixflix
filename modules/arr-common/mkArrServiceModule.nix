@@ -237,6 +237,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.config.hostConfig) port;
+      upstreamHost = cfg.config.hostConfig.bindAddress;
       themeParkService = serviceBase;
     })
     {
@@ -428,6 +429,7 @@ in
             ExecStart = "${getExe cfg.package} -nobrowser -data='${stateDir}'";
             ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
             Restart = "on-failure";
+            UMask = "0002";
           }
           // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
             EnvironmentFile = "/run/${serviceName}/env";

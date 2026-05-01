@@ -106,6 +106,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.settings.misc) port;
+      upstreamHost = cfg.settings.misc.host;
       themeParkService = "sabnzbd";
       websocketUpgrade = true;
     })
