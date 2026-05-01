@@ -30,6 +30,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking:** `nixflix.stateDir` default has been changed to `/var/lib` to match FHS convention
+
+  - You will need to move everything from `/data/.state` to `/var/lib`.
+  - `/data/.state/postgres` will need to be moved to `/var/lib/postgresql/<version>`.
+    - You can find `version` by running `sudo cat /data/.state/postgres/PG_VERSION`.
+
+- **Breaking:** unpin PostgreSQL version.
+
+  - If you're `stateVersion` is `25.11`, you will need to update your database version to 17 manually using `pg_upgrade` from `pkgs.postgresql_17`.
+
 - **Breaking:** `nixflix.mullvad.*` options have been replaced by
   `nixflix.vpn.*`. Update your configuration accordingly.
 

@@ -17,31 +17,12 @@ in
         Whether or not to enable postgresql for the entire stack.
       '';
     };
-
-    stateDir = mkOption {
-      type = types.path;
-      default =
-        if builtins.pathExists "/var/lib/postgresql/${config.services.postgresql.package.psqlSchema}" then
-          "/var/lib/postgresql/${config.services.postgresql.package.psqlSchema}"
-        else
-          "${config.nixflix.stateDir}/postgres";
-      defaultText = ''
-        if builtins.pathExists "/var/lib/postgresql/$${config.services.postgresql.package.psqlSchema}" then
-          "/var/lib/postgresql/$${config.services.postgresql.package.psqlSchema}"
-        else
-          "$${config.nixflix.stateDir}/postgres";
-      '';
-      example = "/var/lib/some/path";
-      description = ''
-        Path to store the PostgreSQL data.
-      '';
-    };
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) {
     services.postgresql = {
       enable = true;
-      dataDir = config.nixflix.postgres.stateDir;
+      dataDir = mkIf (config.nixflix.stateDir != "/var/lib") "${config.nixflix.stateDir}/postgres";
     };
 
     systemd.services.postgresql = {
@@ -50,10 +31,12 @@ in
     };
 
     systemd = {
-      tmpfiles.settings."10-postgresql".${config.nixflix.postgres.stateDir}.d = {
-        user = "postgres";
-        group = "postgres";
-        mode = "0700";
+      tmpfiles.settings."10-postgresql" = mkIf (config.nixflix.stateDir != "/var/lib") {
+        "${config.nixflix.stateDir}/postgres".d = {
+          user = "postgres";
+          group = "postgres";
+          mode = "0700";
+        };
       };
 
       targets.postgresql-ready = {
