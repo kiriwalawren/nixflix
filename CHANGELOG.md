@@ -35,6 +35,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - You will need to move everything from `/data/.state` to `/var/lib`.
   - `/data/.state/postgres` will need to be moved to `/var/lib/postgresql/<version>`.
     - You can find `version` by running `sudo cat /data/.state/postgres/PG_VERSION`.
+    - I also had to delete my `/var/lib/jellyfin` and `/var/lib/seerr` folders entirely after running the following (you may not have to, though):
+      ```sh
+      sudo systemctl stop jellyfin-api-key jellyfin-branding-config jellyfin-libraries jellyfin-plugins jellyfin-setup-wizard jellyfin-system-config jellyfin-users-config jellyfin seerr-jellyfin seerr-env seerr-setup seerr-user-settings seerr-wait-for-db seerr
+      ```
 
 - **Breaking:** unpin PostgreSQL version.
 
