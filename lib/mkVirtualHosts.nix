@@ -41,10 +41,6 @@ let
         sub_filter_once on;
       '';
       hideHeaders = lib.concatMapStringsSep "\n" (h: ''proxy_hide_header "${h}";'') stripHeaders;
-      wsConfig = lib.optionalString websocketUpgrade ''
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-      '';
       bufferingConfig = lib.optionalString disableBuffering ''
         proxy_buffering off;
       '';
@@ -56,9 +52,9 @@ let
       locations."/" = {
         proxyPass = "http://${upstreamHost}:${toString port}";
         recommendedProxySettings = true;
+        proxyWebsockets = websocketUpgrade;
         extraConfig = ''
           proxy_redirect off;
-          ${wsConfig}
           ${bufferingConfig}
           ${hideHeaders}
           ${themeConfig}
