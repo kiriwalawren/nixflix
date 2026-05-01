@@ -265,7 +265,7 @@ in
 
     stateDir = mkOption {
       type = types.path;
-      default = "/data/.state";
+      default = "/var/lib";
       example = "/data/.state";
       description = ''
         The location of the state directory for the services.

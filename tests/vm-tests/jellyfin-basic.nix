@@ -851,8 +851,8 @@ pkgs.testers.runNixOSTest {
             f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
 
         print("Verifying packaged plugin sync...")
-        machine.succeed("test -d '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0'")
-        machine.succeed("test -f '/data/.state/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
 
         print("All plugin management assertions passed!")
   '';
