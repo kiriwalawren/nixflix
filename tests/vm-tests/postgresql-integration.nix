@@ -201,10 +201,10 @@ pkgs.testers.runNixOSTest {
     assert owner == "postgres", f"PostgreSQL directory owner incorrect: {owner}"
     assert group == "postgres", f"PostgreSQL directory group incorrect: {group}"
 
-    # Verify PostgreSQL is using version 16
+    # Verify PostgreSQL is using version 17
     print("Verifying PostgreSQL version...")
     version_output = machine.succeed("sudo -u postgres psql -t -c 'SHOW server_version;'")
-    assert "16." in version_output, f"PostgreSQL version incorrect: {version_output}"
+    assert "17." in version_output, f"PostgreSQL version incorrect: {version_output}"
 
     print("PostgreSQL integration test successful! All services running with PostgreSQL enabled.")
   '';
