@@ -50,10 +50,12 @@ let
     name: pluginCfg:
     let
       rawConfig = pluginCfg.config;
+      pluginGuid = pluginCfg.package.passthru.pluginGuid or null;
     in
     {
       plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (builtins.toJSON (secrets.stripSecretRefs rawConfig));
       jqSecrets = secrets.mkNestedJqSecretArgs rawConfig;
+      inherit pluginGuid;
     }
   ) pluginsWithConfig;
 in
@@ -213,8 +215,14 @@ in
                   in
                   ''
                     echo "Configuring plugin: ${pluginName}..."
-                    PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
-                      --arg name "${pluginName}" '.[] | select(.Name == $name) | .Id // empty')
+                    ${
+                      if configData.pluginGuid != null then
+                        ''PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
+                          --arg id "${configData.pluginGuid}" '.[] | select(.Id == $id) | .Id // empty')''
+                      else
+                        ''PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
+                          --arg name "${pluginName}" '.[] | select(.Name == $name) | .Id // empty')''
+                    }
 
                     if [ -z "$PLUGIN_ID" ]; then
                       echo "Warning: Plugin ${pluginName} not found in installed plugins, skipping configuration" >&2
