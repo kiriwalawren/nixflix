@@ -50,12 +50,10 @@ let
     name: pluginCfg:
     let
       rawConfig = pluginCfg.config;
-      plainFields = filterAttrs (_: v: !(secrets.isSecretRef v)) rawConfig;
-      secretFields = filterAttrs (_: v: secrets.isSecretRef v) rawConfig;
     in
     {
-      plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (builtins.toJSON plainFields);
-      jqSecrets = secrets.mkJqSecretArgs secretFields;
+      plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (builtins.toJSON (secrets.stripSecretRefs rawConfig));
+      jqSecrets = secrets.mkNestedJqSecretArgs rawConfig;
     }
   ) pluginsWithConfig;
 in
@@ -210,10 +208,8 @@ in
                 mapAttrsToList (
                   pluginName: configData:
                   let
-                    secretUpdates = concatStringsSep " | " (
-                      mapAttrsToList (name: ref: ''.["${name}"] = ${ref}'') configData.jqSecrets.refs
-                    );
-                    jqFilter = if secretUpdates != "" then ". * $plain | ${secretUpdates}" else ". * $plain";
+                    secretUpdates = concatStringsSep " | " configData.jqSecrets.assignments;
+                    jqFilter = if configData.jqSecrets.hasSecrets then ". * $plain | ${secretUpdates}" else ". * $plain";
                   in
                   ''
                     echo "Configuring plugin: ${pluginName}..."
