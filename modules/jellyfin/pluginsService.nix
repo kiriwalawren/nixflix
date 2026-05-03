@@ -50,12 +50,14 @@ let
     name: pluginCfg:
     let
       rawConfig = pluginCfg.config;
-      pluginGuid = pluginCfg.package.passthru.pluginGuid or null;
+      lookupName = pluginCfg.apiName;
     in
     {
-      plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (builtins.toJSON (secrets.stripSecretRefs rawConfig));
+      plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (
+        builtins.toJSON (secrets.stripSecretRefs rawConfig)
+      );
       jqSecrets = secrets.mkNestedJqSecretArgs rawConfig;
-      inherit pluginGuid;
+      inherit lookupName;
     }
   ) pluginsWithConfig;
 in
@@ -211,18 +213,13 @@ in
                   pluginName: configData:
                   let
                     secretUpdates = concatStringsSep " | " configData.jqSecrets.assignments;
-                    jqFilter = if configData.jqSecrets.hasSecrets then ". * $plain | ${secretUpdates}" else ". * $plain";
+                    jqFilter =
+                      if configData.jqSecrets.hasSecrets then ". * $plain | ${secretUpdates}" else ". * $plain";
                   in
                   ''
                     echo "Configuring plugin: ${pluginName}..."
-                    ${
-                      if configData.pluginGuid != null then
-                        ''PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
-                          --arg id "${configData.pluginGuid}" '.[] | select(.Id == $id) | .Id // empty')''
-                      else
-                        ''PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
-                          --arg name "${pluginName}" '.[] | select(.Name == $name) | .Id // empty')''
-                    }
+                    PLUGIN_ID=$(echo "$INSTALLED_JSON" | ${pkgs.jq}/bin/jq -r \
+                      --arg name "${configData.lookupName}" '.[] | select(.Name == $name) | .Id // empty')
 
                     if [ -z "$PLUGIN_ID" ]; then
                       echo "Warning: Plugin ${pluginName} not found in installed plugins, skipping configuration" >&2

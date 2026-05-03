@@ -88,7 +88,7 @@ rec {
     if isSecretRef value then
       null
     else if builtins.isAttrs value && !(value ? __unfix__) then
-      lib.mapAttrs (_: v: stripSecretRefs v) value
+      lib.mapAttrs (_: stripSecretRefs) value
     else if builtins.isList value then
       map stripSecretRefs value
     else
@@ -99,7 +99,12 @@ rec {
   collectSecretRefsRec =
     path: value:
     if isSecretRef value then
-      [ { inherit path; file = toString value._secret; } ]
+      [
+        {
+          inherit path;
+          file = toString value._secret;
+        }
+      ]
     else if builtins.isAttrs value && !(value ? __unfix__) then
       lib.concatLists (lib.mapAttrsToList (k: v: collectSecretRefsRec (path ++ [ k ]) v) value)
     else

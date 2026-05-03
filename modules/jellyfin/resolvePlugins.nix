@@ -79,7 +79,6 @@ let
               (release: {
                 inherit (repo) name url;
                 inherit (release) sourceUrl version targetAbi;
-                guid = plugin.guid or null;
               })
               (
                 lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
@@ -161,7 +160,6 @@ let
               stripRoot = false;
             };
             passthru.pluginDirName = pluginDirName;
-            passthru.pluginGuid = resolution.match.guid or null;
           };
         };
       };
