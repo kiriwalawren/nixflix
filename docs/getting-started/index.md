@@ -23,7 +23,7 @@ The `default.nix` at the root of the repository exposes the NixOS module for non
 
 ```nix
 let
-  nixflix = import (builtins.fetchTarball "https://github.com/kiriwalawren/nixflix/archive/main.tar.gz") {};
+  nixflix = import (builtins.fetchTarball "https://github.com/kiriwalawren/nixflix/archive/main.tar.gz");
   # You can pin the module to a specific commit by replacing main with the commit's hash
 in {
   imports = [ nixflix.nixosModules.default ];
@@ -38,9 +38,9 @@ let
   nixflix = import (pkgs.fetchFromGitHub {
     owner = "kiriwalawren";
     repo = "nixflix";
-    rev = "main"; # You can use the rev to pin the module to a specific commit using it's hash
+    rev = "main"; # You can use the rev to pin the module to a specific commit using its hash
     sha256 = ""; # replace with the actual hash which will likely be returned after your rebuild errors out.
-  }) {};
+  });
 in {
   imports = [ nixflix.nixosModules.default ];
 }
@@ -59,7 +59,7 @@ Then import the module:
 ```nix
 let
   sources = import path/to/npins/folder;
-  nixflix = import sources.nixflix {};
+  nixflix = import sources.nixflix;
 in {
   imports = [ nixflix.nixosModules.default ];
 }
