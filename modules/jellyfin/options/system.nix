@@ -357,7 +357,7 @@ in
         {
           "Jellyfin Stable" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-            hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+            hash = "sha256-tPVxoBAN7qGbqNQwsUBW2gQQSr2WUlr5s/CwokFN2mc=";
             enabled = true;
           };
         }
@@ -636,7 +636,7 @@ in
   config.nixflix.jellyfin.system.pluginRepositories = {
     "Jellyfin Stable" = {
       url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-      hash = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+      hash = "sha256-tPVxoBAN7qGbqNQwsUBW2gQQSr2WUlr5s/CwokFN2mc=";
       enabled = true;
     };
   };
