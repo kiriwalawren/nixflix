@@ -244,27 +244,17 @@ This example shows a working media server configuration based on a real producti
 
 ## Service Access
 
-Via reverse proxy (nginx or Caddy):
-
-- Sonarr: http://sonarr.nixflix
-- Sonarr Anime: http://sonarr-anime.nixflix
-- Radarr: http://radarr.nixflix
-- Lidarr: http://lidarr.nixflix
-- Prowlarr: http://prowlarr.nixflix
-- SABnzbd: http://sabnzbd.nixflix
-- Jellyfin: http://jellyfin.nixflix
-- Seerr: http://seerr.nixflix
-
-Direct access:
-
-- Sonarr: http://localhost:8989
-- Sonarr Anime: http://localhost:8990
-- Radarr: http://localhost:7878
-- Lidarr: http://localhost:8686
-- Prowlarr: http://localhost:9696
-- SABnzbd: http://localhost:8080
-- Jellyfin: http://localhost:8096
-- Seerr: http://localhost:5055
+| Service | Via Reverse Proxy | Direct Access | Default Username |
+|---|---|---|---|
+| Sonarr | `http://sonarr.nixflix` | `http://localhost:8989` | `sonarr` |
+| Sonarr Anime | `http://sonarr-anime.nixflix` | `http://localhost:8990` | `sonarr-anime` |
+| Radarr | `http://radarr.nixflix` | `http://localhost:7878` | `radarr` |
+| Lidarr | `http://lidarr.nixflix` | `http://localhost:8686` | `lidarr` |
+| Prowlarr | `http://prowlarr.nixflix` | `http://localhost:9696` | `prowlarr` |
+| SABnzbd | `http://sabnzbd.nixflix` | `http://localhost:8080` | `sabnzbd` |
+| qBittorrent | `http://qbittorrent.nixflix` | `http://localhost:8282` | `admin` |
+| Jellyfin | `http://jellyfin.nixflix` | `http://localhost:8096` | `admin` |
+| Seerr | `http://seerr.nixflix` | `http://localhost:5055` | `seerr` (local), `admin` (Jellyfin auth) |
 
 ## Customization
 
