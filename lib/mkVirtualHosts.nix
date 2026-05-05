@@ -78,7 +78,8 @@ let
 
       subdirectives =
         lib.optional (themeParkService != null && cfg.theme.enable) "header_up -Accept-Encoding"
-        ++ lib.optional disableBuffering "flush_interval -1";
+        ++ lib.optional disableBuffering "flush_interval -1"
+        ++ lib.map (h: "header_down -${h}") stripHeaders;
 
       reverseProxyMatcher = "http://${upstreamHost}:${toString port}";
 
@@ -98,8 +99,6 @@ let
         ${tlsDirective}
 
         ${reverseProxyBlock}
-
-        ${lib.concatMapStringsSep "\n" (h: "header_down -${h}") stripHeaders}
 
         ${lib.optionalString (themeParkService != null && cfg.theme.enable) ''
           replace {
