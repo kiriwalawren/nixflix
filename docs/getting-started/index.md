@@ -8,12 +8,57 @@ This guide shows how to add Nixflix to your NixOS configuration using flakes.
 
 ## Prerequisites
 
-- NixOS with flakes enabled
+- NixOS
 - Git for version control
 - Basic familiarity with NixOS modules
 - Some form of secrets management, like [sops-nix](https://github.com/Mic92/sops-nix)
 
-## Enable Flakes
+From here, you have two ways of using Nixflix in your configuration, those being with and without Flakes.
+
+## Without Flakes
+The `default.nix` at the root of the repository exposes the NixOS module for non-flake users.
+### With `builtins.fetchTarball`
+```nix
+{ pkgs, ... }:
+let
+  nixflix = import (builtins.fetchTarball "https://github.com/kiriwalawren/nixflix/archive/main.tar.gz") { inherit pkgs; };
+  # You can pin the module to a specific commit by replacing main with the commit's hash
+in {
+  imports = [ nixflix.nixosModules.default ];
+}
+```
+### With `pkgs.fetchFromGitHub`
+```nix
+{ pkgs, ... }:
+let
+  nixflix = import (pkgs.fetchFromGitHub {
+    owner = "kiriwalawren";
+    repo = "nixflix";
+    rev = "main"; # You can use the rev to pin the module to a specific commit using its hash
+    sha256 = ""; # replace with the actual hash which will likely be returned after your rebuild errors out.
+  }) { inherit pkgs; };
+in {
+  imports = [ nixflix.nixosModules.default ];
+}
+```
+### With [npins](https://github.com/andir/npins)
+First, add nixflix to your pins:
+```bash
+npins add github kiriwalawren nixflix --branch main
+```
+Then import the module:
+```nix
+{ pkgs, ... }:
+let
+  sources = import path/to/npins/folder;
+  nixflix = import sources.nixflix { inherit pkgs; };
+in {
+  imports = [ nixflix.nixosModules.default ];
+}
+```
+These aren't the only ways to add the Nixflix module to your configuration (you could use `builtins.fetchGit` for example) although they are the most common ones.
+## With Flakes
+### Enable Flakes
 
 If you haven't already enabled flakes, add this to your configuration:
 
@@ -23,7 +68,7 @@ If you haven't already enabled flakes, add this to your configuration:
 }
 ```
 
-## Adding Nixflix to Your Flake
+### Adding Nixflix to Your Flake
 
 Add Nixflix as an input to your `flake.nix`:
 

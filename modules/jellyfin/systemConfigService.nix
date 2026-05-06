@@ -14,7 +14,10 @@ let
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
   systemConfig = util.recursiveTransform (
-    (removeAttrs cfg.system [ "removeOldPlugins" ])
+    (removeAttrs cfg.system [
+      "removeOldPlugins"
+      "cachePath"
+    ])
     // {
       pluginRepositories = lib.mapAttrsToList (
         name: repo:

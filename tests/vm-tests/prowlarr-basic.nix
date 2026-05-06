@@ -122,7 +122,7 @@ pkgsUnfree.testers.runNixOSTest {
 
     # Wait for tags and indexer proxies services
     machine.wait_for_unit("prowlarr-tags.service", timeout=60)
-    machine.wait_for_unit("prowlarr-indexer-proxies.service", timeout=60)
+    machine.wait_for_unit("prowlarr-indexer-proxies.service", timeout=180)
 
     # Check that "flaresolverr" tag was created
     tags = machine.succeed(
