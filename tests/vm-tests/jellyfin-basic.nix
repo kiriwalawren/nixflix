@@ -214,7 +214,7 @@ pkgs.testers.runNixOSTest {
             pluginRepositories = lib.mkForce {
               "Jellyfin Stable" = {
                 url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-                hash = "sha256-tPVxoBAN7qGbqNQwsUBW2gQQSr2WUlr5s/CwokFN2mc=";
+                hash = "sha256-SK70G2N3xpOqqVr/3qGgIc5CscDuHQTDbILJBMwkUA0=";
                 enabled = true;
               };
             };

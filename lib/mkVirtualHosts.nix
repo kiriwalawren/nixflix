@@ -75,24 +75,35 @@ let
     let
       themeParkTag =
         if themeParkService == null then "</body>" else themeParkTags.${themeParkService} or "</body>";
+
+      subdirectives =
+        lib.optional (themeParkService != null && cfg.theme.enable) "header_up -Accept-Encoding"
+        ++ lib.optional disableBuffering "flush_interval -1"
+        ++ lib.map (h: "header_down -${h}") stripHeaders;
+
+      reverseProxyMatcher = "http://${upstreamHost}:${toString port}";
+
+      reverseProxyBlock =
+        if subdirectives == [ ] then
+          "reverse_proxy ${reverseProxyMatcher}"
+        else
+          ''
+            reverse_proxy ${reverseProxyMatcher} {
+              ${lib.concatStringsSep "\n  " subdirectives}
+            }
+          '';
+
     in
     lib.mkIf cfg.caddy.enable {
       extraConfig = ''
         ${tlsDirective}
 
-        reverse_proxy http://${upstreamHost}:${toString port} ${lib.optionalString disableBuffering ''
-          {
-            flush_interval -1
-          }
-        ''}
-
-        ${lib.concatMapStringsSep "\n" (h: "header_down -${h}") stripHeaders}
+        ${reverseProxyBlock}
 
         ${lib.optionalString (themeParkService != null && cfg.theme.enable) ''
           replace {
             ${themeParkTag} "<link rel=\"stylesheet\" type=\"text/css\" href=\"${themeParkUrl themeParkService}\">${themeParkTag}"
           }
-          header_up -Accept-Encoding
         ''}
 
         ${extraConfig}
