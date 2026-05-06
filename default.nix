@@ -1,3 +1,6 @@
+{
+  pkgs ? import <nixpkgs> { },
+}:
 let
   lock = builtins.fromJSON (builtins.readFile ./flake.lock);
   vpn-confinement-src = fetchTarball {
@@ -14,4 +17,6 @@ in
 {
   nixosModules.default = nixflixModule;
   nixosModules.nixflix = nixflixModule;
+  lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit (pkgs) lib; };
+  lib.buildJellyfinPlugin = import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
 }
