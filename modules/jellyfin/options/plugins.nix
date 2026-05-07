@@ -2,60 +2,6 @@
 with lib;
 let
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
-
-  pluginModule = types.submodule (
-    { name, ... }:
-    {
-      options = {
-        package = jellyfinPlugins.packageModule;
-
-        config = mkOption {
-          type = types.attrsOf types.anything;
-          default = { };
-          description = ''
-            Plugin configuration payload as seen in the Jellyfin UI/API. All
-            attributes under this option are POSTed to
-            `/Plugins/<id>/Configuration`.
-          '';
-          example = literalExpression ''
-            {
-              ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
-            }
-          '';
-        };
-
-        apiName = mkOption {
-          type = types.str;
-          default = name;
-          description = ''
-            The plugin's `Name` as reported by the Jellyfin `/Plugins` API.
-            Defaults to the attribute name. Set this when the plugin's
-            self-reported API name differs from its manifest name (e.g. the
-            SSO-Auth plugin is listed in the manifest as `"SSO Authentication"`
-            but reports itself via the API as `"SSO-Auth"`).
-
-            Can be found when running the following while the plugin is installed:
-            ```bash
-            curl -s -H "Authorization: MediaBrowser Token=$(sudo cat /run/jellyfin/auth-token)" \
-                                 http://127.0.0.1:8096/Plugins | jq '.[].Name'
-            ```
-          '';
-          example = "SSO-Auth";
-        };
-
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-          description = ''
-            Whether this plugin should be installed. When false, the plugin is
-            treated as absent: if it was previously installed by nixflix it will
-            be uninstalled on the next nixos-rebuild. This is equivalent to
-            removing the attribute entirely from nixflix.jellyfin.plugins.
-          '';
-        };
-      };
-    }
-  );
 in
 {
   options.nixflix.jellyfin.plugins = mkOption {
@@ -74,7 +20,7 @@ in
       restart automatically. Plan plugin changes for maintenance windows to
       avoid interrupting active streams.
     '';
-    type = types.submodule { freeformType = types.attrsOf pluginModule; };
+    type = types.submodule { freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { }); };
     default = { };
     example = literalExpression ''
       {
