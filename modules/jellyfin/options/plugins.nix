@@ -1,65 +1,13 @@
 { lib, ... }:
 with lib;
 let
-  repoPackageSourceType = types.submodule {
-    options = {
-      version = mkOption {
-        type = types.str;
-        description = ''
-          Version of the plugin to install. Use `"latest"` to resolve the
-          newest version available in the pinned plugin manifest, or pin to a
-          specific version (e.g. `"14.0.0.0"`) for reproducible deployments.
-        '';
-        example = "14.0.0.0";
-      };
-
-      hash = mkOption {
-        type = types.str;
-        description = ''
-          Fixed-output hash for the unpacked plugin archive.
-        '';
-        example = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
-      };
-
-      repository = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = ''
-          Optional repository name from `nixflix.jellyfin.system.pluginRepositories`.
-          Leave unset to resolve by plugin name across all enabled repositories.
-        '';
-        example = "Jellyfin Stable";
-      };
-    };
-  };
+  jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 
   pluginModule = types.submodule (
     { name, ... }:
     {
       options = {
-        package = mkOption {
-          type = types.nullOr (
-            types.oneOf [
-              types.package
-              repoPackageSourceType
-            ]
-          );
-          default = null;
-          description = ''
-            Nix package containing the unpacked Jellyfin plugin files to copy
-            into Jellyfin's plugin directory.
-
-            For repository-managed plugins, use
-            `nixflix.lib.jellyfinPlugins.fromRepo { version = ...; hash = ...; }`
-            to resolve a deterministic package from the pinned plugin manifests.
-          '';
-          example = literalExpression ''
-            nixflix.lib.jellyfinPlugins.fromRepo {
-              version = "13.0.0.0";
-              hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
-            }
-          '';
-        };
+        package = jellyfinPlugins.packageModule;
 
         config = mkOption {
           type = types.attrsOf types.anything;
@@ -126,7 +74,7 @@ in
       restart automatically. Plan plugin changes for maintenance windows to
       avoid interrupting active streams.
     '';
-    type = types.attrsOf pluginModule;
+    type = types.submodule { freeformType = types.attrsOf pluginModule; };
     default = { };
     example = literalExpression ''
       {
