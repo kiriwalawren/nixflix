@@ -79,6 +79,14 @@ let
               (release: {
                 inherit (repo) name url;
                 inherit (release) sourceUrl version targetAbi;
+                timestamp = release.timestamp or "";
+                changelog = release.changelog or "";
+                guid = plugin.guid or "";
+                category = plugin.category or "";
+                description = plugin.description or "";
+                overview = plugin.overview or "";
+                owner = plugin.owner or "";
+                imageUrl = plugin.imageUrl or "";
               })
               (
                 lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
@@ -148,6 +156,21 @@ let
         resolution = findPluginSource pluginName sourceSpec;
         resolvedVersion = resolution.match.version;
         pluginDirName = repoPluginDirName pluginName resolvedVersion;
+        metaJson = pkgs.writeText
+          "jellyfin-plugin-meta-${lib.strings.sanitizeDerivationName pluginName}.json"
+          (builtins.toJSON {
+            category = resolution.match.category;
+            changelog = resolution.match.changelog;
+            description = resolution.match.description;
+            guid = resolution.match.guid;
+            imageUrl = resolution.match.imageUrl;
+            name = pluginName;
+            overview = resolution.match.overview;
+            owner = resolution.match.owner;
+            targetAbi = resolution.match.targetAbi;
+            timestamp = resolution.match.timestamp;
+            version = resolvedVersion;
+          });
       in
       {
         pluginCfg = pluginCfg // {
@@ -160,6 +183,9 @@ let
               stripRoot = false;
             };
             passthru.pluginDirName = pluginDirName;
+            postInstall = ''
+              cp ${metaJson} $out/meta.json
+            '';
           };
         };
       };
