@@ -124,7 +124,7 @@ rec {
         let
           jqPath = "." + lib.concatMapStringsSep "" (k: ''["${k}"]'') ref.path;
         in
-        ''${jqPath} = ($''${ref.varName}Content | rtrimstr("\n"))''
+        "${jqPath} = ($" + ref.varName + ''Content | rtrimstr("\n"))''
       ) indexedRefs;
     in
     {
