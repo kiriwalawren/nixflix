@@ -80,4 +80,56 @@ rec {
       inherit refs;
       flagsString = lib.concatStringsSep " " flags;
     };
+
+  # Recursively replace every ._secret ref with null, leaving all other
+  # values intact so builtins.toJSON produces safe JSON with no file paths.
+  stripSecretRefs =
+    value:
+    if isSecretRef value then
+      null
+    else if builtins.isAttrs value && !(value ? __unfix__) then
+      lib.mapAttrs (_: stripSecretRefs) value
+    else if builtins.isList value then
+      map stripSecretRefs value
+    else
+      value;
+
+  # Collect every ._secret ref in a nested structure as a list of
+  # { path = ["key" "sub" ...]; file = "/runtime/path"; } records.
+  collectSecretRefsRec =
+    path: value:
+    if isSecretRef value then
+      [
+        {
+          inherit path;
+          file = toString value._secret;
+        }
+      ]
+    else if builtins.isAttrs value && !(value ? __unfix__) then
+      lib.concatLists (lib.mapAttrsToList (k: v: collectSecretRefsRec (path ++ [ k ]) v) value)
+    else
+      [ ];
+
+  # Like mkJqSecretArgs but handles ._secret refs at any nesting depth.
+  # Returns { flagsString, assignments, hasSecrets } where assignments is a
+  # list of jq path-assignment strings ready to be joined with " | ".
+  mkNestedJqSecretArgs =
+    rawConfig:
+    let
+      allRefs = collectSecretRefsRec [ ] rawConfig;
+      indexedRefs = lib.imap0 (i: ref: ref // { varName = "nixflixSecret${toString i}"; }) allRefs;
+      flags = map (ref: "--rawfile ${ref.varName}Content ${lib.escapeShellArg ref.file}") indexedRefs;
+      assignments = map (
+        ref:
+        let
+          jqPath = "." + lib.concatMapStringsSep "" (k: ''["${k}"]'') ref.path;
+        in
+        "${jqPath} = ($" + ref.varName + ''Content | rtrimstr("\n"))''
+      ) indexedRefs;
+    in
+    {
+      flagsString = lib.concatStringsSep " " flags;
+      inherit assignments;
+      hasSecrets = allRefs != [ ];
+    };
 }
