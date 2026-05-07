@@ -156,21 +156,23 @@ let
         resolution = findPluginSource pluginName sourceSpec;
         resolvedVersion = resolution.match.version;
         pluginDirName = repoPluginDirName pluginName resolvedVersion;
-        metaJson = pkgs.writeText
-          "jellyfin-plugin-meta-${lib.strings.sanitizeDerivationName pluginName}.json"
-          (builtins.toJSON {
-            category = resolution.match.category;
-            changelog = resolution.match.changelog;
-            description = resolution.match.description;
-            guid = resolution.match.guid;
-            imageUrl = resolution.match.imageUrl;
-            name = pluginName;
-            overview = resolution.match.overview;
-            owner = resolution.match.owner;
-            targetAbi = resolution.match.targetAbi;
-            timestamp = resolution.match.timestamp;
-            version = resolvedVersion;
-          });
+        metaJson =
+          pkgs.writeText "jellyfin-plugin-meta-${lib.strings.sanitizeDerivationName pluginName}.json"
+            (
+              builtins.toJSON {
+                inherit (resolution.match) category;
+                inherit (resolution.match) changelog;
+                inherit (resolution.match) description;
+                inherit (resolution.match) guid;
+                inherit (resolution.match) imageUrl;
+                name = pluginName;
+                inherit (resolution.match) overview;
+                inherit (resolution.match) owner;
+                inherit (resolution.match) targetAbi;
+                inherit (resolution.match) timestamp;
+                version = resolvedVersion;
+              }
+            );
       in
       {
         pluginCfg = pluginCfg // {
