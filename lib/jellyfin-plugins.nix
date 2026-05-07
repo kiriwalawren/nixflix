@@ -60,6 +60,7 @@ let
 
   mkPluginModule =
     {
+      enableDefault ? true,
       packageDefault ? null,
       configOption ? null,
     }:
@@ -109,7 +110,7 @@ let
 
           enable = lib.mkOption {
             type = lib.types.bool;
-            default = true;
+            default = enableDefault;
             description = ''
               Whether this plugin should be installed. When false, the plugin is
               treated as absent: if it was previously installed by nixflix it will
