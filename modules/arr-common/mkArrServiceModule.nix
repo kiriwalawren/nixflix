@@ -72,6 +72,17 @@ in
       };
     };
 
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && cfg.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      description = "Address for connecting to this service.";
+    };
+
     user = mkOption {
       type = types.str;
       default = serviceName;
@@ -243,7 +254,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.config.hostConfig) port;
-      upstreamHost = cfg.config.hostConfig.bindAddress;
+      upstreamHost = cfg.connectionAddress;
       themeParkService = serviceBase;
     })
     {

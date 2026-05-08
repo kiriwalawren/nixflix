@@ -99,6 +99,17 @@ in
         '';
       };
     };
+
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && cfg.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      description = "Address for connecting to this service.";
+    };
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
@@ -106,7 +117,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg.settings.misc) port;
-      upstreamHost = cfg.settings.misc.host;
+      upstreamHost = cfg.connectionAddress;
       themeParkService = "sabnzbd";
       websocketUpgrade = true;
     })

@@ -17,7 +17,7 @@ let
       cfg
       ;
   };
-  baseUrl = "http://127.0.0.1:${toString cfg.port}";
+  baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs {
     password = cfg.jellyfin.adminPassword;
   };

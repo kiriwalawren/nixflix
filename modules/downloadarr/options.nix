@@ -134,8 +134,8 @@ let
     dependencies.default = [ "sabnzbd-categories.service" ];
 
     host = {
-      default = config.nixflix.usenetClients.sabnzbd.settings.misc.host;
-      defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.settings.misc.host";
+      default = config.nixflix.usenetClients.sabnzbd.connectionAddress;
+      defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.connectionAddress";
     };
 
     port = {
@@ -180,8 +180,8 @@ let
     dependencies.default = [ "qbittorrent.service" ];
 
     host = {
-      default = config.nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address;
-      defaultText = literalExpression "config.nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address";
+      default = config.nixflix.torrentClients.qbittorrent.connectionAddress;
+      defaultText = literalExpression "config.nixflix.torrentClients.qbittorrent.connectionAddress";
     };
 
     port = {

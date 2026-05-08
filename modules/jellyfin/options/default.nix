@@ -130,6 +130,17 @@ in
         '';
       };
     };
+
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      description = "Address for connecting to this service.";
+    };
   };
 
   config.assertions = [
