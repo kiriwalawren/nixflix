@@ -31,7 +31,7 @@ in
       script = ''
         set -euo pipefail
 
-        BASE_URL="http://${cfg.settings.misc.host}:${toString cfg.settings.misc.port}${cfg.settings.misc.url_base}"
+        BASE_URL="http://${cfg.connectionAddress}:${toString cfg.settings.misc.port}${cfg.settings.misc.url_base}"
 
         # Function to make API calls
         api_call() {
