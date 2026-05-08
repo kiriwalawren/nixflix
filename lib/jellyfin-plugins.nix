@@ -60,7 +60,7 @@ let
 
   mkPluginModule =
     {
-      enableDefault ? true,
+      enableDefault ? false,
       packageDefault ? null,
       configOption ? null,
     }:

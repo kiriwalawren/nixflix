@@ -20,7 +20,9 @@ in
       restart automatically. Plan plugin changes for maintenance windows to
       avoid interrupting active streams.
     '';
-    type = types.submodule { freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { }); };
+    type = types.submodule {
+      freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { enableDefault = true; });
+    };
     default = { };
     example = literalExpression ''
       {

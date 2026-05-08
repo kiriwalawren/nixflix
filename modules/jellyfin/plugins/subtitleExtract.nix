@@ -6,8 +6,6 @@ in
 {
   options.nixflix.jellyfin.plugins."Subtitle Extract" = lib.mkOption {
     type = jellyfinPlugins.mkPluginModule {
-      enableDefault = false;
-
       packageDefault = jellyfinPlugins.fromRepo {
         version = "7.0.0.0";
         hash = "sha256-vnSYKFf0L6Bk6jOegxs/Rk+2n5oEAQpxTbLqxNpYh2o=";
