@@ -528,6 +528,68 @@ in
       echo 'PASS: jellyfin-integration' > $out
     '';
 
+  download-clients-no-reverse-proxy =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            nginx.enable = false;
+
+            radarr = {
+              enable = true;
+              config = {
+                hostConfig = {
+                  port = 7878;
+                  username = "admin";
+                  password._secret = "/run/secrets/radarr-pass";
+                };
+                apiKey._secret = "/run/secrets/radarr-api";
+                rootFolders = [ { path = "/media/movies"; } ];
+              };
+            };
+
+            usenetClients.sabnzbd = {
+              enable = true;
+              settings.misc = {
+                api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+                nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+                port = 8080;
+                url_base = "/sabnzbd";
+              };
+            };
+          };
+        }
+      ];
+      radarrCfg = config.config.nixflix.radarr;
+      sabnzbdCfg = config.config.nixflix.usenetClients.sabnzbd;
+      downloadClientsService = config.config.systemd.services."radarr-downloadclients";
+    in
+    pkgs.runCommand "unit-test-download-clients-no-reverse-proxy" { } ''
+      ${check "radarr bindAddress is 0.0.0.0 when nginx is disabled" (
+        radarrCfg.config.hostConfig.bindAddress == "0.0.0.0"
+      )}
+      ${check "radarr connectionAddress is 127.0.0.1 (not 0.0.0.0)" (
+        radarrCfg.connectionAddress == "127.0.0.1"
+      )}
+      ${check "sabnzbd connectionAddress is 127.0.0.1 (not 0.0.0.0)" (
+        sabnzbdCfg.connectionAddress == "127.0.0.1"
+      )}
+      ${check "radarr-downloadclients ExecStartPre uses connectionAddress" (
+        lib.hasInfix "127.0.0.1" downloadClientsService.serviceConfig.ExecStartPre
+      )}
+      ${check "radarr-downloadclients ExecStartPre does not use 0.0.0.0" (
+        !lib.hasInfix "0.0.0.0" downloadClientsService.serviceConfig.ExecStartPre
+      )}
+      ${check "radarr-downloadclients script uses connectionAddress" (
+        lib.hasInfix "127.0.0.1" downloadClientsService.script
+      )}
+      ${check "radarr-downloadclients script does not use 0.0.0.0" (
+        !lib.hasInfix "0.0.0.0" downloadClientsService.script
+      )}
+      echo 'PASS: download-clients-no-reverse-proxy' > $out
+    '';
+
   jellyfin-subtitles =
     let
       config = evalConfig [
