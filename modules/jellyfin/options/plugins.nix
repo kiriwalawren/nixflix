@@ -1,113 +1,7 @@
 { lib, ... }:
 with lib;
 let
-  repoPackageSourceType = types.submodule {
-    options = {
-      version = mkOption {
-        type = types.str;
-        description = ''
-          Version of the plugin to install. Use `"latest"` to resolve the
-          newest version available in the pinned plugin manifest, or pin to a
-          specific version (e.g. `"14.0.0.0"`) for reproducible deployments.
-        '';
-        example = "14.0.0.0";
-      };
-
-      hash = mkOption {
-        type = types.str;
-        description = ''
-          Fixed-output hash for the unpacked plugin archive.
-        '';
-        example = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
-      };
-
-      repository = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = ''
-          Optional repository name from `nixflix.jellyfin.system.pluginRepositories`.
-          Leave unset to resolve by plugin name across all enabled repositories.
-        '';
-        example = "Jellyfin Stable";
-      };
-    };
-  };
-
-  pluginModule = types.submodule (
-    { name, ... }:
-    {
-      options = {
-        package = mkOption {
-          type = types.nullOr (
-            types.oneOf [
-              types.package
-              repoPackageSourceType
-            ]
-          );
-          default = null;
-          description = ''
-            Nix package containing the unpacked Jellyfin plugin files to copy
-            into Jellyfin's plugin directory.
-
-            For repository-managed plugins, use
-            `nixflix.lib.jellyfinPlugins.fromRepo { version = ...; hash = ...; }`
-            to resolve a deterministic package from the pinned plugin manifests.
-          '';
-          example = literalExpression ''
-            nixflix.lib.jellyfinPlugins.fromRepo {
-              version = "13.0.0.0";
-              hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
-            }
-          '';
-        };
-
-        config = mkOption {
-          type = types.attrsOf types.anything;
-          default = { };
-          description = ''
-            Plugin configuration payload as seen in the Jellyfin UI/API. All
-            attributes under this option are POSTed to
-            `/Plugins/<id>/Configuration`.
-          '';
-          example = literalExpression ''
-            {
-              ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
-            }
-          '';
-        };
-
-        apiName = mkOption {
-          type = types.str;
-          default = name;
-          description = ''
-            The plugin's `Name` as reported by the Jellyfin `/Plugins` API.
-            Defaults to the attribute name. Set this when the plugin's
-            self-reported API name differs from its manifest name (e.g. the
-            SSO-Auth plugin is listed in the manifest as `"SSO Authentication"`
-            but reports itself via the API as `"SSO-Auth"`).
-
-            Can be found when running the following while the plugin is installed:
-            ```bash
-            curl -s -H "Authorization: MediaBrowser Token=$(sudo cat /run/jellyfin/auth-token)" \
-                                 http://127.0.0.1:8096/Plugins | jq '.[].Name'
-            ```
-          '';
-          example = "SSO-Auth";
-        };
-
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-          description = ''
-            Whether this plugin should be installed. When false, the plugin is
-            treated as absent: if it was previously installed by nixflix it will
-            be uninstalled on the next nixos-rebuild. This is equivalent to
-            removing the attribute entirely from nixflix.jellyfin.plugins.
-          '';
-        };
-      };
-    }
-  );
+  jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 in
 {
   options.nixflix.jellyfin.plugins = mkOption {
@@ -126,7 +20,9 @@ in
       restart automatically. Plan plugin changes for maintenance windows to
       avoid interrupting active streams.
     '';
-    type = types.attrsOf pluginModule;
+    type = types.submodule {
+      freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { enableDefault = true; });
+    };
     default = { };
     example = literalExpression ''
       {

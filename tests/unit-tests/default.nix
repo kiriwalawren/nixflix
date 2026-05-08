@@ -527,4 +527,155 @@ in
 
       echo 'PASS: jellyfin-integration' > $out
     '';
+
+  jellyfin-subtitles =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              apiKey = "test-api-key";
+
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+
+              plugins = {
+                "Open Subtitles" = {
+                  enable = true;
+                  config = {
+                    Username = "testsubsuser";
+                    Password = "opensubs_test_password";
+                  };
+                };
+
+                subbuzz = {
+                  enable = true;
+                  config = {
+                    EnableOpenSubtitles = true;
+                    EnableYifySubtitles = true;
+                    MinScore = 60;
+                    Cache.SubLifeInMinutes = "Always";
+                    SubPostProcessing.EncodeSubtitlesToUTF8 = false;
+                  };
+                };
+
+                "Subtitle Extract" = {
+                  enable = true;
+                  config = {
+                    ExtractionDuringLibraryScan = true;
+                    IncludeTextSubtitles = true;
+                    IncludeGraphicalSubtitles = false;
+                  };
+                };
+              };
+
+              libraries."Subtitle Movies" = {
+                collectionType = "movies";
+                paths = [ "/media/movies" ];
+                subtitleFetcherOrder = [
+                  "Open Subtitles"
+                  "subbuzz"
+                ];
+                subtitleDownloadLanguages = [
+                  "eng"
+                  "spa"
+                ];
+                saveSubtitlesWithMedia = true;
+                allowEmbeddedSubtitles = "AllowAll";
+                requirePerfectSubtitleMatch = true;
+                skipSubtitlesIfAudioTrackMatches = false;
+                skipSubtitlesIfEmbeddedSubtitlesPresent = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+      jellyfinCfg = config.config.nixflix.jellyfin;
+    in
+    pkgs.runCommand "unit-test-jellyfin-subtitles" { } ''
+      ${check "jellyfin-plugins service exists" (config.config.systemd.services ? jellyfin-plugins)}
+
+      ${check "Open Subtitles plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: Open Subtitles" pluginService.script
+      )}
+      ${check "subbuzz plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: subbuzz" pluginService.script
+      )}
+      ${check "Subtitle Extract plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: Subtitle Extract" pluginService.script
+      )}
+
+      ${check "Open Subtitles plugin directory name in service script" (
+        lib.hasInfix "Open Subtitles_24.0.0.0" pluginService.script
+      )}
+      ${check "subbuzz plugin directory name in service script" (
+        lib.hasInfix "subbuzz_1.4.1.0" pluginService.script
+      )}
+      ${check "Subtitle Extract plugin directory name in service script" (
+        lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
+      )}
+
+      ${check "SubBuzz plugin repository is added when subbuzz is enabled" (
+        jellyfinCfg.system.pluginRepositories ? "SubBuzz"
+      )}
+
+      ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}
+      ${check "subbuzz EnableYifySubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableYifySubtitles}
+      ${check "subbuzz MinScore config value" (jellyfinCfg.plugins.subbuzz.config.MinScore == 60)}
+      ${check "subbuzz Cache.SubLifeInMinutes is 1000001 when set to Always" (
+        jellyfinCfg.plugins.subbuzz.config.Cache.SubLifeInMinutes == 1000001
+      )}
+      ${check "subbuzz SubPostProcessing.EncodeSubtitlesToUTF8 config value" (
+        !jellyfinCfg.plugins.subbuzz.config.SubPostProcessing.EncodeSubtitlesToUTF8
+      )}
+
+      ${check "Open Subtitles Username config value" (
+        jellyfinCfg.plugins."Open Subtitles".config.Username == "testsubsuser"
+      )}
+
+      ${check "Subtitle Extract ExtractionDuringLibraryScan config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.ExtractionDuringLibraryScan
+      }
+      ${check "Subtitle Extract IncludeTextSubtitles config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.IncludeTextSubtitles
+      }
+      ${check "Subtitle Extract IncludeGraphicalSubtitles config value" (
+        !jellyfinCfg.plugins."Subtitle Extract".config.IncludeGraphicalSubtitles
+      )}
+
+      ${check "Subtitle Movies library exists" (jellyfinCfg.libraries ? "Subtitle Movies")}
+      ${check "Library subtitle fetcher order" (
+        jellyfinCfg.libraries."Subtitle Movies".subtitleFetcherOrder == [
+          "Open Subtitles"
+          "subbuzz"
+        ]
+      )}
+      ${check "Library subtitle download languages" (
+        builtins.elem "eng" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
+        && builtins.elem "spa" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
+      )}
+      ${check "Library saveSubtitlesWithMedia"
+        jellyfinCfg.libraries."Subtitle Movies".saveSubtitlesWithMedia
+      }
+      ${check "Library allowEmbeddedSubtitles" (
+        jellyfinCfg.libraries."Subtitle Movies".allowEmbeddedSubtitles == "AllowAll"
+      )}
+      ${check "Library requirePerfectSubtitleMatch"
+        jellyfinCfg.libraries."Subtitle Movies".requirePerfectSubtitleMatch
+      }
+      ${check "Library skipSubtitlesIfEmbeddedSubtitlesPresent"
+        jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfEmbeddedSubtitlesPresent
+      }
+      ${check "Library skipSubtitlesIfAudioTrackMatches" (
+        !jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfAudioTrackMatches
+      )}
+
+      echo 'PASS: jellyfin-subtitles' > $out
+    '';
 }

@@ -9,11 +9,11 @@ let
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
-  secrets = import ../../lib/secrets/default.nix { inherit lib; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
+  secrets = import ../../../lib/secrets/default.nix { inherit lib; };
 
-  waitForApiScript = import ./waitForApiScript.nix {
+  waitForApiScript = import ../waitForApiScript.nix {
     inherit pkgs;
     jellyfinCfg = cfg;
   };
@@ -50,7 +50,7 @@ let
     name: pluginCfg:
     let
       rawConfig = pluginCfg.config;
-      lookupName = pluginCfg.apiName;
+      lookupName = pluginCfg.apiName or name;
     in
     {
       plainFile = pkgs.writeText "jellyfin-plugin-config-${name}.json" (

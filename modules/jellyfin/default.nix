@@ -23,7 +23,7 @@ let
     jellyfinCfg = cfg;
   };
 
-  pluginResolution = import ./resolvePlugins.nix {
+  pluginResolution = import ./plugins/resolvePlugins.nix {
     inherit lib pkgs;
     jellyfinVersion = cfg.package.version;
     inherit (cfg.system) pluginRepositories;
@@ -48,7 +48,7 @@ in
     ./brandingService.nix
     ./encodingService.nix
     ./librariesService.nix
-    ./pluginsService.nix
+    ./plugins
     ./setupWizardService.nix
     ./systemConfigService.nix
     ./usersConfigService.nix

@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.0.0] - 2026-05-08
 
 ### Added
 
-- Caddy as alternative reverse proxy to nginx via `nixflix.caddy` ([#163](https://github.com/kiriwalawren/nixflix/pull/163))
-- Per-service reverse proxy opt-out via `reverseProxy.expose` ([#163](https://github.com/kiriwalawren/nixflix/pull/163))
-- Generic WireGuard VPN support via `nixflix.vpn` ([#164](https://github.com/kiriwalawren/nixflix/pull/164))
+- Subtitle downloads using Jellyfin plugins ([#199](https://github.com/kiriwalawren/nixflix/pull/199)).
+- Caddy as alternative reverse proxy to nginx via `nixflix.caddy` ([#163](https://github.com/kiriwalawren/nixflix/pull/163)).
+- Per-service reverse proxy opt-out via `reverseProxy.expose` ([#163](https://github.com/kiriwalawren/nixflix/pull/163)).
+- Generic WireGuard VPN support via `nixflix.vpn` ([#164](https://github.com/kiriwalawren/nixflix/pull/164)).
 - Jellyfin Plugin management ([#156](https://github.com/kiriwalawren/nixflix/pull/156)).
 - Mullvad first-class Tailscale coexistence option (`nixflix.mullvad.tailscale`) ([#141](https://github.com/kiriwalawren/nixflix/pull/141)).
 - Mullvad `persistDevice` option to keep login across reboots ([#133](https://github.com/kiriwalawren/nixflix/pull/133)).
