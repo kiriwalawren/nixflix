@@ -113,6 +113,7 @@ nav:
   - Examples:
       - Basic Setup: examples/basic-setup.md
       - Jellyfin Plugins: examples/jellyfin-plugins.md
+      - Jellyfin Subtitles: examples/jellyfin-subtitles.md
 # REFERENCE_NAV_PLACEHOLDER
 extra:
   social:
