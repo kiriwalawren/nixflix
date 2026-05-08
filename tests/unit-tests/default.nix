@@ -639,8 +639,12 @@ in
         jellyfinCfg.plugins."Open Subtitles".config.Username == "testsubsuser"
       )}
 
-      ${check "Subtitle Extract ExtractionDuringLibraryScan config value" jellyfinCfg.plugins."Subtitle Extract".config.ExtractionDuringLibraryScan}
-      ${check "Subtitle Extract IncludeTextSubtitles config value" jellyfinCfg.plugins."Subtitle Extract".config.IncludeTextSubtitles}
+      ${check "Subtitle Extract ExtractionDuringLibraryScan config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.ExtractionDuringLibraryScan
+      }
+      ${check "Subtitle Extract IncludeTextSubtitles config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.IncludeTextSubtitles
+      }
       ${check "Subtitle Extract IncludeGraphicalSubtitles config value" (
         !jellyfinCfg.plugins."Subtitle Extract".config.IncludeGraphicalSubtitles
       )}
@@ -656,12 +660,18 @@ in
         builtins.elem "eng" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
         && builtins.elem "spa" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
       )}
-      ${check "Library saveSubtitlesWithMedia" jellyfinCfg.libraries."Subtitle Movies".saveSubtitlesWithMedia}
+      ${check "Library saveSubtitlesWithMedia"
+        jellyfinCfg.libraries."Subtitle Movies".saveSubtitlesWithMedia
+      }
       ${check "Library allowEmbeddedSubtitles" (
         jellyfinCfg.libraries."Subtitle Movies".allowEmbeddedSubtitles == "AllowAll"
       )}
-      ${check "Library requirePerfectSubtitleMatch" jellyfinCfg.libraries."Subtitle Movies".requirePerfectSubtitleMatch}
-      ${check "Library skipSubtitlesIfEmbeddedSubtitlesPresent" jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfEmbeddedSubtitlesPresent}
+      ${check "Library requirePerfectSubtitleMatch"
+        jellyfinCfg.libraries."Subtitle Movies".requirePerfectSubtitleMatch
+      }
+      ${check "Library skipSubtitlesIfEmbeddedSubtitlesPresent"
+        jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfEmbeddedSubtitlesPresent
+      }
       ${check "Library skipSubtitlesIfAudioTrackMatches" (
         !jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfAudioTrackMatches
       )}
