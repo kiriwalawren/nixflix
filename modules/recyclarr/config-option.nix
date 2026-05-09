@@ -8,7 +8,7 @@ let
       folder = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Movie folder naming format ('default' for TRaSH guide default)";
+        description = "A naming format taken from the 'Key' column of the 'Movie Folder Format' table.";
       };
 
       movie = mkOption {
@@ -18,19 +18,19 @@ let
               rename = mkOption {
                 type = types.bool;
                 default = true;
-                description = "Whether to rename movie files";
+                description = "Enables the 'Rename Movies' checkbox when set to `true`.";
               };
 
               standard = mkOption {
                 type = types.nullOr types.str;
                 default = null;
-                description = "Movie file naming format ('default' or 'standard' for TRaSH guide defaults)";
+                description = "A naming format taken from the 'Key' column of the 'Standard Movie Format' table.";
               };
             };
           }
         );
         default = null;
-        description = "Movie file naming configuration";
+        description = "Movie file naming configuration.";
       };
     };
   };
@@ -40,13 +40,13 @@ let
       series = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Series folder naming format ('default' for TRaSH guide default)";
+        description = "A naming format taken from the 'Key' column of the 'Series Folder Format' table.";
       };
 
       season = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Season folder naming format ('default' for TRaSH guide default)";
+        description = "A naming format taken from the 'Key' column of the 'Season Folder Format' table.";
       };
 
       episodes = mkOption {
@@ -56,31 +56,31 @@ let
               rename = mkOption {
                 type = types.bool;
                 default = true;
-                description = "Whether to rename episode files";
+                description = "Enables the 'Rename Episodes' checkbox when set to `true`.";
               };
 
               standard = mkOption {
                 type = types.nullOr types.str;
                 default = null;
-                description = "Standard episode naming format ('default' for TRaSH guide default)";
+                description = "Standard episode naming format key.";
               };
 
               daily = mkOption {
                 type = types.nullOr types.str;
                 default = null;
-                description = "Daily episode naming format ('default' for TRaSH guide default)";
+                description = "Daily episode naming format key.";
               };
 
               anime = mkOption {
                 type = types.nullOr types.str;
                 default = null;
-                description = "Anime episode naming format ('default' for TRaSH guide default)";
+                description = "Anime episode naming format key.";
               };
             };
           }
         );
         default = null;
-        description = "Episode file naming configuration";
+        description = "Episode file naming configuration.";
       };
     };
   };
@@ -91,44 +91,103 @@ let
       options = {
         base_url = mkOption {
           type = types.str;
-          description = "Base URL for the service instance (including port and URL base).";
+          description = "The base URL of your instance. Basically this is the URL you bookmark to get to the front page.";
           example = "http://127.0.0.1:8989";
         };
 
         api_key = secrets.mkSecretOption {
-          description = "API key for the instance.";
+          description = "The API key that Recyclarr should use to synchronize settings to your instance.";
         };
 
         delete_old_custom_formats = mkOption {
           type = types.bool;
-          default = true;
-          description = "Whether to delete custom formats in the service that are not defined in the configuration.";
+          default = false;
+          description = ''
+            If enabled, custom formats that you remove from your configuration or that are
+            removed from the guide will be deleted from the service. Only applies to formats
+            Recyclarr synchronized; manually added formats are preserved.
+          '';
         };
 
         quality_definition = mkOption {
           type = types.nullOr (
             types.submodule {
-              options.type = mkOption {
-                type = types.enum (
-                  if instanceType == "radarr" then
-                    [
-                      "movie"
-                      "anime"
-                      "sqp-streaming"
-                      "sqp-uhd"
-                    ]
-                  else
-                    [
-                      "series"
-                      "anime"
-                    ]
-                );
-                description = "Type of quality definition to use from TRaSH guides.";
+              options = {
+                type = mkOption {
+                  type = types.enum (
+                    if instanceType == "radarr" then
+                      [
+                        "movie"
+                        "anime"
+                        "sqp-streaming"
+                        "sqp-uhd"
+                      ]
+                    else
+                      [
+                        "series"
+                        "anime"
+                      ]
+                  );
+                  description = "Identifies which quality size settings to parse and upload.";
+                };
+
+                preferred_ratio = mkOption {
+                  type = types.nullOr (types.numbers.between 0.0 1.0);
+                  default = null;
+                  description = ''
+                    A value 0.0 to 1.0 that represents the percentage (interpolated) position
+                    of the preferred quality slider between minimum and maximum. Values outside
+                    the range are clamped with a warning. Has no effect on Sonarr v3.
+                  '';
+                };
+
+                qualities = mkOption {
+                  type = types.nullOr (
+                    types.listOf (
+                      types.submodule {
+                        options = {
+                          name = mkOption {
+                            type = types.str;
+                            description = "The name of a quality to override. Must exist in the guide (case-insensitive).";
+                            example = "Bluray-1080p";
+                          };
+
+                          min = mkOption {
+                            type = types.nullOr types.numbers.nonnegative;
+                            default = null;
+                            description = "Minimum size in MB per minute of runtime.";
+                          };
+
+                          max = mkOption {
+                            type = types.nullOr (types.either types.numbers.nonnegative (types.enum [ "unlimited" ]));
+                            default = null;
+                            description = ''
+                              Maximum size in MB per minute of runtime, or `"unlimited"`.
+                            '';
+                          };
+
+                          preferred = mkOption {
+                            type = types.nullOr (types.either types.numbers.nonnegative (types.enum [ "unlimited" ]));
+                            default = null;
+                            description = ''
+                              Preferred size in MB per minute of runtime, or `"unlimited"`.
+                            '';
+                          };
+                        };
+                      }
+                    )
+                  );
+                  default = null;
+                  description = ''
+                    Override size limits for specific qualities while retaining guide defaults
+                    for others. Constraint: min ≤ preferred ≤ max.
+                  '';
+                };
               };
             }
           );
           default = null;
-          description = "Quality definition configuration from TRaSH guides.";
+          description = "Control the minimum, maximum, and preferred file sizes for each quality level.";
         };
 
         media_management = mkOption {
@@ -144,8 +203,8 @@ let
                 );
                 default = null;
                 description = ''
-                  How to handle Propers and Repacks. Set to `do_not_prefer` when using
-                  Custom Formats for repack/proper handling.
+                  Controls how Sonarr/Radarr handles Propers and Repacks. This corresponds
+                  to the 'Propers and Repacks' dropdown in the Media Management settings.
                 '';
               };
             }
@@ -173,11 +232,7 @@ let
                 trash_id = mkOption {
                   type = types.nullOr types.str;
                   default = null;
-                  description = ''
-                    The trash_id of a guide-backed quality profile. When specified, qualities,
-                    custom formats, scores, and language are automatically configured from the
-                    TRaSH Guides.
-                  '';
+                  description = "The trash ID of a TRaSH Guide quality profile definition.";
                   example = "0896c29d74de619df168d23b98104b22";
                 };
 
@@ -185,9 +240,10 @@ let
                   type = types.nullOr types.str;
                   default = null;
                   description = ''
-                    Name of the quality profile. For guide-backed profiles (with `trash_id`),
-                    this overrides the guide name. For user-defined profiles, this is the
-                    profile identity. Either `trash_id` or `name` is required.
+                    The name of the quality profile. For guide-backed profiles (with
+                    `trash_id`), this defaults to the guide's recommended name and may be
+                    overridden. For user-defined profiles, this is the profile identity.
+                    Either `trash_id` or `name` is required.
                   '';
                   example = "WEB-2160p";
                 };
@@ -195,7 +251,7 @@ let
                 score_set = mkOption {
                   type = types.nullOr types.str;
                   default = null;
-                  description = "The set of scores to use for custom formats assigned to the profile.";
+                  description = "A string (name) that determines the guide-provided, preset scores to use across all custom formats assigned to a quality profile.";
                 };
 
                 reset_unmatched_scores = mkOption {
@@ -205,19 +261,19 @@ let
                         enabled = mkOption {
                           type = types.bool;
                           default = true;
-                          description = "Whether to reset scores for custom formats not in the configuration.";
+                          description = "If `true`, custom format scores not managed by Recyclarr are set to `0`. If `false`, scores are only altered when listed in `trash_ids` with a valid score.";
                         };
 
                         except = mkOption {
                           type = types.nullOr (types.listOf types.str);
                           default = null;
-                          description = "Custom format names to exclude when resetting scores (case-insensitive).";
+                          description = "A list of one or more custom format names to exclude from score resets. Names must match exactly (case-sensitive).";
                         };
 
                         except_patterns = mkOption {
                           type = types.nullOr (types.listOf types.str);
                           default = null;
-                          description = "Regular expression patterns to exclude when resetting scores (case-insensitive).";
+                          description = "A list of one or more regular expression patterns used to exclude custom formats from score resets. Matching is case-insensitive.";
                         };
                       };
                     }
@@ -233,20 +289,20 @@ let
                         allowed = mkOption {
                           type = types.bool;
                           default = true;
-                          description = "Whether upgrades are allowed.";
+                          description = "Directly correlates to the 'Upgrades Allowed' checkbox in the Quality Profile edit dialog in Radarr/Sonarr.";
                         };
 
                         until_quality = mkOption {
                           type = types.nullOr types.str;
                           default = null;
-                          description = "Upgrade until this quality level is reached.";
+                          description = "The quality name mentioned here must exist in the `qualities` list or be a valid quality in your profile.";
                           example = "WEB 2160p";
                         };
 
                         until_score = mkOption {
                           type = types.nullOr types.int;
                           default = null;
-                          description = "Upgrade until this custom format score is reached.";
+                          description = "Correlates directly to the 'Upgrade Until Custom Format Score' field in the Quality Profile edit dialog.";
                         };
                       };
                     }
@@ -258,16 +314,13 @@ let
                 min_format_score = mkOption {
                   type = types.nullOr types.int;
                   default = null;
-                  description = "Minimum custom format score required to download a release.";
+                  description = "Correlates directly to the 'Minimum Custom Format Score' field in the Quality Profile edit dialog in Radarr/Sonarr.";
                 };
 
                 min_upgrade_format_score = mkOption {
                   type = types.nullOr types.int;
                   default = null;
-                  description = ''
-                    Minimum custom format score required to upgrade an already-downloaded
-                    release.
-                  '';
+                  description = "Correlates directly to the 'Minimum Custom Format Score For Upgrades' field in the Quality Profile edit dialog in Radarr/Sonarr.";
                 };
 
                 quality_sort = mkOption {
@@ -278,7 +331,7 @@ let
                     ]
                   );
                   default = null;
-                  description = "Quality sort order (top = highest quality first).";
+                  description = "Controls which direction specified qualities are sorted. `top` sorts them to the top of the list; `bottom` sorts them to the bottom.";
                 };
 
                 qualities = mkOption {
@@ -288,20 +341,20 @@ let
                         options = {
                           name = mkOption {
                             type = types.str;
-                            description = "Quality name.";
+                            description = "The name of an existing quality. If this is a quality group, this name identifies either an existing quality group or will be used as the name for a newly created group.";
                             example = "WEB 2160p";
                           };
 
                           enabled = mkOption {
                             type = types.bool;
                             default = true;
-                            description = "Whether this quality is enabled in the profile.";
+                            description = "If `true`, this quality will be allowed. If `false`, this quality will be disallowed.";
                           };
 
                           qualities = mkOption {
                             type = types.nullOr (types.listOf types.str);
                             default = null;
-                            description = "Optional list of specific quality variants.";
+                            description = "A list of one or more existing qualities to bundle into a group. By specifying this list, you implicitly make this item a quality group.";
                             example = [
                               "WEBDL-2160p"
                               "WEBRip-2160p"
@@ -319,7 +372,7 @@ let
           );
           default = [ ];
           description = ''
-            List of quality profiles to create or update.
+            An array of quality profiles that Recyclarr should create or modify.
 
             Prefer setting `trash_id` to use a guide-backed profile — qualities, custom
             formats, scores, and language will be configured automatically from the
@@ -335,7 +388,7 @@ let
                 trash_ids = mkOption {
                   type = types.listOf types.str;
                   default = [ ];
-                  description = "List of TRaSH custom format IDs (GUIDs)";
+                  description = "Trash IDs of the custom formats to synchronize.";
                   example = [ "85c61753df5da1fb2aab6f2a47426b09" ];
                 };
 
@@ -346,35 +399,29 @@ let
                         trash_id = mkOption {
                           type = types.nullOr types.str;
                           default = null;
-                          description = ''
-                            Guide-backed quality profile trash_id to assign scores to.
-                            Either `trash_id` or `name` must be specified.
-                          '';
+                          description = "The trash ID of a guide-backed quality profile. Remains stable across guide updates.";
                         };
                         name = mkOption {
                           type = types.nullOr types.str;
                           default = null;
-                          description = ''
-                            Name of the quality profile to assign scores to.
-                            Either `trash_id` or `name` must be specified.
-                          '';
+                          description = "The name of the quality profile. Works for both guide-backed and user-defined profiles.";
                         };
                         score = mkOption {
                           type = types.nullOr types.int;
                           default = null;
-                          description = "Optional score override; omit to use the TRaSH guide default score";
+                          description = "Score override applied to all custom formats in this list. Omit to use guide default scores.";
                         };
                       };
                     }
                   );
                   default = [ ];
-                  description = "Quality profiles to assign these custom format scores to";
+                  description = "Quality profiles to receive scores from these custom formats.";
                 };
               };
             }
           );
           default = [ ];
-          description = "List of custom format configurations from TRaSH guides";
+          description = "Sets of custom formats with optional quality profile assignments for score application.";
         };
 
         custom_format_groups = mkOption {
@@ -384,10 +431,7 @@ let
                 skip = mkOption {
                   type = types.nullOr (types.listOf types.str);
                   default = null;
-                  description = ''
-                    Trash IDs of custom format groups to skip. Use this to opt out of
-                    auto-synced default groups.
-                  '';
+                  description = "Trash IDs of groups to exclude from auto-sync.";
                 };
 
                 add = mkOption {
@@ -396,7 +440,7 @@ let
                       options = {
                         trash_id = mkOption {
                           type = types.str;
-                          description = "Trash ID of the custom format group to add.";
+                          description = "The trash ID of the custom format group.";
                         };
 
                         assign_scores_to = mkOption {
@@ -407,67 +451,53 @@ let
                                   trash_id = mkOption {
                                     type = types.nullOr types.str;
                                     default = null;
-                                    description = "Guide-backed quality profile trash_id to assign scores to.";
+                                    description = "The trash ID of a guide-backed quality profile.";
                                   };
                                   name = mkOption {
                                     type = types.nullOr types.str;
                                     default = null;
-                                    description = "Name of the quality profile to assign scores to.";
+                                    description = "The name of the quality profile.";
                                   };
                                 };
                               }
                             )
                           );
                           default = null;
-                          description = ''
-                            Quality profiles to assign scores to. If omitted, scores are
-                            assigned to all guide-backed profiles.
-                          '';
+                          description = "Quality profiles to receive scores from this group. If omitted, scores are assigned to all applicable guide-backed profiles.";
                         };
 
                         select_all = mkOption {
                           type = types.nullOr types.bool;
                           default = null;
-                          description = ''
-                            Include all custom formats in the group regardless of their
-                            default status. Mutually exclusive with `select`.
-                          '';
+                          description = "When `true`, all non-required custom formats in the group are included. Mutually exclusive with `select`.";
                         };
 
                         select = mkOption {
                           type = types.nullOr (types.listOf types.str);
                           default = null;
-                          description = ''
-                            Non-default custom formats to additionally include. Required CFs
-                            are always included. Mutually exclusive with `select_all`.
-                          '';
+                          description = "Non-default custom formats to include alongside defaults. Mutually exclusive with `select_all`.";
                         };
 
                         exclude = mkOption {
                           type = types.nullOr (types.listOf types.str);
                           default = null;
-                          description = ''
-                            Default custom formats to exclude from the group. Required CFs
-                            cannot be excluded.
-                          '';
+                          description = "Trash IDs of custom formats to remove from the synced set. Required CFs cannot be excluded.";
                         };
                       };
                     }
                   );
                   default = [ ];
-                  description = ''
-                    Custom format groups to explicitly add. Use this for non-default groups
-                    or groups not auto-matched to your profiles.
-                  '';
+                  description = "Groups to explicitly synchronize. Use this to customize default group behavior or opt in to non-default groups.";
                 };
               };
             }
           );
           default = null;
           description = ''
-            Custom format groups from the TRaSH Guides. Groups marked `default: true` in
-            the guide are automatically synced when using guide-backed quality profiles.
-            Use `skip` to opt out of defaults or `add` to opt in to non-default groups.
+            Controls which custom format groups synchronize from the TRaSH Guides. Groups
+            marked `default: true` in the guide are automatically synced when using
+            guide-backed quality profiles. Use `skip` to opt out of defaults or `add` to
+            opt in to non-default groups.
           '';
         };
 
@@ -479,11 +509,9 @@ let
                   type = types.nullOr types.str;
                   default = null;
                   description = ''
-                    ID of a config include template from the Recyclarr
-                    [config-templates repository](https://github.com/recyclarr/config-templates)
-                    (or a local replacement). As of Recyclarr v8 the official repository no
-                    longer ships any include templates, so this only works with a custom
-                    resource provider or user-supplied local includes.
+                    The ID of an include template from a resource provider. As of Recyclarr
+                    v8 the official repository no longer ships any include templates, so this
+                    only works with a custom resource provider or user-supplied local includes.
                   '';
                 };
 
@@ -491,8 +519,8 @@ let
                   type = types.nullOr types.str;
                   default = null;
                   description = ''
-                    Path to a local YAML file (relative paths are resolved under the
-                    Recyclarr `includes` directory) to merge into this instance's config.
+                    An absolute or relative path to the YAML file to include. Relative paths
+                    resolve from the `includes` directory in the Recyclarr app data folder.
                   '';
                 };
               };
@@ -500,8 +528,8 @@ let
           );
           default = [ ];
           description = ''
-            List of includes to merge into this instance. Each entry must set exactly one
-            of `template` or `config`.
+            A sequence of include directives to merge into this instance. Each entry must
+            set exactly one of `template` or `config`.
           '';
         };
       };
@@ -568,7 +596,7 @@ in
       from TRaSH guides, media naming, media management (e.g. Propers and
       Repacks handling), and template/file includes.
 
-      [Config Reference](https://recyclarr.dev/wiki/yaml/config-reference/)
+      [Config Reference](https://recyclarr.dev/reference/configuration/)
     '';
   };
 }
