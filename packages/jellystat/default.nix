@@ -16,7 +16,7 @@ buildNpmPackage {
     owner = "CyferShepard";
     repo = "Jellystat";
     rev = version;
-    hash = "sha256-3wD9xy+P/edVJnLgImRyDCQ1xgVvkjN07T5JZDoJFY0=";
+    hash = "sha256-eMDnQJLGEUlOZupUODXvNQ/TtQyQ7salqeZatR6ieRQ=";
   };
 
   npmDepsHash = "sha256-Y40ZnpHjEbYOjDrgwjLxCTyGWHGH6Zw8JADUiJc4hl4=";
