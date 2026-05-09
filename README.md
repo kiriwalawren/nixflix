@@ -108,11 +108,8 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 ### WireGuard VPN
 
-- Automatic authentication
-- Custom DNS servers
-- Kill switch (lockdown mode)
-- Location selection
-- Auto-connect on startup
+- Generic WireGuard support
+- Kill switch
 
 ## Development
 
