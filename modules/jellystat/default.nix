@@ -13,9 +13,13 @@ let
 
   jellyfinUrl =
     if cfg.jellyfin.urlBase == "" then
-      "${if cfg.jellyfin.useSsl then "https" else "http"}://${cfg.jellyfin.hostname}:${toString cfg.jellyfin.port}"
+      "${
+        if cfg.jellyfin.useSsl then "https" else "http"
+      }://${cfg.jellyfin.hostname}:${toString cfg.jellyfin.port}"
     else
-      "${if cfg.jellyfin.useSsl then "https" else "http"}://${cfg.jellyfin.hostname}:${toString cfg.jellyfin.port}/${cfg.jellyfin.urlBase}";
+      "${
+        if cfg.jellyfin.useSsl then "https" else "http"
+      }://${cfg.jellyfin.hostname}:${toString cfg.jellyfin.port}/${cfg.jellyfin.urlBase}";
   generatedJwtSecret = pkgs.lib.mkStrongPassword;
 in
 {
