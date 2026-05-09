@@ -92,8 +92,8 @@ in
               default = "";
               description = "Username for authenticating with OpenSubtitles.";
             };
-            OpenSubPassword = lib.mkOption {
-              type = lib.types.str;
+            OpenSubPassword = secrets.mkSecretOption {
+              nullable = false;
               default = "";
               description = "Password for authenticating with OpenSubtitles.";
             };
