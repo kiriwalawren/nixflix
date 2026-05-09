@@ -40,7 +40,7 @@
               config.allowUnfree = true;
               config.allowUnfreePredicate = _: true;
               overlays = [
-                (self: super: {
+                (_self: super: {
                   jellystat = super.callPackage ./packages/jellystat { };
                 })
               ];
@@ -70,7 +70,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
-          jellystat = pkgs.jellystat;
+          inherit (pkgs) jellystat;
         }
       );
 

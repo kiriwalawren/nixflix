@@ -8,7 +8,6 @@
   curl,
   postgresql,
   cacert,
-  writeTextFile,
   lib,
 }:
 let
@@ -83,7 +82,7 @@ stdenv.mkDerivation {
     '';
     homepage = "https://github.com/CyferShepard/Jellystat";
     license = licenses.gpl3;
-    maintainers = [];
+    maintainers = [ ];
     platforms = platforms.linux;
   };
 }

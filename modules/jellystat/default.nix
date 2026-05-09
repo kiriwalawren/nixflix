@@ -20,7 +20,14 @@ let
 
   jellyfinHostname =
     if cfg.jellyfin.hostname != "127.0.0.1" || cfg.jellyfin.port != 8096 then
-      { inherit (cfg.jellyfin) hostname port useSsl urlBase; }
+      {
+        inherit (cfg.jellyfin)
+          hostname
+          port
+          useSsl
+          urlBase
+          ;
+      }
     else if config.nixflix.jellyfin.enable then
       {
         hostname = "127.0.0.1";
@@ -33,9 +40,13 @@ let
 
   jellyfinUrl =
     if jellyfinHostname.urlBase == "" then
-      "${if jellyfinHostname.useSsl then "https" else "http"}://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}"
+      "${
+        if jellyfinHostname.useSsl then "https" else "http"
+      }://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}"
     else
-      "${if jellyfinHostname.useSsl then "https" else "http"}://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}/${jellyfinHostname.urlBase}";
+      "${
+        if jellyfinHostname.useSsl then "https" else "http"
+      }://${jellyfinHostname.hostname}:${toString jellyfinHostname.port}/${jellyfinHostname.urlBase}";
   generatedPostgresPassword = pkgs.lib.mkStrongPassword;
   generatedJwtSecret = pkgs.lib.mkStrongPassword;
 in
@@ -115,11 +126,16 @@ in
         script = ''
           mkdir -p /run/jellystat
           echo "JWT_SECRET=${secrets.toShellValue (cfg.jwtSecret or generatedJwtSecret)}" > /run/jellystat/env
-          ${optionalString (jellyfinApiKey != null) ''echo "JF_API_KEY=${secrets.toShellValue jellyfinApiKey}" >> /run/jellystat/env''}
-          ${optionalString (cfg.jellyfin.masterOverrideUser != null && cfg.jellyfin.masterOverridePassword != null) ''
-            echo "JS_USER=${secrets.toShellValue cfg.jellyfin.masterOverrideUser}" >> /run/jellystat/env
-            echo "JS_PASSWORD=${secrets.toShellValue cfg.jellyfin.masterOverridePassword}" >> /run/jellystat/env
-          ''}
+          ${optionalString (
+            jellyfinApiKey != null
+          ) ''echo "JF_API_KEY=${secrets.toShellValue jellyfinApiKey}" >> /run/jellystat/env''}
+          ${optionalString
+            (cfg.jellyfin.masterOverrideUser != null && cfg.jellyfin.masterOverridePassword != null)
+            ''
+              echo "JS_USER=${secrets.toShellValue cfg.jellyfin.masterOverrideUser}" >> /run/jellystat/env
+              echo "JS_PASSWORD=${secrets.toShellValue cfg.jellyfin.masterOverridePassword}" >> /run/jellystat/env
+            ''
+          }
           chown ${cfg.user}:${cfg.group} /run/jellystat/env
           chmod 0400 /run/jellystat/env
         '';
