@@ -58,6 +58,11 @@
           (import ./modules)
           vpn-confinement.nixosModules.default
         ];
+        nixpkgs.overlays = [
+          (_self: super: {
+            jellystat = super.callPackage ./packages/jellystat { };
+          })
+        ];
       };
       nixosModules.nixflix = self.nixosModules.default;
 

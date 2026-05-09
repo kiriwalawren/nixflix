@@ -20,7 +20,6 @@ let
       "${
         if cfg.jellyfin.useSsl then "https" else "http"
       }://${cfg.jellyfin.hostname}:${toString cfg.jellyfin.port}/${cfg.jellyfin.urlBase}";
-  generatedJwtSecret = pkgs.lib.mkStrongPassword;
 in
 {
   imports = [

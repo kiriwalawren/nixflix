@@ -68,6 +68,7 @@ in
     };
 
     jwtSecret = secrets.mkSecretOption {
+      nullable = true;
       default = null;
       description = "JWT secret for session encryption. If not set, a random one will be generated.";
     };
@@ -100,7 +101,7 @@ in
 
     port = mkOption {
       type = types.port;
-      default = 3000;
+      default = 2842;
       description = "Port on which jellystat listens.";
     };
 
