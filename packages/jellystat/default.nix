@@ -5,14 +5,17 @@
   makeWrapper,
   lib,
 }:
-buildNpmPackage {
-  pname = "jellystat";
+let
   version = "1.1.10";
+in
+buildNpmPackage {
+  inherit version;
+  pname = "jellystat";
 
   src = fetchFromGitHub {
     owner = "CyferShepard";
     repo = "Jellystat";
-    rev = "V1.1.10";
+    rev = version;
     hash = "sha256-3wD9xy+P/edVJnLgImRyDCQ1xgVvkjN07T5JZDoJFY0=";
   };
 
