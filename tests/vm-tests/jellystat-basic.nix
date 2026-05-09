@@ -25,6 +25,8 @@ pkgs.testers.runNixOSTest {
         jellyfin = {
           enable = true;
 
+          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfin_api_key_123456789012";
+
           users = {
             admin = {
               password = {
@@ -37,12 +39,7 @@ pkgs.testers.runNixOSTest {
 
         jellystat = {
           enable = true;
-          jellyfin.apiKey = {
-            _secret = pkgs.writeText "jellystat-apikey" "jellyfin_api_key_123456789012";
-          };
-          jwtSecret = {
-            _secret = pkgs.writeText "jellystat-jwt" "super_secret_jwt_key_for_jellystat";
-          };
+          jwtSecret._secret = pkgs.writeText "jellystat-jwt" "super_secret_jwt_key_for_jellystat";
         };
       };
 
@@ -53,9 +50,13 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     machine.wait_for_unit("postgresql.service", timeout=120)
+    machine.wait_for_unit("jellystat-wait-for-db.service", timeout=120)
     machine.wait_for_unit("jellyfin.service", timeout=300)
     machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=300)
+    machine.wait_for_unit("jellystat-env.service", timeout=60)
     machine.wait_for_unit("jellystat.service", timeout=300)
     machine.wait_for_open_port(3000, timeout=300)
+
+    machine.succeed("curl -f http://127.0.0.1:3000/")
   '';
 }

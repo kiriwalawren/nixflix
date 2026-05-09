@@ -1,70 +1,38 @@
 {
-  stdenv,
+  buildNpmPackage,
   fetchFromGitHub,
   nodejs_20,
-  python3,
   makeWrapper,
-  jq,
-  curl,
-  postgresql,
-  cacert,
   lib,
 }:
-let
+buildNpmPackage {
   pname = "jellystat";
-  version = "1.1.8";
+  version = "1.1.10";
 
   src = fetchFromGitHub {
     owner = "CyferShepard";
     repo = "Jellystat";
-    rev = "V${version}";
-    sha256 = "sha256-KQJR+xw0xHsfLvnpSupT6GHsVHY9LXFqH0f3xqoP9q8=";
+    rev = "V1.1.10";
+    hash = "sha256-3wD9xy+P/edVJnLgImRyDCQ1xgVvkjN07T5JZDoJFY0=";
   };
 
-in
-stdenv.mkDerivation {
-  inherit pname version src;
-
-  nativeBuildInputs = [
-    nodejs_20
-    python3
-    makeWrapper
+  npmDepsHash = "sha256-Y40ZnpHjEbYOjDrgwjLxCTyGWHGH6Zw8JADUiJc4hl4=";
+  npmFlags = [
+    "--legacy-peer-deps"
+    "--ignore-scripts"
   ];
 
-  buildInputs = [
-    postgresql
-    jq
-    curl
-  ];
-
-  setSSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
-
-  configurePhase = ''
-    export HOME=$TMPDIR
-  '';
-
-  buildPhase = ''
-    runHook preBuild
-
-    cd backend
-    npm install --ignore-scripts --legacy-peer-deps
-
-    cd ..
-    npm install --ignore-scripts --legacy-peer-deps
-    npm run build --ignore-scripts
-
-    runHook postBuild
-  '';
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/lib/jellystat/backend
-    mkdir -p $out/lib/jellystat/dist
-    mkdir -p $out/bin
+    mkdir -p $out/lib/jellystat/backend $out/lib/jellystat/dist $out/bin
 
-    cp -r backend/* $out/lib/jellystat/backend/
-    cp -r dist/* $out/lib/jellystat/dist/ 2>/dev/null || true
+    cp package.json $out/lib/jellystat/package.json
+    cp -r backend/. $out/lib/jellystat/backend/
+    cp -r node_modules $out/lib/jellystat/backend/node_modules
+    cp -r dist/. $out/lib/jellystat/dist/
 
     makeWrapper ${nodejs_20}/bin/node $out/bin/jellystat \
       --chdir $out/lib/jellystat/backend \
@@ -82,6 +50,7 @@ stdenv.mkDerivation {
     '';
     homepage = "https://github.com/CyferShepard/Jellystat";
     license = licenses.gpl3;
+    mainProgram = "jellystat";
     maintainers = [ ];
     platforms = platforms.linux;
   };

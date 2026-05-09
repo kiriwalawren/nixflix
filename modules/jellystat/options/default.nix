@@ -16,27 +16,23 @@ in
 
     timezone = mkOption {
       type = types.str;
-      default = config.time.timeZone or "UTC";
+      default = if config.time.timeZone == null then "UTC" else config.time.timeZone;
+      defaultText = literalExpression ''if config.time.timeZone == null then "UTC" else config.time.timeZone'';
       description = "Timezone for jellystat.";
-    };
-
-    postgres = {
-      password = secrets.mkSecretOption {
-        default = null;
-        description = "PostgreSQL password for Jellystat.";
-      };
     };
 
     jellyfin = {
       hostname = mkOption {
         type = types.str;
-        default = "127.0.0.1";
+        default = config.nixflix.jellyfin.connectionAddress;
+        defaultText = literalExpression "config.nixflix.jellyfin.connectionAddress";
         description = "Jellyfin server hostname or IP";
       };
 
       port = mkOption {
         type = types.port;
-        default = 8096;
+        default = config.nixflix.jellyfin.network.internalHttpPort or 8096;
+        defaultText = literalExpression "config.nixflix.jellyfin.network.internalHttpPort";
         description = "Jellyfin server port";
       };
 
@@ -48,17 +44,19 @@ in
 
       urlBase = mkOption {
         type = types.str;
-        default = "";
+        default = config.nixflix.jellyfin.network.baseUrl or "";
+        defaultText = literalExpression ''config.nixflix.jellyfin.network.baseUrl or ""'';
         description = "Jellyfin URL base path (e.g., /jellyfin)";
       };
 
       apiKey = secrets.mkSecretOption {
-        default = null;
+        default = config.nixflix.jellyfin.apiKey;
+        defaultText = literalExpression "config.nixflix.jellyfin.apiKey";
         description = "Jellyfin API key for Jellystat.";
       };
 
       masterOverrideUser = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
         default = null;
         description = "Master override user (in case username/password for setup is forgotten).";
       };
@@ -66,14 +64,6 @@ in
       masterOverridePassword = secrets.mkSecretOption {
         default = null;
         description = "Master override password.";
-      };
-    };
-
-    database = {
-      name = mkOption {
-        type = types.str;
-        default = "jfstat";
-        description = "PostgreSQL database name for Jellystat.";
       };
     };
 
@@ -123,22 +113,45 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "jellystat";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose Jellystat via the reverse proxy.";
+      };
     };
 
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.mullvad.enable;
-        defaultText = literalExpression "config.nixflix.mullvad.enable";
+        default = false;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Jellystat traffic through the VPN.
 
-          When true (default), Jellystat routes through the VPN (requires nixflix.mullvad.enable = true).
-
-          When false, Jellystat bypasses the VPN.
+          When `false`, Jellystat bypasses the VPN.
+          When `true`, Jellystat is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
+    };
+
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && config.nixflix.jellystat.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      defaultText = literalExpression ''
+        if config.nixflix.vpn.enable && config.nixflix.jellystat.vpn.enable
+        then config.vpnNamespaces.wg.namespaceAddress
+        else "127.0.0.1"
+      '';
+      description = "Address for connecting to this service.";
     };
 
     useWebsockets = mkOption {
@@ -178,4 +191,11 @@ in
       description = "Use Emby API instead of Jellyfin";
     };
   };
+
+  config.assertions = [
+    {
+      assertion = config.nixflix.jellystat.vpn.enable -> config.nixflix.vpn.enable;
+      message = "Cannot enable VPN routing for Jellystat (nixflix.jellystat.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+    }
+  ];
 }
