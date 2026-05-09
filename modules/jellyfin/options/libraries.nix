@@ -269,10 +269,12 @@ let
 
       requirePerfectSubtitleMatch = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = ''
           Requiring a perfect match will filter subtitles to include only those that have been tested and verified with your exact video file.
           Unchecking this will increase the likelihood of subtitles being downloaded, but will increase the chances of mistimed or incorrect subtitle text.
+
+          Default is `false` because the requirements are pretty strict and make it difficult to actually find any subtitles at all.
         '';
       };
 

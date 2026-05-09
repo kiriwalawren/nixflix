@@ -65,7 +65,6 @@ Nixflix is:
 - [X] Jellyfin Plugin Configuration
 - [X] Torrent client integration
 - [X] qBittorrent Client Configuration
-- [ ] Jellystat configuration
 - [ ] Media Removal Automation
 - [X] Subtitle Management (via Jellyfin Plugins)
 
@@ -109,11 +108,8 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 ### WireGuard VPN
 
-- Automatic authentication
-- Custom DNS servers
-- Kill switch (lockdown mode)
-- Location selection
-- Auto-connect on startup
+- Generic WireGuard support
+- Kill switch
 
 ## Development
 

@@ -46,19 +46,27 @@ This example shows how to setup subtitle acquisition in jellyfin.
     };
 
     # Optional
-    libraries.Shows = {
-      disabledSubtitleFetchers = ["subbuzz"]; # Default: []
-      subtitleFetcherOrder = ["subbuzz" "Open Subtitles"]; # Default: ["Open Subtitles" "subbuzz"]
-      subtitleDownloadLanguages = [
-        "eng"
-        "spa"
-      ]; # Default: []
-      saveSubtitlesWithMedia = true;
-      allowEmbeddedSubtitles = "AllowAll";
-      requirePerfectSubtitleMatch = true;
-      skipSubtitlesIfAudioTrackMatches = false;
-      skipSubtitlesIfEmbeddedsubtitlesPresent = true;
-    };
+    libraries =
+      let
+        subtitleSettings = {
+          disabledSubtitleFetchers = ["subbuzz"]; # Default: []
+          subtitleFetcherOrder = ["subbuzz" "Open Subtitles"]; # Default: ["Open Subtitles" "subbuzz"]
+          subtitleDownloadLanguages = [
+            "eng"
+            "spa"
+          ]; # Default: []
+          saveSubtitlesWithMedia = true;
+          allowEmbeddedSubtitles = "AllowAll";
+          requirePerfectSubtitleMatch = false;
+          skipSubtitlesIfAudioTrackMatches = false;
+          skipSubtitlesIfEmbeddedsubtitlesPresent = true;
+        };
+      in
+      {
+        Shows = subtitleSettings;
+        Anime = subtitleSettings;
+        Movies = subtitleSettings;
+      };
   };
 }
 ```
