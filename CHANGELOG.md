@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Missing Recyclarr options ([#204](https://github.com/kiriwalawren/nixflix/pull/204)).
+
+### Changed
+
+- Updated Recyclarr options documentation ([#204](https://github.com/kiriwalawren/nixflix/pull/204)).
+
+### Fixed
+
+- Incorrect Recyclarr `delete_old_custom_formats` default ([#204](https://github.com/kiriwalawren/nixflix/pull/204)).
+
 ## [1.0.0] - 2026-05-08
 
 ### Added
