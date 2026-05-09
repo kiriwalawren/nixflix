@@ -65,7 +65,6 @@ Nixflix is:
 - [X] Jellyfin Plugin Configuration
 - [X] Torrent client integration
 - [X] qBittorrent Client Configuration
-- [ ] Jellystat configuration
 - [ ] Media Removal Automation
 - [X] Subtitle Management (via Jellyfin Plugins)
 
