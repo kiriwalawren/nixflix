@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- `nixflix.lib.jellyfinPlugins.fromRepo`'s `hash` parameter now supports nix32 format as well ([#202](https://github.com/kiriwalawren/nixflix/pull/202)).
+
+  - It also throws if the user's system does not have `builtins.convertHash` implemented
+
 ## [1.0.0] - 2026-05-08
 
 ### Added

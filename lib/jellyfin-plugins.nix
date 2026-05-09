@@ -16,6 +16,8 @@ let
         type = lib.types.str;
         description = ''
           Fixed-output hash for the unpacked plugin archive.
+
+          Supports SRI (`sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=`) or nix32 (`sha256:16h3ncx7n4wfb08r1n6xf3hg432lr2nf2mxafk3n99rm6d1r7ck2`) formats.
         '';
         example = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
       };
