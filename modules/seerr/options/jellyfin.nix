@@ -40,7 +40,8 @@ in
 
     hostname = mkOption {
       type = types.str;
-      default = "127.0.0.1";
+      default = config.nixflix.jellyfin.connectionAddress;
+      defaultText = literalExpression "config.nixflix.jellyfin.connectionAddress";
       description = "Jellyfin server hostname";
     };
 

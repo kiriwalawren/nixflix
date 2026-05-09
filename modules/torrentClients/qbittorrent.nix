@@ -153,10 +153,23 @@ in
             default =
               if config.nixflix.vpn.enable && cfg.vpn.enable then
                 config.vpnNamespaces.wg.namespaceAddress
+              else if config.nixflix.reverseProxy.enable then
+                "127.0.0.1"
               else
-                "127.0.0.1";
+                "*";
             description = "Bind address for the WebUI";
           };
+        };
+
+        connectionAddress = mkOption {
+          type = types.str;
+          readOnly = true;
+          default =
+            if config.nixflix.vpn.enable && cfg.vpn.enable then
+              config.vpnNamespaces.wg.namespaceAddress
+            else
+              "127.0.0.1";
+          description = "Address for connecting to this service.";
         };
       };
     };
@@ -168,7 +181,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       port = service.webuiPort;
-      upstreamHost = cfg.serverConfig.Preferences.WebUI.Address;
+      upstreamHost = cfg.connectionAddress;
       themeParkService = "qbittorrent";
       stripHeaders = [
         "x-webkit-csp"
@@ -186,6 +199,7 @@ in
 
       services.qbittorrent = builtins.removeAttrs cfg [
         "categories"
+        "connectionAddress"
         "downloadsDir"
         "password"
         "reverseProxy"

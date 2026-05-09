@@ -14,8 +14,10 @@ types.submodule {
       default =
         if config.nixflix.vpn.enable && serviceConfig.vpn.enable then
           config.vpnNamespaces.wg.namespaceAddress
+        else if config.nixflix.reverseProxy.enable then
+          "127.0.0.1"
         else
-          "127.0.0.1";
+          "0.0.0.0";
       description = "Address to bind to";
     };
 

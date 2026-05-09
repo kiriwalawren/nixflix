@@ -5,9 +5,9 @@
 let
   baseUrl =
     if jellyfinCfg.network.baseUrl == "" then
-      "http://127.0.0.1:${toString jellyfinCfg.network.internalHttpPort}"
+      "http://${jellyfinCfg.connectionAddress}:${toString jellyfinCfg.network.internalHttpPort}"
     else
-      "http://127.0.0.1:${toString jellyfinCfg.network.internalHttpPort}/${jellyfinCfg.network.baseUrl}";
+      "http://${jellyfinCfg.connectionAddress}:${toString jellyfinCfg.network.internalHttpPort}/${jellyfinCfg.network.baseUrl}";
 in
 pkgs.writeShellScript "jellyfin-wait-for-api" ''
   set -eu

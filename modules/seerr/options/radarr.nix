@@ -95,7 +95,7 @@ let
 
   defaultInstance = optionalAttrs (config.nixflix.radarr.enable or false) {
     Radarr = {
-      hostname = config.nixflix.radarr.config.hostConfig.bindAddress;
+      hostname = config.nixflix.radarr.connectionAddress;
       port = config.nixflix.radarr.config.hostConfig.port or 7878;
       inherit (config.nixflix.radarr.config) apiKey;
       baseUrl = config.nixflix.radarr.config.hostConfig.urlBase;

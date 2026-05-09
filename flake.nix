@@ -108,7 +108,9 @@
           docs-build = self.packages.${system}.docs;
         }
         // tests.vm-tests
-        // tests.unit-tests
+        // {
+          unit-tests = pkgs.linkFarmFromDrvs "unit-tests" (lib.attrValues tests.unit-tests);
+        }
       );
 
       devShells = perSystem (
