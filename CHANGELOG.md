@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Disable `nixflix.jellyfin.libraries.<name>.requirePerfectSubtitleMatch` by default.
 - Updated Recyclarr options documentation ([#204](https://github.com/kiriwalawren/nixflix/pull/204)).
 
 ### Fixed
