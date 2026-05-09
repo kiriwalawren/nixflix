@@ -59,7 +59,7 @@ This example shows how to setup subtitle acquisition in jellyfin.
           ]; # Default: []
           saveSubtitlesWithMedia = true;
           allowEmbeddedSubtitles = "AllowAll";
-          requirePerfectSubtitleMatch = false;
+          requirePerfectSubtitleMatch = true;
           skipSubtitlesIfAudioTrackMatches = false;
           skipSubtitlesIfEmbeddedsubtitlesPresent = true;
         };
