@@ -5,6 +5,14 @@
 }:
 let
   inherit (pkgs) lib;
+  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit lib; };
+  manifestHash =
+    file:
+    builtins.convertHash {
+      hash = builtins.hashFile "sha256" file;
+      hashAlgo = "sha256";
+      toHashFormat = "sri";
+    };
 
   # Helper to evaluate a NixOS configuration without building
   evalConfig =
@@ -49,13 +57,9 @@ in
                 hostConfig = {
                   port = 8989;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/tv"; } ];
               };
             };
@@ -82,13 +86,9 @@ in
                 hostConfig = {
                   port = 8990;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/anime"; } ];
               };
             };
@@ -117,13 +117,9 @@ in
                 hostConfig = {
                   port = 7878;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/radarr-pass";
-                  };
+                  password._secret = "/run/secrets/radarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/radarr-api";
-                };
+                apiKey._secret = "/run/secrets/radarr-api";
                 rootFolders = [ { path = "/media/movies"; } ];
               };
             };
@@ -149,19 +145,13 @@ in
                 hostConfig = {
                   port = 9696;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/prowlarr-pass";
-                  };
+                  password._secret = "/run/secrets/prowlarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/prowlarr-api";
-                };
+                apiKey._secret = "/run/secrets/prowlarr-api";
                 indexers = [
                   {
                     name = "1337x";
-                    apiKey = {
-                      _secret = "/run/secrets/1337x-api";
-                    };
+                    apiKey._secret = "/run/secrets/1337x-api";
                   }
                 ];
               };
@@ -187,12 +177,8 @@ in
               downloadsDir = "/downloads/usenet";
               settings = {
                 misc = {
-                  api_key = {
-                    _secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-                  };
-                  nzb_key = {
-                    _secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
-                  };
+                  api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+                  nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
                   port = 8080;
                   host = "127.0.0.1";
                   url_base = "/sabnzbd";
@@ -205,12 +191,8 @@ in
                     name = "TestServer";
                     host = "news.example.com";
                     port = 563;
-                    username = {
-                      _secret = pkgs.writeText "eweka-username" "testuser";
-                    };
-                    password = {
-                      _secret = pkgs.writeText "eweka-password" "testpass123";
-                    };
+                    username._secret = pkgs.writeText "eweka-username" "testuser";
+                    password._secret = pkgs.writeText "eweka-password" "testpass123";
                     connections = 10;
                     ssl = true;
                     priority = 0;
@@ -242,18 +224,16 @@ in
     in
     assertTest "sabnzbd-service-generation" hasAllServices;
 
-  # Test that jellyseerr generates services with a remote Jellyfin (no local jellyfin)
-  jellyseerr-remote-jellyfin =
+  # Test that seerr generates services with a remote Jellyfin (no local jellyfin)
+  seerr-remote-jellyfin =
     let
       config = evalConfig [
         {
           nixflix = {
             enable = true;
-            jellyseerr = {
+            seerr = {
               enable = true;
-              apiKey = {
-                _secret = "/run/secrets/jellyseerr-api";
-              };
+              apiKey._secret = "/run/secrets/seerr-api";
               jellyfin = {
                 adminUsername = "remoteadmin";
                 adminPassword = "remotepassword";
@@ -264,13 +244,193 @@ in
       ];
       systemdUnits = config.config.systemd.services;
     in
-    assertTest "jellyseerr-remote-jellyfin" (
-      systemdUnits ? jellyseerr
-      && systemdUnits ? jellyseerr-setup
-      && systemdUnits ? jellyseerr-jellyfin
-      && systemdUnits ? jellyseerr-libraries
-      && systemdUnits ? jellyseerr-user-settings
+    assertTest "seerr-remote-jellyfin" (
+      systemdUnits ? seerr
+      && systemdUnits ? seerr-setup
+      && systemdUnits ? seerr-jellyfin
+      && systemdUnits ? seerr-libraries
+      && systemdUnits ? seerr-user-settings
     );
+
+  jellyfin-plugin-package-service-generation =
+    let
+      plugin = pkgs.runCommand "test-plugin-1.0.0" { } ''
+        mkdir -p "$out"
+        touch "$out/TestPlugin.dll"
+      '';
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins."Test Plugin".package = plugin;
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      systemdUnits = config.config.systemd.services;
+      tmpfilesSettings = config.config.systemd.tmpfiles.settings;
+      pluginPath = "${config.config.nixflix.jellyfin.dataDir}/plugins";
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-package-service-generation" { } ''
+      ${check "plugin service exists" (systemdUnits ? jellyfin-plugins)}
+      ${check "plugin tmpfiles directory exists" (
+        builtins.hasAttr pluginPath tmpfilesSettings."10-jellyfin"
+      )}
+
+      echo 'PASS: jellyfin-plugin-package-service-generation' > $out
+    '';
+
+  jellyfin-plugin-source-assertion =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+
+                jellyfin = {
+                  enable = true;
+                  plugins."Broken Plugin" = {
+                    package = {
+                      version = "1.0.0.0";
+                    };
+                    config.SomeSetting = true;
+                  };
+                  users.admin = {
+                    password = "testpassword";
+                    policy.isAdministrator = true;
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "jellyfin-plugin-source-assertion" (!result.success);
+
+  jellyfin-plugin-repo-service-generation =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              plugins.Bookshelf = {
+                package = jellyfinPlugins.fromRepo {
+                  version = "latest";
+                  hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                };
+              };
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-repo-service-generation" { } ''
+      ${check "plugin service exists for repo-managed plugin" (
+        config.config.systemd.services ? jellyfin-plugins
+      )}
+      ${check "repo-managed plugins resolve to package sync commands" (
+        lib.hasInfix "Syncing packaged plugin: Bookshelf" pluginService.script
+      )}
+      ${check "resolved plugin directory name appears in service script" (
+        lib.hasInfix "Bookshelf_13.0.0.0" pluginService.script
+      )}
+
+      echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
+    '';
+
+  jellyfin-plugin-repo-ambiguity-assertion =
+    let
+      targetAbi = "${pkgs.jellyfin.version}.0";
+      manifestA = pkgs.writeText "jellyfin-plugin-repo-a.json" (
+        builtins.toJSON [
+          {
+            guid = "11111111-1111-1111-1111-111111111111";
+            name = "Collision Plugin";
+            versions = [
+              {
+                version = "1.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://example.invalid/repo-a.zip";
+              }
+            ];
+          }
+        ]
+      );
+      manifestB = pkgs.writeText "jellyfin-plugin-repo-b.json" (
+        builtins.toJSON [
+          {
+            guid = "22222222-2222-2222-2222-222222222222";
+            name = "Collision Plugin";
+            versions = [
+              {
+                version = "1.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://example.invalid/repo-b.zip";
+              }
+            ];
+          }
+        ]
+      );
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+
+                jellyfin = {
+                  enable = true;
+                  apiKey = "test-api-key";
+                  system.pluginRepositories = lib.mkForce {
+                    "Repo A" = {
+                      url = builtins.unsafeDiscardStringContext "file://${manifestA}";
+                      hash = manifestHash manifestA;
+                      enabled = true;
+                    };
+                    "Repo B" = {
+                      url = builtins.unsafeDiscardStringContext "file://${manifestB}";
+                      hash = manifestHash manifestB;
+                      enabled = true;
+                    };
+                  };
+                  plugins."Collision Plugin" = {
+                    package = jellyfinPlugins.fromRepo {
+                      version = "1.0.0.0";
+                      hash = lib.fakeHash;
+                    };
+                  };
+                  users.admin = {
+                    password = "testpassword";
+                    policy.isAdministrator = true;
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "jellyfin-plugin-repo-ambiguity-assertion" (!result.success);
 
   jellyfin-integration =
     let
@@ -294,13 +454,9 @@ in
                 hostConfig = {
                   port = 7878;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/radarr-pass";
-                  };
+                  password._secret = "/run/secrets/radarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/radarr-api";
-                };
+                apiKey._secret = "/run/secrets/radarr-api";
                 rootFolders = [ { path = "/media/movies"; } ];
               };
             };
@@ -312,13 +468,9 @@ in
                 hostConfig = {
                   port = 8989;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-api";
                 rootFolders = [ { path = "/media/shows"; } ];
               };
             };
@@ -330,13 +482,9 @@ in
                 hostConfig = {
                   port = 8990;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/sonarr-anime-pass";
-                  };
+                  password._secret = "/run/secrets/sonarr-anime-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/sonarr-anime-api";
-                };
+                apiKey._secret = "/run/secrets/sonarr-anime-api";
                 rootFolders = [ { path = "/media/anime"; } ];
               };
             };
@@ -348,13 +496,9 @@ in
                 hostConfig = {
                   port = 8686;
                   username = "admin";
-                  password = {
-                    _secret = "/run/secrets/lidarr-pass";
-                  };
+                  password._secret = "/run/secrets/lidarr-pass";
                 };
-                apiKey = {
-                  _secret = "/run/secrets/lidarr-api";
-                };
+                apiKey._secret = "/run/secrets/lidarr-api";
                 rootFolders = [ { path = "/media/music"; } ];
               };
             };
@@ -382,5 +526,218 @@ in
       ${check "Music library has correct path" (builtins.elem "/media/music" libraries.Music.paths)}
 
       echo 'PASS: jellyfin-integration' > $out
+    '';
+
+  download-clients-no-reverse-proxy =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            nginx.enable = false;
+
+            radarr = {
+              enable = true;
+              config = {
+                hostConfig = {
+                  port = 7878;
+                  username = "admin";
+                  password._secret = "/run/secrets/radarr-pass";
+                };
+                apiKey._secret = "/run/secrets/radarr-api";
+                rootFolders = [ { path = "/media/movies"; } ];
+              };
+            };
+
+            usenetClients.sabnzbd = {
+              enable = true;
+              settings.misc = {
+                api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+                nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+                port = 8080;
+                url_base = "/sabnzbd";
+              };
+            };
+          };
+        }
+      ];
+      radarrCfg = config.config.nixflix.radarr;
+      sabnzbdCfg = config.config.nixflix.usenetClients.sabnzbd;
+      downloadClientsService = config.config.systemd.services."radarr-downloadclients";
+    in
+    pkgs.runCommand "unit-test-download-clients-no-reverse-proxy" { } ''
+      ${check "radarr bindAddress is 0.0.0.0 when nginx is disabled" (
+        radarrCfg.config.hostConfig.bindAddress == "0.0.0.0"
+      )}
+      ${check "radarr connectionAddress is 127.0.0.1 (not 0.0.0.0)" (
+        radarrCfg.connectionAddress == "127.0.0.1"
+      )}
+      ${check "sabnzbd connectionAddress is 127.0.0.1 (not 0.0.0.0)" (
+        sabnzbdCfg.connectionAddress == "127.0.0.1"
+      )}
+      ${check "radarr-downloadclients ExecStartPre uses connectionAddress" (
+        lib.hasInfix "127.0.0.1" downloadClientsService.serviceConfig.ExecStartPre
+      )}
+      ${check "radarr-downloadclients ExecStartPre does not use 0.0.0.0" (
+        !lib.hasInfix "0.0.0.0" downloadClientsService.serviceConfig.ExecStartPre
+      )}
+      ${check "radarr-downloadclients script uses connectionAddress" (
+        lib.hasInfix "127.0.0.1" downloadClientsService.script
+      )}
+      ${check "radarr-downloadclients script does not use 0.0.0.0" (
+        !lib.hasInfix "0.0.0.0" downloadClientsService.script
+      )}
+      echo 'PASS: download-clients-no-reverse-proxy' > $out
+    '';
+
+  jellyfin-subtitles =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              apiKey = "test-api-key";
+
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+
+              plugins = {
+                "Open Subtitles" = {
+                  enable = true;
+                  config = {
+                    Username = "testsubsuser";
+                    Password = "opensubs_test_password";
+                  };
+                };
+
+                subbuzz = {
+                  enable = true;
+                  config = {
+                    EnableOpenSubtitles = true;
+                    EnableYifySubtitles = true;
+                    MinScore = 60;
+                    Cache.SubLifeInMinutes = "Always";
+                    SubPostProcessing.EncodeSubtitlesToUTF8 = false;
+                  };
+                };
+
+                "Subtitle Extract" = {
+                  enable = true;
+                  config = {
+                    ExtractionDuringLibraryScan = true;
+                    IncludeTextSubtitles = true;
+                    IncludeGraphicalSubtitles = false;
+                  };
+                };
+              };
+
+              libraries."Subtitle Movies" = {
+                collectionType = "movies";
+                paths = [ "/media/movies" ];
+                subtitleFetcherOrder = [
+                  "Open Subtitles"
+                  "subbuzz"
+                ];
+                subtitleDownloadLanguages = [
+                  "eng"
+                  "spa"
+                ];
+                saveSubtitlesWithMedia = true;
+                allowEmbeddedSubtitles = "AllowAll";
+                requirePerfectSubtitleMatch = true;
+                skipSubtitlesIfAudioTrackMatches = false;
+                skipSubtitlesIfEmbeddedSubtitlesPresent = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+      jellyfinCfg = config.config.nixflix.jellyfin;
+    in
+    pkgs.runCommand "unit-test-jellyfin-subtitles" { } ''
+      ${check "jellyfin-plugins service exists" (config.config.systemd.services ? jellyfin-plugins)}
+
+      ${check "Open Subtitles plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: Open Subtitles" pluginService.script
+      )}
+      ${check "subbuzz plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: subbuzz" pluginService.script
+      )}
+      ${check "Subtitle Extract plugin sync command in service script" (
+        lib.hasInfix "Syncing packaged plugin: Subtitle Extract" pluginService.script
+      )}
+
+      ${check "Open Subtitles plugin directory name in service script" (
+        lib.hasInfix "Open Subtitles_24.0.0.0" pluginService.script
+      )}
+      ${check "subbuzz plugin directory name in service script" (
+        lib.hasInfix "subbuzz_1.4.1.0" pluginService.script
+      )}
+      ${check "Subtitle Extract plugin directory name in service script" (
+        lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
+      )}
+
+      ${check "SubBuzz plugin repository is added when subbuzz is enabled" (
+        jellyfinCfg.system.pluginRepositories ? "SubBuzz"
+      )}
+
+      ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}
+      ${check "subbuzz EnableYifySubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableYifySubtitles}
+      ${check "subbuzz MinScore config value" (jellyfinCfg.plugins.subbuzz.config.MinScore == 60)}
+      ${check "subbuzz Cache.SubLifeInMinutes is 1000001 when set to Always" (
+        jellyfinCfg.plugins.subbuzz.config.Cache.SubLifeInMinutes == 1000001
+      )}
+      ${check "subbuzz SubPostProcessing.EncodeSubtitlesToUTF8 config value" (
+        !jellyfinCfg.plugins.subbuzz.config.SubPostProcessing.EncodeSubtitlesToUTF8
+      )}
+
+      ${check "Open Subtitles Username config value" (
+        jellyfinCfg.plugins."Open Subtitles".config.Username == "testsubsuser"
+      )}
+
+      ${check "Subtitle Extract ExtractionDuringLibraryScan config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.ExtractionDuringLibraryScan
+      }
+      ${check "Subtitle Extract IncludeTextSubtitles config value"
+        jellyfinCfg.plugins."Subtitle Extract".config.IncludeTextSubtitles
+      }
+      ${check "Subtitle Extract IncludeGraphicalSubtitles config value" (
+        !jellyfinCfg.plugins."Subtitle Extract".config.IncludeGraphicalSubtitles
+      )}
+
+      ${check "Subtitle Movies library exists" (jellyfinCfg.libraries ? "Subtitle Movies")}
+      ${check "Library subtitle fetcher order" (
+        jellyfinCfg.libraries."Subtitle Movies".subtitleFetcherOrder == [
+          "Open Subtitles"
+          "subbuzz"
+        ]
+      )}
+      ${check "Library subtitle download languages" (
+        builtins.elem "eng" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
+        && builtins.elem "spa" jellyfinCfg.libraries."Subtitle Movies".subtitleDownloadLanguages
+      )}
+      ${check "Library saveSubtitlesWithMedia"
+        jellyfinCfg.libraries."Subtitle Movies".saveSubtitlesWithMedia
+      }
+      ${check "Library allowEmbeddedSubtitles" (
+        jellyfinCfg.libraries."Subtitle Movies".allowEmbeddedSubtitles == "AllowAll"
+      )}
+      ${check "Library requirePerfectSubtitleMatch"
+        jellyfinCfg.libraries."Subtitle Movies".requirePerfectSubtitleMatch
+      }
+      ${check "Library skipSubtitlesIfEmbeddedSubtitlesPresent"
+        jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfEmbeddedSubtitlesPresent
+      }
+      ${check "Library skipSubtitlesIfAudioTrackMatches" (
+        !jellyfinCfg.libraries."Subtitle Movies".skipSubtitlesIfAudioTrackMatches
+      )}
+
+      echo 'PASS: jellyfin-subtitles' > $out
     '';
 }

@@ -72,6 +72,10 @@ pkgsUnfree.testers.runNixOSTest {
     assert "tv" in parsed, "tv category missing"
     assert parsed["tv"]["save_path"] == "/downloads/torrent/tv", "tv save_path incorrect"
 
+    # Verify category directories were created
+    machine.succeed("test -d /downloads/torrent/movies")
+    machine.succeed("test -d /downloads/torrent/tv")
+
     # Verify WebUI is accessible
     machine.succeed("curl -f http://127.0.0.1:8282")
   '';

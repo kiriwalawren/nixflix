@@ -24,7 +24,7 @@ Each option is documented with:
 
 ### Media Management
 
-- [Jellyseerr](jellyseerr/index.md) - Requests management
+- [Seerr](seerr/index.md) - Requests management
 - [Sonarr](sonarr/index.md) - TV show management
 - [Sonarr Anime](sonarr-anime/index.md) - Anime management
 - [Radarr](radarr/index.md) - Movie management
@@ -49,6 +49,8 @@ Each option is documented with:
 
 ### Infrastructure
 
-- [Mullvad VPN](mullvad/index.md) - VPN configuration
+- [Nginx](nginx/index.md) - Nginx reverse proxy
+- [Caddy](caddy/index.md) - Caddy reverse proxy
+- [VPN](vpn/index.md) - WireGuard VPN configuration
 - [PostgreSQL](postgres/index.md) - Database configuration
 - [Recyclarr](recyclarr/index.md) - TRaSH guides automation

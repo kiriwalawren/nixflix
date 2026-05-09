@@ -43,7 +43,7 @@ let
         activeProfileName = mkOption {
           type = types.nullOr types.str;
           default = null;
-          description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
+          description = "Quality profile name. Defaults to first available quality profile in Seerr.";
         };
 
         activeDirectory = mkOption {
@@ -116,7 +116,7 @@ let
         preventSearch = mkOption {
           type = types.bool;
           default = false;
-          description = "Prevent Jellyseerr from triggering searches";
+          description = "Prevent Seerr from triggering searches";
         };
       };
     }
@@ -125,6 +125,7 @@ let
   defaultInstances =
     (optionalAttrs (config.nixflix.sonarr.enable or false) {
       Sonarr = {
+        hostname = config.nixflix.sonarr.connectionAddress;
         port = config.nixflix.sonarr.config.hostConfig.port or 8989;
         inherit (config.nixflix.sonarr.config) apiKey;
         baseUrl = config.nixflix.sonarr.config.hostConfig.urlBase;
@@ -134,14 +135,15 @@ let
         animeSeriesType = "standard";
         isDefault = true;
         externalUrl =
-          if config.nixflix.nginx.enable then
-            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+          if config.nixflix.reverseProxy.enable then
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
     })
     // (optionalAttrs (config.nixflix.sonarr-anime.enable or false) {
       "Sonarr Anime" = {
+        hostname = config.nixflix."sonarr-anime".connectionAddress;
         port = config.nixflix.sonarr-anime.config.hostConfig.port or 8990;
         inherit (config.nixflix.sonarr-anime.config) apiKey;
         baseUrl = config.nixflix.sonarr-anime.config.hostConfig.urlBase;
@@ -151,15 +153,15 @@ let
         animeSeriesType = "anime";
         isDefault = false;
         externalUrl =
-          if config.nixflix.nginx.enable then
-            "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+          if config.nixflix.reverseProxy.enable then
+            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
           else
             "";
       };
     });
 in
 {
-  options.nixflix.jellyseerr.sonarr = mkOption {
+  options.nixflix.seerr.sonarr = mkOption {
     type = types.attrsOf sonarrServerModule;
     default = defaultInstances;
     description = ''

@@ -11,6 +11,7 @@
       url = "github:ruslanlap/mkdocs-catppuccin";
       flake = false;
     };
+    vpn-confinement.url = "github:Maroka-chan/VPN-Confinement";
   };
 
   outputs =
@@ -18,6 +19,7 @@
       self,
       nixpkgs,
       treefmt-nix,
+      vpn-confinement,
       ...
     }@inputs:
     let
@@ -48,8 +50,16 @@
         );
     in
     {
-      nixosModules.default = import ./modules;
-      nixosModules.nixflix = import ./modules;
+      lib.buildJellyfinPlugin = { pkgs }: import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
+      lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit lib; };
+
+      nixosModules.default = {
+        imports = [
+          (import ./modules)
+          vpn-confinement.nixosModules.default
+        ];
+      };
+      nixosModules.nixflix = self.nixosModules.default;
 
       packages = perSystem (
         {
@@ -104,7 +114,9 @@
           docs-build = self.packages.${system}.docs;
         }
         // tests.vm-tests
-        // tests.unit-tests
+        // {
+          unit-tests = pkgs.linkFarmFromDrvs "unit-tests" (lib.attrValues tests.unit-tests);
+        }
       );
 
       devShells = perSystem (

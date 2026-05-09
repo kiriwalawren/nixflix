@@ -8,7 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
-  cfg = nixflix.jellyseerr;
+  cfg = nixflix.seerr;
 
   authUtil = import ./authUtil.nix {
     inherit
@@ -17,21 +17,21 @@ let
       cfg
       ;
   };
-  baseUrl = "http://127.0.0.1:${toString cfg.port}";
+  baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs {
     password = cfg.jellyfin.adminPassword;
   };
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
-    systemd.services.jellyseerr-setup = {
-      description = "Complete Jellyseerr initial setup with Jellyfin";
+    systemd.services.seerr-setup = {
+      description = "Complete Seerr initial setup with Jellyfin";
       after = [
-        "jellyseerr.service"
+        "seerr.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
       requires = [
-        "jellyseerr.service"
+        "seerr.service"
       ]
       ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
       wantedBy = [ "multi-user.target" ];
@@ -46,8 +46,7 @@ in
 
         BASE_URL="${baseUrl}"
 
-        # Wait for Jellyseerr
-        echo "Waiting for Jellyseerr..."
+        echo "Waiting for Seerr..."
         for i in {1..60}; do
           if ${pkgs.curl}/bin/curl -sf "$BASE_URL/api/v1/status" >/dev/null 2>&1; then
             break
@@ -60,7 +59,7 @@ in
         IS_INITIALIZED=$(echo "$STATUS_RESPONSE" | ${pkgs.jq}/bin/jq -r '.initialized // false')
 
         if [ "$IS_INITIALIZED" = "true" ]; then
-          echo "Jellyseerr is already initialized"
+          echo "Seerr is already initialized"
           source ${authUtil.authScript}
           exit 0
         fi
@@ -208,7 +207,7 @@ in
         fi
 
         source ${authUtil.authScript}
-        echo "Jellyseerr setup completed successfully"
+        echo "Seerr setup completed successfully"
       '';
     };
   };

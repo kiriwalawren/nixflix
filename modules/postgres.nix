@@ -1,13 +1,11 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
 let
   cfg = config.nixflix.postgres;
-  stateDir = "${config.nixflix.stateDir}/postgres";
 in
 {
   options.nixflix.postgres = {
@@ -15,15 +13,16 @@ in
       type = types.bool;
       default = false;
       example = true;
-      description = "Whether or not to enable postgresql for the entire stack";
+      description = ''
+        Whether or not to enable postgresql for the entire stack.
+      '';
     };
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) {
     services.postgresql = {
       enable = true;
-      package = pkgs.postgresql_16;
-      dataDir = stateDir;
+      dataDir = mkIf (config.nixflix.stateDir != "/var/lib") "${config.nixflix.stateDir}/postgres";
     };
 
     systemd.services.postgresql = {
@@ -32,10 +31,12 @@ in
     };
 
     systemd = {
-      tmpfiles.settings."10-postgresql".${stateDir}.d = {
-        user = "postgres";
-        group = "postgres";
-        mode = "0700";
+      tmpfiles.settings."10-postgresql" = mkIf (config.nixflix.stateDir != "/var/lib") {
+        "${config.nixflix.stateDir}/postgres".d = {
+          user = "postgres";
+          group = "postgres";
+          mode = "0700";
+        };
       };
 
       targets.postgresql-ready = {

@@ -6,8 +6,9 @@
 }:
 with lib;
 let
+  inherit (import ../../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.usenetClients.sabnzbd;
-  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
   settingsType = import ./settingsType.nix { inherit lib config; };
   iniGenerator = import ./iniGenerator.nix { inherit lib; };
@@ -60,7 +61,15 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "sabnzbd";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose SABnzbd via the reverse proxy.";
+      };
     };
 
     settings = mkOption {
@@ -76,143 +85,170 @@ in
       description = "Computed API key path for *arr service integration. Automatically set from settings.misc.api_key._secret";
       internal = true;
     };
-  };
 
-  config = mkIf (config.nixflix.enable && cfg.enable) {
-    assertions = [
-      {
-        assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
-        message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
-      }
-      {
-        assertion =
-          cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
-        message = "nixflix.usenetClients.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
-      }
-    ];
+    vpn = {
+      enable = mkOption {
+        type = types.bool;
+        default = config.nixflix.vpn.enable;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
+        description = ''
+          Whether to route SABnzbd traffic through the VPN.
 
-    nixflix.usenetClients.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
-
-    users.users.${cfg.user} = {
-      inherit (cfg) group;
-      uid = mkForce config.nixflix.globals.uids.sabnzbd;
-      home = stateDir;
-      isSystemUser = true;
-    };
-
-    users.groups.${cfg.group} = { };
-    systemd.tmpfiles.settings."10-sabnzbd" =
-      let
-        mkDir = dir: {
-          "${dir}".d = {
-            inherit (cfg) user group;
-            mode = "0775";
-          };
-        };
-      in
-      {
-        "${stateDir}".d = {
-          inherit (cfg) user group;
-          mode = "0755";
-        };
-      }
-      // lib.mergeAttrsList (
-        map mkDir [
-          cfg.downloadsDir
-          cfg.settings.misc.download_dir
-          cfg.settings.misc.complete_dir
-          cfg.settings.misc.dirscan_dir
-          cfg.settings.misc.nzb_backup_dir
-          cfg.settings.misc.admin_dir
-          cfg.settings.misc.log_dir
-        ]
-      );
-
-    environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
-
-    systemd.services.sabnzbd = {
-      description = "SABnzbd Usenet Downloader";
-      after = [
-        "network-online.target"
-        "nixflix-setup-dirs.service"
-      ];
-      requires = [ "nixflix-setup-dirs.service" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-      restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
-
-      serviceConfig = {
-        Type = "simple";
-        User = cfg.user;
-        Group = cfg.group;
-
-        # Run with root privileges ('+' prefix) to read secrets owned by root
-        ExecStartPre =
-          "+"
-          + pkgs.writeShellScript "sabnzbd-prestart" ''
-            set -euo pipefail
-
-            echo "Merging secrets into SABnzbd configuration..."
-            ${pkgs.python3}/bin/python3 ${../../../lib/secrets/mergeSecrets.py} \
-              /etc/sabnzbd/sabnzbd.ini.template \
-              ${configFile}
-
-            ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
-            ${pkgs.coreutils}/bin/chmod 600 ${configFile}
-
-            echo "Configuration ready"
-          '';
-
-        ExecStart = "${getExe cfg.package} -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
-
-        Restart = "on-failure";
-        RestartSec = "5s";
-
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ReadWritePaths = [
-          stateDir
-          cfg.downloadsDir
-          cfg.settings.misc.download_dir
-          cfg.settings.misc.complete_dir
-          cfg.settings.misc.dirscan_dir
-          cfg.settings.misc.nzb_backup_dir
-          cfg.settings.misc.admin_dir
-          cfg.settings.misc.log_dir
-        ];
-      };
-    };
-
-    networking.firewall = mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.settings.misc.port ];
-    };
-
-    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
-      "127.0.0.1" = [ hostname ];
-    };
-
-    services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.settings.misc.port}";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-
-          ${
-            if config.nixflix.theme.enable then
-              ''
-                proxy_set_header Accept-Encoding "";
-                sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/sabnzbd/${config.nixflix.theme.name}.css"></head>';
-                sub_filter_once on;
-              ''
-            else
-              ""
-          }
+          When `false`, SABnzbd bypasses the VPN.
+          When `true`, SABnzbd is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
     };
+
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && cfg.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      description = "Address for connecting to this service.";
+    };
   };
+
+  config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      inherit (cfg.settings.misc) port;
+      upstreamHost = cfg.connectionAddress;
+      themeParkService = "sabnzbd";
+      websocketUpgrade = true;
+    })
+    {
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for SABnzbd (nixflix.usenetClients.sabnzbd.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
+        {
+          assertion = cfg.settings.misc ? api_key && cfg.settings.misc.api_key ? _secret;
+          message = "nixflix.usenetClients.sabnzbd.settings.misc.api_key must be set with { _secret = /path; } for *arr integration";
+        }
+        {
+          assertion =
+            cfg.settings.misc ? url_base && builtins.match "^$|/.*[^/]$" cfg.settings.misc.url_base != null;
+          message = "nixflix.usenetClients.sabnzbd.settings.misc.url_base must either be an empty string or a string with a leading slash and no trailing slash, e.g. `/sabnzbd`";
+        }
+      ];
+
+      nixflix.usenetClients.sabnzbd.apiKeyPath = cfg.settings.misc.api_key._secret;
+
+      users.users.${cfg.user} = {
+        inherit (cfg) group;
+        uid = mkForce config.nixflix.globals.uids.sabnzbd;
+        home = stateDir;
+        isSystemUser = true;
+      };
+
+      users.groups.${cfg.group} = { };
+      systemd.tmpfiles.settings."10-sabnzbd" =
+        let
+          mkDir = dir: {
+            "${dir}".d = {
+              inherit (cfg) user group;
+              mode = "0775";
+            };
+          };
+        in
+        {
+          "${stateDir}".d = {
+            inherit (cfg) user group;
+            mode = "0755";
+          };
+        }
+        // lib.mergeAttrsList (
+          map mkDir [
+            cfg.downloadsDir
+            cfg.settings.misc.download_dir
+            cfg.settings.misc.complete_dir
+            cfg.settings.misc.dirscan_dir
+            cfg.settings.misc.nzb_backup_dir
+            cfg.settings.misc.admin_dir
+            cfg.settings.misc.log_dir
+          ]
+        );
+
+      environment.etc."sabnzbd/sabnzbd.ini.template".text = templateIni;
+
+      systemd.services.sabnzbd = {
+        description = "SABnzbd Usenet Downloader";
+        after = [
+          "network-online.target"
+          "nixflix-setup-dirs.service"
+        ];
+        requires = [ "nixflix-setup-dirs.service" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        restartTriggers = [ config.environment.etc."sabnzbd/sabnzbd.ini.template".text ];
+
+        serviceConfig = {
+          Type = "simple";
+          User = cfg.user;
+          Group = cfg.group;
+
+          # Run with root privileges ('+' prefix) to read secrets owned by root
+          ExecStartPre =
+            "+"
+            + pkgs.writeShellScript "sabnzbd-prestart" ''
+              set -euo pipefail
+
+              echo "Merging secrets into SABnzbd configuration..."
+              ${pkgs.python3}/bin/python3 ${../../../lib/secrets/mergeSecrets.py} \
+                /etc/sabnzbd/sabnzbd.ini.template \
+                ${configFile}
+
+              ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${configFile}
+              ${pkgs.coreutils}/bin/chmod 600 ${configFile}
+
+              echo "Configuration ready"
+            '';
+
+          ExecStart = "${getExe cfg.package} -f ${configFile} -s ${cfg.settings.misc.host}:${toString cfg.settings.misc.port} -b 0";
+
+          Restart = "on-failure";
+          RestartSec = "5s";
+
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ReadWritePaths = [
+            stateDir
+            cfg.downloadsDir
+            cfg.settings.misc.download_dir
+            cfg.settings.misc.complete_dir
+            cfg.settings.misc.dirscan_dir
+            cfg.settings.misc.nzb_backup_dir
+            cfg.settings.misc.admin_dir
+            cfg.settings.misc.log_dir
+          ];
+        };
+      };
+
+      networking.firewall = mkIf cfg.openFirewall {
+        allowedTCPPorts = [ cfg.settings.misc.port ];
+      };
+
+    }
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
+      systemd.services.sabnzbd.vpnConfinement = {
+        enable = true;
+        vpnNamespace = "wg";
+      };
+      vpnNamespaces.wg.portMappings = [
+        {
+          from = cfg.settings.misc.port;
+          to = cfg.settings.misc.port;
+          protocol = "tcp";
+        }
+      ];
+    })
+  ]);
 }

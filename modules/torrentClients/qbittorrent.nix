@@ -7,10 +7,11 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.torrentClients.qbittorrent;
   service = config.services.qbittorrent;
 
-  hostname = "${cfg.subdomain}.${config.nixflix.nginx.domain}";
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
   categoriesJson = builtins.toJSON (lib.mapAttrs (_name: path: { save_path = path; }) cfg.categories);
   categoriesFile = pkgs.writeText "categories.json" categoriesJson;
   configPath = "${service.profileDir}/qBittorrent/config";
@@ -47,6 +48,20 @@ in
           default = "${config.nixflix.downloadsDir}/torrent";
           defaultText = literalExpression ''"$${config.nixflix.downloadsDir}/torrent"'';
           description = "Base directory for qBittorrent downloads";
+        };
+
+        vpn = {
+          enable = mkOption {
+            type = types.bool;
+            default = config.nixflix.vpn.enable;
+            defaultText = literalExpression "config.nixflix.vpn.enable";
+            description = ''
+              Whether to route qBittorrent traffic through the VPN.
+
+              When `false`, qBittorrent bypasses the VPN.
+              When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+            '';
+          };
         };
 
         categories = lib.mkOption {
@@ -87,6 +102,7 @@ in
         };
 
         password = secrets.mkSecretOption {
+          nullable = true;
           description = ''
             The password for qbittorrent. This is for the other services to integrate with qBittorrent.
             Not for setting the password in qBittorrent
@@ -101,104 +117,163 @@ in
         subdomain = mkOption {
           type = types.str;
           default = "qbittorrent";
-          description = "Subdomain prefix for nginx reverse proxy.";
+          description = "Subdomain prefix for reverse proxy.";
+        };
+
+        reverseProxy = {
+          expose = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether to expose qBittorrent via the reverse proxy.";
+          };
         };
 
         serverConfig = {
-          BitTorrent.Session.DefaultSavePath = mkOption {
-            type = types.str;
-            default = "${cfg.downloadsDir}/default";
-            defaultText = literalExpression ''"''${config.nixflix.torrentClients.qbittorrent.downloadsDir}/default"'';
-            description = "Default save path for downloads without a category.";
+          BitTorrent.Session = {
+            DefaultSavePath = mkOption {
+              type = types.str;
+              default = "${cfg.downloadsDir}/default";
+              defaultText = literalExpression ''"''${config.nixflix.torrentClients.qbittorrent.downloadsDir}/default"'';
+              description = "Default save path for downloads without a category.";
+            };
+
+            DisableAutoTMMByDefault = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                Default Torrent Management Mode. Set to false to enable category save paths.
+
+                `true` = `Manual`, `false` = `Automatic`
+              '';
+            };
           };
 
           Preferences.WebUI.Address = mkOption {
             type = types.str;
-            default = "127.0.0.1";
+            default =
+              if config.nixflix.vpn.enable && cfg.vpn.enable then
+                config.vpnNamespaces.wg.namespaceAddress
+              else if config.nixflix.reverseProxy.enable then
+                "127.0.0.1"
+              else
+                "*";
             description = "Bind address for the WebUI";
           };
+        };
+
+        connectionAddress = mkOption {
+          type = types.str;
+          readOnly = true;
+          default =
+            if config.nixflix.vpn.enable && cfg.vpn.enable then
+              config.vpnNamespaces.wg.namespaceAddress
+            else
+              "127.0.0.1";
+          description = "Address for connecting to this service.";
         };
       };
     };
     default = { };
   };
 
-  config = mkIf (config.nixflix.enable && cfg != null && cfg.enable) {
-    services.qbittorrent = builtins.removeAttrs cfg [
-      "password"
-      "subdomain"
-      "downloadsDir"
-      "categories"
-    ];
+  config = mkIf (config.nixflix.enable && cfg != null && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      port = service.webuiPort;
+      upstreamHost = cfg.connectionAddress;
+      themeParkService = "qbittorrent";
+      stripHeaders = [
+        "x-webkit-csp"
+        "content-security-policy"
+        "X-Frame-Options"
+      ];
+    })
+    {
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "Cannot enable VPN routing for qBittorrent (nixflix.torrentClients.qbittorrent.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+        }
+      ];
 
-    users = {
-      # nixpkgs' `service.qbittorrent.[user|group]` only gets created
-      # when the value is "qbittorent", so we create it here
-      users.${service.user} = mkForce {
-        inherit (service) group;
-        isSystemUser = true;
-        uid = config.nixflix.globals.uids.qbittorrent;
+      services.qbittorrent = builtins.removeAttrs cfg [
+        "categories"
+        "connectionAddress"
+        "downloadsDir"
+        "password"
+        "reverseProxy"
+        "subdomain"
+        "vpn"
+      ];
+
+      users = {
+        # nixpkgs' `service.qbittorrent.[user|group]` only gets created
+        # when the value is "qbittorent", so we create it here
+        users.${service.user} = mkForce {
+          inherit (service) group;
+          isSystemUser = true;
+          uid = config.nixflix.globals.uids.qbittorrent;
+        };
+
+        groups.${service.group} = mkForce { };
       };
 
-      groups.${service.group} = mkForce { };
-    };
-
-    systemd.tmpfiles = {
-      settings."10-qbittorrent" = {
-        ${service.profileDir}.d = {
-          inherit (service) user group;
-          mode = "0755";
-        };
-        ${configPath}.d = {
-          inherit (service) user group;
-          mode = "0754";
-        };
-        ${cfg.serverConfig.BitTorrent.Session.DefaultSavePath}.d = {
-          inherit (service) user group;
-          mode = "0775";
-        };
-      };
-    };
-
-    systemd.services.qbittorrent = {
-      after = [ "nixflix-setup-dirs.service" ];
-      requires = [ "nixflix-setup-dirs.service" ];
-      preStart = lib.mkIf (cfg.categories != { }) (
-        lib.mkAfter ''
-          cp -f '${categoriesFile}' '${configPath}/categories.json'
-          chmod 640 '${configPath}/categories.json'
-          chown ${service.user}:${service.group} '${configPath}/categories.json'
-        ''
-      );
-    };
-
-    networking.hosts = mkIf (config.nixflix.nginx.enable && config.nixflix.nginx.addHostsEntries) {
-      "127.0.0.1" = [ hostname ];
-    };
-
-    services.nginx.virtualHosts."${hostname}" = mkIf config.nixflix.nginx.enable {
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString service.webuiPort}";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_http_version 1.1;
-
-          ${
-            if config.nixflix.theme.enable then
-              ''
-                proxy_set_header Accept-Encoding "";
-                proxy_hide_header "x-webkit-csp";
-                proxy_hide_header "content-security-policy";
-                proxy_hide_header "X-Frame-Options";
-
-                sub_filter '</body>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/qbittorrent/${config.nixflix.theme.name}.css"></body>';
-                sub_filter_once on;
-              ''
-            else
-              ""
+      systemd.tmpfiles = {
+        settings."10-qbittorrent" = {
+          ${service.profileDir}.d = {
+            inherit (service) user group;
+            mode = "0755";
+          };
+          ${configPath}.d = {
+            inherit (service) user group;
+            mode = "0754";
+          };
+          ${cfg.downloadsDir}.d = {
+            inherit (service) user group;
+            mode = "0775";
+          };
+          ${cfg.serverConfig.BitTorrent.Session.DefaultSavePath}.d = {
+            inherit (service) user group;
+            mode = "0775";
+          };
+        }
+        // lib.mapAttrs' (
+          _name: path:
+          lib.nameValuePair path {
+            d = {
+              inherit (service) user group;
+              mode = "0775";
+            };
           }
-        '';
+        ) (lib.filterAttrs (_name: path: path != "") cfg.categories);
       };
-    };
-  };
+
+      systemd.services.qbittorrent = {
+        after = [ "nixflix-setup-dirs.service" ];
+        requires = [ "nixflix-setup-dirs.service" ];
+        preStart = lib.mkIf (cfg.categories != { }) (
+          lib.mkAfter ''
+            cp -f '${categoriesFile}' '${configPath}/categories.json'
+            chmod 640 '${configPath}/categories.json'
+            chown ${service.user}:${service.group} '${configPath}/categories.json'
+          ''
+        );
+      };
+
+    }
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
+      systemd.services.qbittorrent.vpnConfinement = {
+        enable = true;
+        vpnNamespace = "wg";
+      };
+      vpnNamespaces.wg.portMappings = [
+        {
+          from = service.webuiPort;
+          to = service.webuiPort;
+          protocol = "tcp";
+        }
+      ];
+    })
+  ]);
 }

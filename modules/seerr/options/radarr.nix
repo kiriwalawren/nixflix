@@ -41,7 +41,7 @@ let
       activeProfileName = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Quality profile name. Defaults to first available quality profile in Jellyseerr.";
+        description = "Quality profile name. Defaults to first available quality profile in Seerr.";
       };
 
       activeDirectory = mkOption {
@@ -88,28 +88,29 @@ let
       preventSearch = mkOption {
         type = types.bool;
         default = false;
-        description = "Prevent Jellyseerr from triggering searches";
+        description = "Prevent Seerr from triggering searches";
       };
     };
   };
 
   defaultInstance = optionalAttrs (config.nixflix.radarr.enable or false) {
     Radarr = {
+      hostname = config.nixflix.radarr.connectionAddress;
       port = config.nixflix.radarr.config.hostConfig.port or 7878;
       inherit (config.nixflix.radarr.config) apiKey;
       baseUrl = config.nixflix.radarr.config.hostConfig.urlBase;
       activeDirectory = head (config.nixflix.radarr.mediaDirs or [ "/data/media/movies" ]);
       isDefault = true;
       externalUrl =
-        if config.nixflix.nginx.enable then
-          "${config.nixflix.jellyseerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.nginx.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
+        if config.nixflix.reverseProxy.enable then
+          "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };
   };
 in
 {
-  options.nixflix.jellyseerr.radarr = mkOption {
+  options.nixflix.seerr.radarr = mkOption {
     type = types.attrsOf radarrServerModule;
     default = defaultInstance;
     description = ''
@@ -119,16 +120,12 @@ in
     '';
     example = {
       Radarr = {
-        apiKey = {
-          _secret = "/run/secrets/radarr-apikey";
-        };
+        apiKey._secret = "/run/secrets/radarr-apikey";
         activeProfileName = "HD-1080p";
         activeDirectory = "/movies";
       };
       "Radarr 4K" = {
-        apiKey = {
-          _secret = "/run/secrets/radarr-4k-apikey";
-        };
+        apiKey._secret = "/run/secrets/radarr-4k-apikey";
         activeProfileName = "UHD-2160p";
         activeDirectory = "/movies-4k";
         is4k = true;

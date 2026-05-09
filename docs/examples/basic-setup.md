@@ -23,8 +23,8 @@ This example shows a working media server configuration based on a real producti
     "indexer-api-keys/NZBFinder" = {};
     "indexer-api-keys/NzbPlanet" = {};
     "jellyfin/alice_password" = {};
-    "jellyseerr/api_key" = {};
-    "mullvad-account-number" = {};
+    "seerr/api_key" = {};
+    "wireguard/conf" = {};
     "sabnzbd/api_key" = {};
     "sabnzbd/nzb_key" = {};
     "usenet/eweka/username" = {};
@@ -44,26 +44,31 @@ This example shows a working media server configuration based on a real producti
       name = "overseerr";
     };
 
+    # Reverse proxy (choose nginx or caddy, not both)
     nginx = {
       enable = true;
-      addHostsEntries = true; # Disable this is you have your own DNS configuration
+      addHostsEntries = true; # Disable this if you have your own DNS configuration
     };
+    # caddy = {
+    #   enable = true;
+    #   addHostsEntries = true;
+    # };
 
     postgres.enable = true;
 
     sonarr = {
       enable = true;
       config = {
-        apiKey = {_secret = config.sops.secrets."sonarr/api_key".path;};
-        hostConfig.password = {_secret = config.sops.secrets."sonarr/password".path;};
+        apiKey._secret = config.sops.secrets."sonarr/api_key".path;
+        hostConfig.password._secret = config.sops.secrets."sonarr/password".path;
       };
     };
 
     radarr = {
       enable = true;
       config = {
-        apiKey = {_secret = config.sops.secrets."radarr/api_key".path;};
-        hostConfig.password = {_secret = config.sops.secrets."radarr/password".path;};
+        apiKey._secret = config.sops.secrets."radarr/api_key".path;
+        hostConfig.password._secret = config.sops.secrets."radarr/password".path;
       };
     };
 
@@ -75,28 +80,28 @@ This example shows a working media server configuration based on a real producti
     lidarr = {
       enable = true;
       config = {
-        apiKey = {_secret = config.sops.secrets."lidarr/api_key".path;};
-        hostConfig.password = {_secret = config.sops.secrets."lidarr/password".path;};
+        apiKey._secret = config.sops.secrets."lidarr/api_key".path;
+        hostConfig.password._secret = config.sops.secrets."lidarr/password".path;
       };
     };
 
     prowlarr = {
       enable = true;
       config = {
-        apiKey = {_secret = config.sops.secrets."prowlarr/api_key".path;};
-        hostConfig.password = {_secret = config.sops.secrets."prowlarr/password".path;};
+        apiKey._secret = config.sops.secrets."prowlarr/api_key".path;
+        hostConfig.password._secret = config.sops.secrets."prowlarr/password".path;
         indexers = [
           {
             name = "DrunkenSlug";
-            apiKey = {_secret = config.sops.secrets."indexer-api-keys/DrunkenSlug".path;};
+            apiKey._secret = config.sops.secrets."indexer-api-keys/DrunkenSlug".path;
           }
           {
             name = "NZBFinder";
-            apiKey = {_secret = config.sops.secrets."indexer-api-keys/NZBFinder".path;};
+            apiKey._secret = config.sops.secrets."indexer-api-keys/NZBFinder".path;
           }
           {
             name = "NzbPlanet";
-            apiKey = {_secret = config.sops.secrets."indexer-api-keys/NzbPlanet".path;};
+            apiKey._secret = config.sops.secrets."indexer-api-keys/NzbPlanet".path;
           }
         ];
       };
@@ -107,8 +112,8 @@ This example shows a working media server configuration based on a real producti
 
       settings = {
         misc = {
-          api_key = {_secret = config.sops.secrets."sabnzbd/api_key".path;};
-          nzb_key = {_secret = config.sops.secrets."sabnzbd/nzb_key".path;};
+          api_key._secret = config.sops.secrets."sabnzbd/api_key".path;
+          nzb_key._secret = config.sops.secrets."sabnzbd/nzb_key".path;
         };
 
         servers = [
@@ -116,9 +121,8 @@ This example shows a working media server configuration based on a real producti
             name = "Eweka";
             host = "sslreader.eweka.nl";
             port = 563;
-            # Secrets use { _secret = /path; } syntax
-            username = {_secret = config.sops.secrets."usenet/eweka/username".path;};
-            password = {_secret = config.sops.secrets."usenet/eweka/password".path;};
+            username._secret = config.sops.secrets."usenet/eweka/username".path;
+            password._secret = config.sops.secrets."usenet/eweka/password".path;
             connections = 20;
             ssl = true;
             priority = 0;
@@ -128,8 +132,8 @@ This example shows a working media server configuration based on a real producti
             name = "NewsgroupDirect";
             host = "news.newsgroupdirect.com";
             port = 563;
-            username = {_secret = config.sops.secrets."usenet/newsgroupdirect/username".path;};
-            password = {_secret = config.sops.secrets."usenet/newsgroupdirect/password".path;};
+            username._secret = config.sops.secrets."usenet/newsgroupdirect/username".path;
+            password._secret = config.sops.secrets."usenet/newsgroupdirect/password".path;
             connections = 10;
             ssl = true;
             priority = 1;
@@ -142,34 +146,25 @@ This example shows a working media server configuration based on a real producti
 
     jellyfin = {
       enable = true;
+      apiKey._secret = config.sops.secrets."jellyfin/api_key".path;
       users = {
-        alice = {
+        admin = {
           mutable = false;
           policy.isAdministrator = true;
-          password = {_secret = config.sops.secrets."jellyfin/alice_password".path;};
+          password._secret = config.sops.secrets."jellyfin/alice_password".path;
         };
       };
     };
 
-    jellyseerr = {
+    seerr = {
       enable = true;
-      apiKey = {_secret = config.sops.secrets."jellyseerr/api_key".path;};
+      apiKey._secret = config.sops.secrets."seerr/api_key".path;
     };
 
-    mullvad = {
+    vpn = {
       enable = true;
-      accountNumber = {_secret = config.sops.secrets.mullvad-account-number.path;};
-      location = ["us" "nyc"];
-      dns = [
-        "94.140.14.14"
-        "94.140.15.15"
-        "76.76.2.2"
-        "76.76.10.2"
-      ];
-      killSwitch = {
-        enable = true;
-        allowLan = true;
-      };
+      wgConfFile = config.sops.secrets."wireguard/conf".path;
+      accessibleFrom = [ "192.168.1.0/24" ];
     };
   };
 }
@@ -186,14 +181,14 @@ This example shows a working media server configuration based on a real producti
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
-- **Jellyseerr** - Requests Management
-- **Mullvad VPN** - Download protection with kill switch
+- **Seerr** - Requests Management
+- **WireGuard VPN** - Download protection via network namespace confinement
 - **Recyclarr** - TRaSH guides automation
 
 ### Infrastructure
 
 - **PostgreSQL** - Database backend for better performance
-- **Nginx** - Reverse proxy for all services
+- **Nginx** (or **Caddy**) - Reverse proxy for all services
 - **theme.park** - UI theming (set to "plex" theme)
 
 ### Automatic Integration
@@ -218,10 +213,8 @@ This example shows a working media server configuration based on a real producti
 
 **VPN Setup**:
 
-- Download services route through Mullvad (NYC location)
-- Custom DNS for ad-blocking (AdGuard and Control D)
-- Kill switch prevents leaks if VPN disconnects
-- LAN access still works
+- Download services are confined to a WireGuard network namespace
+- Local network (`192.168.1.0/24`) can still reach confined services via nginx
 
 **Recyclarr**: Automatically manages quality profiles with anime support
 
@@ -240,38 +233,28 @@ This example shows a working media server configuration based on a real producti
 │       └── incomplete/
 └── .state/
     ├── jellyfin/
-    ├── jellyseerr/
     ├── lidarr/
     ├── postgres/
     ├── prowlarr/
     ├── radarr/
+    ├── seerr/
     ├── sonarr/
     └── sonarr-anime/
 ```
 
 ## Service Access
 
-Via nginx reverse proxy:
-
-- Sonarr: http://sonarr.nixflix
-- Sonarr Anime: http://sonarr-anime.nixflix
-- Radarr: http://radarr.nixflix
-- Lidarr: http://lidarr.nixflix
-- Prowlarr: http://prowlarr.nixflix
-- SABnzbd: http://sabnzbd.nixflix
-- Jellyfin: http://jellyfin.nixflix
-- Jellyseerr: http://jellyseer.nixflix
-
-Direct access:
-
-- Sonarr: http://localhost:8989
-- Sonarr Anime: http://localhost:8990
-- Radarr: http://localhost:7878
-- Lidarr: http://localhost:8686
-- Prowlarr: http://localhost:9696
-- SABnzbd: http://localhost:8080
-- Jellyfin: http://localhost:8096
-- Jellyseerr: http://localhost:5055
+| Service | Via Reverse Proxy | Direct Access | Default Username |
+|---|---|---|---|
+| Sonarr | `http://sonarr.nixflix` | `http://localhost:8989` | `sonarr` |
+| Sonarr Anime | `http://sonarr-anime.nixflix` | `http://localhost:8990` | `sonarr-anime` |
+| Radarr | `http://radarr.nixflix` | `http://localhost:7878` | `radarr` |
+| Lidarr | `http://lidarr.nixflix` | `http://localhost:8686` | `lidarr` |
+| Prowlarr | `http://prowlarr.nixflix` | `http://localhost:9696` | `prowlarr` |
+| SABnzbd | `http://sabnzbd.nixflix` | `http://localhost:8080` | `sabnzbd` |
+| qBittorrent | `http://qbittorrent.nixflix` | `http://localhost:8282` | `admin` |
+| Jellyfin | `http://jellyfin.nixflix` | `http://localhost:8096` | `admin` |
+| Seerr | `http://seerr.nixflix` | `http://localhost:5055` | `seerr` (local), `admin` (Jellyfin auth) |
 
 ## Customization
 
@@ -279,9 +262,9 @@ Replace these with your own values:
 
 - **Indexers**: Change `DrunkenSlug`, `NZBFinder`, `NzbPlanet` to your indexers
 - **Usenet providers**: Update server details for your providers
-- **VPN location**: Change `["us" "nyc"]` to your preferred location
+- **VPN**: Replace `wireguard/conf` with the sops path to your wg-quick `.conf` file
+- **Accessible from**: Update `192.168.1.0/24` to your local network subnet
 - **Theme**: Change `"plex"` to another theme.park theme
-- **DNS servers**: Use your preferred DNS providers
 - **Jellyfin user**: Change `alice` to your username
 
 ## Next Steps
@@ -289,4 +272,4 @@ Replace these with your own values:
 - Access Prowlarr to verify indexer connections
 - Add content through Sonarr/Radarr/Lidarr
 - Access Jellyfin - libraries are already configured!
-- Verify VPN: `mullvad status` should show "Connected"
+- Verify VPN: `ip netns list` should show the `wg` namespace

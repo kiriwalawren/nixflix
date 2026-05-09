@@ -7,6 +7,7 @@
 with lib;
 let
   stateDir = "${config.nixflix.stateDir}/jellyfin";
+  secrets = import ../../../lib/secrets { inherit lib; };
 in
 {
   imports = [
@@ -14,6 +15,7 @@ in
     ./branding.nix
     ./encoding.nix
     ./libraries.nix
+    ./plugins.nix
     ./system.nix
     ./users.nix
   ];
@@ -22,6 +24,18 @@ in
       type = types.bool;
       default = false;
       description = "Whether to enable Jellyfin media server";
+    };
+
+    apiKey = secrets.mkSecretOption {
+      description = ''
+        API key to inject into Jellyfin's database. Used by nixflix management services to authenticate to Jellyfin.
+
+        Can be created with the following:
+
+        ```bash
+        openssl rand -hex 16
+        ```
+      '';
     };
 
     package = mkOption {
@@ -92,20 +106,47 @@ in
     subdomain = mkOption {
       type = types.str;
       default = "jellyfin";
-      description = "Subdomain prefix for nginx reverse proxy.";
+      description = "Subdomain prefix for reverse proxy.";
+    };
+
+    reverseProxy = {
+      expose = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to expose Jellyfin via the reverse proxy.";
+      };
     };
 
     vpn = {
       enable = mkOption {
         type = types.bool;
-        default = config.nixflix.mullvad.enable;
-        defaultText = literalExpression "config.nixflix.mullvad.enable";
+        default = false;
+        defaultText = literalExpression "config.nixflix.vpn.enable";
         description = ''
           Whether to route Jellyfin traffic through the VPN.
-          When false (default), Jellyfin bypasses the VPN.
-          When true, Jellyfin routes through the VPN (requires nixflix.mullvad.enable = true).
+
+          When `false`, Jellyfin bypasses the VPN.
+          When `true`, Jellyfin is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
     };
+
+    connectionAddress = mkOption {
+      type = types.str;
+      readOnly = true;
+      default =
+        if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
+          config.vpnNamespaces.wg.namespaceAddress
+        else
+          "127.0.0.1";
+      description = "Address for connecting to this service.";
+    };
   };
+
+  config.assertions = [
+    {
+      assertion = config.nixflix.jellyfin.vpn.enable -> config.nixflix.vpn.enable;
+      message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+    }
+  ];
 }

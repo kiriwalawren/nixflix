@@ -21,21 +21,27 @@ let
 
   baseUrl =
     if cfg.network.baseUrl == "" then
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}"
     else
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+
+  waitForApiScript = import ./waitForApiScript.nix {
+    inherit pkgs;
+    jellyfinCfg = cfg;
+  };
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-branding-config = {
       description = "Configure Jellyfin Branding via API";
-      after = [ "jellyfin-setup-wizard.service" ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      after = [ "jellyfin-plugins.service" ];
+      requires = [ "jellyfin-plugins.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        ExecStartPre = waitForApiScript;
       };
 
       script = ''

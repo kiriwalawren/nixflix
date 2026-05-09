@@ -35,13 +35,9 @@ pkgsUnfree.testers.runNixOSTest {
             hostConfig = {
               port = 7878;
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "radarr-password" "testpassword123";
-              };
+              password._secret = pkgs.writeText "radarr-password" "testpassword123";
             };
-            apiKey = {
-              _secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
-            };
+            apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
           };
         };
 
@@ -52,13 +48,9 @@ pkgsUnfree.testers.runNixOSTest {
             hostConfig = {
               port = 8989;
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "sonarr-password" "testpassword456";
-              };
+              password._secret = pkgs.writeText "sonarr-password" "testpassword456";
             };
-            apiKey = {
-              _secret = pkgs.writeText "sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
-            };
+            apiKey._secret = pkgs.writeText "sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
           };
         };
 
@@ -69,13 +61,9 @@ pkgsUnfree.testers.runNixOSTest {
             hostConfig = {
               port = 8990;
               username = "admin";
-              password = {
-                _secret = pkgs.writeText "sonarr-anime-password" "testpassword789";
-              };
+              password._secret = pkgs.writeText "sonarr-anime-password" "testpassword789";
             };
-            apiKey = {
-              _secret = pkgs.writeText "sonarr-anime-apikey" "ijkl9012ijkl9012ijkl9012ijkl9012";
-            };
+            apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "ijkl9012ijkl9012ijkl9012ijkl9012";
           };
         };
 
@@ -87,21 +75,23 @@ pkgsUnfree.testers.runNixOSTest {
         jellyfin = {
           enable = true;
 
+          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+
           users = {
             admin = {
-              password = {
-                _secret = pkgs.writeText "kiri_password" "321password";
-              };
+              password._secret = pkgs.writeText "kiri_password" "321password";
               policy.isAdministrator = true;
             };
           };
+
+          # Disable AniDB to keep test pure
+          plugins.AniDB.enable = false;
+          libraries.Anime.typeOptions = lib.mkForce [ ];
         };
 
-        jellyseerr = {
+        seerr = {
           enable = true;
-          apiKey = {
-            _secret = pkgs.writeText "jellyseerr-apikey" "jellyseerr555555555555555555";
-          };
+          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
         };
       };
 
@@ -150,15 +140,18 @@ pkgsUnfree.testers.runNixOSTest {
 
     # Wait for jellyfin to complete
     machine.wait_for_unit("jellyfin.service", timeout=300)
-    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=300)
+    machine.wait_for_unit("jellyfin-api-key.service", timeout=300)
+    machine.wait_for_unit("jellyfin-setup-wizard.service", timeout=180)
+    machine.wait_for_unit("jellyfin-system-config.service", timeout=180)
+    machine.wait_for_unit("jellyfin-plugins.service", timeout=360)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=300)
 
-    # Wait for jellyseerr to complete
-    machine.wait_for_unit("jellyseerr.service", timeout=300)
+    # Wait for seerr to complete
+    machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(5055, timeout=300)
-    machine.wait_for_unit("jellyseerr-setup.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-radarr.service", timeout=300)
-    machine.wait_for_unit("jellyseerr-sonarr.service", timeout=300)
+    machine.wait_for_unit("seerr-setup.service", timeout=300)
+    machine.wait_for_unit("seerr-radarr.service", timeout=300)
+    machine.wait_for_unit("seerr-sonarr.service", timeout=300)
 
     # Check that quality profiles were created by recyclarr for Radarr
     radarr_profiles = machine.succeed(
@@ -167,9 +160,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     radarr_profiles_list = json.loads(radarr_profiles)
 
-    radarr_profile_names = [p['name'] for p in radarr_profiles_list]
-    assert "SQP-1 (1080p)" in radarr_profile_names, \
-        f"Expected 'UHD Bluray + WEB' profile from recyclarr in Radarr, found: {radarr_profile_names}"
+    radarr_profile_names = {p['name'] for p in radarr_profiles_list}
+    assert radarr_profile_names == {"[SQP] SQP-1 (1080p)"}, \
+        f"Expected only '[SQP] SQP-1 (1080p)' in Radarr after cleanup, found: {radarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr
     sonarr_profiles = machine.succeed(
@@ -178,12 +171,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     sonarr_profiles_list = json.loads(sonarr_profiles)
 
-    sonarr_profile_names = [p['name'] for p in sonarr_profiles_list]
-    # Sonarr should have both normal and anime profiles when sonarr-anime is enabled
-    assert "WEB-1080p" in sonarr_profile_names, \
-        f"Expected 'WEB-1080p' profile from recyclarr in Sonarr, found: {sonarr_profile_names}"
-    assert len(sonarr_profiles_list) > 1, \
-        f"Expected multiple quality profiles in Sonarr, found: {len(sonarr_profiles_list)}"
+    sonarr_profile_names = {p['name'] for p in sonarr_profiles_list}
+    assert sonarr_profile_names == {"WEB-1080p (Alternative)"}, \
+        f"Expected only 'WEB-1080p (Alternative)' in Sonarr after cleanup, found: {sonarr_profile_names}"
 
     # Check that quality profiles were created by recyclarr for Sonarr-Anime
     sonarr_anime_profiles = machine.succeed(
@@ -192,9 +182,9 @@ pkgsUnfree.testers.runNixOSTest {
     )
     sonarr_anime_profiles_list = json.loads(sonarr_anime_profiles)
 
-    sonarr_anime_profile_names = [p['name'] for p in sonarr_anime_profiles_list]
-    assert "Remux-1080p - Anime" in sonarr_anime_profile_names, \
-        f"Expected 'Remux-1080p - Anime' profile from recyclarr in Sonarr-Anime, found: {sonarr_anime_profile_names}"
+    sonarr_anime_profile_names = {p['name'] for p in sonarr_anime_profiles_list}
+    assert sonarr_anime_profile_names == {"[Anime] Remux-1080p"}, \
+        f"Expected only '[Anime] Remux-1080p' in Sonarr-Anime after cleanup, found: {sonarr_anime_profile_names}"
 
     # Wait for cleanup-profiles service to complete
     machine.wait_until_succeeds(

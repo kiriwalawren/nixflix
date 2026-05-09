@@ -29,21 +29,27 @@ let
 
   baseUrl =
     if cfg.network.baseUrl == "" then
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}"
     else
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+
+  waitForApiScript = import ./waitForApiScript.nix {
+    inherit pkgs;
+    jellyfinCfg = cfg;
+  };
 in
 {
   config = mkIf (config.nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";
-      after = [ "jellyfin-setup-wizard.service" ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      after = [ "jellyfin-plugins.service" ];
+      requires = [ "jellyfin-plugins.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        ExecStartPre = waitForApiScript;
       };
 
       script = ''
@@ -87,7 +93,7 @@ in
               echo "Processing user: ${userName}"
               echo "=========================================="
 
-              USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name == $name) | .Id' || echo "")
+              USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name | ascii_downcase == ($name | ascii_downcase)) | .Id' || echo "")
               echo "Found USER_ID for ${userName}: $USER_ID"
               IS_NEW_USER=false
 
@@ -129,11 +135,11 @@ in
                     apiKeyHeader = "Authorization";
                   }
                 })
-                USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name == $name) | .Id')
+                USER_ID=$(echo "$USERS_JSON" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg userName} '.[] | select(.Name | ascii_downcase == ($name | ascii_downcase)) | .Id')
               fi
 
               echo "Current user settings from server:"
-              echo "$USERS_JSON" | ${pkgs.jq}/bin/jq --arg name ${escapeShellArg userName} '.[] | select(.Name == $name)'
+              echo "$USERS_JSON" | ${pkgs.jq}/bin/jq --arg name ${escapeShellArg userName} '.[] | select(.Name | ascii_downcase == ($name | ascii_downcase))'
 
               echo ""
               echo "Configured payload to send:"

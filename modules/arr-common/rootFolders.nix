@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   serviceName,
@@ -26,8 +27,8 @@ in
 
   mkService = serviceConfig: {
     description = "Configure ${serviceName} root folders via API";
-    after = [ "${serviceName}-config.service" ];
-    requires = [ "${serviceName}-config.service" ];
+    after = [ "${serviceName}-config.service" ] ++ config.nixflix.serviceDependencies;
+    requires = [ "${serviceName}-config.service" ] ++ config.nixflix.serviceDependencies;
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
@@ -38,7 +39,7 @@ in
     script = ''
       set -eu
 
-      BASE_URL="http://127.0.0.1:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
+      BASE_URL="http://${serviceConfig.hostConfig.bindAddress}:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}"
 
       # Create root folders if they don't exist
       echo "Checking for root folders..."

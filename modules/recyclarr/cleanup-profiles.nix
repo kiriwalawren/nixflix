@@ -110,14 +110,26 @@ in
                       else
                         echo "  Found $PROFILE_COUNT unmanaged profile(s) to delete"
 
-                        # Get the first managed profile to use as default for reassignment
-                        DEFAULT_PROFILE_NAME=$(echo "$MANAGED_PROFILES" | ${pkgs.jq}/bin/jq -r '.[0]')
-                        DEFAULT_PROFILE_ID=$(echo "$ALL_PROFILES" | ${pkgs.jq}/bin/jq -r --arg name "$DEFAULT_PROFILE_NAME" '
-                          map(select(.name == $name)) | .[0].id
-                        ')
+                        # Find the first managed profile that actually exists in this
+                        # instance — managedProfiles is a single list used for every
+                        # Sonarr/Radarr instance, so e.g. a radarr-only "[SQP] SQP-1 (1080p)"
+                        # must be skipped when cleaning up sonarr.
+                        DEFAULT_PROFILE_NAME=""
+                        DEFAULT_PROFILE_ID=""
+                        while IFS= read -r candidate; do
+                          [ -n "$candidate" ] || continue
+                          candidate_id=$(echo "$ALL_PROFILES" | ${pkgs.jq}/bin/jq -r --arg name "$candidate" '
+                            map(select(.name == $name)) | .[0].id // empty
+                          ')
+                          if [ -n "$candidate_id" ] && [ "$candidate_id" != "null" ]; then
+                            DEFAULT_PROFILE_NAME="$candidate"
+                            DEFAULT_PROFILE_ID="$candidate_id"
+                            break
+                          fi
+                        done < <(echo "$MANAGED_PROFILES" | ${pkgs.jq}/bin/jq -r '.[]')
 
-                        if [ -z "$DEFAULT_PROFILE_ID" ] || [ "$DEFAULT_PROFILE_ID" = "null" ]; then
-                          echo "  ERROR: Could not find default managed profile '$DEFAULT_PROFILE_NAME'"
+                        if [ -z "$DEFAULT_PROFILE_ID" ]; then
+                          echo "  ERROR: None of the managed profiles exist in ${instance.instanceName}; skipping cleanup"
                         else
                           echo "  Default profile for reassignment: $DEFAULT_PROFILE_NAME (ID: $DEFAULT_PROFILE_ID)"
 

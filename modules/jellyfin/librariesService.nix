@@ -41,22 +41,28 @@ let
 
   baseUrl =
     if cfg.network.baseUrl == "" then
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}"
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}"
     else
-      "http://127.0.0.1:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+      "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
+
+  waitForApiScript = import ./waitForApiScript.nix {
+    inherit pkgs;
+    jellyfinCfg = cfg;
+  };
 in
 {
   config = mkIf (nixflix.enable && cfg.enable && cfg.libraries != { }) {
     systemd.services.jellyfin-libraries = {
       description = "Configure Jellyfin Libraries via API";
-      after = [ "jellyfin-setup-wizard.service" ];
-      requires = [ "jellyfin-setup-wizard.service" ];
+      after = [ "jellyfin-plugins.service" ] ++ config.nixflix.serviceDependencies;
+      requires = [ "jellyfin-plugins.service" ] ++ config.nixflix.serviceDependencies;
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         TimeoutStartSec = 300;
+        ExecStartPre = waitForApiScript;
       };
 
       script = ''
@@ -216,11 +222,13 @@ in
                     })
 
                     UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
+                    UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
 
                     echo "Update library options response (HTTP $UPDATE_HTTP_CODE)"
 
                     if [ "$UPDATE_HTTP_CODE" -lt 200 ] || [ "$UPDATE_HTTP_CODE" -ge 300 ]; then
                       echo "Failed to update library options for ${libraryName} (HTTP $UPDATE_HTTP_CODE)" >&2
+                      echo "Response body: $UPDATE_BODY" >&2
                       exit 1
                     fi
 

@@ -36,7 +36,16 @@ in
           appProfileId = mkOption {
             type = types.int;
             default = 1;
-            description = "Application profile ID for the indexer (default: 1)";
+            description = "Application profile ID for the indexer (default: 1).";
+          };
+          tags = mkOption {
+            type = types.listOf types.str;
+            default = [ ];
+            description = ''
+              Use tags to specify Indexer Proxies or which apps the indexer is synced to.
+
+              Tags should be used with caution, they can have unintended effects. An indexer with a tag will only sync to apps with the same tag.
+            '';
           };
         };
       }
@@ -66,8 +75,14 @@ in
     mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null)
       {
         description = "Configure Prowlarr indexers via API";
-        after = [ "prowlarr-config.service" ];
-        requires = [ "prowlarr-config.service" ];
+        after = [
+          "prowlarr-config.service"
+          "prowlarr-tags.service"
+        ];
+        requires = [
+          "prowlarr-config.service"
+          "prowlarr-tags.service"
+        ];
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
@@ -78,7 +93,7 @@ in
         script = ''
           set -eu
 
-          BASE_URL="http://127.0.0.1:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
+          BASE_URL="http://${cfg.connectionAddress}:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
 
           # Fetch all indexer schemas
           echo "Fetching indexer schemas..."
@@ -94,6 +109,15 @@ in
           INDEXERS=$(${
             mkSecureCurl cfg.config.apiKey {
               url = "$BASE_URL/indexer";
+              extraArgs = "-S";
+            }
+          })
+
+          # Fetch all tags for name-to-ID resolution
+          echo "Fetching tags..."
+          ALL_TAGS=$(${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/tag";
               extraArgs = "-S";
             }
           })
@@ -132,6 +156,7 @@ in
                 "apiKey"
                 "username"
                 "password"
+                "tags"
               ];
               fieldOverrides = lib.filterAttrs (
                 name: value: value != null && !lib.hasPrefix "_" name
@@ -183,6 +208,10 @@ in
 
                 UPDATED_INDEXER=$(apply_field_overrides "$EXISTING_INDEXER" "$FIELD_OVERRIDES")
 
+                TAG_IDS=$(echo "$ALL_TAGS" | ${pkgs.jq}/bin/jq --argjson names ${escapeShellArg (builtins.toJSON indexerConfig.tags)} \
+                  '[.[] | select(.label as $l | $names | index($l)) | .id]')
+                UPDATED_INDEXER=$(echo "$UPDATED_INDEXER" | ${pkgs.jq}/bin/jq --argjson tags "$TAG_IDS" '.tags = $tags')
+
                 ${
                   mkSecureCurl cfg.config.apiKey {
                     url = "$BASE_URL/indexer/$INDEXER_ID";
@@ -207,6 +236,10 @@ in
                 fi
 
                 NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
+
+                TAG_IDS=$(echo "$ALL_TAGS" | ${pkgs.jq}/bin/jq --argjson names ${escapeShellArg (builtins.toJSON indexerConfig.tags)} \
+                  '[.[] | select(.label as $l | $names | index($l)) | .id]')
+                NEW_INDEXER=$(echo "$NEW_INDEXER" | ${pkgs.jq}/bin/jq --argjson tags "$TAG_IDS" '.tags = $tags')
 
                 ${
                   mkSecureCurl cfg.config.apiKey {

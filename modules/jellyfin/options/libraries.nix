@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ config, lib, ... }:
 with lib;
 let
   typeOptionsModule = types.submodule {
@@ -235,20 +235,26 @@ let
 
       subtitleFetcherOrder = mkOption {
         type = types.listOf types.str;
-        default = [ ];
+        default =
+          lib.optional config.nixflix.jellyfin.plugins."Open Subtitles".enable "Open Subtitles"
+          ++ lib.optional config.nixflix.jellyfin.plugins."subbuzz".enable "subbuzz";
+        defaultText = literalExpression ''
+          lib.optional config.nixflix.jellyfin.plugins."Open Subtitles".enable "Open Subtitles"
+          ++ lib.optional config.nixflix.jellyfin.plugins."subbuzz".enable "subbuzz";
+        '';
         description = "Order in which to use subtitle fetchers";
       };
 
       skipSubtitlesIfEmbeddedSubtitlesPresent = mkOption {
         type = types.bool;
         default = true;
-        description = "Skip downloading external subtitles if embedded subtitles are present";
+        description = "Keeping text versions of subtitles will result in more efficient delivery and decrease the likelihood of video transcoding.";
       };
 
       skipSubtitlesIfAudioTrackMatches = mkOption {
         type = types.bool;
-        default = true;
-        description = "Skip downloading subtitles if audio track matches preferred language";
+        default = false;
+        description = "Uncheck this to ensure all videos have subtitles, regardless of audio language.";
       };
 
       subtitleDownloadLanguages = mkOption {
@@ -264,7 +270,10 @@ let
       requirePerfectSubtitleMatch = mkOption {
         type = types.bool;
         default = true;
-        description = "Only download subtitles that perfectly match the media file";
+        description = ''
+          Requiring a perfect match will filter subtitles to include only those that have been tested and verified with your exact video file.
+          Unchecking this will increase the likelihood of subtitles being downloaded, but will increase the chances of mistimed or incorrect subtitle text.
+        '';
       };
 
       saveSubtitlesWithMedia = mkOption {

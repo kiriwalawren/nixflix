@@ -15,7 +15,7 @@ title: Getting Started
   nixflix = {
     enable = true;
     mediaDir = "/data/media";
-    stateDir = "/data/.state/services";
+    stateDir = "/var/lib";
 
     sonarr = {
       enable = true;
