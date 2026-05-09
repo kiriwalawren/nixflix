@@ -10,7 +10,7 @@ This example shows how to setup subtitle acquisition in jellyfin.
 
 ```nix
 {config, ...}: {
-  sops.secrets."opensubtitles-com/api-token" = { };
+  sops.secrets."opensubtitles-com/api-key" = { };
   sops.secrets."opensubtitles-com/password" = { };
 
   nixflix.jellyfin = {
@@ -21,7 +21,9 @@ This example shows how to setup subtitle acquisition in jellyfin.
         enable = true;
 
         config = {
-          OpenSubToken._secret = config.sops.secrets."opensubtitles-com/api-token".path;
+          OpenSubUserName = "kiriwalawren";
+          OpenSubPassword._secret = config.sops.secrets."opensubtitles-com/password".path;
+          OpenSubApiKey._secret = config.sops.secrets."opensubtitles-com/api-key".path;
           EnableOpenSubtitles = true;
           EnableYifySubtitles = true;
 

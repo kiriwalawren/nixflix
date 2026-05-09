@@ -89,15 +89,11 @@ in
             };
             OpenSubUserName = lib.mkOption {
               type = lib.types.str;
-              readOnly = true;
-              internal = true;
               default = "";
               description = "Username for authenticating with OpenSubtitles.";
             };
             OpenSubPassword = lib.mkOption {
               type = lib.types.str;
-              readOnly = true;
-              internal = true;
               default = "";
               description = "Password for authenticating with OpenSubtitles.";
             };
@@ -106,8 +102,6 @@ in
               default = "";
               description = ''
                 [API Key](https://www.opensubtitles.com/en/consumers) for the OpenSubtitles service.
-
-                You probably don't need this. You most likely want `nixflix.jellyfin.plugins.SubBuzz.config.OpenSubToken`.
               '';
             };
             OpenSubToken = secrets.mkSecretOption {
