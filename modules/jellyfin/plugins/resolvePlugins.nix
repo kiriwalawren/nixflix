@@ -51,9 +51,9 @@ let
             sha256 =
               let
                 inherit (repo) hash;
-                isSha256 = hash: builtins.match "sha256-[a-zA-Z0-9+/]{43}=" hash != null;
+                isSha256SRI = hash: (builtins.match "sha256-[a-zA-Z0-9+/]{43}=" hash) != null;
               in
-              if isSha256 hash then
+              if isSha256SRI hash then
                 if builtins.convertHash or null == null then
                   throw "Hash is in SRI format, but builtins.convertHash is not available in this version of Nix. Please provide the hash in nix32 format instead."
                 else
