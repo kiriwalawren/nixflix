@@ -399,7 +399,7 @@ in
       Default libraries can be removed with the following:
       - nixflix.jellyfin.libraries.Movies = lib.mkForce {};
     '';
-    type = types.attrsOf libraryModule;
+    type = types.attrsOf (types.nullOr libraryModule);
     default = { };
     example = {
       "Movies" = {
@@ -419,6 +419,186 @@ in
         paths = [ "/mnt/photos" ];
         enablePhotos = true;
       };
+    };
+  };
+
+  config.nixflix.jellyfin.libraries = {
+    Shows = mkIf (config.nixflix.sonarr.enable or false) {
+      collectionType = "tvshows";
+      paths = config.nixflix.sonarr.mediaDirs;
+
+      typeOptions = [
+        {
+          type = "Series";
+          imageFetchers = [
+            "TheMovieDb"
+          ];
+          imageFetcherOrder = [
+            "TheMovieDb"
+          ];
+          metadataFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+          metadataFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+        }
+        {
+          type = "Season";
+          imageFetchers = [
+            "TheMovieDb"
+          ];
+          imageFetcherOrder = [
+            "TheMovieDb"
+          ];
+          metadataFetchers = [
+            "TheMovieDb"
+          ];
+          metadataFetcherOrder = [
+            "TheMovieDb"
+          ];
+        }
+        {
+          type = "Episode";
+          imageFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          imageFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          metadataFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+          metadataFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+        }
+      ];
+    };
+
+    Anime = mkIf (config.nixflix.sonarr-anime.enable or false) {
+      collectionType = "tvshows";
+      paths = config.nixflix.sonarr-anime.mediaDirs;
+
+      typeOptions = [
+        {
+          type = "Series";
+          imageFetchers = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+          ];
+          imageFetcherOrder = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+          ];
+          metadataFetchers = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+          metadataFetcherOrder = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+        }
+        {
+          type = "Season";
+          imageFetchers = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+          ];
+          imageFetcherOrder = [
+            "AniDB"
+            "AniSearch"
+            "TheMovieDb"
+          ];
+          metadataFetchers = [
+            "AniDB"
+            "TheMovieDb"
+          ];
+          metadataFetcherOrder = [
+            "AniDB"
+            "TheMovieDb"
+          ];
+        }
+        {
+          type = "Episode";
+          imageFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          imageFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          metadataFetchers = [
+            "AniDB"
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+          metadataFetcherOrder = [
+            "AniDB"
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+        }
+      ];
+    };
+
+    Movies = mkIf (config.nixflix.radarr.enable or false) {
+      collectionType = "movies";
+      paths = config.nixflix.radarr.mediaDirs;
+
+      typeOptions = [
+        {
+          type = "Movies";
+          imageFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          imageFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          metadataFetchers = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+          metadataFetcherOrder = [
+            "TheMovieDb"
+            "The Open Movie Database"
+          ];
+        }
+      ];
+    };
+
+    Music = mkIf (config.nixflix.lidarr.enable or false) {
+      collectionType = "music";
+      paths = config.nixflix.lidarr.mediaDirs;
     };
   };
 }
