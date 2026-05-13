@@ -32,12 +32,14 @@ let
     LibraryOptions = buildLibraryOptions libraryName libraryCfg;
   };
 
+  libraries = lib.filterAttrs (_name: value: value != null) cfg.libraries;
+
   libraryConfigFiles = mapAttrs (
     libraryName: libraryCfg:
     pkgs.writeText "jellyfin-library-${libraryName}.json" (
       builtins.toJSON (buildCreatePayload libraryName libraryCfg)
     )
-  ) cfg.libraries;
+  ) libraries;
 
   baseUrl =
     if cfg.network.baseUrl == "" then
@@ -51,7 +53,7 @@ let
   };
 in
 {
-  config = mkIf (nixflix.enable && cfg.enable && cfg.libraries != { }) {
+  config = mkIf (nixflix.enable && cfg.enable && libraries != { }) {
     systemd.services.jellyfin-libraries = {
       description = "Configure Jellyfin Libraries via API";
       after = [ "jellyfin-plugins.service" ] ++ config.nixflix.serviceDependencies;
@@ -80,7 +82,7 @@ in
               mkdir -p "${path}"
               echo "Created path: ${path}"
             '') libraryCfg.paths
-          ) cfg.libraries
+          ) libraries
         )}
 
         source ${authUtil.authScript}
@@ -105,7 +107,7 @@ in
         fi
 
         CONFIGURED_NAMES=$(cat <<'EOF'
-        ${builtins.toJSON (attrNames cfg.libraries)}
+        ${builtins.toJSON (attrNames libraries)}
         EOF
         )
 
@@ -330,7 +332,7 @@ in
                     echo "Successfully recreated library: ${libraryName}"
                   fi
                 fi
-          '') cfg.libraries
+          '') libraries
         )}
 
         echo "$CONFIGURED_NAMES" > "$STATE_FILE"
