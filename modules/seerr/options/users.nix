@@ -28,7 +28,7 @@ with lib;
             default = 32; # REQUEST permission
             description = ''
               Default permission flags for newly created users.
-              Common values: 0 (none), 32 (REQUEST - default), 1024 (ADMIN)
+              Common values: 0 (none), 32 (REQUEST - default), 1024 (ADMIN), 160 (Auto-approve non-4k)
             '';
           };
 
