@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/210)
 - Inability to unset predefined libraries
 
 ## [1.1.0] - 2026-05-12
