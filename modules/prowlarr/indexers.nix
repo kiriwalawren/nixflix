@@ -180,7 +180,7 @@ in
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" '
                     .fields[] |= (
-                      if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                      if .name == "apiKey" or .name == "apikey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
                       elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
                       elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
                       else .
