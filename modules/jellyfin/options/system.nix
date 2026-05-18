@@ -344,10 +344,12 @@ in
 
             hash = mkOption {
               type = types.str;
-              example = "sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=";
+              example = "0vbarvv9dkcpxby8c3akbcgh41k72iy75craghb3vpf8fnzaikji";
               description = ''
                 Fixed-output hash for the repository manifest. This pins the
                 manifest used to resolve plugin versions to source URLs.
+
+                Supports SRI (`sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=`) or nix32 (`0vbarvv9dkcpxby8c3akbcgh41k72iy75craghb3vpf8fnzaikji`) formats.
               '';
             };
           };
@@ -357,7 +359,7 @@ in
         {
           "Jellyfin Stable" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-            hash = "sha256-SK70G2N3xpOqqVr/3qGgIc5CscDuHQTDbILJBMwkUA0=";
+            hash = "03ah4k609jc2dk1h87gfq2ql5ki1l2hxxzssm6m97ikpccdz9bj8";
             enabled = true;
           };
         }
@@ -636,7 +638,7 @@ in
   config.nixflix.jellyfin.system.pluginRepositories = {
     "Jellyfin Stable" = {
       url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-      hash = "sha256-SK70G2N3xpOqqVr/3qGgIc5CscDuHQTDbILJBMwkUA0=";
+      hash = "03ah4k609jc2dk1h87gfq2ql5ki1l2hxxzssm6m97ikpccdz9bj8";
       enabled = true;
     };
   };

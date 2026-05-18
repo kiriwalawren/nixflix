@@ -381,7 +381,7 @@ in
     system.pluginRepositories = {
       "SubBuzz" = {
         url = "https://raw.githubusercontent.com/josdion/subbuzz/f7c7985a00fe0910f548e3574a592fe8bb7f8ce4/repo/jellyfin_10.11.json";
-        hash = "sha256-YrKTQzM1p2THdKpX4azIVAzy4HDd2JARWI4TezqzA5o=";
+        hash = "16h3ncx7n4wfb08r1n6xf3hg432lr2nf2mxafk3n99rm6d1r7ck2";
       };
     };
   };
