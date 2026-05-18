@@ -76,10 +76,10 @@ in
       type = types.str;
       readOnly = true;
       default =
-        if config.nixflix.vpn.enable && cfg.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
+        if cfg.config.hostConfig.bindAddress == "0.0.0.0" then
+          "127.0.0.1"
         else
-          "127.0.0.1";
+          cfg.config.hostConfig.bindAddress;
       description = "Address for connecting to this service.";
     };
 

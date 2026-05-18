@@ -135,10 +135,10 @@ in
       type = types.str;
       readOnly = true;
       default =
-        if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
+        if cfg.network.localNetworkAddresses == [ ] then
+          "127.0.0.1"
         else
-          "127.0.0.1";
+          builtins.head cfg.localNetworkAddresses;
       description = "Address for connecting to this service.";
     };
   };
