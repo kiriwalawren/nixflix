@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `connectionAddress`es ignoring bind addresses of associated services ([#213](https://github.com/kiriwalawren/nixflix)).
 - Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/210)
 - Inability to unset predefined libraries
 
