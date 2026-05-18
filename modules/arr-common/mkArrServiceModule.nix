@@ -444,9 +444,46 @@ in
             User = cfg.user;
             Group = cfg.group;
             ExecStart = "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
+            # '+' prefix runs as root; NoNewPrivileges does not apply to it
             ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
             Restart = "on-failure";
             UMask = "0002";
+
+            # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            ProtectHome = true;
+            ProtectSystem = "strict";
+            CapabilityBoundingSet = "";
+            AmbientCapabilities = "";
+            ProtectProc = "invisible";
+            ProcSubset = "pid";
+            ReadWritePaths = [
+              cfg.dataDir
+            ]
+            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ]);
+            RestrictNamespaces = true;
+            PrivateDevices = true;
+            SystemCallFilter = [
+              "~@debug"
+              "~@module"
+              "~@raw-io"
+              "~@reboot"
+              "~@swap"
+            ];
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectKernelLogs = true;
+            ProtectControlGroups = true;
+            LockPersonality = true;
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            RestrictAddressFamilies = [
+              "AF_UNIX"
+              "AF_INET"
+              "AF_INET6"
+            ];
+            SystemCallArchitectures = "native";
           }
           // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
             EnvironmentFile = "/run/${serviceName}/env";

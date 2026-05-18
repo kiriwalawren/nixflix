@@ -740,4 +740,79 @@ in
 
       echo 'PASS: jellyfin-subtitles' > $out
     '';
+
+  # Verify sandbox directives are present on arr services that use media dirs (sonarr as representative)
+  arr-sandbox-directives =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              mediaDirs = [ "/media/tv" ];
+              config = {
+                apiKey._secret = "/run/secrets/sonarr-api";
+                hostConfig = {
+                  port = 8989;
+                  username = "admin";
+                  password._secret = "/run/secrets/sonarr-pass";
+                };
+              };
+            };
+          };
+        }
+      ];
+      svc = config.config.systemd.services.sonarr.serviceConfig;
+      dataDir = config.config.nixflix.sonarr.dataDir;
+      downloadsDir = config.config.nixflix.downloadsDir;
+    in
+    pkgs.runCommand "unit-test-arr-sandbox-directives" { } ''
+      ${check "ProtectSystem=strict" (svc.ProtectSystem == "strict")}
+      ${check "NoNewPrivileges" svc.NoNewPrivileges}
+      ${check "PrivateTmp" svc.PrivateTmp}
+      ${check "ProtectHome" svc.ProtectHome}
+      ${check "RestrictNamespaces" svc.RestrictNamespaces}
+      ${check "CapabilityBoundingSet empty" (svc.CapabilityBoundingSet == "")}
+      ${check "AmbientCapabilities empty" (svc.AmbientCapabilities == "")}
+      ${check "ProtectProc=invisible" (svc.ProtectProc == "invisible")}
+      ${check "ProcSubset=pid" (svc.ProcSubset == "pid")}
+      ${check "ReadWritePaths includes dataDir" (builtins.elem dataDir svc.ReadWritePaths)}
+      ${check "ReadWritePaths includes mediaDirs" (builtins.elem "/media/tv" svc.ReadWritePaths)}
+      ${check "ReadWritePaths includes downloadsDir" (builtins.elem downloadsDir svc.ReadWritePaths)}
+      echo 'PASS: arr-sandbox-directives' > $out
+    '';
+
+  # Prowlarr (usesMediaDirs=false) should only have dataDir in ReadWritePaths
+  arr-sandbox-prowlarr-read-write-paths =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            prowlarr = {
+              enable = true;
+              config = {
+                apiKey._secret = "/run/secrets/prowlarr-api";
+                hostConfig = {
+                  port = 9696;
+                  username = "admin";
+                  password._secret = "/run/secrets/prowlarr-pass";
+                };
+              };
+            };
+          };
+        }
+      ];
+      svc = config.config.systemd.services.prowlarr.serviceConfig;
+      dataDir = config.config.nixflix.prowlarr.dataDir;
+      downloadsDir = config.config.nixflix.downloadsDir;
+    in
+    pkgs.runCommand "unit-test-arr-sandbox-prowlarr-read-write-paths" { } ''
+      ${check "prowlarr ReadWritePaths includes dataDir" (builtins.elem dataDir svc.ReadWritePaths)}
+      ${check "prowlarr ReadWritePaths excludes downloadsDir" (
+        !builtins.elem downloadsDir svc.ReadWritePaths
+      )}
+      echo 'PASS: arr-sandbox-prowlarr-read-write-paths' > $out
+    '';
 }
