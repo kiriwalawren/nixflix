@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `nixflix.lib.jellyfinPlugins.fromRepo`'s `hash` parameter now supports nix32 format as well ([#202](https://github.com/kiriwalawren/nixflix/pull/202)).
+  - It also throws if the user's system does not have `builtins.convertHash` implemented
+
 ### Fixed
 
+- Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/210)
 - Inability to unset predefined libraries
 
 ## [1.1.0] - 2026-05-12
