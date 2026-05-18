@@ -839,6 +839,39 @@ in
       echo 'PASS: arr-sandbox-setup-services' > $out
     '';
 
+  # LoadCredential replaces the old -env root service; verify the generated unit
+  arr-load-credential =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config = {
+                apiKey._secret = "/run/secrets/sonarr-api";
+                hostConfig = {
+                  port = 8989;
+                  username = "admin";
+                  password._secret = "/run/secrets/sonarr-pass";
+                };
+              };
+            };
+          };
+        }
+      ];
+      services = config.config.systemd.services;
+      svc = services.sonarr.serviceConfig;
+    in
+    pkgs.runCommand "unit-test-arr-load-credential" { } ''
+      ${check "sonarr-env service no longer exists" (!services ? sonarr-env)}
+      ${check "LoadCredential set for secret-ref apiKey" (
+        builtins.elem "apiKey:/run/secrets/sonarr-api" svc.LoadCredential
+      )}
+      ${check "no EnvironmentFile" (!svc ? EnvironmentFile)}
+      echo 'PASS: arr-load-credential' > $out
+    '';
+
   # Prowlarr (usesMediaDirs=false) should only have dataDir in ReadWritePaths
   arr-sandbox-prowlarr-read-write-paths =
     let

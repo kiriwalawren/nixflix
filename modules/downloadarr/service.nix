@@ -80,15 +80,15 @@ let
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStartPre =
-              "${pkgs.curl}/bin/curl --retry 30 --retry-delay 2 --retry-connrefused -so /dev/null"
-              + " http://${
-                 config.nixflix.${serviceName}.connectionAddress
-               }:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
-          }
-          // apiClientSandbox;
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStartPre =
+            "${pkgs.curl}/bin/curl --retry 30 --retry-delay 2 --retry-connrefused -so /dev/null"
+            + " http://${
+               config.nixflix.${serviceName}.connectionAddress
+             }:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
+        }
+        // apiClientSandbox;
 
         script = ''
           set -eu

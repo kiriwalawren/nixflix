@@ -36,6 +36,16 @@ let
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
   serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
+  apiKeyEnvVar = toUpper serviceBase + "__AUTH__APIKEY";
+  apiKeyIsSecretRef = cfg.config.apiKey != null && secrets.isSecretRef cfg.config.apiKey;
+  credentialPath = "/run/credentials/${serviceName}.service/apiKey";
+  waitConfig =
+    cfg.config
+    // optionalAttrs apiKeyIsSecretRef {
+      apiKey = {
+        _secret = credentialPath;
+      };
+    };
 
   mkServarrSettingsEnvVars =
     name: settings:
@@ -424,17 +434,11 @@ in
             "nixflix-setup-dirs.service"
           ]
           ++ config.nixflix.serviceDependencies
-          ++ (optional (
-            cfg.config.apiKey != null && cfg.config.hostConfig.password != null
-          ) "${serviceName}-env.service")
           ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
           requires = [
             "nixflix-setup-dirs.service"
           ]
           ++ config.nixflix.serviceDependencies
-          ++ (optional (
-            cfg.config.apiKey != null && cfg.config.hostConfig.password != null
-          ) "${serviceName}-env.service")
           ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
           wants = [ ];
           wantedBy = [ "multi-user.target" ];
@@ -443,9 +447,15 @@ in
             Type = "simple";
             User = cfg.user;
             Group = cfg.group;
-            ExecStart = "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
-            # '+' prefix runs as root; NoNewPrivileges does not apply to it
-            ExecStartPost = "+" + (mkWaitForApiScript serviceName cfg.config);
+            ExecStart =
+              if apiKeyIsSecretRef then
+                pkgs.writeShellScript "${serviceName}-start" ''
+                  export ${apiKeyEnvVar}="$(cat ${credentialPath})"
+                  exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
+                ''
+              else
+                "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
+            ExecStartPost = mkWaitForApiScript serviceName waitConfig;
             Restart = "on-failure";
             UMask = "0002";
 
@@ -485,32 +495,15 @@ in
             ];
             SystemCallArchitectures = "native";
           }
-          // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
-            EnvironmentFile = "/run/${serviceName}/env";
+          // optionalAttrs apiKeyIsSecretRef {
+            LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
+          }
+          // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
+            environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
           };
         };
       }
       // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
-        "${serviceName}-env" = {
-          description = "Setup ${capitalizedName} environment file";
-          wantedBy = [ "${serviceName}.service" ];
-          before = [ "${serviceName}.service" ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-
-          script = ''
-            mkdir -p /run/${serviceName}
-            echo "${
-              toUpper serviceBase + "__AUTH__APIKEY"
-            }=${secrets.toShellValue cfg.config.apiKey}" > /run/${serviceName}/env
-            chown ${cfg.user}:${cfg.group} /run/${serviceName}/env
-            chmod 0400 /run/${serviceName}/env
-          '';
-        };
-
         "${serviceName}-config" = hostConfig.mkService cfg.config;
       }
       // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null && cfg.config.rootFolders != [ ]) {
