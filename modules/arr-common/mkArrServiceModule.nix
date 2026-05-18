@@ -447,6 +447,7 @@ in
             Type = "simple";
             User = cfg.user;
             Group = cfg.group;
+            SupplementaryGroups = optionals usesMediaDirs [ globals.libraryOwner.group ];
             ExecStart =
               if apiKeyIsSecretRef then
                 pkgs.writeShellScript "${serviceName}-start" ''

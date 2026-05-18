@@ -783,6 +783,9 @@ in
       ${check "SystemCallFilter blocks @debug" (builtins.elem "~@debug" svc.SystemCallFilter)}
       ${check "SystemCallFilter blocks @module" (builtins.elem "~@module" svc.SystemCallFilter)}
       ${check "SystemCallFilter blocks @reboot" (builtins.elem "~@reboot" svc.SystemCallFilter)}
+      ${check "SupplementaryGroups includes libraryOwner group" (
+        builtins.elem config.config.nixflix.globals.libraryOwner.group svc.SupplementaryGroups
+      )}
       echo 'PASS: arr-sandbox-directives' > $out
     '';
 
@@ -901,6 +904,9 @@ in
       ${check "prowlarr ReadWritePaths includes dataDir" (builtins.elem dataDir svc.ReadWritePaths)}
       ${check "prowlarr ReadWritePaths excludes downloadsDir" (
         !builtins.elem downloadsDir svc.ReadWritePaths
+      )}
+      ${check "prowlarr has no SupplementaryGroups" (
+        !(svc ? SupplementaryGroups) || svc.SupplementaryGroups == [ ]
       )}
       echo 'PASS: arr-sandbox-prowlarr-read-write-paths' > $out
     '';
