@@ -135,10 +135,10 @@ in
       type = types.str;
       readOnly = true;
       default =
-        if cfg.network.localNetworkAddresses == [ ] then
+        if config.nixflix.jellyfin.network.localNetworkAddresses == [ ] then
           "127.0.0.1"
         else
-          builtins.head cfg.localNetworkAddresses;
+          builtins.head config.nixflix.jellyfin.network.localNetworkAddresses;
       description = "Address for connecting to this service.";
     };
   };
