@@ -780,7 +780,63 @@ in
       ${check "ReadWritePaths includes dataDir" (builtins.elem dataDir svc.ReadWritePaths)}
       ${check "ReadWritePaths includes mediaDirs" (builtins.elem "/media/tv" svc.ReadWritePaths)}
       ${check "ReadWritePaths includes downloadsDir" (builtins.elem downloadsDir svc.ReadWritePaths)}
+      ${check "SystemCallFilter blocks @debug" (builtins.elem "~@debug" svc.SystemCallFilter)}
+      ${check "SystemCallFilter blocks @module" (builtins.elem "~@module" svc.SystemCallFilter)}
+      ${check "SystemCallFilter blocks @reboot" (builtins.elem "~@reboot" svc.SystemCallFilter)}
       echo 'PASS: arr-sandbox-directives' > $out
+    '';
+
+  # Verify sandbox directives are present on setup oneshot services
+  arr-sandbox-setup-services =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              mediaDirs = [ "/media/tv" ];
+              config = {
+                apiKey._secret = "/run/secrets/sonarr-api";
+                hostConfig = {
+                  port = 8989;
+                  username = "admin";
+                  password._secret = "/run/secrets/sonarr-pass";
+                };
+                rootFolders = [ { path = "/media/tv"; } ];
+              };
+            };
+          };
+        }
+      ];
+      configSvc = config.config.systemd.services.sonarr-config.serviceConfig;
+      rootfoldersSvc = config.config.systemd.services.sonarr-rootfolders.serviceConfig;
+      delayprofilesSvc = config.config.systemd.services.sonarr-delayprofiles.serviceConfig;
+    in
+    pkgs.runCommand "unit-test-arr-sandbox-setup-services" { } ''
+      ${check "sonarr-config ProtectSystem=strict" (configSvc.ProtectSystem == "strict")}
+      ${check "sonarr-config NoNewPrivileges" configSvc.NoNewPrivileges}
+      ${check "sonarr-config PrivateTmp" configSvc.PrivateTmp}
+      ${check "sonarr-config CapabilityBoundingSet empty" (configSvc.CapabilityBoundingSet == "")}
+      ${check "sonarr-config RestrictNamespaces" configSvc.RestrictNamespaces}
+
+      ${check "sonarr-rootfolders ProtectSystem=strict" (rootfoldersSvc.ProtectSystem == "strict")}
+      ${check "sonarr-rootfolders NoNewPrivileges" rootfoldersSvc.NoNewPrivileges}
+      ${check "sonarr-rootfolders PrivateTmp" rootfoldersSvc.PrivateTmp}
+      ${check "sonarr-rootfolders CapabilityBoundingSet empty" (
+        rootfoldersSvc.CapabilityBoundingSet == ""
+      )}
+      ${check "sonarr-rootfolders RestrictNamespaces" rootfoldersSvc.RestrictNamespaces}
+
+      ${check "sonarr-delayprofiles ProtectSystem=strict" (delayprofilesSvc.ProtectSystem == "strict")}
+      ${check "sonarr-delayprofiles NoNewPrivileges" delayprofilesSvc.NoNewPrivileges}
+      ${check "sonarr-delayprofiles PrivateTmp" delayprofilesSvc.PrivateTmp}
+      ${check "sonarr-delayprofiles CapabilityBoundingSet empty" (
+        delayprofilesSvc.CapabilityBoundingSet == ""
+      )}
+      ${check "sonarr-delayprofiles RestrictNamespaces" delayprofilesSvc.RestrictNamespaces}
+
+      echo 'PASS: arr-sandbox-setup-services' > $out
     '';
 
   # Prowlarr (usesMediaDirs=false) should only have dataDir in ReadWritePaths
