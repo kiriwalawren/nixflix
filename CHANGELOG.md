@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- add support for `apikey` and `passkey` indexer fields ([#220](https://github.com/kiriwalawren/nixflix/pull/220)).
+
 ### Changed
 
 - `nixflix.lib.jellyfinPlugins.fromRepo`'s `hash` parameter now supports nix32 format as well ([#202](https://github.com/kiriwalawren/nixflix/pull/202)).
@@ -13,9 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- `connectionAddress`es ignoring bind addresses of associated services ([#213](https://github.com/kiriwalawren/nixflix)).
-- Fix prowlarr indexer API key inconsistency bug ([#219](https://github.com/kiriwalawren/219)).
-- Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/210)).
+- `connectionAddress`es ignoring bind addresses of associated services ([#213](https://github.com/kiriwalawren/nixflix/pull/213)).
+- Fix prowlarr indexer API key inconsistency bug ([#219](https://github.com/kiriwalawren/pull/219)).
+- Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/pull/210)).
 - Inability to unset predefined libraries.
 
 ## [1.1.0] - 2026-05-12
