@@ -12,7 +12,7 @@
         <img src="https://img.shields.io/github/repo-size/kiriwalawren/nixflix?color=ea999c&labelColor=303446&style=for-the-badge">
     </a>
     <a href="https://github.com/kiriwalawren/nixflix/blob/main/LICENSE">
-        <img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=GPL-3&logoColor=ca9ee6&colorA=313244&colorB=a6da95"/>
+        <img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MPL-2.0&logoColor=ca9ee6&colorA=313244&colorB=a6da95"/>
     </a>
     <a href="https://nixos.org">
         <img src="https://img.shields.io/badge/NixOS-unstable-blue.svg?style=for-the-badge&labelColor=303446&logo=NixOS&logoColor=white&color=91D7E3">
