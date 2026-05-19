@@ -25,12 +25,20 @@ in
             description = "API key for the indexer.";
             nullable = true;
           };
+          apikey = secrets.mkSecretOption {
+            description = "API key for the indexer (lowercase variant). Applied to schema fields named apikey or apiKey.";
+            nullable = true;
+          };
           username = secrets.mkSecretOption {
             description = "Username for the indexer.";
             nullable = true;
           };
           password = secrets.mkSecretOption {
             description = "Password for the indexer.";
+            nullable = true;
+          };
+          passkey = secrets.mkSecretOption {
+            description = "Passkey for the indexer.";
             nullable = true;
           };
           appProfileId = mkOption {
@@ -54,10 +62,10 @@ in
     description = ''
       List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents).
 
-      Any additional attributes beyond name, apiKey, username, password, and appProfileId
+      Any additional attributes beyond name, apiKey, apikey, username, password, passkey, and appProfileId
       will be applied as field values to the indexer schema.
 
-      The apiKey value is automatically applied to whichever field name the indexer schema
+      The apiKey or apikey value is automatically applied to whichever field name the indexer schema
       uses — some schemas use apiKey (camelCase) and others use apikey (all-lowercase).
 
       You can run the following command to get the field names for a particular indexer:
@@ -147,12 +155,20 @@ in
             indexerConfig:
             let
               indexerName = indexerConfig.name;
-              inherit (indexerConfig) apiKey username password;
+              inherit (indexerConfig)
+                apiKey
+                apikey
+                username
+                password
+                passkey
+                ;
               allOverrides = builtins.removeAttrs indexerConfig [
                 "name"
                 "apiKey"
+                "apikey"
                 "username"
                 "password"
+                "passkey"
                 "tags"
               ];
               fieldOverrides = lib.filterAttrs (
@@ -162,8 +178,10 @@ in
 
               jqSecrets = secrets.mkJqSecretArgs {
                 apiKey = if apiKey == null then "" else apiKey;
+                apikey = if apikey == null then "" else apikey;
                 username = if username == null then "" else username;
                 password = if password == null then "" else password;
+                passkey = if passkey == null then "" else passkey;
               };
             in
             ''
@@ -177,9 +195,14 @@ in
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" '
                     .fields[] |= (
-                      if (.name == "apiKey" or .name == "apikey") and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                      if (.name == "apiKey" or .name == "apikey") then
+                        if ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                        elif ${jqSecrets.refs.apikey} != "" then .value = ${jqSecrets.refs.apikey}
+                        else .
+                        end
                       elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
                       elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
+                      elif .name == "passkey" and ${jqSecrets.refs.passkey} != "" then .value = ${jqSecrets.refs.passkey}
                       else .
                       end
                     )
