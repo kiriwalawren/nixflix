@@ -176,5 +176,15 @@ pkgsUnfree.testers.runNixOSTest {
 
     # Verify the service is running under the correct user
     machine.succeed("pgrep -u testuser Sonarr")
+
+    # Verify sandbox directives are active at the kernel level
+    machine.succeed("systemctl show sonarr --property=ProtectSystem | grep -q 'ProtectSystem=strict'")
+    machine.succeed("systemctl show sonarr --property=NoNewPrivileges | grep -q 'NoNewPrivileges=yes'")
+    machine.succeed("systemctl show sonarr --property=PrivateTmp | grep -q 'PrivateTmp=yes'")
+    machine.succeed("systemctl show sonarr --property=ProtectHome | grep -q 'ProtectHome=yes'")
+    machine.succeed("systemctl show sonarr --property=RestrictNamespaces | grep -q 'RestrictNamespaces=yes'")
+    machine.succeed("systemctl show sonarr --property=ProtectProc | grep -q 'ProtectProc=invisible'")
+    machine.succeed("systemctl show sonarr --property=ProcSubset | grep -q 'ProcSubset=pid'")
+    print("Sandbox directives verified active")
   '';
 }
