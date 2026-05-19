@@ -234,17 +234,15 @@ in
 
                 RESPONSE_FILE=$(mktemp)
                 HTTP_CODE=$(
-                  ${
-                    mkSecureCurl cfg.config.apiKey {
-                      url = "$BASE_URL/indexer/$INDEXER_ID";
-                      method = "PUT";
-                      headers = {
-                        "Content-Type" = "application/json";
-                      };
-                      data = "$UPDATED_INDEXER";
-                      extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
-                    }
-                  }
+                  ${mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/indexer/$INDEXER_ID";
+                    method = "PUT";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$UPDATED_INDEXER";
+                    extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
+                  }}
                 )
                 if [ "$HTTP_CODE" -ge 400 ]; then
                   echo "Error updating indexer ${indexerName} (HTTP $HTTP_CODE):"
@@ -284,17 +282,15 @@ in
 
                 RESPONSE_FILE=$(mktemp)
                 HTTP_CODE=$(
-                  ${
-                    mkSecureCurl cfg.config.apiKey {
-                      url = "$BASE_URL/indexer";
-                      method = "POST";
-                      headers = {
-                        "Content-Type" = "application/json";
-                      };
-                      data = "$NEW_INDEXER";
-                      extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
-                    }
-                  }
+                  ${mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/indexer";
+                    method = "POST";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$NEW_INDEXER";
+                    extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
+                  }}
                 )
                 if [ "$HTTP_CODE" -ge 400 ]; then
                   echo "Error creating indexer ${indexerName} (HTTP $HTTP_CODE):"
