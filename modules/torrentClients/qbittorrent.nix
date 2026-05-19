@@ -165,10 +165,10 @@ in
           type = types.str;
           readOnly = true;
           default =
-            if config.nixflix.vpn.enable && cfg.vpn.enable then
-              config.vpnNamespaces.wg.namespaceAddress
+            if cfg.serverConfig.Preferences.WebUI.Address == "*" then
+              "127.0.0.1"
             else
-              "127.0.0.1";
+              cfg.serverConfig.Preferences.WebUI.Address;
           description = "Address for connecting to this service.";
         };
       };

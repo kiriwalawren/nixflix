@@ -105,7 +105,9 @@ in
     localNetworkAddresses = mkOption {
       type = types.listOf types.str;
       default =
-        if (config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable) then
+        if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
+          [ config.vpnNamespaces.wg.namespaceAddress ]
+        else if config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable then
           [ "127.0.0.1" ]
         else
           [ ];
