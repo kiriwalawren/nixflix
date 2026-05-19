@@ -22,11 +22,11 @@ in
             description = "Name of the Prowlarr Indexer Schema";
           };
           apiKey = secrets.mkSecretOption {
-            description = "API key for the indexer.";
+            description = "API key for the indexer. Applied to schema fields named `apikey` or `apiKey`.";
             nullable = true;
           };
           apikey = secrets.mkSecretOption {
-            description = "API key for the indexer (lowercase variant). Applied to schema fields named apikey or apiKey.";
+            description = "API key for the indexer (lowercase variant). Applied to schema fields named `apikey` or `apiKey`.";
             nullable = true;
           };
           username = secrets.mkSecretOption {
@@ -62,11 +62,11 @@ in
     description = ''
       List of indexers to configure in Prowlarr. Prowlarr supports many indexers in addition to any indexer that uses the Newznab/Torznab standard using 'Generic Newznab' (for usenet) or 'Generic Torznab' (for torrents).
 
-      Any additional attributes beyond name, apiKey, apikey, username, password, passkey, and appProfileId
+      Any additional attributes beyond `name`, `apiKey`, `apikey`, `username`, `password`, `passkey`, and `appProfileId`
       will be applied as field values to the indexer schema.
 
-      The apiKey or apikey value is automatically applied to whichever field name the indexer schema
-      uses — some schemas use apiKey (camelCase) and others use apikey (all-lowercase).
+      The `apiKey` or `apikey` value is automatically applied to whichever field name the indexer schema
+      uses — some schemas use `apiKey` (camelCase) and others use `apikey` (all-lowercase).
 
       You can run the following command to get the field names for a particular indexer:
 
