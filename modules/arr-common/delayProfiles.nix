@@ -6,6 +6,7 @@
 with lib;
 let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  apiClientSandbox = import ./mkApiClientSandbox.nix;
   capitalizedName =
     lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 
@@ -123,7 +124,8 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-    };
+    }
+    // apiClientSandbox;
 
     script =
       let
