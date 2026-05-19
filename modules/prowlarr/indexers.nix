@@ -57,13 +57,10 @@ in
       Any additional attributes beyond name, apiKey, username, password, and appProfileId
       will be applied as field values to the indexer schema.
 
+      The apiKey value is automatically applied to whichever field name the indexer schema
+      uses — some schemas use apiKey (camelCase) and others use apikey (all-lowercase).
+
       You can run the following command to get the field names for a particular indexer:
-
-      ```sh
-      curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/prowlarr/api/v1/indexer/schema" | jq '.[] | select(.name=="<indexerName>") | .fields'
-      ```
-
-      Or if you have nginx disabled or `config.nixflix.prowlarr.config.hostConfig.urlBase` is not configured
 
       ```sh
       curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/apiKey>)" "http://127.0.0.1:9696/api/v1/indexer/schema" | jq '.[] | select(.name=="<indexerName>") | .fields'
@@ -180,7 +177,7 @@ in
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" '
                     .fields[] |= (
-                      if .name == "apiKey" or .name == "apikey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
+                      if (.name == "apiKey" or .name == "apikey") and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
                       elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
                       elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
                       else .
