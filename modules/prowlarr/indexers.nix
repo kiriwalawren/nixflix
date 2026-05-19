@@ -232,18 +232,27 @@ in
                   '[.[] | select(.label as $l | $names | index($l)) | .id]')
                 UPDATED_INDEXER=$(echo "$UPDATED_INDEXER" | ${pkgs.jq}/bin/jq --argjson tags "$TAG_IDS" '.tags = $tags')
 
-                ${
-                  mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexer/$INDEXER_ID";
-                    method = "PUT";
-                    headers = {
-                      "Content-Type" = "application/json";
-                    };
-                    data = "$UPDATED_INDEXER";
-                    extraArgs = "-Sf";
+                RESPONSE_FILE=$(mktemp)
+                HTTP_CODE=$(
+                  ${
+                    mkSecureCurl cfg.config.apiKey {
+                      url = "$BASE_URL/indexer/$INDEXER_ID";
+                      method = "PUT";
+                      headers = {
+                        "Content-Type" = "application/json";
+                      };
+                      data = "$UPDATED_INDEXER";
+                      extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
+                    }
                   }
-                } >/dev/null
-
+                )
+                if [ "$HTTP_CODE" -ge 400 ]; then
+                  echo "Error updating indexer ${indexerName} (HTTP $HTTP_CODE):"
+                  cat "$RESPONSE_FILE"
+                  rm -f "$RESPONSE_FILE"
+                  exit 1
+                fi
+                rm -f "$RESPONSE_FILE"
                 echo "Indexer ${indexerName} updated"
               else
                 echo "Indexer ${indexerName} does not exist, creating..."
@@ -256,23 +265,44 @@ in
                 fi
 
                 NEW_INDEXER=$(apply_field_overrides "$SCHEMA" "$FIELD_OVERRIDES")
+                NEW_INDEXER=$(echo "$NEW_INDEXER" | ${pkgs.jq}/bin/jq '
+                  (.indexerUrls[0] // null) as $firstUrl |
+                  if $firstUrl != null then
+                    .fields[] |= (
+                      if .name == "baseUrl" and (.value == null or .value == "") then
+                        .value = $firstUrl
+                      else .
+                      end
+                    )
+                  else .
+                  end
+                ')
 
                 TAG_IDS=$(echo "$ALL_TAGS" | ${pkgs.jq}/bin/jq --argjson names ${escapeShellArg (builtins.toJSON indexerConfig.tags)} \
                   '[.[] | select(.label as $l | $names | index($l)) | .id]')
                 NEW_INDEXER=$(echo "$NEW_INDEXER" | ${pkgs.jq}/bin/jq --argjson tags "$TAG_IDS" '.tags = $tags')
 
-                ${
-                  mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexer";
-                    method = "POST";
-                    headers = {
-                      "Content-Type" = "application/json";
-                    };
-                    data = "$NEW_INDEXER";
-                    extraArgs = "-Sf";
+                RESPONSE_FILE=$(mktemp)
+                HTTP_CODE=$(
+                  ${
+                    mkSecureCurl cfg.config.apiKey {
+                      url = "$BASE_URL/indexer";
+                      method = "POST";
+                      headers = {
+                        "Content-Type" = "application/json";
+                      };
+                      data = "$NEW_INDEXER";
+                      extraArgs = "-S -o \"$RESPONSE_FILE\" -w \"%{http_code}\"";
+                    }
                   }
-                } >/dev/null
-
+                )
+                if [ "$HTTP_CODE" -ge 400 ]; then
+                  echo "Error creating indexer ${indexerName} (HTTP $HTTP_CODE):"
+                  cat "$RESPONSE_FILE"
+                  rm -f "$RESPONSE_FILE"
+                  exit 1
+                fi
+                rm -f "$RESPONSE_FILE"
                 echo "Indexer ${indexerName} created"
               fi
             ''
