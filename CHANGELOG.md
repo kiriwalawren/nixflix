@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Prowlarr indexers missing baseUrl when list of choices is available.
 - `connectionAddress`es ignoring bind addresses of associated services ([#213](https://github.com/kiriwalawren/nixflix/pull/213)).
-- Fix prowlarr indexer API key inconsistency bug ([#219](https://github.com/kiriwalawren/pull/219)).
+- Fix prowlarr indexer API key inconsistency bug ([#219](https://github.com/kiriwalawren/nixflix/pull/219)).
 - Prowlarr indexer `apiKey` inconsistency ([#210](https://github.com/kiriwalawren/nixflix/pull/210)).
 - Inability to unset predefined libraries.
 
