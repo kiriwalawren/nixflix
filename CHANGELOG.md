@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Print response error when prowlarr indexer add/update fails.
-- add support for `apikey` and `passkey` indexer fields ([#220](https://github.com/kiriwalawren/nixflix/pull/220)).
+- Add support for `apikey` and `passkey` indexer fields ([#220](https://github.com/kiriwalawren/nixflix/pull/220)).
 
 ### Changed
 
