@@ -331,7 +331,7 @@ in
             A list of implementation names can be acquired with:
 
             ```sh
-            curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/api_key>)" "http://127.0.0.1:9696/api/v1/downloadclient/schema" | jq '.[].implementationName'`
+            curl -s -H "X-Api-Key: $(sudo cat </path/to/prowlarr/api_key>)" "http://127.0.0.1:9696/api/v1/downloadclient/schema" | jq '.[].implementationName'
             ```
 
             You can run the following command to get the field names for a particular `implementationName`:
