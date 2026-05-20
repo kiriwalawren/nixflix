@@ -13,6 +13,7 @@ let
   cfg = config.nixflix.${serviceName};
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
+
   hostConfig = import ./hostConfig.nix {
     inherit
       lib
@@ -22,6 +23,7 @@ let
       ;
     serviceConfig = cfg;
   };
+
   rootFolders = import ./rootFolders.nix {
     inherit
       config
@@ -30,6 +32,15 @@ let
       serviceName
       ;
   };
+
+  mediaManagement = import ./mediaManagement.nix {
+    inherit
+      lib
+      pkgs
+      serviceName
+      ;
+  };
+
   delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
   usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
@@ -244,6 +255,7 @@ in
         // optionalAttrs usesMediaDirs {
           rootFolders = rootFolders.options;
           delayProfiles = delayProfiles.options;
+          mediaManagement = mediaManagement.options;
         };
       };
       default = { };
@@ -512,6 +524,7 @@ in
       }
       // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null) {
         "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
+        "${serviceName}-mediamanagement" = mediaManagement.mkService cfg.config;
       };
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
