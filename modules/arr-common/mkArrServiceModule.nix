@@ -1,49 +1,21 @@
+{ serviceName }:
 {
   config,
   lib,
   pkgs,
   ...
 }:
-serviceName:
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.${serviceName};
+  usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
 
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
 
-  hostConfig = import ./hostConfig.nix {
-    inherit
-      lib
-      pkgs
-      serviceName
-      config
-      ;
-    serviceConfig = cfg;
-  };
-
-  rootFolders = import ./rootFolders.nix {
-    inherit
-      config
-      lib
-      pkgs
-      serviceName
-      ;
-  };
-
-  mediaManagement = import ./mediaManagement.nix {
-    inherit
-      lib
-      pkgs
-      serviceName
-      ;
-  };
-
-  delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
   capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
-  usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
   serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
@@ -73,6 +45,13 @@ let
     ];
 in
 {
+  imports = [
+    (import ./delayProfiles.nix { inherit serviceName; })
+    (import ./mediaManagement.nix { inherit serviceName; })
+    (import ./rootFolders.nix { inherit serviceName; })
+    (import ./hostConfig.nix { inherit serviceName; })
+  ];
+
   options.nixflix.${serviceName} = {
     enable = mkEnableOption "${capitalizedName}";
     package = mkPackageOption pkgs serviceBase { };
@@ -229,37 +208,23 @@ in
       '';
     };
 
-    config = mkOption {
-      type = types.submodule {
-        options = {
-          apiVersion = mkOption {
-            type = types.str;
-            default = "v3";
-            description = "Current version of the API of the service";
-          };
-
-          apiKey = secrets.mkSecretOption {
-            default = null;
-            description = ''
-              API key for ${capitalizedName}. Can be created by running:
-
-              ```bash
-              openssl rand -hex 16
-              ```
-            '';
-          };
-        }
-        // {
-          hostConfig = hostConfig.options;
-        }
-        // optionalAttrs usesMediaDirs {
-          rootFolders = rootFolders.options;
-          delayProfiles = delayProfiles.options;
-          mediaManagement = mediaManagement.options;
-        };
+    config = {
+      apiVersion = mkOption {
+        type = types.str;
+        default = "v3";
+        description = "Current version of the API of the service";
       };
-      default = { };
-      description = "${capitalizedName} configuration options that will be set via the API.";
+
+      apiKey = secrets.mkSecretOption {
+        default = null;
+        description = ''
+          API key for ${capitalizedName}. Can be created by running:
+
+          ```bash
+          openssl rand -hex 16
+          ```
+        '';
+      };
     };
   }
   // optionalAttrs usesMediaDirs {
@@ -378,13 +343,7 @@ in
             };
           }) cfg.mediaDirs
         )
-      )
-      // optionalAttrs (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") {
-        "${cfg.config.mediaManagement.recycleBin}".d = {
-          inherit (cfg) user group;
-          mode = "0755";
-        };
-      };
+      );
 
       systemd.services = {
         "${serviceName}-setup-logs-db" = mkIf config.nixflix.postgres.enable {
@@ -490,10 +449,7 @@ in
             ReadWritePaths = [
               cfg.dataDir
             ]
-            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ])
-            ++ optionals (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") [
-              cfg.config.mediaManagement.recycleBin
-            ];
+            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ]);
             RestrictNamespaces = true;
             PrivateDevices = true;
             SystemCallFilter = [
@@ -524,16 +480,6 @@ in
             environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
           };
         };
-      }
-      // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
-        "${serviceName}-config" = hostConfig.mkService cfg.config;
-      }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null && cfg.config.rootFolders != [ ]) {
-        "${serviceName}-rootfolders" = rootFolders.mkService cfg.config;
-      }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null) {
-        "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
-        "${serviceName}-mediamanagement" = mediaManagement.mkService cfg.config;
       };
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
