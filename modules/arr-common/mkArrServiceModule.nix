@@ -378,7 +378,13 @@ in
             };
           }) cfg.mediaDirs
         )
-      );
+      )
+      // optionalAttrs (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") {
+        "${cfg.config.mediaManagement.recycleBin}".d = {
+          inherit (cfg) user group;
+          mode = "0755";
+        };
+      };
 
       systemd.services = {
         "${serviceName}-setup-logs-db" = mkIf config.nixflix.postgres.enable {
@@ -484,7 +490,10 @@ in
             ReadWritePaths = [
               cfg.dataDir
             ]
-            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ]);
+            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ])
+            ++ optionals (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") [
+              cfg.config.mediaManagement.recycleBin
+            ];
             RestrictNamespaces = true;
             PrivateDevices = true;
             SystemCallFilter = [

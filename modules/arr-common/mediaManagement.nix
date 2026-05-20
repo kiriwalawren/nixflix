@@ -9,15 +9,55 @@ let
   apiClientSandbox = import ./mkApiClientSandbox.nix;
   capitalizedName =
     lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+  serviceBase = builtins.elemAt (lib.splitString "-" serviceName) 0;
+  isSonarr = serviceBase == "sonarr";
+  isRadarr = serviceBase == "radarr";
+  isLidarr = serviceBase == "lidarr";
+
+  fileDateValues =
+    if isSonarr then
+      [
+        "none"
+        "localAirDate"
+        "utcAirDate"
+      ]
+    else if isRadarr then
+      [
+        "none"
+        "cinemas"
+        "physical"
+        "digital"
+      ]
+    else if isLidarr then
+      [
+        "none"
+        "albumReleaseDate"
+      ]
+    else
+      [ "none" ];
+
+  autoUnmonitorField =
+    if isSonarr then
+      "autoUnmonitorPreviouslyDownloadedEpisodes"
+    else if isRadarr then
+      "autoUnmonitorPreviouslyDownloadedMovies"
+    else if isLidarr then
+      "autoUnmonitorPreviouslyDownloadedTracks"
+    else
+      "autoUnmonitorPreviouslyDownloaded";
+
+  createEmptyFoldersField =
+    if isSonarr then
+      "createEmptySeriesFolders"
+    else if isRadarr then
+      "createEmptyMovieFolders"
+    else if isLidarr then
+      "createEmptyArtistFolders"
+    else
+      "createEmptyFolders";
 in
 {
   options = {
-    autoUnmonitorPreviouslyDownloaded = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Automatically unmonitor media after it has been downloaded.";
-    };
-
     recycleBin = lib.mkOption {
       type = lib.types.str;
       default = "";
@@ -40,12 +80,6 @@ in
       description = "How to handle proper and repack releases.";
     };
 
-    createEmptyFolders = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Create missing media folders during disk scan.";
-    };
-
     deleteEmptyFolders = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -53,7 +87,7 @@ in
     };
 
     fileDate = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.enum fileDateValues;
       default = "none";
       description = "Set the file date on imported media files.";
     };
@@ -84,16 +118,6 @@ in
       type = lib.types.str;
       default = "";
       description = "Group name or gid to apply to media folders.";
-    };
-
-    episodeTitleRequired = lib.mkOption {
-      type = lib.types.enum [
-        "always"
-        "bulkSeasonReleases"
-        "never"
-      ];
-      default = "always";
-      description = "Prevent importing for a limited time if the episode title is TBA.";
     };
 
     skipFreeSpaceCheckWhenImporting = lib.mkOption {
@@ -143,6 +167,51 @@ in
       default = true;
       description = "Scan video files for media info such as resolution, runtime, and codec.";
     };
+  }
+  // optionalAttrs isSonarr {
+    autoUnmonitorPreviouslyDownloadedEpisodes = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Automatically unmonitor episodes after they have been downloaded.";
+    };
+    createEmptySeriesFolders = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Create missing series folders during disk scan.";
+    };
+    episodeTitleRequired = lib.mkOption {
+      type = lib.types.enum [
+        "always"
+        "bulkSeasonReleases"
+        "never"
+      ];
+      default = "always";
+      description = "Prevent importing for a limited time if the episode title is TBA.";
+    };
+  }
+  // optionalAttrs isRadarr {
+    autoUnmonitorPreviouslyDownloadedMovies = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Automatically unmonitor movies after they have been downloaded.";
+    };
+    createEmptyMovieFolders = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Create missing movie folders during disk scan.";
+    };
+  }
+  // optionalAttrs isLidarr {
+    autoUnmonitorPreviouslyDownloadedTracks = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Automatically unmonitor tracks after they have been downloaded.";
+    };
+    createEmptyArtistFolders = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Create missing artist folders during disk scan.";
+    };
   };
 
   mkService =
@@ -170,7 +239,7 @@ in
         echo "Fetching current media management configuration..."
         CURRENT_CONFIG=$(${
           mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/mediamanagement";
+            url = "$BASE_URL/config/mediamanagement";
             extraArgs = "-Sf";
           }
         } 2>/dev/null)
@@ -182,10 +251,6 @@ in
 
         CONFIG_ID=$(echo "$CURRENT_CONFIG" | ${pkgs.jq}/bin/jq -r '.id')
 
-        # Build desired settings. Booleans/ints are Nix-interpolated as JSON literals;
-        # strings use --arg. Generic options fan out to all app-specific field-name
-        # variants — the merge step below filters to only keys that exist in this
-        # app's API response, so Radarr/Lidarr never receive Sonarr-specific fields.
         DESIRED=$(${pkgs.jq}/bin/jq -n \
           --arg recycleBin ${escapeShellArg mm.recycleBin} \
           --arg downloadPropersAndRepacks ${escapeShellArg mm.downloadPropersAndRepacks} \
@@ -193,26 +258,24 @@ in
           --arg rescanAfterRefresh ${escapeShellArg mm.rescanAfterRefresh} \
           --arg chmodFolder ${escapeShellArg mm.chmodFolder} \
           --arg chownGroup ${escapeShellArg mm.chownGroup} \
-          --arg episodeTitleRequired ${escapeShellArg mm.episodeTitleRequired} \
           --arg scriptImportPath ${escapeShellArg mm.scriptImportPath} \
           --arg extraFileExtensions ${escapeShellArg mm.extraFileExtensions} \
+          ${
+            if isSonarr then "--arg episodeTitleRequired ${escapeShellArg mm.episodeTitleRequired}" else ""
+          } \
           '{
-            autoUnmonitorPreviouslyDownloadedEpisodes: ${boolToString mm.autoUnmonitorPreviouslyDownloaded},
-            autoUnmonitorPreviouslyDownloadedMovies:  ${boolToString mm.autoUnmonitorPreviouslyDownloaded},
-            autoUnmonitorPreviouslyDownloadedTracks:  ${boolToString mm.autoUnmonitorPreviouslyDownloaded},
+            ${autoUnmonitorField}: ${boolToString mm.${autoUnmonitorField}},
             recycleBin: $recycleBin,
             recycleBinCleanupDays: ${builtins.toString mm.recycleBinCleanupDays},
             downloadPropersAndRepacks: $downloadPropersAndRepacks,
-            createEmptySeriesFolders: ${boolToString mm.createEmptyFolders},
-            createEmptyMovieFolders:  ${boolToString mm.createEmptyFolders},
-            createEmptyArtistFolders: ${boolToString mm.createEmptyFolders},
+            ${createEmptyFoldersField}: ${boolToString mm.${createEmptyFoldersField}},
             deleteEmptyFolders: ${boolToString mm.deleteEmptyFolders},
             fileDate: $fileDate,
             rescanAfterRefresh: $rescanAfterRefresh,
             setPermissionsLinux: ${boolToString mm.setPermissionsLinux},
             chmodFolder: $chmodFolder,
             chownGroup: $chownGroup,
-            episodeTitleRequired: $episodeTitleRequired,
+            ${if isSonarr then "episodeTitleRequired: $episodeTitleRequired," else ""}
             skipFreeSpaceCheckWhenImporting: ${boolToString mm.skipFreeSpaceCheckWhenImporting},
             minimumFreeSpaceWhenImporting: ${builtins.toString mm.minimumFreeSpaceWhenImporting},
             copyUsingHardlinks: ${boolToString mm.copyUsingHardlinks},
@@ -226,20 +289,25 @@ in
         NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
           --argjson current "$CURRENT_CONFIG" \
           --argjson desired "$DESIRED" \
-          '$current * ($desired | with_entries(select(.key as $k | $current | has($k))))')
+          '$current * $desired')
 
         echo "Updating ${capitalizedName} media management configuration..."
-        ${
+        PUT_STATUS=$(${
           mkSecureCurl serviceConfig.apiKey {
-            url = "$BASE_URL/mediamanagement/$CONFIG_ID";
+            url = "$BASE_URL/config/mediamanagement/$CONFIG_ID";
             method = "PUT";
             headers = {
               "Content-Type" = "application/json";
             };
             data = "$NEW_CONFIG";
-            extraArgs = "-Sf";
+            extraArgs = ''-So /tmp/put_response -w "%{http_code}"'';
           }
-        } > /dev/null
+        })
+        if [ "$PUT_STATUS" -ge 400 ]; then
+          echo "PUT failed (HTTP $PUT_STATUS):"
+          cat /tmp/put_response
+          exit 1
+        fi
 
         echo "${capitalizedName} media management configuration complete"
       '';

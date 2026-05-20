@@ -48,6 +48,26 @@ pkgsUnfree.testers.runNixOSTest {
                 id = 1;
               }
             ];
+            mediaManagement = {
+              autoUnmonitorPreviouslyDownloadedEpisodes = true;
+              recycleBin = "/var/lib/recyclebin";
+              recycleBinCleanupDays = 14;
+              downloadPropersAndRepacks = "doNotPrefer";
+              createEmptySeriesFolders = true;
+              deleteEmptyFolders = false;
+              fileDate = "localAirDate";
+              rescanAfterRefresh = "never";
+              setPermissionsLinux = true;
+              chmodFolder = "775";
+              chownGroup = "media";
+              episodeTitleRequired = "never";
+              skipFreeSpaceCheckWhenImporting = true;
+              minimumFreeSpaceWhenImporting = 200;
+              copyUsingHardlinks = false;
+              importExtraFiles = true;
+              extraFileExtensions = "srt,ass,ssa";
+              enableMediaInfo = false;
+            };
           };
         };
 
@@ -173,6 +193,35 @@ pkgsUnfree.testers.runNixOSTest {
     assert profiles_list[0]['torrentDelay'] == 360, "Expected torrentDelay=360"
     assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
     print("Default delay profile configured successfully!")
+
+    # Wait for media management service and verify settings
+    machine.wait_for_unit("sonarr-mediamanagement.service", timeout=60)
+
+    media_mgmt = machine.succeed(
+        "curl -s -H 'X-Api-Key: 0123456789abcdef0123456789abcdef' "
+        "http://127.0.0.1:8989/api/v3/config/mediamanagement"
+    )
+    mm = json.loads(media_mgmt)
+    print(f"Media management: {media_mgmt}")
+    assert mm['autoUnmonitorPreviouslyDownloadedEpisodes'] == True, "autoUnmonitorPreviouslyDownloadedEpisodes not set"
+    assert mm['recycleBin'] == '/var/lib/recyclebin', "recycleBin not set"
+    assert mm['recycleBinCleanupDays'] == 14, "recycleBinCleanupDays not set"
+    assert mm['downloadPropersAndRepacks'] == 'doNotPrefer', "downloadPropersAndRepacks not set"
+    assert mm['createEmptySeriesFolders'] == True, "createEmptySeriesFolders not set"
+    assert mm['deleteEmptyFolders'] == False, "deleteEmptyFolders not set"
+    assert mm['fileDate'] == 'localAirDate', "fileDate not set"
+    assert mm['rescanAfterRefresh'] == 'never', "rescanAfterRefresh not set"
+    assert mm['setPermissionsLinux'] == True, "setPermissionsLinux not set"
+    assert mm['chmodFolder'] == '775', "chmodFolder not set"
+    assert mm['chownGroup'] == 'media', "chownGroup not set"
+    assert mm['episodeTitleRequired'] == 'never', "episodeTitleRequired not set"
+    assert mm['skipFreeSpaceCheckWhenImporting'] == True, "skipFreeSpaceCheckWhenImporting not set"
+    assert mm['minimumFreeSpaceWhenImporting'] == 200, "minimumFreeSpaceWhenImporting not set"
+    assert mm['copyUsingHardlinks'] == False, "copyUsingHardlinks not set"
+    assert mm['importExtraFiles'] == True, "importExtraFiles not set"
+    assert mm['extraFileExtensions'] == 'srt,ass,ssa', "extraFileExtensions not set"
+    assert mm['enableMediaInfo'] == False, "enableMediaInfo not set"
+    print("Media management configured successfully!")
 
     # Verify the service is running under the correct user
     machine.succeed("pgrep -u testuser Sonarr")
