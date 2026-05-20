@@ -49,6 +49,7 @@ in
     (import ./mediaManagement.nix { inherit serviceName; })
     (import ./rootFolders.nix { inherit serviceName; })
     (import ./hostConfig.nix { inherit serviceName; })
+    (import ./postgres.nix { inherit serviceName; })
   ];
 
   options.nixflix.${serviceName} = {
@@ -276,16 +277,6 @@ in
             method = "Forms";
           };
           server = { inherit (cfg.config.hostConfig) port urlBase; };
-        }
-        // optionalAttrs config.nixflix.postgres.enable {
-          log.dbEnabled = true;
-          postgres = {
-            inherit (cfg) user;
-            inherit (config.services.postgresql.settings) port;
-            host = "/run/postgresql";
-            mainDb = cfg.user;
-            logDb = "${cfg.user}-logs";
-          };
         };
         config = {
           apiKey = mkDefault null;
@@ -295,18 +286,6 @@ in
             instanceName = mkDefault capitalizedName;
           };
         };
-      };
-
-      services.postgresql = mkIf config.nixflix.postgres.enable {
-        ensureDatabases = [
-          cfg.settings.postgres.mainDb
-          cfg.settings.postgres.logDb
-        ];
-        ensureUsers = [
-          {
-            name = cfg.user;
-          }
-        ];
       };
 
       users = {
@@ -345,62 +324,6 @@ in
       );
 
       systemd.services = {
-        "${serviceName}-setup-logs-db" = mkIf config.nixflix.postgres.enable {
-          description = "Grant ownership of ${capitalizedName} databases";
-          after = [
-            "postgresql.service"
-            "postgresql-setup.service"
-          ];
-          requires = [
-            "postgresql.service"
-            "postgresql-setup.service"
-          ];
-          before = [ "postgresql-ready.target" ];
-          requiredBy = [ "postgresql-ready.target" ];
-
-          serviceConfig = {
-            User = "postgres";
-            Group = "postgres";
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-
-          script = ''
-            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.mainDb}" OWNER TO "${cfg.user}";'
-            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.logDb}" OWNER TO "${cfg.user}";'
-          '';
-        };
-
-        "${serviceName}-wait-for-db" = mkIf config.nixflix.postgres.enable {
-          description = "Wait for ${capitalizedName} PostgreSQL databases to be ready";
-          after = [
-            "postgresql.service"
-            "postgresql-setup.service"
-          ];
-          before = [ "postgresql-ready.target" ];
-          requiredBy = [ "postgresql-ready.target" ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            TimeoutStartSec = "5min";
-            User = cfg.user;
-            Group = cfg.group;
-          };
-
-          script = ''
-            while true; do
-              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1 && \
-                 ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user}-logs -c "SELECT 1" > /dev/null 2>&1; then
-                echo "${capitalizedName} PostgreSQL databases are ready"
-                exit 0
-              fi
-              echo "Waiting for ${capitalizedName} PostgreSQL databases..."
-              sleep 1
-            done
-          '';
-        };
-
         ${serviceName} = {
           description = capitalizedName;
           environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
@@ -409,13 +332,11 @@ in
             "network.target"
             "nixflix-setup-dirs.service"
           ]
-          ++ config.nixflix.serviceDependencies
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
+          ++ config.nixflix.serviceDependencies;
           requires = [
             "nixflix-setup-dirs.service"
           ]
-          ++ config.nixflix.serviceDependencies
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
+          ++ config.nixflix.serviceDependencies;
           wants = [ ];
           wantedBy = [ "multi-user.target" ];
 
