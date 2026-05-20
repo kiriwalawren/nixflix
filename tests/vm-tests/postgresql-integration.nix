@@ -6,6 +6,8 @@
 pkgs.testers.runNixOSTest {
   name = "postgresql-integration-test";
 
+  meta.timeout = 900;
+
   nodes.machine =
     { pkgs, ... }:
     {
@@ -105,30 +107,30 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("radarr-wait-for-db.service", timeout=60)
     machine.wait_for_unit("lidarr-wait-for-db.service", timeout=60)
 
-    # Wait for all services
-    machine.wait_for_unit("prowlarr.service", timeout=120)
-    machine.wait_for_unit("sonarr.service", timeout=120)
-    machine.wait_for_unit("sonarr-anime.service", timeout=120)
-    machine.wait_for_unit("radarr.service", timeout=120)
-    machine.wait_for_unit("lidarr.service", timeout=120)
+    # Wait for all services (long timeout: 5 services doing concurrent PostgreSQL migrations)
+    machine.wait_for_unit("prowlarr.service", timeout=300)
+    machine.wait_for_unit("sonarr.service", timeout=300)
+    machine.wait_for_unit("sonarr-anime.service", timeout=300)
+    machine.wait_for_unit("radarr.service", timeout=300)
+    machine.wait_for_unit("lidarr.service", timeout=300)
     machine.wait_for_open_port(9696, timeout=60)
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(7878, timeout=60)
     machine.wait_for_open_port(8686, timeout=60)
 
     # Wait for configuration services
-    machine.wait_for_unit("prowlarr-config.service", timeout=60)
-    machine.wait_for_unit("sonarr-config.service", timeout=60)
-    machine.wait_for_unit("sonarr-anime-config.service", timeout=60)
-    machine.wait_for_unit("radarr-config.service", timeout=60)
-    machine.wait_for_unit("lidarr-config.service", timeout=60)
+    machine.wait_for_unit("prowlarr-config.service", timeout=120)
+    machine.wait_for_unit("sonarr-config.service", timeout=120)
+    machine.wait_for_unit("sonarr-anime-config.service", timeout=120)
+    machine.wait_for_unit("radarr-config.service", timeout=120)
+    machine.wait_for_unit("lidarr-config.service", timeout=120)
 
     # Wait for services to come back up after restart
-    machine.wait_for_unit("prowlarr.service", timeout=60)
-    machine.wait_for_unit("sonarr.service", timeout=60)
-    machine.wait_for_unit("sonarr-anime.service", timeout=60)
-    machine.wait_for_unit("radarr.service", timeout=60)
-    machine.wait_for_unit("lidarr.service", timeout=60)
+    machine.wait_for_unit("prowlarr.service", timeout=120)
+    machine.wait_for_unit("sonarr.service", timeout=120)
+    machine.wait_for_unit("sonarr-anime.service", timeout=120)
+    machine.wait_for_unit("radarr.service", timeout=120)
+    machine.wait_for_unit("lidarr.service", timeout=120)
     machine.wait_for_open_port(9696, timeout=60)
     machine.wait_for_open_port(8989, timeout=60)
     machine.wait_for_open_port(7878, timeout=60)
