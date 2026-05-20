@@ -48,6 +48,25 @@ pkgsUnfree.testers.runNixOSTest {
                 id = 1;
               }
             ];
+            mediaManagement = {
+              autoUnmonitorPreviouslyDownloadedTracks = true;
+              recycleBin = "/var/lib/recyclebin";
+              recycleBinCleanupDays = 14;
+              downloadPropersAndRepacks = "doNotPrefer";
+              createEmptyArtistFolders = true;
+              deleteEmptyFolders = false;
+              fileDate = "albumReleaseDate";
+              rescanAfterRefresh = "never";
+              setPermissionsLinux = true;
+              chmodFolder = "775";
+              chownGroup = "media";
+              skipFreeSpaceCheckWhenImporting = true;
+              minimumFreeSpaceWhenImporting = 200;
+              copyUsingHardlinks = false;
+              importExtraFiles = true;
+              extraFileExtensions = "srt,ass,ssa";
+              enableMediaInfo = false;
+            };
           };
         };
 
@@ -163,6 +182,34 @@ pkgsUnfree.testers.runNixOSTest {
     assert profiles_list[0]['torrentDelay'] == 360, "Expected torrentDelay=360"
     assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
     print("Default delay profile configured successfully!")
+
+    # Wait for media management service and verify settings
+    machine.wait_for_unit("lidarr-mediamanagement.service", timeout=60)
+
+    media_mgmt = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/config/mediamanagement"
+    )
+    mm = json.loads(media_mgmt)
+    print(f"Media management: {media_mgmt}")
+    assert mm['autoUnmonitorPreviouslyDownloadedTracks'] == True, "autoUnmonitorPreviouslyDownloadedTracks not set"
+    assert mm['recycleBin'] == '/var/lib/recyclebin', "recycleBin not set"
+    assert mm['recycleBinCleanupDays'] == 14, "recycleBinCleanupDays not set"
+    assert mm['downloadPropersAndRepacks'] == 'doNotPrefer', "downloadPropersAndRepacks not set"
+    assert mm['createEmptyArtistFolders'] == True, "createEmptyArtistFolders not set"
+    assert mm['deleteEmptyFolders'] == False, "deleteEmptyFolders not set"
+    assert mm['fileDate'] == 'albumReleaseDate', "fileDate not set"
+    assert mm['rescanAfterRefresh'] == 'never', "rescanAfterRefresh not set"
+    assert mm['setPermissionsLinux'] == True, "setPermissionsLinux not set"
+    assert mm['chmodFolder'] == '775', "chmodFolder not set"
+    assert mm['chownGroup'] == 'media', "chownGroup not set"
+    assert mm['skipFreeSpaceCheckWhenImporting'] == True, "skipFreeSpaceCheckWhenImporting not set"
+    assert mm['minimumFreeSpaceWhenImporting'] == 200, "minimumFreeSpaceWhenImporting not set"
+    assert mm['copyUsingHardlinks'] == False, "copyUsingHardlinks not set"
+    assert mm['importExtraFiles'] == True, "importExtraFiles not set"
+    assert mm['extraFileExtensions'] == 'srt,ass,ssa', "extraFileExtensions not set"
+    assert mm['enableMediaInfo'] == False, "enableMediaInfo not set"
+    print("Media management configured successfully!")
 
     machine.succeed("pgrep -u testuser Lidarr")
   '';
