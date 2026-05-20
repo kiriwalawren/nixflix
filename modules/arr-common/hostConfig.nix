@@ -9,11 +9,12 @@ with lib;
 let
   cfg = config.nixflix.${serviceName};
   secrets = import ../../lib/secrets { inherit lib; };
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
-  apiClientSandbox = import ./mkApiClientSandbox.nix;
-  capitalizedName =
-    lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+  inherit (import ./utils.nix { inherit lib pkgs serviceName; })
+    capitalizedName
+    apiClientSandbox
+    mkSecureCurl
+    mkWaitForApiScript
+    ;
 in
 {
   options.nixflix.${serviceName}.config.hostConfig = mkOption {

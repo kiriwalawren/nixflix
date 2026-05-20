@@ -8,15 +8,15 @@
 with lib;
 let
   cfg = config.nixflix.${serviceName};
-  usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  apiClientSandbox = import ./mkApiClientSandbox.nix;
-  capitalizedName =
-    lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
-  serviceBase = builtins.elemAt (lib.splitString "-" serviceName) 0;
-  isSonarr = serviceBase == "sonarr";
-  isRadarr = serviceBase == "radarr";
-  isLidarr = serviceBase == "lidarr";
+  inherit (import ./utils.nix { inherit lib pkgs serviceName; })
+    usesMediaDirs
+    capitalizedName
+    isSonarr
+    isRadarr
+    isLidarr
+    apiClientSandbox
+    mkSecureCurl
+    ;
 
   fileDateValues =
     if isSonarr then

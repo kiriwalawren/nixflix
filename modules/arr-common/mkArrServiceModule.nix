@@ -11,14 +11,13 @@ let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   inherit (config.nixflix) globals;
   cfg = config.nixflix.${serviceName};
-  usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
-
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
-
-  capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
+  inherit (import ./utils.nix { inherit lib pkgs serviceName; })
+    usesMediaDirs
+    capitalizedName
+    serviceBase
+    mkWaitForApiScript
+    ;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
-
-  serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
   apiKeyEnvVar = toUpper serviceBase + "__AUTH__APIKEY";
   apiKeyIsSecretRef = cfg.config.apiKey != null && secrets.isSecretRef cfg.config.apiKey;
   credentialPath = "/run/credentials/${serviceName}.service/apiKey";
