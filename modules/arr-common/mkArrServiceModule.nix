@@ -7,10 +7,10 @@
 }:
 with lib;
 let
+  cfg = config.nixflix.${serviceName};
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   inherit (config.nixflix) globals;
-  cfg = config.nixflix.${serviceName};
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     usesMediaDirs
     capitalizedName
@@ -46,10 +46,11 @@ in
 {
   imports = [
     (import ./delayProfiles.nix { inherit serviceName; })
-    (import ./mediaManagement.nix { inherit serviceName; })
-    (import ./rootFolders.nix { inherit serviceName; })
     (import ./hostConfig.nix { inherit serviceName; })
+    (import ./mediaManagement.nix { inherit serviceName; })
+    (import ./mediaDirs.nix { inherit serviceName; })
     (import ./postgres.nix { inherit serviceName; })
+    (import ./rootFolders.nix { inherit serviceName; })
   ];
 
   options.nixflix.${serviceName} = {
@@ -226,14 +227,6 @@ in
         '';
       };
     };
-  }
-  // optionalAttrs usesMediaDirs {
-    mediaDirs = mkOption {
-      type = types.listOf types.path;
-      default = [ ];
-      defaultText = literalExpression ''[config.nixflix.mediaDir + "/<media-type>"]'';
-      description = "List of media directories to create and manage";
-    };
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
@@ -311,17 +304,7 @@ in
           inherit (cfg) user group;
           mode = "0755";
         };
-      }
-      // optionalAttrs usesMediaDirs (
-        lib.mergeAttrsList (
-          map (mediaDir: {
-            "${mediaDir}".d = {
-              inherit (globals.libraryOwner) user group;
-              mode = "0775";
-            };
-          }) cfg.mediaDirs
-        )
-      );
+      };
 
       systemd.services = {
         ${serviceName} = {
@@ -344,7 +327,6 @@ in
             Type = "simple";
             User = cfg.user;
             Group = cfg.group;
-            SupplementaryGroups = optionals usesMediaDirs [ globals.libraryOwner.group ];
             ExecStart =
               if apiKeyIsSecretRef then
                 pkgs.writeShellScript "${serviceName}-start" ''
@@ -368,8 +350,7 @@ in
             ProcSubset = "pid";
             ReadWritePaths = [
               cfg.dataDir
-            ]
-            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ]);
+            ];
             RestrictNamespaces = true;
             PrivateDevices = true;
             SystemCallFilter = [
