@@ -271,14 +271,6 @@ in
           };
           server = { inherit (cfg.config.hostConfig) port urlBase; };
         };
-        config = {
-          apiKey = mkDefault null;
-          hostConfig = {
-            username = mkDefault serviceBase;
-            password = mkDefault null;
-            instanceName = mkDefault capitalizedName;
-          };
-        };
       };
 
       users = {
@@ -306,80 +298,77 @@ in
         };
       };
 
-      systemd.services = {
-        ${serviceName} = {
-          description = capitalizedName;
-          environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
+      systemd.services.${serviceName} = {
+        description = capitalizedName;
+        environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
 
-          after = [
-            "network.target"
-            "nixflix-setup-dirs.service"
-          ]
-          ++ config.nixflix.serviceDependencies;
-          requires = [
-            "nixflix-setup-dirs.service"
-          ]
-          ++ config.nixflix.serviceDependencies;
-          wants = [ ];
-          wantedBy = [ "multi-user.target" ];
+        after = [
+          "network.target"
+          "nixflix-setup-dirs.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+        wantedBy = [ "multi-user.target" ];
 
-          serviceConfig = {
-            Type = "simple";
-            User = cfg.user;
-            Group = cfg.group;
-            ExecStart =
-              if apiKeyIsSecretRef then
-                pkgs.writeShellScript "${serviceName}-start" ''
-                  export ${apiKeyEnvVar}="$(cat ${credentialPath})"
-                  exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
-                ''
-              else
-                "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
-            ExecStartPost = mkWaitForApiScript serviceName waitConfig;
-            Restart = "on-failure";
-            UMask = "0002";
+        serviceConfig = {
+          Type = "simple";
+          User = cfg.user;
+          Group = cfg.group;
+          ExecStart =
+            if apiKeyIsSecretRef then
+              pkgs.writeShellScript "${serviceName}-start" ''
+                export ${apiKeyEnvVar}="$(cat ${credentialPath})"
+                exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
+              ''
+            else
+              "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
+          ExecStartPost = mkWaitForApiScript serviceName waitConfig;
+          Restart = "on-failure";
+          UMask = "0002";
 
-            # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
-            NoNewPrivileges = true;
-            PrivateTmp = true;
-            ProtectHome = true;
-            ProtectSystem = "strict";
-            CapabilityBoundingSet = "";
-            AmbientCapabilities = "";
-            ProtectProc = "invisible";
-            ProcSubset = "pid";
-            ReadWritePaths = [
-              cfg.dataDir
-            ];
-            RestrictNamespaces = true;
-            PrivateDevices = true;
-            SystemCallFilter = [
-              "~@debug"
-              "~@module"
-              "~@raw-io"
-              "~@reboot"
-              "~@swap"
-            ];
-            ProtectKernelTunables = true;
-            ProtectKernelModules = true;
-            ProtectKernelLogs = true;
-            ProtectControlGroups = true;
-            LockPersonality = true;
-            RestrictRealtime = true;
-            RestrictSUIDSGID = true;
-            RestrictAddressFamilies = [
-              "AF_UNIX"
-              "AF_INET"
-              "AF_INET6"
-            ];
-            SystemCallArchitectures = "native";
-          }
-          // optionalAttrs apiKeyIsSecretRef {
-            LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
-          }
-          // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
-            environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
-          };
+          # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectHome = true;
+          ProtectSystem = "strict";
+          CapabilityBoundingSet = "";
+          AmbientCapabilities = "";
+          ProtectProc = "invisible";
+          ProcSubset = "pid";
+          ReadWritePaths = [
+            cfg.dataDir
+          ];
+          RestrictNamespaces = true;
+          PrivateDevices = true;
+          SystemCallFilter = [
+            "~@debug"
+            "~@module"
+            "~@raw-io"
+            "~@reboot"
+            "~@swap"
+          ];
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectKernelLogs = true;
+          ProtectControlGroups = true;
+          LockPersonality = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          RestrictAddressFamilies = [
+            "AF_UNIX"
+            "AF_INET"
+            "AF_INET6"
+          ];
+          SystemCallArchitectures = "native";
+        }
+        // optionalAttrs apiKeyIsSecretRef {
+          LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
+        }
+        // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
+          environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
         };
       };
     }

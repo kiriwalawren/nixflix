@@ -11,6 +11,7 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     capitalizedName
+    serviceBase
     apiClientSandbox
     mkSecureCurl
     mkWaitForApiScript
@@ -72,11 +73,13 @@ in
 
         username = secrets.mkSecretOption {
           nullable = true;
+          default = serviceBase;
           description = "Username for web interface authentication.";
         };
 
         password = secrets.mkSecretOption {
           nullable = true;
+          default = null;
           description = "Password for web interface authentication.";
         };
 
@@ -95,6 +98,7 @@ in
 
         instanceName = mkOption {
           type = types.str;
+          default = capitalizedName;
           description = "Instance name";
         };
 
@@ -260,8 +264,17 @@ in
     description = "Host configuration options that will be set via the API /config/host endpoint";
   };
 
-  config =
-    mkIf
+  config = mkMerge [
+    (mkIf (config.nixflix.enable && cfg.enable) {
+      assertions = [
+        {
+          assertion = (cfg.config.hostConfig.username == null) == (cfg.config.hostConfig.password == null);
+          message = "nixflix.${serviceName}.config.hostConfig: username and password must both be set or both be null";
+        }
+      ];
+    })
+
+    (mkIf
       (
         config.nixflix.enable
         && cfg.enable
@@ -400,5 +413,7 @@ in
               echo "${capitalizedName} service restarted"
             '';
           };
-      };
+      }
+    )
+  ];
 }

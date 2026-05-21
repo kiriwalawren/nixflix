@@ -875,6 +875,57 @@ in
       echo 'PASS: arr-load-credential' > $out
     '';
 
+  # hostConfig assertion: username and password must both be set or both be null
+  hostconfig-username-requires-password =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+                sonarr = {
+                  enable = true;
+                  config.hostConfig = {
+                    port = 8989;
+                    username = "admin";
+                    # password left at default null
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "hostconfig-username-requires-password" (!result.success);
+
+  hostconfig-password-requires-username =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+                sonarr = {
+                  enable = true;
+                  config.hostConfig = {
+                    port = 8989;
+                    username = null;
+                    password._secret = "/run/secrets/sonarr-pass";
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "hostconfig-password-requires-username" (!result.success);
+
   # Prowlarr (usesMediaDirs=false) should only have dataDir in ReadWritePaths
   arr-sandbox-prowlarr-read-write-paths =
     let
