@@ -6,10 +6,10 @@
 }:
 with lib;
 let
-  secrets = import ../../lib/secrets { inherit lib; };
+  secrets = import ../../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ./authUtil.nix {
+  authUtil = import ../authUtil.nix {
     inherit
       lib
       pkgs
@@ -205,6 +205,8 @@ let
     '';
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (nixflix.enable && cfg.enable && cfg.sonarr != { }) {
     systemd.services.seerr-sonarr = {
       description = "Configure Seerr Sonarr integration";

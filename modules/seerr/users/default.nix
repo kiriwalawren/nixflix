@@ -8,7 +8,7 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ./authUtil.nix {
+  authUtil = import ../authUtil.nix {
     inherit
       lib
       pkgs
@@ -19,6 +19,8 @@ let
   userSettings = cfg.settings.users;
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.seerr-user-settings = {
       description = "Configure Seerr default user settings";

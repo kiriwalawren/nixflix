@@ -13,13 +13,13 @@ let
 in
 {
   imports = [
-    ./jellyfinService.nix
+    ./jellyfin
     ./librarySyncService.nix
-    ./options
-    ./radarrService.nix
+    ./options.nix
+    ./radarr
     ./setupService.nix
-    ./sonarrService.nix
-    ./userSettingsService.nix
+    ./sonarr
+    ./users
   ];
 
   config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
