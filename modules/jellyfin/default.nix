@@ -10,29 +10,10 @@ let
   inherit (config.nixflix) globals;
   cfg = config.nixflix.jellyfin;
 
-  jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit lib; };
-
   waitForApiScript = import ./waitForApiScript.nix {
     inherit pkgs;
     jellyfinCfg = cfg;
   };
-
-  pluginResolution = import ./plugins/resolvePlugins.nix {
-    inherit lib pkgs;
-    jellyfinVersion = cfg.package.version;
-    inherit (cfg.system) pluginRepositories;
-    inherit (cfg) plugins;
-  };
-
-  enabledPlugins = pluginResolution.resolvedEnabledPlugins;
-
-  configuredEnabledPlugins = filterAttrs (_name: pluginCfg: pluginCfg.enable) cfg.plugins;
-
-  inherit (pluginResolution) packagePluginDirName;
-
-  packagePluginDirNames = mapAttrsToList (_name: pluginCfg: packagePluginDirName pluginCfg.package) (
-    filterAttrs (_name: pluginCfg: pluginCfg.package != null) enabledPlugins
-  );
 in
 {
   imports = [
@@ -50,32 +31,6 @@ in
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) {
-    warnings = pluginResolution.resolutionWarnings;
-
-    nixflix.jellyfin = {
-      plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable {
-        package = mkDefault (
-          jellyfinPlugins.fromRepo {
-            version = "11.0.0.0";
-            hash = "sha256-Rtvxq6NxQSrRyhYdsyWXY+SoDPW4S0471gmiLTUjaSk=";
-          }
-        );
-        config = {
-          TitlePreference = mkDefault "Localized";
-          OriginalTitlePreference = mkDefault "JapaneseRomaji";
-          IgnoreSeason = mkDefault false;
-          TitleSimilarityThreshold = mkDefault "50";
-          MaxGenres = mkDefault "5";
-          TidyGenreList = mkDefault true;
-          TitleCaseGenres = mkDefault false;
-          AnimeDefaultGenre = mkDefault "Anime";
-          AniDbRateLimit = mkDefault "2000";
-          MaxCacheAge = mkDefault "7";
-          AniDbReplaceGraves = mkDefault true;
-        };
-      };
-    };
-
     assertions = [
       {
         assertion = any (user: user.policy.isAdministrator) (attrValues cfg.users);
@@ -84,14 +39,6 @@ in
       {
         assertion = cfg.system.cacheSize >= 3;
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
-      }
-      {
-        assertion = all (pluginCfg: pluginCfg.package != null) (attrValues configuredEnabledPlugins);
-        message = "nixflix.jellyfin.plugins: enabled plugins must define `package`. Use `nixflix.lib.jellyfinPlugins.fromRepo` for repository-backed plugins.";
-      }
-      {
-        assertion = length packagePluginDirNames == length (unique packagePluginDirNames);
-        message = "nixflix.jellyfin.plugins contains duplicate package-managed plugin directory names.";
       }
     ];
 
