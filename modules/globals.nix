@@ -12,28 +12,29 @@ with lib;
     libraryOwner.group = "media";
 
     uids = {
-      jellyfin = 146;
       autobrr = 188;
       bazarr = 232;
+      cross-seed = 183;
+      jellyfin = 146;
       lidarr = 306;
       prowlarr = 293;
-      seerr = 262;
-      sonarr = 274;
-      sonarr-anime = 273;
+      qbittorrent = 70;
       radarr = 275;
       recyclarr = 269;
       sabnzbd = 38;
-      qbittorrent = 70;
-      cross-seed = 183;
+      seerr = 262;
+      shoko = 82;
+      sonarr = 274;
+      sonarr-anime = 273;
     };
     gids = {
       autobrr = 188;
       cross-seed = 183;
       jellyfin = 146;
-      seerr = 250;
       media = 169;
       prowlarr = 287;
       recyclarr = 269;
+      seerr = 250;
     };
   };
 }

@@ -21,6 +21,7 @@ in
     ./prowlarr
     ./radarr.nix
     ./recyclarr
+    ./shoko
     ./sonarr-anime.nix
     ./sonarr.nix
     ./torrentClients
