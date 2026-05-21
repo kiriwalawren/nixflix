@@ -1,7 +1,7 @@
 { lib, ... }:
 with lib;
 let
-  util = import ./util.nix { inherit lib; };
+  util = import ../util.nix { inherit lib; };
 
   escapeXml =
     str:
