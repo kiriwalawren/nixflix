@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
 
+### Changed
+
+- `nixflix.<starr>.config.hostConfig.username` and `nixflix.<starr>.config.hostConfig.password` must both be set or `null` ([#223](https://github.com/kiriwalawren/nixflix/pull/223)).
+
 ## [1.2.0] - 2026-05-20
 
 ### Added
