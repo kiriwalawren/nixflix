@@ -6,16 +6,9 @@
 }:
 with lib;
 let
-  secrets = import ../../../lib/secrets { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
 in
 {
-  imports = [
-    ./jellyfin.nix
-    ./radarr.nix
-    ./sonarr.nix
-    ./users.nix
-  ];
-
   options.nixflix.seerr = {
     enable = mkEnableOption "Seerr media request manager";
 

@@ -8,7 +8,7 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ./authUtil.nix {
+  authUtil = import ../authUtil.nix {
     inherit
       lib
       pkgs
@@ -18,6 +18,8 @@ let
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.seerr-jellyfin = {
       description = "Configure Jellyfin settings in Seerr";
