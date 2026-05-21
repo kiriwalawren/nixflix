@@ -7,11 +7,11 @@
 with lib;
 let
   cfg = config.nixflix.jellyfin;
-  secrets = import ../../lib/secrets { inherit lib; };
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  secrets = import ../../../lib/secrets { inherit lib; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
 
-  util = import ./util.nix { inherit lib; };
-  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  util = import ../util.nix { inherit lib; };
+  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
 
   buildUserPayload = userName: userCfg: {
     name = userName;
@@ -33,12 +33,14 @@ let
     else
       "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 
-  waitForApiScript = import ./waitForApiScript.nix {
+  waitForApiScript = import ../waitForApiScript.nix {
     inherit pkgs;
     jellyfinCfg = cfg;
   };
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (config.nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";

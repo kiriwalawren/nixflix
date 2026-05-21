@@ -7,18 +7,9 @@
 with lib;
 let
   stateDir = "${config.nixflix.stateDir}/jellyfin";
-  secrets = import ../../../lib/secrets { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
 in
 {
-  imports = [
-    ./network.nix
-    ./branding.nix
-    ./encoding.nix
-    ./libraries.nix
-    ./plugins.nix
-    ./system.nix
-    ./users.nix
-  ];
   options.nixflix.jellyfin = {
     enable = mkOption {
       type = types.bool;
@@ -93,60 +84,5 @@ in
         passed with `--logdir` see [#log-directory](https://jellyfin.org/docs/general/administration/configuration/#log-directory)
       '';
     };
-
-    openFirewall = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Open ports in the firewall for Jellyfin.
-        TCP ports 8096 and 8920, UDP ports 1900 and 7359.
-      '';
-    };
-
-    subdomain = mkOption {
-      type = types.str;
-      default = "jellyfin";
-      description = "Subdomain prefix for reverse proxy.";
-    };
-
-    reverseProxy = {
-      expose = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether to expose Jellyfin via the reverse proxy.";
-      };
-    };
-
-    vpn = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        defaultText = literalExpression "config.nixflix.vpn.enable";
-        description = ''
-          Whether to route Jellyfin traffic through the VPN.
-
-          When `false`, Jellyfin bypasses the VPN.
-          When `true`, Jellyfin is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
-        '';
-      };
-    };
-
-    connectionAddress = mkOption {
-      type = types.str;
-      readOnly = true;
-      default =
-        if config.nixflix.jellyfin.network.localNetworkAddresses == [ ] then
-          "127.0.0.1"
-        else
-          builtins.head config.nixflix.jellyfin.network.localNetworkAddresses;
-      description = "Address for connecting to this service.";
-    };
   };
-
-  config.assertions = [
-    {
-      assertion = config.nixflix.jellyfin.vpn.enable -> config.nixflix.vpn.enable;
-      message = "Cannot enable VPN routing for Jellyfin (nixflix.jellyfin.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
-    }
-  ];
 }
