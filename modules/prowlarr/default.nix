@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
@@ -44,7 +43,7 @@ let
 in
 {
   imports = [
-    (import ../arr-common/mkArrServiceModule.nix { inherit config lib pkgs; } "prowlarr")
+    (import ../arr-common/mkArrServiceModule.nix { serviceName = "prowlarr"; })
     ./applications.nix
     ./indexers.nix
     ./indexerProxies.nix

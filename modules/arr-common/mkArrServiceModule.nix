@@ -1,52 +1,23 @@
+{ serviceName }:
 {
   config,
   lib,
   pkgs,
   ...
 }:
-serviceName:
 with lib;
 let
+  cfg = config.nixflix.${serviceName};
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   inherit (config.nixflix) globals;
-  cfg = config.nixflix.${serviceName};
-
-  mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
-
-  hostConfig = import ./hostConfig.nix {
-    inherit
-      lib
-      pkgs
-      serviceName
-      config
-      ;
-    serviceConfig = cfg;
-  };
-
-  rootFolders = import ./rootFolders.nix {
-    inherit
-      config
-      lib
-      pkgs
-      serviceName
-      ;
-  };
-
-  mediaManagement = import ./mediaManagement.nix {
-    inherit
-      lib
-      pkgs
-      serviceName
-      ;
-  };
-
-  delayProfiles = import ./delayProfiles.nix { inherit lib pkgs serviceName; };
-  capitalizedName = toUpper (substring 0 1 serviceName) + substring 1 (-1) serviceName;
-  usesMediaDirs = !(elem serviceName [ "prowlarr" ]);
+  inherit (import ./utils.nix { inherit lib pkgs serviceName; })
+    usesMediaDirs
+    capitalizedName
+    serviceBase
+    mkWaitForApiScript
+    ;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
-
-  serviceBase = builtins.elemAt (splitString "-" serviceName) 0;
   apiKeyEnvVar = toUpper serviceBase + "__AUTH__APIKEY";
   apiKeyIsSecretRef = cfg.config.apiKey != null && secrets.isSecretRef cfg.config.apiKey;
   credentialPath = "/run/credentials/${serviceName}.service/apiKey";
@@ -73,6 +44,15 @@ let
     ];
 in
 {
+  imports = [
+    (import ./delayProfiles.nix { inherit serviceName; })
+    (import ./hostConfig.nix { inherit serviceName; })
+    (import ./mediaManagement.nix { inherit serviceName; })
+    (import ./mediaDirs.nix { inherit serviceName; })
+    (import ./postgres.nix { inherit serviceName; })
+    (import ./rootFolders.nix { inherit serviceName; })
+  ];
+
   options.nixflix.${serviceName} = {
     enable = mkEnableOption "${capitalizedName}";
     package = mkPackageOption pkgs serviceBase { };
@@ -229,45 +209,23 @@ in
       '';
     };
 
-    config = mkOption {
-      type = types.submodule {
-        options = {
-          apiVersion = mkOption {
-            type = types.str;
-            default = "v3";
-            description = "Current version of the API of the service";
-          };
-
-          apiKey = secrets.mkSecretOption {
-            default = null;
-            description = ''
-              API key for ${capitalizedName}. Can be created by running:
-
-              ```bash
-              openssl rand -hex 16
-              ```
-            '';
-          };
-        }
-        // {
-          hostConfig = hostConfig.options;
-        }
-        // optionalAttrs usesMediaDirs {
-          rootFolders = rootFolders.options;
-          delayProfiles = delayProfiles.options;
-          mediaManagement = mediaManagement.options;
-        };
+    config = {
+      apiVersion = mkOption {
+        type = types.str;
+        default = "v3";
+        description = "Current version of the API of the service";
       };
-      default = { };
-      description = "${capitalizedName} configuration options that will be set via the API.";
-    };
-  }
-  // optionalAttrs usesMediaDirs {
-    mediaDirs = mkOption {
-      type = types.listOf types.path;
-      default = [ ];
-      defaultText = literalExpression ''[config.nixflix.mediaDir + "/<media-type>"]'';
-      description = "List of media directories to create and manage";
+
+      apiKey = secrets.mkSecretOption {
+        default = null;
+        description = ''
+          API key for ${capitalizedName}. Can be created by running:
+
+          ```bash
+          openssl rand -hex 16
+          ```
+        '';
+      };
     };
   };
 
@@ -312,37 +270,7 @@ in
             method = "Forms";
           };
           server = { inherit (cfg.config.hostConfig) port urlBase; };
-        }
-        // optionalAttrs config.nixflix.postgres.enable {
-          log.dbEnabled = true;
-          postgres = {
-            inherit (cfg) user;
-            inherit (config.services.postgresql.settings) port;
-            host = "/run/postgresql";
-            mainDb = cfg.user;
-            logDb = "${cfg.user}-logs";
-          };
         };
-        config = {
-          apiKey = mkDefault null;
-          hostConfig = {
-            username = mkDefault serviceBase;
-            password = mkDefault null;
-            instanceName = mkDefault capitalizedName;
-          };
-        };
-      };
-
-      services.postgresql = mkIf config.nixflix.postgres.enable {
-        ensureDatabases = [
-          cfg.settings.postgres.mainDb
-          cfg.settings.postgres.logDb
-        ];
-        ensureUsers = [
-          {
-            name = cfg.user;
-          }
-        ];
       };
 
       users = {
@@ -368,172 +296,80 @@ in
           inherit (cfg) user group;
           mode = "0755";
         };
-      }
-      // optionalAttrs usesMediaDirs (
-        lib.mergeAttrsList (
-          map (mediaDir: {
-            "${mediaDir}".d = {
-              inherit (globals.libraryOwner) user group;
-              mode = "0775";
-            };
-          }) cfg.mediaDirs
-        )
-      )
-      // optionalAttrs (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") {
-        "${cfg.config.mediaManagement.recycleBin}".d = {
-          inherit (cfg) user group;
-          mode = "0755";
-        };
       };
 
-      systemd.services = {
-        "${serviceName}-setup-logs-db" = mkIf config.nixflix.postgres.enable {
-          description = "Grant ownership of ${capitalizedName} databases";
-          after = [
-            "postgresql.service"
-            "postgresql-setup.service"
+      systemd.services.${serviceName} = {
+        description = capitalizedName;
+        environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
+
+        after = [
+          "network.target"
+          "nixflix-setup-dirs.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+        requires = [
+          "nixflix-setup-dirs.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "simple";
+          User = cfg.user;
+          Group = cfg.group;
+          ExecStart =
+            if apiKeyIsSecretRef then
+              pkgs.writeShellScript "${serviceName}-start" ''
+                export ${apiKeyEnvVar}="$(cat ${credentialPath})"
+                exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
+              ''
+            else
+              "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
+          ExecStartPost = mkWaitForApiScript serviceName waitConfig;
+          Restart = "on-failure";
+          UMask = "0002";
+
+          # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectHome = true;
+          ProtectSystem = "strict";
+          CapabilityBoundingSet = "";
+          AmbientCapabilities = "";
+          ProtectProc = "invisible";
+          ProcSubset = "pid";
+          ReadWritePaths = [
+            cfg.dataDir
           ];
-          requires = [
-            "postgresql.service"
-            "postgresql-setup.service"
+          RestrictNamespaces = true;
+          PrivateDevices = true;
+          SystemCallFilter = [
+            "~@debug"
+            "~@module"
+            "~@raw-io"
+            "~@reboot"
+            "~@swap"
           ];
-          before = [ "postgresql-ready.target" ];
-          requiredBy = [ "postgresql-ready.target" ];
-
-          serviceConfig = {
-            User = "postgres";
-            Group = "postgres";
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-
-          script = ''
-            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.mainDb}" OWNER TO "${cfg.user}";'
-            ${pkgs.postgresql}/bin/psql  -tAc 'ALTER DATABASE "${cfg.settings.postgres.logDb}" OWNER TO "${cfg.user}";'
-          '';
-        };
-
-        "${serviceName}-wait-for-db" = mkIf config.nixflix.postgres.enable {
-          description = "Wait for ${capitalizedName} PostgreSQL databases to be ready";
-          after = [
-            "postgresql.service"
-            "postgresql-setup.service"
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectKernelLogs = true;
+          ProtectControlGroups = true;
+          LockPersonality = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          RestrictAddressFamilies = [
+            "AF_UNIX"
+            "AF_INET"
+            "AF_INET6"
           ];
-          before = [ "postgresql-ready.target" ];
-          requiredBy = [ "postgresql-ready.target" ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            TimeoutStartSec = "5min";
-            User = cfg.user;
-            Group = cfg.group;
-          };
-
-          script = ''
-            while true; do
-              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1 && \
-                 ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user}-logs -c "SELECT 1" > /dev/null 2>&1; then
-                echo "${capitalizedName} PostgreSQL databases are ready"
-                exit 0
-              fi
-              echo "Waiting for ${capitalizedName} PostgreSQL databases..."
-              sleep 1
-            done
-          '';
+          SystemCallArchitectures = "native";
+        }
+        // optionalAttrs apiKeyIsSecretRef {
+          LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
+        }
+        // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
+          environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
         };
-
-        ${serviceName} = {
-          description = capitalizedName;
-          environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
-
-          after = [
-            "network.target"
-            "nixflix-setup-dirs.service"
-          ]
-          ++ config.nixflix.serviceDependencies
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
-          requires = [
-            "nixflix-setup-dirs.service"
-          ]
-          ++ config.nixflix.serviceDependencies
-          ++ (optional config.nixflix.postgres.enable "postgresql-ready.target");
-          wants = [ ];
-          wantedBy = [ "multi-user.target" ];
-
-          serviceConfig = {
-            Type = "simple";
-            User = cfg.user;
-            Group = cfg.group;
-            SupplementaryGroups = optionals usesMediaDirs [ globals.libraryOwner.group ];
-            ExecStart =
-              if apiKeyIsSecretRef then
-                pkgs.writeShellScript "${serviceName}-start" ''
-                  export ${apiKeyEnvVar}="$(cat ${credentialPath})"
-                  exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
-                ''
-              else
-                "${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'";
-            ExecStartPost = mkWaitForApiScript serviceName waitConfig;
-            Restart = "on-failure";
-            UMask = "0002";
-
-            # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
-            NoNewPrivileges = true;
-            PrivateTmp = true;
-            ProtectHome = true;
-            ProtectSystem = "strict";
-            CapabilityBoundingSet = "";
-            AmbientCapabilities = "";
-            ProtectProc = "invisible";
-            ProcSubset = "pid";
-            ReadWritePaths = [
-              cfg.dataDir
-            ]
-            ++ optionals usesMediaDirs (cfg.mediaDirs ++ [ config.nixflix.downloadsDir ])
-            ++ optionals (usesMediaDirs && cfg.config.mediaManagement.recycleBin != "") [
-              cfg.config.mediaManagement.recycleBin
-            ];
-            RestrictNamespaces = true;
-            PrivateDevices = true;
-            SystemCallFilter = [
-              "~@debug"
-              "~@module"
-              "~@raw-io"
-              "~@reboot"
-              "~@swap"
-            ];
-            ProtectKernelTunables = true;
-            ProtectKernelModules = true;
-            ProtectKernelLogs = true;
-            ProtectControlGroups = true;
-            LockPersonality = true;
-            RestrictRealtime = true;
-            RestrictSUIDSGID = true;
-            RestrictAddressFamilies = [
-              "AF_UNIX"
-              "AF_INET"
-              "AF_INET6"
-            ];
-            SystemCallArchitectures = "native";
-          }
-          // optionalAttrs apiKeyIsSecretRef {
-            LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
-          }
-          // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
-            environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
-          };
-        };
-      }
-      // optionalAttrs (cfg.config.apiKey != null && cfg.config.hostConfig.password != null) {
-        "${serviceName}-config" = hostConfig.mkService cfg.config;
-      }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null && cfg.config.rootFolders != [ ]) {
-        "${serviceName}-rootfolders" = rootFolders.mkService cfg.config;
-      }
-      // optionalAttrs (usesMediaDirs && cfg.config.apiKey != null) {
-        "${serviceName}-delayprofiles" = delayProfiles.mkService cfg.config;
-        "${serviceName}-mediamanagement" = mediaManagement.mkService cfg.config;
       };
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
