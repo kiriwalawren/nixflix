@@ -42,16 +42,16 @@ let
 in
 {
   imports = [
+    ./branding
+    ./encoding
+    ./libaries
     ./options
+    ./plugins
+    ./system
+    ./users
 
     ./apiKeyService.nix
-    ./brandingService.nix
-    ./encodingService.nix
-    ./librariesService.nix
-    ./plugins
     ./setupWizardService.nix
-    ./systemConfigService.nix
-    ./usersConfigService.nix
   ];
 
   config = mkIf (nixflix.enable && cfg.enable) (mkMerge [

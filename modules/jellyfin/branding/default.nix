@@ -9,9 +9,9 @@ let
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
-  util = import ./util.nix { inherit lib; };
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  util = import ../util.nix { inherit lib; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
 
   # Transform branding config to API format
   # Remove splashscreenLocation as it's handled separately via upload endpoint
@@ -25,12 +25,14 @@ let
     else
       "http://${cfg.connectionAddress}:${toString cfg.network.internalHttpPort}/${cfg.network.baseUrl}";
 
-  waitForApiScript = import ./waitForApiScript.nix {
+  waitForApiScript = import ../waitForApiScript.nix {
     inherit pkgs;
     jellyfinCfg = cfg;
   };
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-branding-config = {
       description = "Configure Jellyfin Branding via API";

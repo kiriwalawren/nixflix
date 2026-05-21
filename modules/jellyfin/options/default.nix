@@ -12,12 +12,6 @@ in
 {
   imports = [
     ./network.nix
-    ./branding.nix
-    ./encoding.nix
-    ./libraries.nix
-    ./plugins.nix
-    ./system.nix
-    ./users.nix
   ];
   options.nixflix.jellyfin = {
     enable = mkOption {
