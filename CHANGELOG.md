@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Fix inet_exposure for SABnzbd when reverse proxy is enabled
 - Change license to MPL 2.0 ([#217](https://github.com/kiriwalawren/nixflix/pull/217)).
 - `nixflix.lib.jellyfinPlugins.fromRepo`'s `hash` parameter now supports nix32 format as well ([#202](https://github.com/kiriwalawren/nixflix/pull/202)).
   - It also throws if the user's system does not have `builtins.convertHash` implemented.
