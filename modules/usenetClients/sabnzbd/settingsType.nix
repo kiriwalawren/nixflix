@@ -269,8 +269,15 @@ let
           "api+web (auth needed)" = 4;
           "api+web (locally no auth)" = 5;
         };
-        default = 0;
-        description = "Controls access restrictions from non-local IP addresses.";
+        default = if config.nixflix.reverseProxy.enable then 4 else 0;
+        defaultText = lib.literalExpression "if config.nixflix.reverseProxy.enable then 4 else 0";
+        description = ''
+          Controls access restrictions from non-local IP addresses. Defaults to
+          `api+web (auth needed)` when a reverse proxy is enabled, because nginx
+          forwards the real client IP via `X-Forwarded-For` and SABnzbd only
+          considers RFC 1918 ranges local — clients on Tailscale (100.64.0.0/10)
+          or similar networks would otherwise be refused.
+        '';
       };
 
       email_endjob = mkOption {

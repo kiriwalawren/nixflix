@@ -27,6 +27,8 @@ This example shows a working media server configuration based on a real producti
     "wireguard/conf" = {};
     "sabnzbd/api_key" = {};
     "sabnzbd/nzb_key" = {};
+    "sabnzbd/username" = { };
+    "sabnzbd/password" = { };
     "usenet/eweka/username" = {};
     "usenet/eweka/password" = {};
     "usenet/newsgroupdirect/username" = {};
@@ -114,6 +116,8 @@ This example shows a working media server configuration based on a real producti
         misc = {
           api_key._secret = config.sops.secrets."sabnzbd/api_key".path;
           nzb_key._secret = config.sops.secrets."sabnzbd/nzb_key".path;
+          username._secret = config.sops.secrets."sabnzbd/username".path;
+          password._secret = config.sops.secrets."sabnzbd/password".path;
         };
 
         servers = [
