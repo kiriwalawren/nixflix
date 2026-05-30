@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `_secret` pattern not trimming all terminating newlines in decrypted files.
+
 ### Added
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).

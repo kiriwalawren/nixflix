@@ -64,7 +64,7 @@ rec {
         else if isSecretRef value then
           {
             flag = "--rawfile ${name}Content ${lib.escapeShellArg (toString value._secret)}";
-            ref = "($" + name + "Content | rtrimstr(\"\\n\"))";
+            ref = "($" + name + "Content | sub(\"\\n+$\"; \"\"))";
           }
         else
           {
@@ -124,7 +124,7 @@ rec {
         let
           jqPath = "." + lib.concatMapStringsSep "" (k: ''["${k}"]'') ref.path;
         in
-        "${jqPath} = ($" + ref.varName + ''Content | rtrimstr("\n"))''
+        "${jqPath} = ($" + ref.varName + ''Content | sub("\n+$"; ""))''
       ) indexedRefs;
     in
     {
