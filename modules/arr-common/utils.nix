@@ -14,7 +14,6 @@ in
   isSonarr = serviceBase == "sonarr";
   isRadarr = serviceBase == "radarr";
   isLidarr = serviceBase == "lidarr";
-  apiClientSandbox = import ./mkApiClientSandbox.nix;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   mkWaitForApiScript = import ./mkWaitForApiScript.nix { inherit lib pkgs; };
 }
