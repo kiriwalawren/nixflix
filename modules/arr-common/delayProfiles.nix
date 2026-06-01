@@ -11,7 +11,6 @@ let
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     usesMediaDirs
     capitalizedName
-    apiClientSandbox
     mkSecureCurl
     ;
 
@@ -143,8 +142,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-        }
-        // apiClientSandbox;
+        };
 
         script = ''
           set -eu

@@ -14,7 +14,6 @@ let
     isSonarr
     isRadarr
     isLidarr
-    apiClientSandbox
     mkSecureCurl
     ;
 
@@ -246,8 +245,7 @@ in
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-          }
-          // apiClientSandbox;
+          };
 
           script = ''
             set -eu

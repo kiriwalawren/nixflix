@@ -12,7 +12,6 @@ let
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     capitalizedName
     serviceBase
-    apiClientSandbox
     mkSecureCurl
     mkWaitForApiScript
     ;
@@ -308,8 +307,7 @@ in
               RemainAfterExit = true;
               ExecStartPre = mkWaitForApiScript serviceName cfg.config;
               ExecStartPost = mkWaitForApiScript serviceName cfg.config;
-            }
-            // apiClientSandbox;
+            };
 
             script = ''
               set -eu
