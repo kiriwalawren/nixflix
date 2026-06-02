@@ -328,41 +328,6 @@ in
           ExecStartPost = mkWaitForApiScript serviceName waitConfig;
           Restart = "on-failure";
           UMask = "0002";
-
-          # RestrictNamespaces: safe with vpnConfinement (systemd resolves NetworkNamespacePath before exec)
-          NoNewPrivileges = true;
-          PrivateTmp = true;
-          ProtectHome = true;
-          ProtectSystem = "strict";
-          CapabilityBoundingSet = "";
-          AmbientCapabilities = "";
-          ProtectProc = "invisible";
-          ProcSubset = "pid";
-          ReadWritePaths = [
-            cfg.dataDir
-          ];
-          RestrictNamespaces = true;
-          PrivateDevices = true;
-          SystemCallFilter = [
-            "~@debug"
-            "~@module"
-            "~@raw-io"
-            "~@reboot"
-            "~@swap"
-          ];
-          ProtectKernelTunables = true;
-          ProtectKernelModules = true;
-          ProtectKernelLogs = true;
-          ProtectControlGroups = true;
-          LockPersonality = true;
-          RestrictRealtime = true;
-          RestrictSUIDSGID = true;
-          RestrictAddressFamilies = [
-            "AF_UNIX"
-            "AF_INET"
-            "AF_INET6"
-          ];
-          SystemCallArchitectures = "native";
         }
         // optionalAttrs apiKeyIsSecretRef {
           LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - `_secret` pattern not trimming all terminating newlines in decrypted files.
+- qBittorrent potentially starting before `nixflix.serviceDependencies` and thus losing track of downloaded files, lest a recheck was manually forced.
 
 ### Added
 

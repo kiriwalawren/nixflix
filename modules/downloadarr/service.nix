@@ -8,8 +8,6 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-  apiClientSandbox = import ../arr-common/mkApiClientSandbox.nix;
-
   cfg = config.nixflix.downloadarr;
 
   allClients = filter (c: c.enable) (
@@ -87,8 +85,7 @@ let
             + " http://${
                config.nixflix.${serviceName}.connectionAddress
              }:${builtins.toString serviceConfig.hostConfig.port}${serviceConfig.hostConfig.urlBase}/api/${serviceConfig.apiVersion}/system/status";
-        }
-        // apiClientSandbox;
+        };
 
         script = ''
           set -eu
