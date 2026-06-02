@@ -250,8 +250,8 @@ in
       };
 
       systemd.services.qbittorrent = {
-        after = [ "nixflix-setup-dirs.service" ];
-        requires = [ "nixflix-setup-dirs.service" ];
+        after = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
+        requires = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         preStart = lib.mkIf (cfg.categories != { }) (
           lib.mkAfter ''
             cp -f '${categoriesFile}' '${configPath}/categories.json'

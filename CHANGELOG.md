@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- qBittorrent potentially starting before `nixflix.serviceDependencies` and thus losing track of downloaded files, lest a recheck was manually forced.
+
 ### Added
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
