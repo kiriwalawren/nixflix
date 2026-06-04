@@ -161,7 +161,10 @@ in
           PrivateDevices = true;
           ProtectSystem = "strict";
           ProtectHome = true;
-          ReadWritePaths = [ cfg.dataDir ];
+          ReadWritePaths = [
+            cfg.dataDir
+            config.nixflix.mediaDir
+          ];
           RestrictAddressFamilies = [
             "AF_UNIX"
             "AF_INET"
