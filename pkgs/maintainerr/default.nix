@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  nodejs_22,
+  nodejs_24,
   yarn-berry_4,
   makeWrapper,
   python3,
@@ -39,7 +39,7 @@ stdenv.mkDerivation {
   missingHashes = ./missing-hashes.json;
 
   nativeBuildInputs = [
-    nodejs_22
+    nodejs_24
     yarn-berry_4
     yarn-berry_4.yarnBerryConfigHook
     makeWrapper
@@ -109,12 +109,20 @@ stdenv.mkDerivation {
     find $out/lib/maintainerr/apps/server/dist/ui -type f \
       -exec sed -i 's,/__PATH_PREFIX__,,g' {} +
 
-    makeWrapper ${nodejs_22}/bin/node $out/bin/maintainerr \
+    # Replace Docker-specific hardcoded paths with DATA_DIR-aware equivalents.
+    sed -i "s|/opt/app/apps/server/dist/database/migrations|$out/lib/maintainerr/apps/server/dist/database/migrations|g" \
+      $out/lib/maintainerr/apps/server/dist/app/config/typeOrmConfig.js
+    sed -i "s#    ? '/opt/data'#    ? (process.env.DATA_DIR || '/opt/data')#g" \
+      $out/lib/maintainerr/apps/server/dist/modules/logging/logs.module.js
+    sed -i "s#    ? '/opt/data/logs'#    ? ((process.env.DATA_DIR || '/opt/data') + '/logs')#g" \
+      $out/lib/maintainerr/apps/server/dist/modules/logging/logs.controller.js
+
+    makeWrapper ${nodejs_24}/bin/node $out/bin/maintainerr \
       --chdir $out/lib/maintainerr/apps/server \
       --add-flags dist/main.js \
       --set NODE_ENV production \
       --set UV_USE_IO_URING 0 \
-      --prefix PATH : ${lib.makeBinPath [ nodejs_22 ]}
+      --prefix PATH : ${lib.makeBinPath [ nodejs_24 ]}
 
     runHook postInstall
   '';
