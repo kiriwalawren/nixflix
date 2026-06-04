@@ -51,15 +51,12 @@
 
       overlays.default = import ./pkgs/overlay.nix;
 
-      nixosModules.default =
-        { config, lib, ... }:
-        {
-          imports = [
-            (import ./modules)
-            vpn-confinement.nixosModules.default
-          ];
-          _module.args.pkgs = lib.mkForce (config.nixpkgs.pkgs.extend self.overlays.default);
-        };
+      nixosModules.default = {
+        imports = [
+          (import ./modules)
+          vpn-confinement.nixosModules.default
+        ];
+      };
       nixosModules.nixflix = self.nixosModules.default;
 
       packages = perSystem (
@@ -130,6 +127,7 @@
           default = pkgs.mkShell {
             nativeBuildInputs = [
               treefmt.config.build.wrapper
+              pkgs.yarn-berry_4.yarn-berry-fetcher
             ]
             ++ (lib.attrValues treefmt.config.build.programs);
 

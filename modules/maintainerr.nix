@@ -15,7 +15,12 @@ in
   options.nixflix.maintainerr = {
     enable = mkEnableOption "Maintainerr media library maintenance tool";
 
-    package = mkPackageOption pkgs "maintainerr" { };
+    package = mkOption {
+      type = types.package;
+      default = pkgs.callPackage ../pkgs/maintainerr { };
+      defaultText = literalExpression "pkgs.callPackage ../pkgs/maintainerr { }";
+      description = "Maintainerr package to use.";
+    };
 
     user = mkOption {
       type = types.str;

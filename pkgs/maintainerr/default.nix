@@ -24,16 +24,19 @@ let
     owner = "Maintainerr";
     repo = "Maintainerr";
     tag = "v${version}";
-    hash = lib.fakeHash;
+    hash = "sha256-SmF3zko6LnJ5vHVJ6m/TzQokka0FzTqshQ6mIr+YHoM=";
   };
 
   offlineCache = yarn-berry_4.fetchYarnBerryDeps {
     inherit src;
-    hash = lib.fakeHash;
+    missingHashes = ./missing-hashes.json;
+    hash = "sha256-eek++X6cmodqirurGLBxau1VwOGHqX4q8IyZdnAgH54=";
   };
 in
 stdenv.mkDerivation {
   inherit pname version src;
+
+  missingHashes = ./missing-hashes.json;
 
   nativeBuildInputs = [
     nodejs_22
@@ -59,7 +62,19 @@ stdenv.mkDerivation {
     PYTHON = "${python3}/bin/python3";
     npm_config_sqlite = "${sqlite.dev}";
     inherit offlineCache;
+    # Prevents yarn 4.14.1 treating the v8 lockfile as stale and re-resolving from the registry.
+    YARN_LOCKFILE_VERSION_OVERRIDE = "8";
   };
+
+  postPatch = ''
+    echo 'approvedGitRepositories: ["**"]' >> .yarnrc.yml
+    echo 'enableScripts: true' >> .yarnrc.yml
+  '';
+
+  preBuild = ''
+    awk '/^approvedGitRepositories:/{skip=1;next} skip&&/^[[:space:]]/{next} {skip=0;print}' \
+      .yarnrc.yml > .yarnrc.yml.tmp && mv .yarnrc.yml.tmp .yarnrc.yml
+  '';
 
   buildPhase = ''
     runHook preBuild
@@ -73,29 +88,24 @@ stdenv.mkDerivation {
     runHook preInstall
     mkdir -p $out/lib/maintainerr $out/bin
 
-    # root node_modules (hoisted dependencies)
     cp -r node_modules $out/lib/maintainerr/
 
-    # server: compiled output, package manifest, local node_modules
     mkdir -p $out/lib/maintainerr/apps/server
-    cp -r apps/server/dist apps/server/package.json apps/server/node_modules \
+    cp -r apps/server/dist apps/server/package.json \
       $out/lib/maintainerr/apps/server/
+    [ -d apps/server/node_modules ] && \
+      cp -r apps/server/node_modules $out/lib/maintainerr/apps/server/
 
-    # UI output served statically by the server (mirrors Docker layout)
     cp -r apps/ui/dist $out/lib/maintainerr/apps/server/dist/ui
 
-    # bundled fonts/images for overlay rendering
     cp -r apps/server/assets $out/lib/maintainerr/apps/server/dist/assets
 
-    # contracts package
     mkdir -p $out/lib/maintainerr/packages/contracts
     cp -r packages/contracts/dist packages/contracts/package.json \
-      packages/contracts/node_modules \
       $out/lib/maintainerr/packages/contracts/
+    [ -d packages/contracts/node_modules ] && \
+      cp -r packages/contracts/node_modules $out/lib/maintainerr/packages/contracts/
 
-    # Replace the build-time placeholder with an empty base path.
-    # The Nix store is immutable so this must happen at build time rather
-    # than at service startup (as Docker's start.sh would do).
     find $out/lib/maintainerr/apps/server/dist/ui -type f \
       -exec sed -i 's,/__PATH_PREFIX__,,g' {} +
 

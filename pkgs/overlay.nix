@@ -1,3 +1,3 @@
 final: _prev: {
-  maintainerr = final.callPackage ./maintainerr.nix { };
+  maintainerr = final.callPackage ./maintainerr { };
 }
