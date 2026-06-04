@@ -7,17 +7,19 @@
 with lib;
 let
   inherit (config.nixflix) globals;
-  inherit (import ../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.maintainerr;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
+  imports = [ ./settings ];
+
   options.nixflix.maintainerr = {
     enable = mkEnableOption "Maintainerr media library maintenance tool";
 
     package = mkOption {
       type = types.package;
-      default = pkgs.callPackage ../pkgs/maintainerr { };
+      default = pkgs.callPackage ../../pkgs/maintainerr { };
       defaultText = literalExpression "pkgs.callPackage ../pkgs/maintainerr { }";
       description = "Maintainerr package to use.";
     };
