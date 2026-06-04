@@ -17,6 +17,7 @@ in
     ./jellyfin
     ./seerr
     ./lidarr.nix
+    ./maintainerr.nix
     ./postgres.nix
     ./prowlarr
     ./radarr.nix

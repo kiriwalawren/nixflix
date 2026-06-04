@@ -39,6 +39,7 @@
               inherit system;
               config.allowUnfree = true;
               config.allowUnfreePredicate = _: true;
+              overlays = [ self.overlays.default ];
             };
             treefmt = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
           }
@@ -48,12 +49,17 @@
       lib.buildJellyfinPlugin = { pkgs }: import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
       lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit lib; };
 
-      nixosModules.default = {
-        imports = [
-          (import ./modules)
-          vpn-confinement.nixosModules.default
-        ];
-      };
+      overlays.default = import ./pkgs/overlay.nix;
+
+      nixosModules.default =
+        { config, lib, ... }:
+        {
+          imports = [
+            (import ./modules)
+            vpn-confinement.nixosModules.default
+          ];
+          _module.args.pkgs = lib.mkForce (config.nixpkgs.pkgs.extend self.overlays.default);
+        };
       nixosModules.nixflix = self.nixosModules.default;
 
       packages = perSystem (
@@ -65,6 +71,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
+          inherit (pkgs) maintainerr;
         }
       );
 
