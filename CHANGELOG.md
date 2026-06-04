@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Maintainerr support ([#242](https://github.com/kiriwalawren/nixflix/pull/242)).
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
 
 ### Changed
