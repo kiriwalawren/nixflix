@@ -33,7 +33,7 @@ in
     jellyfin = {
       jellyfin_url = lib.mkOption {
         type = lib.types.str;
-        default = "http://${config.nixflix.jellyfin.connectionAddress}:${config.nixflix.jellyfin.port}";
+        default = "http://${config.nixflix.jellyfin.connectionAddress}:${builtins.toString config.nixflix.jellyfin.network.internalHttpPort}";
         defaultText = lib.literalExpression ''"http://''${config.nixflix.jellyfin.connectionAddress}:''${config.nixflix.jellyfin.port}"'';
         description = "URL to access Jellyfin";
       };
@@ -47,7 +47,7 @@ in
     seerr = {
       url = lib.mkOption {
         type = lib.types.str;
-        default = "http://${config.nixflix.seerr.connectionAddress}:${config.nixflix.seerr.port}";
+        default = "http://${config.nixflix.seerr.connectionAddress}:${builtins.toString config.nixflix.seerr.port}";
         defaultText = lib.literalExpression ''"http://''${config.nixflix.seerr.connectionAddress}:''${config.nixflix.seerr.port}"'';
         description = "URL to access Seerr.";
       };
@@ -70,18 +70,18 @@ in
   config.nixflix.maintainerr.settings = {
     radarr = lib.optional (config.nixflix.radarr.enable == true) {
       serverName = "Radarr";
-      url = "http://${config.nixflix.radarr.connectionAddress}:${config.nixflix.radarr.port}";
+      url = "http://${config.nixflix.radarr.connectionAddress}:${builtins.toString config.nixflix.radarr.config.hostConfig.port}";
       apiKey = config.nixflix.radarr.config.apiKey;
     };
     sonarr =
       lib.optional (config.nixflix.sonarr.enable == true) {
         serverName = "Sonarr";
-        url = "http://${config.nixflix.sonarr.connectionAddress}:${config.nixflix.sonarr.port}";
+        url = "http://${config.nixflix.sonarr.connectionAddress}:${builtins.toString config.nixflix.sonarr.config.hostConfig.port}";
         apiKey = config.nixflix.sonarr.config.apiKey;
       }
       ++ lib.optional (config.nixflix.sonarr-anime.enable == true) {
         serverName = "Sonarr Anime";
-        url = "http://${config.nixflix.sonarr-anime.connectionAddress}:${config.nixflix.sonarr-anime.port}";
+        url = "http://${config.nixflix.sonarr-anime.connectionAddress}:${builtins.toString config.nixflix.sonarr-anime.config.hostConfig.port}";
         apiKey = config.nixflix.sonarr-anime.config.apiKey;
       };
   };
