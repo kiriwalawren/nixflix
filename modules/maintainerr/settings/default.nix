@@ -81,23 +81,23 @@ in
 
     systemd.services.maintainerr-settings = {
       description = "Configure Maintainerr settings via API";
-      after =
-        [
-          "maintainerr.service"
-          "network-online.target"
-        ]
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
-        ++ optional config.nixflix.radarr.enable "radarr-config.service"
-        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
-        ++ optional config.nixflix.seerr.enable "seerr-setup.service";
-      requires =
-        [ "maintainerr.service" ]
-        ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
-        ++ optional config.nixflix.radarr.enable "radarr-config.service"
-        ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
-        ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
-        ++ optional config.nixflix.seerr.enable "seerr-setup.service";
+      after = [
+        "maintainerr.service"
+        "network-online.target"
+      ]
+      ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
+      ++ optional config.nixflix.radarr.enable "radarr-config.service"
+      ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+      ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+      ++ optional config.nixflix.seerr.enable "seerr-setup.service";
+      requires = [
+        "maintainerr.service"
+      ]
+      ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
+      ++ optional config.nixflix.radarr.enable "radarr-config.service"
+      ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
+      ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
+      ++ optional config.nixflix.seerr.enable "seerr-setup.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
