@@ -113,7 +113,6 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 ### Maintainerr
 
-- Automatic collection manager
 - Automatic cleanup of old media
 
 ## Development
