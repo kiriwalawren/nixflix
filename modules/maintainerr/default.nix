@@ -6,7 +6,6 @@
 }:
 with lib;
 let
-  inherit (config.nixflix) globals;
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.maintainerr;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
@@ -110,16 +109,16 @@ in
       ];
 
       users.users.${cfg.user} = {
-        isSystemUser = true;
         inherit (cfg) group;
+        isSystemUser = true;
         home = cfg.dataDir;
       }
-      // optionalAttrs (globals.uids ? maintainerr) {
-        uid = mkForce globals.uids.maintainerr;
+      // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+        uid = mkForce config.nixflix.globals.uids.${cfg.user};
       };
 
-      users.groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
-        gid = mkForce globals.gids.media;
+      users.groups.${cfg.group} = optionalAttrs (config.nixflix.globals.gids ? ${cfg.group}) {
+        gid = mkForce config.nixflix.globals.gids.media;
       };
 
       systemd.tmpfiles.settings."10-maintainerr" = {

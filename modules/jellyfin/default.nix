@@ -46,7 +46,9 @@ in
       inherit (cfg) group;
       isSystemUser = true;
       home = cfg.dataDir;
-      uid = mkForce globals.uids.jellyfin;
+    }
+    // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+      uid = mkForce config.nixflix.globals.uids.${cfg.user};
     };
 
     users.groups.${cfg.group} = optionalAttrs (globals.gids ? ${cfg.group}) {
