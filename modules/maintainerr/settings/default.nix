@@ -171,6 +171,16 @@ in
               "${maintainerrUrl}/api/settings/test/seerr" \
               | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
 
+            echo "Applying Seerr settings..."
+            ${pkgs.curl}/bin/curl -s -X POST \
+              -H "Content-Type: application/json" \
+              --data-binary "$(${pkgs.jq}/bin/jq -n \
+                --arg url "$SEERR_URL" \
+                --arg apiKey "$SEERR_API_KEY" \
+                '{url: $url, api_key: $apiKey}')" \
+              "${maintainerrUrl}/api/settings/seerr" \
+              | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
+
           ''
           + mkArrTypeScript "radarr" cfg.settings.radarr
           + mkArrTypeScript "sonarr" cfg.settings.sonarr
