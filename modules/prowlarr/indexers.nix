@@ -81,10 +81,12 @@ in
       {
         description = "Configure Prowlarr indexers via API";
         after = [
+          "prowlarr.service"
           "prowlarr-config.service"
           "prowlarr-tags.service"
         ];
         requires = [
+          "prowlarr.service"
           "prowlarr-config.service"
           "prowlarr-tags.service"
         ];
@@ -235,7 +237,7 @@ in
                 RESPONSE_FILE=$(mktemp)
                 HTTP_CODE=$(
                   ${mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexer/$INDEXER_ID";
+                    url = "$BASE_URL/indexer/$INDEXER_ID?forceSave=true";
                     method = "PUT";
                     headers = {
                       "Content-Type" = "application/json";
@@ -283,7 +285,7 @@ in
                 RESPONSE_FILE=$(mktemp)
                 HTTP_CODE=$(
                   ${mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexer";
+                    url = "$BASE_URL/indexer?forceSave=true";
                     method = "POST";
                     headers = {
                       "Content-Type" = "application/json";
