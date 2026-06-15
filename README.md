@@ -130,4 +130,4 @@ nix flake check
 
 ## License
 
-GNU General Public License
+MPL 2.0
