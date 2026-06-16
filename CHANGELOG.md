@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `prowlarr-indexer-proxies` restart-looping (and blocking boot) when the proxy's test endpoint is unreachable, by adding `?forceSave=true` to its create/update requests (mirrors [#247](https://github.com/kiriwalawren/nixflix/pull/247) for indexers).
 - `_secret` pattern not trimming all terminating newlines in decrypted files.
 - qBittorrent potentially starting before `nixflix.serviceDependencies` and thus losing track of downloaded files, lest a recheck was manually forced.
 

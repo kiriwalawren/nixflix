@@ -214,7 +214,7 @@ in
 
                 ${
                   mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexerProxy/$INDEXER_ID";
+                    url = "$BASE_URL/indexerProxy/$INDEXER_ID?forceSave=true";
                     method = "PUT";
                     headers = {
                       "Content-Type" = "application/json";
@@ -243,7 +243,7 @@ in
 
                 ${
                   mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/indexerProxy";
+                    url = "$BASE_URL/indexerProxy?forceSave=true";
                     method = "POST";
                     headers = {
                       "Content-Type" = "application/json";
