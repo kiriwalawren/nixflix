@@ -12,7 +12,6 @@ let
 in
 {
   imports = [
-    ./cleanup-metadata.nix
     ./settings
   ];
 
