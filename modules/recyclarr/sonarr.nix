@@ -19,17 +19,6 @@ in
       type = lib.mkDefault "series";
     };
 
-    media_naming = {
-      series = lib.mkDefault "default";
-      season = lib.mkDefault "default";
-      episodes = {
-        rename = lib.mkDefault true;
-        standard = lib.mkDefault "default";
-        daily = lib.mkDefault "default";
-        anime = lib.mkDefault "default";
-      };
-    };
-
     quality_profiles = lib.mkDefault [
       {
         trash_id =

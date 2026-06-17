@@ -16,17 +16,6 @@
       type = lib.mkDefault "anime";
     };
 
-    media_naming = {
-      series = lib.mkDefault "default";
-      season = lib.mkDefault "default";
-      episodes = {
-        rename = lib.mkDefault true;
-        standard = lib.mkDefault "default";
-        daily = lib.mkDefault "default";
-        anime = lib.mkDefault "default";
-      };
-    };
-
     quality_profiles = lib.mkDefault [
       {
         trash_id = "20e0fc959f1f1704bed501f23bdae76f"; # [Anime] Remux-1080p
