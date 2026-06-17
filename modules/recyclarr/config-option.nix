@@ -23,7 +23,7 @@ let
 
               standard = mkOption {
                 type = types.nullOr types.str;
-                default = null;
+                default = "jellyfin-tmdb";
                 description = "A naming format taken from the 'Key' column of the 'Standard Movie Format' table.";
               };
             };
@@ -39,7 +39,7 @@ let
     options = {
       series = mkOption {
         type = types.nullOr types.str;
-        default = null;
+        default = "jellyfin-tvdb";
         description = "A naming format taken from the 'Key' column of the 'Series Folder Format' table.";
       };
 
