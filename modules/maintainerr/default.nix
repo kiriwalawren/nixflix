@@ -11,7 +11,10 @@ let
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
-  imports = [ ./settings ];
+  imports = [
+    ./cleanup-metadata.nix
+    ./settings
+  ];
 
   options.nixflix.maintainerr = {
     enable = mkEnableOption "Maintainerr media library maintenance tool";
