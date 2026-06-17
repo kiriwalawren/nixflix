@@ -7,8 +7,12 @@ let
     options = {
       folder = mkOption {
         type = types.nullOr types.str;
-        default = null;
-        description = "A naming format taken from the 'Key' column of the 'Movie Folder Format' table.";
+        default = "jellyfin-tmdb";
+        description = ''
+          A naming format taken from the 'Key' column of the 'Movie Folder Format' table.
+
+          Can be acquired from `nix run nixpkgs#recyclarr -- list naming radarr`.
+        '';
       };
 
       movie = mkOption {
@@ -23,7 +27,7 @@ let
 
               standard = mkOption {
                 type = types.nullOr types.str;
-                default = "jellyfin-tmdb";
+                default = null;
                 description = "A naming format taken from the 'Key' column of the 'Standard Movie Format' table.";
               };
             };
@@ -40,7 +44,11 @@ let
       series = mkOption {
         type = types.nullOr types.str;
         default = "jellyfin-tvdb";
-        description = "A naming format taken from the 'Key' column of the 'Series Folder Format' table.";
+        description = ''
+          A naming format taken from the 'Key' column of the 'Series Folder Format' table.
+
+          Can be acquired from `nix run nixpkgs#recyclarr -- list naming sonarr`.
+        '';
       };
 
       season = mkOption {
