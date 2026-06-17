@@ -7,8 +7,12 @@ let
     options = {
       folder = mkOption {
         type = types.nullOr types.str;
-        default = null;
-        description = "A naming format taken from the 'Key' column of the 'Movie Folder Format' table.";
+        default = "jellyfin-tmdb";
+        description = ''
+          A naming format taken from the 'Key' column of the 'Movie Folder Format' table.
+
+          Can be acquired from `nix run nixpkgs#recyclarr -- list naming radarr`.
+        '';
       };
 
       movie = mkOption {
@@ -23,13 +27,13 @@ let
 
               standard = mkOption {
                 type = types.nullOr types.str;
-                default = null;
+                default = "standard";
                 description = "A naming format taken from the 'Key' column of the 'Standard Movie Format' table.";
               };
             };
           }
         );
-        default = null;
+        default = { };
         description = "Movie file naming configuration.";
       };
     };
@@ -39,13 +43,17 @@ let
     options = {
       series = mkOption {
         type = types.nullOr types.str;
-        default = null;
-        description = "A naming format taken from the 'Key' column of the 'Series Folder Format' table.";
+        default = "jellyfin-tvdb";
+        description = ''
+          A naming format taken from the 'Key' column of the 'Series Folder Format' table.
+
+          Can be acquired from `nix run nixpkgs#recyclarr -- list naming sonarr`.
+        '';
       };
 
       season = mkOption {
         type = types.nullOr types.str;
-        default = null;
+        default = "default";
         description = "A naming format taken from the 'Key' column of the 'Season Folder Format' table.";
       };
 
@@ -61,25 +69,25 @@ let
 
               standard = mkOption {
                 type = types.nullOr types.str;
-                default = null;
+                default = "default";
                 description = "Standard episode naming format key.";
               };
 
               daily = mkOption {
                 type = types.nullOr types.str;
-                default = null;
+                default = "default";
                 description = "Daily episode naming format key.";
               };
 
               anime = mkOption {
                 type = types.nullOr types.str;
-                default = null;
+                default = "default";
                 description = "Anime episode naming format key.";
               };
             };
           }
         );
-        default = null;
+        default = { };
         description = "Episode file naming configuration.";
       };
     };
@@ -217,7 +225,7 @@ let
           type = types.nullOr (
             if instanceType == "radarr" then radarrMediaNamingType else sonarrMediaNamingType
           );
-          default = null;
+          default = { };
           description = ''
             Media naming configuration.
 

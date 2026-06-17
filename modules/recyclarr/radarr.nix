@@ -19,14 +19,6 @@ in
       type = lib.mkDefault "sqp-streaming";
     };
 
-    media_naming = {
-      folder = lib.mkDefault "default";
-      movie = {
-        rename = lib.mkDefault true;
-        standard = lib.mkDefault "standard";
-      };
-    };
-
     quality_profiles = lib.mkDefault [
       {
         trash_id =
