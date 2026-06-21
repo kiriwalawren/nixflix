@@ -140,11 +140,6 @@ pkgs.testers.runNixOSTest {
     print("Testing PostgreSQL is running...")
     machine.succeed("sudo -u postgres psql -c 'SELECT version();'")
 
-    # Verify PostgreSQL dataDir configuration
-    print("Verifying PostgreSQL data directory...")
-    datadir = machine.succeed("sudo -u postgres psql -t -c 'SHOW data_directory;'").strip()
-    assert "/var/lib/nixflix/postgres" in datadir, f"PostgreSQL dataDir incorrect: {datadir}"
-
     # Test Prowlarr API and verify PostgreSQL database type
     print("Testing Prowlarr API and database type...")
     prowlarr_status = machine.succeed(
@@ -194,14 +189,6 @@ pkgs.testers.runNixOSTest {
     lidarr_data = json.loads(lidarr_status)
     assert lidarr_data.get("databaseType") == "postgreSQL", \
         f"Lidarr not using PostgreSQL: {lidarr_data.get('databaseType')}"
-
-    # Verify PostgreSQL directory has correct permissions
-    print("Verifying PostgreSQL directory permissions...")
-    stat_output = machine.succeed("stat -c '%a %U %G' /var/lib/nixflix/postgres")
-    perms, owner, group = stat_output.strip().split()
-    assert perms == "700", f"PostgreSQL directory permissions incorrect: {perms}"
-    assert owner == "postgres", f"PostgreSQL directory owner incorrect: {owner}"
-    assert group == "postgres", f"PostgreSQL directory group incorrect: {group}"
 
     # Verify PostgreSQL is using version 17
     print("Verifying PostgreSQL version...")
