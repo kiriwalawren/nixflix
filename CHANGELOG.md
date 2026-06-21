@@ -8,7 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- PostgreSQL `dataDir` no longer overridden globally, fixing data loss for co-located services (e.g. Forgejo) that share the system PostgreSQL instance ([#230](https://github.com/kiriwalawren/nixflix/issues/230)).
 - Sonarr and Radarr renaming for better Jellyfin matches
 - `prowlarr-indexer-proxies` restart-looping (and blocking boot) when the proxy's test endpoint is unreachable, by adding `?forceSave=true` to its create/update requests (mirrors [#247](https://github.com/kiriwalawren/nixflix/pull/247) for indexers).
 - `_secret` pattern not trimming all terminating newlines in decrypted files.
@@ -18,12 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
 
+### Removed
 
-### Changed
+- **Breaking ([#230](https://github.com/kiriwalawren/nixflix/issues/230)):** `nixflix.postgres.dataDir`. PostgreSQL `dataDir` no longer overridden globally, fixing data loss for co-located services (e.g. Forgejo) that share the system PostgreSQL instance ([#230](https://github.com/kiriwalawren/nixflix/issues/230)).
+  - Remove `nixflix.postgres.dataDir` from your configuraiton.
 
-- **Breaking ([#230](https://github.com/kiriwalawren/nixflix/issues/230)):** `nixflix.postgres` no longer overrides `services.postgresql.dataDir`.
-
-  - This only affects you if `nixflix.stateDir` was set to a non-default value (i.e. anything other than `/var/lib`). In that case, your PostgreSQL data was previously stored at `${nixflix.stateDir}/postgres` and must be moved to the standard NixOS location before rebuilding. Stop all services that depend on PostgreSQL first, then perform the following steps:
+  - If you set `nixflix.stateDir` to a non-default value (i.e. anything other than `/var/lib`), then your PostgreSQL data was previously stored at `${nixflix.stateDir}/postgres` and must be moved to the standard NixOS location before rebuilding. Stop all services that depend on PostgreSQL first, then perform the following steps:
 
     1. ```bash
        sudo -su postgres
@@ -43,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     1. ```bash
        exit
        ```
+
+### Changed
 
 - `nixflix.<starr>.config.hostConfig.username` and `nixflix.<starr>.config.hostConfig.password` must both be set or `null` ([#223](https://github.com/kiriwalawren/nixflix/pull/223)).
 
