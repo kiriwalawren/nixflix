@@ -12,6 +12,7 @@ let
 in
 {
   imports = [
+    ./overlays
     ./settings
   ];
 

@@ -1,0 +1,3 @@
+{
+  options.nixflix.maintainerr.overlays = { };
+}
