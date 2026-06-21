@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Maintainerr support ([#242](https://github.com/kiriwalawren/nixflix/pull/242)).
+
 ## [2.0.0] - 2026-06-21
 
 ### Fixed
@@ -15,7 +21,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Maintainerr support ([#242](https://github.com/kiriwalawren/nixflix/pull/242)).
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
 
 ### Fixed
