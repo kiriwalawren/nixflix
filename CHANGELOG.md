@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- PostgreSQL `dataDir` no longer overridden globally, fixing data loss for co-located services (e.g. Forgejo) that share the system PostgreSQL instance ([#230](https://github.com/kiriwalawren/nixflix/issues/230)).
 - Sonarr and Radarr renaming for better Jellyfin matches
 - `prowlarr-indexer-proxies` restart-looping (and blocking boot) when the proxy's test endpoint is unreachable, by adding `?forceSave=true` to its create/update requests (mirrors [#247](https://github.com/kiriwalawren/nixflix/pull/247) for indexers).
 - `_secret` pattern not trimming all terminating newlines in decrypted files.
@@ -17,9 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
 
-### Fixed
-
-- PostgreSQL `dataDir` no longer overridden globally, fixing data loss for co-located services (e.g. Forgejo) that share the system PostgreSQL instance ([#230](https://github.com/kiriwalawren/nixflix/issues/230)).
 
 ### Changed
 
