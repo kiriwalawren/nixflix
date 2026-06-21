@@ -153,6 +153,12 @@ in
             fi
           done
 
+          # Run each indexer in its own subshell and fold its exit status into RC, so a
+          # single failing indexer doesn't abort the rest of the batch; exit non-zero at
+          # the end if any failed, so Restart=on-failure can retry the stragglers.
+          RC=0
+          set +e
+
           ${concatMapStringsSep "\n" (
             indexerConfig:
             let
@@ -187,6 +193,8 @@ in
               };
             in
             ''
+              (
+              set -e
               echo "Processing indexer: ${indexerName}"
 
               apply_field_overrides() {
@@ -303,10 +311,14 @@ in
                 rm -f "$RESPONSE_FILE"
                 echo "Indexer ${indexerName} created"
               fi
+              )
+              [ $? -eq 0 ] || RC=1
             ''
           ) cfg.config.indexers}
+          set -e
 
           echo "Prowlarr indexers configuration complete"
+          exit "$RC"
         '';
       };
 }
