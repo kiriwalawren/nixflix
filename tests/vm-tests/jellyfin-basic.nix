@@ -212,9 +212,9 @@ pkgs.testers.runNixOSTest {
               "hevc"
             ];
             pluginRepositories = lib.mkForce {
-              "Jellyfin Stable" = {
-                url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-                hash = "1ykrpwya7px7dz4h92994kpqlf5jd429z7r4dckbw13236x5mpbx";
+              "Jellyfin Stable Plugin Repo" = {
+                url = "https://raw.githubusercontent.com/kiriwalawren/Jellyfin-Stable-Plugin-Repo/bfc2c365d9d164fcc1d73b608265f62d0a185216/manifest.json";
+                hash = "sha256-fd1auhliBL4maySfnwRpsjiK7yQpiQTJb6ffozy/efo=";
                 enabled = true;
               };
             };
@@ -376,7 +376,7 @@ pkgs.testers.runNixOSTest {
           plugins = {
             "Bookshelf" = {
               package = jellyfinPlugins.fromRepo {
-                version = "latest";
+                version = "13.0.0.0";
                 hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
               };
               config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
@@ -717,10 +717,10 @@ pkgs.testers.runNixOSTest {
         assert len(system_config['PluginRepositories']) == 1, \
             f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
         plugin_repo = system_config['PluginRepositories'][0]
-        assert plugin_repo['Name'] == 'Jellyfin Stable', \
-            f"Plugin repo Name should be 'Jellyfin Stable', got {plugin_repo.get('Name')}"
-        assert plugin_repo['Url'] == 'https://repo.jellyfin.org/files/plugin/manifest.json', \
-            f"Plugin repo Url should be 'https://repo.jellyfin.org/files/plugin/manifest.json', got {plugin_repo.get('Url')}"
+        assert plugin_repo['Name'] == 'Jellyfin Stable Plugin Repo', \
+            f"Plugin repo Name should be 'Jellyfin Stable Plugin Repo', got {plugin_repo.get('Name')}"
+        assert 'Jellyfin-Stable-Plugin-Repo' in plugin_repo['Url'], \
+            f"Plugin repo Url should point to Jellyfin-Stable-Plugin-Repo, got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
             f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
         assert system_config['EnableLegacyAuthorization'] == False, \

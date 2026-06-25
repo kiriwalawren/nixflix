@@ -9,5 +9,8 @@ _: {
   programs.nixfmt.enable = true;
   programs.deadnix.enable = true;
   programs.statix.enable = true;
-  programs.yamlfmt.enable = true;
+  programs.yamlfmt = {
+    enable = true;
+    settings.formatter.retain_line_breaks_single = true;
+  };
 }

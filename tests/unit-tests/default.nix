@@ -329,7 +329,7 @@ in
               enable = true;
               plugins.Bookshelf = {
                 package = jellyfinPlugins.fromRepo {
-                  version = "latest";
+                  version = "13.0.0.0";
                   hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
                 };
               };
