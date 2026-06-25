@@ -126,3 +126,4 @@ nix store prefetch-file --json "https://example.com/manifest.json" | jq -r .hash
 ## Secrets
 
 All attributes of `nixflix.jellyfin.plugins.<name>.config` support the `{ _secret = "/path/to/secret"; }` syntax.
+
