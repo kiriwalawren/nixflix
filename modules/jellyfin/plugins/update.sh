@@ -7,6 +7,7 @@ SUBBUZZ_NIX="$REPO_ROOT/modules/jellyfin/plugins/subbuzz.nix"
 OPEN_SUBTITLES_NIX="$REPO_ROOT/modules/jellyfin/plugins/openSubtitles.nix"
 SUBTITLE_EXTRACT_NIX="$REPO_ROOT/modules/jellyfin/plugins/subtitleExtract.nix"
 DEFAULT_NIX="$REPO_ROOT/modules/jellyfin/plugins/default.nix"
+JELLYFIN_BASIC_TEST="$REPO_ROOT/tests/vm-tests/jellyfin-basic.nix"
 
 # === Part 1: Update manifest hashes ===
 
@@ -31,6 +32,8 @@ else
   echo "  Universal Plugin Repo: ${OLD_UPR_SHA:0:8} → ${NEW_UPR_SHA:0:8}"
   sed -i "s|${OLD_UPR_SHA}|${NEW_UPR_SHA}|g" "$OPTIONS_NIX"
   sed -i "s|${OLD_UPR_HASH}|${NEW_UPR_HASH}|g" "$OPTIONS_NIX"
+  sed -i "s|${OLD_UPR_SHA}|${NEW_UPR_SHA}|g" "$JELLYFIN_BASIC_TEST"
+  sed -i "s|${OLD_UPR_HASH}|${NEW_UPR_HASH}|g" "$JELLYFIN_BASIC_TEST"
 fi
 
 UPR_MANIFEST=$(curl -sf "$NEW_UPR_URL")
@@ -86,15 +89,13 @@ update_plugin() {
     '.[] | select(.name == $name) | .versions[] | select(.version == $ver) | .sourceUrl')
 
   local current_version
-  current_version=$(grep -o 'version = "[0-9][^"]*"' "$nix_file" | head -1 |
+  current_version=$(grep -o 'version = "\(latest\|[0-9][^"]*\)"' "$nix_file" | head -1 |
     sed 's/version = "\(.*\)"/\1/')
 
-  if [[ "$latest_version" == "$current_version" ]]; then
+  if [[ "$current_version" != "latest" && "$latest_version" == "$current_version" ]]; then
     echo "  $plugin_name: already at $current_version"
     return
   fi
-
-  echo "  $plugin_name: $current_version → $latest_version"
 
   local new_hash
   new_hash=$(nix store prefetch-file --json --unpack "$source_url" 2>/dev/null | jq -r '.hash')
@@ -103,7 +104,13 @@ update_plugin() {
   current_hash=$(grep -o 'hash = "sha256-[A-Za-z0-9+/]*="' "$nix_file" | head -1 |
     sed 's/hash = "\(.*\)"/\1/')
 
-  sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
+  if [[ "$current_version" == "latest" ]]; then
+    echo "  $plugin_name: updating hash (latest → $latest_version)"
+  else
+    echo "  $plugin_name: $current_version → $latest_version"
+    sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
+  fi
+
   sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
 }
 
@@ -111,6 +118,7 @@ update_plugin "AniDB" "$UPR_MANIFEST" "$DEFAULT_NIX"
 update_plugin "Open Subtitles" "$UPR_MANIFEST" "$OPEN_SUBTITLES_NIX"
 update_plugin "Subtitle Extract" "$UPR_MANIFEST" "$SUBTITLE_EXTRACT_NIX"
 update_plugin "subbuzz" "$SUBBUZZ_MANIFEST" "$SUBBUZZ_NIX"
+update_plugin "Bookshelf" "$UPR_MANIFEST" "$JELLYFIN_BASIC_TEST"
 
 echo ""
 echo "Done."

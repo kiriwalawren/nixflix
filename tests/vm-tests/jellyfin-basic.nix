@@ -212,9 +212,9 @@ pkgs.testers.runNixOSTest {
               "hevc"
             ];
             pluginRepositories = lib.mkForce {
-              "Jellyfin Stable" = {
-                url = "https://repo.jellyfin.org/files/plugin/manifest.json";
-                hash = "1ykrpwya7px7dz4h92994kpqlf5jd429z7r4dckbw13236x5mpbx";
+              "Jellyfin Universal Plugin Repo" = {
+                url = "https://raw.githubusercontent.com/0belous/Jellyfin-Universal-Plugin-Repo/b7d63884d3b0981f4670c0eaf1501fbf2519e791/manifest.json";
+                hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
                 enabled = true;
               };
             };
@@ -717,10 +717,10 @@ pkgs.testers.runNixOSTest {
         assert len(system_config['PluginRepositories']) == 1, \
             f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
         plugin_repo = system_config['PluginRepositories'][0]
-        assert plugin_repo['Name'] == 'Jellyfin Stable', \
-            f"Plugin repo Name should be 'Jellyfin Stable', got {plugin_repo.get('Name')}"
-        assert plugin_repo['Url'] == 'https://repo.jellyfin.org/files/plugin/manifest.json', \
-            f"Plugin repo Url should be 'https://repo.jellyfin.org/files/plugin/manifest.json', got {plugin_repo.get('Url')}"
+        assert plugin_repo['Name'] == 'Jellyfin Universal Plugin Repo', \
+            f"Plugin repo Name should be 'Jellyfin Universal Plugin Repo', got {plugin_repo.get('Name')}"
+        assert 'Jellyfin-Universal-Plugin-Repo' in plugin_repo['Url'], \
+            f"Plugin repo Url should point to Jellyfin-Universal-Plugin-Repo, got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
             f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
         assert system_config['EnableLegacyAuthorization'] == False, \
