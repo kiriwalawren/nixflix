@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [2.0.0] - 2026-06-21
 
 ### Fixed
 
@@ -16,6 +16,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Starr app Media Management API configuration ([#221](https://github.com/kiriwalawren/nixflix/pull/221)).
+
+### Removed
+
+- **Breaking ([#230](https://github.com/kiriwalawren/nixflix/issues/230)):** `nixflix.postgres.dataDir`. PostgreSQL `dataDir` no longer overridden globally, fixing data loss for co-located services (e.g. Forgejo) that share the system PostgreSQL instance ([#230](https://github.com/kiriwalawren/nixflix/issues/230)).
+  - Remove `nixflix.postgres.dataDir` from your configuraiton.
+
+  - If you set `nixflix.stateDir` to a non-default value (i.e. anything other than `/var/lib`), then your PostgreSQL data was previously stored at `${nixflix.stateDir}/postgres` and must be moved to the standard NixOS location before rebuilding. Stop all services that depend on PostgreSQL first, then perform the following steps:
+
+    1. ```bash
+       sudo -su postgres
+       ```
+    1. ```bash
+       cd /var/lib/postgresql/
+       ```
+    1. ```bash
+       stateDir=/your/custom/stateDir  # replace with your nixflix.stateDir value
+       version=$(cat $stateDir/postgres/PG_VERSION)
+       ```
+    1. ```bash
+       # Move and fix ownership
+       mv $stateDir/postgres /var/lib/postgresql/$version
+       chown -R postgres:postgres /var/lib/postgresql/$version
+       ```
+    1. ```bash
+       exit
+       ```
 
 ### Changed
 
