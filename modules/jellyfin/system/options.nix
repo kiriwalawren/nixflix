@@ -636,9 +636,9 @@ in
   };
 
   config.nixflix.jellyfin.system.pluginRepositories = {
-    "Jellyfin Universal Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/0belous/Jellyfin-Universal-Plugin-Repo/b7d63884d3b0981f4670c0eaf1501fbf2519e791/manifest.json";
-      hash = "sha256-joalyagEWhkJ5YtW/15SAj/ZTI4V5cJFozL6wJCGpgc=";
+    "Jellyfin Stable Plugin Repo" = {
+      url = "https://raw.githubusercontent.com/kiriwalawren/Jellyfin-Stable-Plugin-Repo/a882a544595a0fd46ebd31f2f3160d235834047f/manifest.json";
+      hash = "sha256-JdOFlbXJQqKHoLvjU2mWBaZbfYXN+4hglzhNIE3mxN8=";
       enabled = true;
     };
   };

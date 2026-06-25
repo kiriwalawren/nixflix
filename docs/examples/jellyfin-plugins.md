@@ -6,10 +6,6 @@ title: Jellyfin Plugin Example
 
 This example shows how to setup a plugin.
 
-!!! note
-
-    Nixflix ships with the [Jellyfin Universal Plugin Repo](https://github.com/0belous/Jellyfin-Universal-Plugin-Repo) by default. You only need to add `system.pluginRepositories` entries for plugins whose manifest is not already covered — for example, a private or niche plugin not found in the Universal Plugin Repo.
-
 ## Configuration
 
 ```nix
@@ -17,6 +13,14 @@ let
   fromRepo = nixflix.lib.jellyfinPlugins.fromRepo;
 in {
   nixflix.jellyfin = {
+    system.pluginRepositories = {
+      "Intro Skipper" = {
+        url = "https://raw.githubusercontent.com/intro-skipper/manifest/main/10.11/manifest.json";
+        hash = "sha256-<manifest-hash>";
+        enabled = true;
+      };
+    };
+
     plugins."Intro Skipper" = {
       package = fromRepo {
         version = "1.10.11.17";
@@ -86,38 +90,6 @@ in {
 }
 ```
 
-## Adding a Plugin from a Custom Repository
-
-If a plugin is not in the Universal Plugin Repo, add its manifest under `system.pluginRepositories` alongside the plugin itself:
-
-```nix
-let
-  fromRepo = nixflix.lib.jellyfinPlugins.fromRepo;
-in {
-  nixflix.jellyfin = {
-    system.pluginRepositories = {
-      "My Plugin" = {
-        url = "https://raw.githubusercontent.com/author/my-plugin/<commit-sha>/manifest.json";
-        hash = "sha256-<manifest-hash>";
-      };
-    };
-
-    plugins."My Plugin" = {
-      package = fromRepo {
-        version = "1.0.0.0";
-        hash = "sha256-<unpacked-plugin-hash>";
-      };
-    };
-  };
-}
-```
-
-Get the manifest hash with:
-
-```bash
-nix store prefetch-file --json "https://raw.githubusercontent.com/author/my-plugin/<commit-sha>/manifest.json" | jq -r .hash
-```
-
 ## Settings
 
 Individual plugin settings vary greatly and there is no way I could enumerate them all.
@@ -125,7 +97,7 @@ Individual plugin settings vary greatly and there is no way I could enumerate th
 I usually configure them first via the UI, then declare them in Nix
 Here are the steps that I follow:
 
-1. If the plugin is not in the [Universal Plugin Repo](https://github.com/0belous/Jellyfin-Universal-Plugin-Repo), add its manifest to `nixflix.jellyfin.system.pluginRepositories` first (see above)
+1. Configure the manifest in `nixflix.jellyfin.system.pluginRepositories`
 1. Rebuild
 1. Install the desired plugin in the UI
 1. Take note of the version of the plugin
@@ -154,3 +126,4 @@ nix store prefetch-file --json "https://example.com/manifest.json" | jq -r .hash
 ## Secrets
 
 All attributes of `nixflix.jellyfin.plugins.<name>.config` support the `{ _secret = "/path/to/secret"; }` syntax.
+

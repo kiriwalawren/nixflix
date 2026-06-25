@@ -2,123 +2,140 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-OPTIONS_NIX="$REPO_ROOT/modules/jellyfin/system/options.nix"
-SUBBUZZ_NIX="$REPO_ROOT/modules/jellyfin/plugins/subbuzz.nix"
-OPEN_SUBTITLES_NIX="$REPO_ROOT/modules/jellyfin/plugins/openSubtitles.nix"
-SUBTITLE_EXTRACT_NIX="$REPO_ROOT/modules/jellyfin/plugins/subtitleExtract.nix"
-DEFAULT_NIX="$REPO_ROOT/modules/jellyfin/plugins/default.nix"
-JELLYFIN_BASIC_TEST="$REPO_ROOT/tests/vm-tests/jellyfin-basic.nix"
 
 # === Part 1: Update manifest hashes ===
 
 echo "=== Updating Jellyfin plugin manifests ==="
 
-# --- Universal Plugin Repo ---
-echo "Fetching Jellyfin Universal Plugin Repo..."
-NEW_UPR_SHA=$(curl -sf \
-  "https://api.github.com/repos/0belous/Jellyfin-Universal-Plugin-Repo/commits/main?per_page=1" |
+update_manifest() {
+  local name="$1"
+  local new_sha="$2"
+  local new_url="$3"
+  local new_hash="$4"
+  local sha_pattern="$5"
+
+  local old_sha
+  old_sha=$(grep -roh "$sha_pattern" "$REPO_ROOT" --include="*.nix" | head -1 | grep -o '[0-9a-f]\{40\}')
+
+  if [[ "$new_sha" == "$old_sha" ]]; then
+    echo "  $name: already at ${new_sha:0:8}"
+    return
+  fi
+
+  local old_hash_file old_hash
+  old_hash_file=$(grep -rl "$old_sha" "$REPO_ROOT" --include="*.nix" | head -1)
+  old_hash=$(grep -A3 "$old_sha" "$old_hash_file" | grep 'hash = ' | head -1 | sed 's/.*hash = "\(.*\)".*/\1/')
+
+  echo "  $name: ${old_sha:0:8} → ${new_sha:0:8}"
+  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" \
+    -exec sed -i "s|${old_sha}|${new_sha}|g; s|${old_hash}|${new_hash}|g" {} \;
+}
+
+echo "Fetching Jellyfin Stable Plugin Repo..."
+UPR_SHA=$(curl -sf \
+  "https://api.github.com/repos/kiriwalawren/Jellyfin-Stable-Plugin-Repo/commits/main?per_page=1" |
   jq -r '.sha')
-NEW_UPR_URL="https://raw.githubusercontent.com/0belous/Jellyfin-Universal-Plugin-Repo/${NEW_UPR_SHA}/manifest.json"
-NEW_UPR_HASH=$(nix store prefetch-file --json "$NEW_UPR_URL" 2>/dev/null | jq -r '.hash')
+UPR_URL="https://raw.githubusercontent.com/kiriwalawren/Jellyfin-Stable-Plugin-Repo/${UPR_SHA}/manifest.json"
+UPR_HASH=$(nix store prefetch-file --json "$UPR_URL" 2>/dev/null | jq -r '.hash')
 
-OLD_UPR_SHA=$(grep -o 'Jellyfin-Universal-Plugin-Repo/[0-9a-f]\{40\}/manifest' "$OPTIONS_NIX" |
-  grep -o '[0-9a-f]\{40\}')
-OLD_UPR_HASH=$(grep -A3 '"Jellyfin Universal Plugin Repo"' "$OPTIONS_NIX" |
-  grep 'hash = ' | sed 's/.*hash = "\(.*\)".*/\1/')
+update_manifest "Stable Plugin Repo" \
+  "$UPR_SHA" "$UPR_URL" "$UPR_HASH" \
+  'kiriwalawren/Jellyfin-Stable-Plugin-Repo/[0-9a-f]\{40\}/manifest'
 
-if [[ "$NEW_UPR_SHA" == "$OLD_UPR_SHA" ]]; then
-  echo "  Universal Plugin Repo: already at ${NEW_UPR_SHA:0:8}"
-else
-  echo "  Universal Plugin Repo: ${OLD_UPR_SHA:0:8} → ${NEW_UPR_SHA:0:8}"
-  sed -i "s|${OLD_UPR_SHA}|${NEW_UPR_SHA}|g" "$OPTIONS_NIX"
-  sed -i "s|${OLD_UPR_HASH}|${NEW_UPR_HASH}|g" "$OPTIONS_NIX"
-  sed -i "s|${OLD_UPR_SHA}|${NEW_UPR_SHA}|g" "$JELLYFIN_BASIC_TEST"
-  sed -i "s|${OLD_UPR_HASH}|${NEW_UPR_HASH}|g" "$JELLYFIN_BASIC_TEST"
-fi
+UPR_MANIFEST=$(curl -sf "$UPR_URL")
 
-UPR_MANIFEST=$(curl -sf "$NEW_UPR_URL")
-
-# --- SubBuzz manifest ---
 echo "Fetching SubBuzz manifest..."
-NEW_SUBBUZZ_SHA=$(curl -sf \
+SUBBUZZ_SHA=$(curl -sf \
   "https://api.github.com/repos/josdion/subbuzz/commits?path=repo/jellyfin_10.11.json&per_page=1" |
   jq -r '.[0].sha')
-NEW_SUBBUZZ_URL="https://raw.githubusercontent.com/josdion/subbuzz/${NEW_SUBBUZZ_SHA}/repo/jellyfin_10.11.json"
-NEW_SUBBUZZ_MANIFEST_HASH=$(nix store prefetch-file --json "$NEW_SUBBUZZ_URL" 2>/dev/null | jq -r '.hash')
+SUBBUZZ_URL="https://raw.githubusercontent.com/josdion/subbuzz/${SUBBUZZ_SHA}/repo/jellyfin_10.11.json"
+SUBBUZZ_MANIFEST_HASH=$(nix store prefetch-file --json "$SUBBUZZ_URL" 2>/dev/null | jq -r '.hash')
 
-OLD_SUBBUZZ_SHA=$(grep -o 'josdion/subbuzz/[0-9a-f]\{40\}/repo' "$SUBBUZZ_NIX" |
-  grep -o '[0-9a-f]\{40\}')
-OLD_SUBBUZZ_MANIFEST_HASH=$(grep -A2 "josdion/subbuzz/${OLD_SUBBUZZ_SHA}" "$SUBBUZZ_NIX" |
-  grep 'hash = ' | sed 's/.*hash = "\(.*\)".*/\1/')
+update_manifest "SubBuzz manifest" \
+  "$SUBBUZZ_SHA" "$SUBBUZZ_URL" "$SUBBUZZ_MANIFEST_HASH" \
+  'josdion/subbuzz/[0-9a-f]\{40\}/repo'
 
-if [[ "$NEW_SUBBUZZ_SHA" == "$OLD_SUBBUZZ_SHA" ]]; then
-  echo "  SubBuzz manifest: already at ${NEW_SUBBUZZ_SHA:0:8}"
-else
-  echo "  SubBuzz manifest: ${OLD_SUBBUZZ_SHA:0:8} → ${NEW_SUBBUZZ_SHA:0:8}"
-  sed -i "s|${OLD_SUBBUZZ_SHA}|${NEW_SUBBUZZ_SHA}|g" "$SUBBUZZ_NIX"
-  sed -i "s|${OLD_SUBBUZZ_MANIFEST_HASH}|${NEW_SUBBUZZ_MANIFEST_HASH}|g" "$SUBBUZZ_NIX"
-fi
-
-SUBBUZZ_MANIFEST=$(curl -sf "$NEW_SUBBUZZ_URL")
+SUBBUZZ_MANIFEST=$(curl -sf "$SUBBUZZ_URL")
 
 # === Part 2: Update plugin version + download hashes ===
 
 echo ""
 echo "=== Updating Jellyfin plugin versions ==="
 
-update_plugin() {
-  local plugin_name="$1"
-  local manifest_json="$2"
-  local nix_file="$3"
-
-  local latest_version
-  latest_version=$(echo "$manifest_json" | jq -r \
-    --arg name "$plugin_name" \
-    '[.[] | select(.name == $name) | .versions[]]
-         | sort_by(.version | split(".") | map(tonumber))
-         | last | .version')
-
-  if [[ -z "$latest_version" || "$latest_version" == "null" ]]; then
-    echo "  $plugin_name: not found in manifest, skipping"
-    return
-  fi
-
-  local source_url
-  source_url=$(echo "$manifest_json" | jq -r \
-    --arg name "$plugin_name" --arg ver "$latest_version" \
-    '.[] | select(.name == $name) | .versions[] | select(.version == $ver) | .sourceUrl')
-
-  local current_version
-  current_version=$(grep -o 'version = "\(latest\|[0-9][^"]*\)"' "$nix_file" | head -1 |
-    sed 's/version = "\(.*\)"/\1/')
-
-  if [[ "$current_version" != "latest" && "$latest_version" == "$current_version" ]]; then
-    echo "  $plugin_name: already at $current_version"
-    return
-  fi
-
-  local new_hash
-  new_hash=$(nix store prefetch-file --json --unpack "$source_url" 2>/dev/null | jq -r '.hash')
-
-  local current_hash
-  current_hash=$(grep -o 'hash = "sha256-[A-Za-z0-9+/]*="' "$nix_file" | head -1 |
-    sed 's/hash = "\(.*\)"/\1/')
-
-  if [[ "$current_version" == "latest" ]]; then
-    echo "  $plugin_name: updating hash (latest → $latest_version)"
-  else
-    echo "  $plugin_name: $current_version → $latest_version"
-    sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
-  fi
-
-  sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
+discover_fromrepo() {
+  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" -print0 |
+    xargs -0 gawk '
+    FNR == 1 { delete history; in_fromrepo = 0; block_depth = 0 }
+    { history[FNR] = $0 }
+    /fromRepo[[:space:]]*\{/ && !/^[[:space:]]*#/ && !in_fromrepo {
+      in_fromrepo = 1
+      block_depth = 0
+      plugin_name = version = hash_val = ""
+      for (i = FNR - 1; i >= (FNR - 10 > 1 ? FNR - 10 : 1); i--) {
+        h = history[i]
+        if (match(h, /plugins\."([^"]+)"/, a)) { plugin_name = a[1]; break }
+        if (match(h, /plugins\.([A-Za-z][A-Za-z0-9_-]*)[ \t]*[={]/, a)) { plugin_name = a[1]; break }
+        if (match(h, /"([A-Z][^"]*)"[ \t]*=[ \t]*\{/, a)) { plugin_name = a[1]; break }
+      }
+    }
+    in_fromrepo {
+      for (j = 1; j <= length($0); j++) {
+        c = substr($0, j, 1)
+        if (c == "{") block_depth++
+        else if (c == "}") block_depth--
+      }
+      if (match($0, /version[ \t]*=[ \t]*"([^"]+)"/, a)) version = a[1]
+      if (match($0, /hash[ \t]*=[ \t]*"([^"]+)"/, a)) hash_val = a[1]
+      if (block_depth <= 0) {
+        if (plugin_name != "" && version != "" && hash_val != "")
+          print FILENAME "\t" plugin_name "\t" version "\t" hash_val
+        in_fromrepo = 0
+      }
+    }
+    '
 }
 
-update_plugin "AniDB" "$UPR_MANIFEST" "$DEFAULT_NIX"
-update_plugin "Open Subtitles" "$UPR_MANIFEST" "$OPEN_SUBTITLES_NIX"
-update_plugin "Subtitle Extract" "$UPR_MANIFEST" "$SUBTITLE_EXTRACT_NIX"
-update_plugin "subbuzz" "$SUBBUZZ_MANIFEST" "$SUBBUZZ_NIX"
-update_plugin "Bookshelf" "$UPR_MANIFEST" "$JELLYFIN_BASIC_TEST"
+lookup_in_manifest() {
+  local plugin_name="$1"
+  local manifest_json="$2"
+  echo "$manifest_json" | jq -r \
+    --arg name "$plugin_name" \
+    '[.[] | select(.name == $name) | .versions[]]
+     | if length == 0 then empty
+       else sort_by(.version | split(".") | map(tonumber)) | last
+       | (.version + "\t" + .sourceUrl)
+       end' 2>/dev/null
+}
+
+MANIFESTS=("$UPR_MANIFEST" "$SUBBUZZ_MANIFEST")
+
+while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
+  latest_info=""
+  for manifest in "${MANIFESTS[@]}"; do
+    latest_info=$(lookup_in_manifest "$plugin_name" "$manifest")
+    [[ -n "$latest_info" ]] && break
+  done
+
+  if [[ -z "$latest_info" ]]; then
+    echo "  $plugin_name: not found in any manifest, skipping"
+    continue
+  fi
+
+  latest_version=$(cut -f1 <<<"$latest_info")
+  source_url=$(cut -f2 <<<"$latest_info")
+
+  if [[ "$latest_version" == "$current_version" ]]; then
+    echo "  $plugin_name: already at $current_version"
+    continue
+  fi
+
+  new_hash=$(nix store prefetch-file --json --unpack "$source_url" 2>/dev/null | jq -r '.hash')
+
+  echo "  $plugin_name: $current_version → $latest_version"
+  sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
+  sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
+
+done < <(discover_fromrepo)
 
 echo ""
 echo "Done."
