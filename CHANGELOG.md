@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Maintainerr support ([#242](https://github.com/kiriwalawren/nixflix/pull/242)).
 
+### Fixed
+
+- Make Seerr library sync non-fatal to circumvent Seerr bug
+
 ## [2.0.0] - 2026-06-21
 
 ### Fixed
