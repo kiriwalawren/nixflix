@@ -20,6 +20,7 @@ in
     ./branding
     ./encoding
     ./libaries
+    ./metadata
     ./network
     ./options.nix
     ./plugins

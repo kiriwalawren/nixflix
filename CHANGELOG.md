@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Jellyfin Metadata Settings (UseFileCreationTimeForDateAdded)
 - Maintainerr support ([#242](https://github.com/kiriwalawren/nixflix/pull/242)).
 
 ### Fixed
