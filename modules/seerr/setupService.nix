@@ -172,9 +172,10 @@ in
 
         SYNC_HTTP_CODE=$(echo "$SYNC_RESPONSE" | tail -n1)
         if [ "$SYNC_HTTP_CODE" != "200" ] && [ "$SYNC_HTTP_CODE" != "201" ] && [ "$SYNC_HTTP_CODE" != "204" ]; then
-          echo "Failed to sync with Jellyfin (HTTP $SYNC_HTTP_CODE)" >&2
-          echo "$SYNC_RESPONSE" | head -n-1 >&2
-          exit 1
+          # Non-fatal: Jellyseerr may return 500 on first sync if the scan job
+          # hasn't initialized yet. The sync runs on schedule regardless.
+          echo "Warning: Jellyfin sync returned HTTP $SYNC_HTTP_CODE, continuing..."
+          echo "$SYNC_RESPONSE" | head -n-1
         fi
 
         echo "Initializing settings..."
