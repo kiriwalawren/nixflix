@@ -62,11 +62,7 @@ Nixflix is:
 
 ### Upcoming Features
 
-- [X] Jellyfin Plugin Configuration
-- [X] Torrent client integration
-- [X] qBittorrent Client Configuration
-- [X] Media Removal Automation
-- [X] Subtitle Management (via Jellyfin Plugins)
+- [ ] Better music tooling
 
 ## Documentation
 
