@@ -1,3 +1,3 @@
 {
-  imports = [ ./options.nix ];
+  imports = [ ./settings ];
 }
