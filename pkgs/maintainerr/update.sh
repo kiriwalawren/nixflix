@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "=== Updating Maintainerr package ==="
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_NIX="$SCRIPT_DIR/default.nix"
 MISSING_HASHES="$SCRIPT_DIR/missing-hashes.json"
 
 for cmd in curl jq nix nix-prefetch-url yarn-berry-fetcher; do
-    command -v "$cmd" &>/dev/null || { echo "error: $cmd not found in PATH" >&2; exit 1; }
+  command -v "$cmd" &>/dev/null || {
+    echo "error: $cmd not found in PATH" >&2
+    exit 1
+  }
 done
 
 if [[ $# -eq 0 ]]; then
-    echo "Fetching latest release from GitHub..." >&2
-    VERSION=$(curl -fsSL "https://api.github.com/repos/Maintainerr/Maintainerr/releases/latest" \
-        | jq -r '.tag_name | ltrimstr("v")')
-    echo "Latest: ${VERSION}" >&2
+  echo "Fetching latest release from GitHub..." >&2
+  VERSION=$(curl -fsSL "https://api.github.com/repos/Maintainerr/Maintainerr/releases/latest" |
+    jq -r '.tag_name | ltrimstr("v")')
+  echo "Latest: ${VERSION}" >&2
 else
-    VERSION="$1"
+  VERSION="$1"
 fi
 
 CURRENT=$(grep -oP '(?<=version = ")[^"]+' "$DEFAULT_NIX" | head -1)
 if [[ "$VERSION" == "$CURRENT" ]]; then
-    echo "Already at v${VERSION}." >&2
-    exit 0
+  echo "Already at v${VERSION}." >&2
+  exit 0
 fi
 echo "Updating: ${CURRENT} → ${VERSION}" >&2
 
@@ -36,14 +41,14 @@ echo "src hash: ${SRC_HASH}" >&2
 
 # Regenerate missing-hashes.json from the new yarn.lock
 echo "Regenerating missing-hashes.json..." >&2
-yarn-berry-fetcher missing-hashes "${SOURCE_PATH}/yarn.lock" > "$MISSING_HASHES"
+yarn-berry-fetcher missing-hashes "${SOURCE_PATH}/yarn.lock" >"$MISSING_HASHES"
 
 # Compute offline cache hash
 echo "Computing offline cache hash (downloads all deps)..." >&2
 CACHE_HASH=$(yarn-berry-fetcher prefetch "${SOURCE_PATH}/yarn.lock" "$MISSING_HASHES")
 # Normalise to SRI if the tool emits nix base32
 if [[ "$CACHE_HASH" != sha256-* ]]; then
-    CACHE_HASH=$(nix hash to-sri --type sha256 "$CACHE_HASH")
+  CACHE_HASH=$(nix hash to-sri --type sha256 "$CACHE_HASH")
 fi
 echo "offlineCache hash: ${CACHE_HASH}" >&2
 
@@ -57,6 +62,6 @@ awk -v src="$SRC_HASH" -v cache="$CACHE_HASH" '
         else if (n == 2) { sub(/sha256-[^"]*/, cache) }
     }
     { print }
-' "$DEFAULT_NIX" > "${DEFAULT_NIX}.tmp" && mv "${DEFAULT_NIX}.tmp" "$DEFAULT_NIX"
+' "$DEFAULT_NIX" >"${DEFAULT_NIX}.tmp" && mv "${DEFAULT_NIX}.tmp" "$DEFAULT_NIX"
 
 echo "Done. Verify with: nix build .#maintainerr" >&2

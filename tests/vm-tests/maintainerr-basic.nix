@@ -30,6 +30,20 @@ pkgsUnfree.testers.runNixOSTest {
 
         maintainerr.enable = true;
 
+        maintainerr.settings.forceJellyfinToIgnoreEmptyMediaFolders = true;
+
+        maintainerr.overlays.templates = [
+          {
+            name = "Test Pill";
+            description = "Custom test overlay template";
+            mode = "poster";
+            canvasWidth = 1000;
+            canvasHeight = 1500;
+            elements = [ ];
+            isDefault = true;
+          }
+        ];
+
         jellyfin = {
           enable = true;
 
@@ -154,5 +168,32 @@ pkgsUnfree.testers.runNixOSTest {
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings/radarr | jq -e 'length == 1 and .[0].serverName == \"Radarr\" and .[0].url == \"http://127.0.0.1:7878\"'")
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings/sonarr | jq -e 'length == 2'")
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings/sonarr | jq -e 'map(.serverName) | sort == [\"Sonarr\", \"Sonarr Anime\"]'")
+
+    # Wait for new services introduced in recent commits
+    machine.wait_for_unit("maintainerr-rules.service", timeout=120)
+    machine.wait_for_unit("maintainerr-overlays.service", timeout=120)
+    machine.wait_for_unit("maintainerr-overlay-templates.service", timeout=120)
+
+    # Validate job schedules were applied (456e102: add jobs settings category)
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings | jq -e '.collection_handler_job_cron == \"0 0-23/12 * * *\"'")
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings | jq -e '.rules_handler_job_cron == \"0 0-23/8 * * *\"'")
+
+    # Validate rule groups created by forceJellyfinIgnore (6df31e9 + 79a925b)
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/rules | jq -e 'length == 2'")
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/rules | jq -e 'map(.name) | sort == [\"Anime To Ignore\", \"Shows To Ignore\"]'")
+
+    # Validate jellyfin-ignore timer is active (6df31e9)
+    machine.succeed("systemctl is-active maintainerr-jellyfin-ignore.timer")
+
+    # Trigger jellyfin-ignore service manually and verify it exits cleanly (6df31e9)
+    machine.succeed("systemctl start maintainerr-jellyfin-ignore.service")
+
+    # Validate overlay settings are applied (d32f332)
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/overlays/settings | jq -e '.enabled == true'")
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/overlays/settings | jq -e '.cronSchedule == \"0 */6 * * *\"'")
+
+    # Validate overlay template was created (1f6565c)
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/overlays/templates | jq -e '[.[] | select(.isPreset == false)] | length == 1'")
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/overlays/templates | jq -e '[.[] | select(.isPreset == false)] | .[0].name == \"Test Pill\"'")
   '';
 }
