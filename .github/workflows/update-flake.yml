@@ -25,6 +25,7 @@ jobs:
         uses: cachix/cachix-action@v17
         with:
           name: kiriwalawren
+          skipPush: true
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Update flake.lock
