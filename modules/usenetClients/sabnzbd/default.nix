@@ -142,9 +142,11 @@ in
 
       users.users.${cfg.user} = {
         inherit (cfg) group;
-        uid = mkForce config.nixflix.globals.uids.sabnzbd;
         home = stateDir;
         isSystemUser = true;
+      }
+      // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+        uid = mkForce config.nixflix.globals.uids.${cfg.user};
       };
 
       users.groups.${cfg.group} = { };

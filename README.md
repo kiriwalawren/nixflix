@@ -62,11 +62,7 @@ Nixflix is:
 
 ### Upcoming Features
 
-- [X] Jellyfin Plugin Configuration
-- [X] Torrent client integration
-- [X] qBittorrent Client Configuration
-- [ ] Media Removal Automation
-- [X] Subtitle Management (via Jellyfin Plugins)
+- [ ] Better music tooling
 
 ## Documentation
 
@@ -110,6 +106,10 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - Generic WireGuard support
 - Kill switch
+
+### Maintainerr
+
+- Automatic cleanup of old media
 
 ## Development
 

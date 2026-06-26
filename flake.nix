@@ -39,6 +39,7 @@
               inherit system;
               config.allowUnfree = true;
               config.allowUnfreePredicate = _: true;
+              overlays = [ self.overlays.default ];
             };
             treefmt = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
           }
@@ -47,6 +48,8 @@
     {
       lib.buildJellyfinPlugin = { pkgs }: import ./lib/build-jellyfin-plugin.nix { inherit pkgs; };
       lib.jellyfinPlugins = import ./lib/jellyfin-plugins.nix { inherit lib; };
+
+      overlays.default = import ./pkgs/overlay.nix;
 
       nixosModules.default = {
         imports = [
@@ -65,6 +68,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
+          inherit (pkgs) maintainerr;
         }
       );
 
@@ -123,6 +127,7 @@
           default = pkgs.mkShell {
             nativeBuildInputs = [
               treefmt.config.build.wrapper
+              pkgs.yarn-berry_4.yarn-berry-fetcher
             ]
             ++ (lib.attrValues treefmt.config.build.programs);
 

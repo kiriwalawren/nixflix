@@ -99,7 +99,9 @@ in
           inherit (cfg) group;
           home = cfg.dataDir;
           isSystemUser = true;
-          uid = mkForce config.nixflix.globals.uids.seerr;
+        }
+        // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+          uid = mkForce config.nixflix.globals.uids.${cfg.user};
         };
       };
 

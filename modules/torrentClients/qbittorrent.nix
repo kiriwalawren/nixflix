@@ -210,11 +210,14 @@ in
       users = {
         # nixpkgs' `service.qbittorrent.[user|group]` only gets created
         # when the value is "qbittorent", so we create it here
-        users.${service.user} = mkForce {
-          inherit (service) group;
-          isSystemUser = true;
-          uid = config.nixflix.globals.uids.qbittorrent;
-        };
+        users.${service.user} =
+          mkForce {
+            inherit (service) group;
+            isSystemUser = true;
+          }
+          // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+            uid = mkForce config.nixflix.globals.uids.${cfg.user};
+          };
 
         groups.${service.group} = mkForce { };
       };

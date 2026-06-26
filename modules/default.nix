@@ -17,6 +17,7 @@ in
     ./globals.nix
     ./jellyfin
     ./lidarr.nix
+    ./maintainerr
     ./options.nix
     ./postgres.nix
     ./prowlarr

@@ -25,6 +25,7 @@ with lib;
       sabnzbd = 38;
       qbittorrent = 70;
       cross-seed = 183;
+      maintainerr = 322;
     };
     gids = {
       autobrr = 188;
