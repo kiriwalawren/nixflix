@@ -13,6 +13,7 @@ in
 {
   imports = [
     ./overlays
+    ./rules
     ./settings
   ];
 
