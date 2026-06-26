@@ -1,5 +1,11 @@
 { lib, ... }:
 let
+  enumFromAttrs =
+    enum_values:
+    lib.types.coercedTo (lib.types.enum (lib.attrNames enum_values)) (name: enum_values.${name}) (
+      lib.types.enum (lib.attrValues enum_values)
+    );
+
   customValModule = lib.types.submodule {
     options = {
       ruleTypeId = lib.mkOption {
@@ -43,15 +49,29 @@ let
       };
 
       action = lib.mkOption {
-        type = lib.types.int;
-        description = ''
-          Comparison action ID (RulePossibility): 0=BIGGER, 1=SMALLER, 2=EQUALS,
-          3=NOT_EQUALS, 4=CONTAINS, 5=BEFORE, 6=AFTER, 7=IN_LAST, 8=IN_NEXT,
-          9=NOT_CONTAINS, 10=CONTAINS_PARTIAL, 11=NOT_CONTAINS_PARTIAL,
-          12=CONTAINS_ALL, 13=NOT_CONTAINS_ALL, 14=COUNT_EQUALS,
-          15=COUNT_NOT_EQUALS, 16=COUNT_BIGGER, 17=COUNT_SMALLER,
-          18=EXISTS, 19=NOT_EXISTS.
-        '';
+        type = enumFromAttrs {
+          "BIGGER" = 0;
+          "SMALLER" = 1;
+          "EQUALS" = 2;
+          "NOT_EQUALS" = 3;
+          "CONTAINS" = 4;
+          "BEFORE" = 5;
+          "AFTER" = 6;
+          "IN_LAST" = 7;
+          "IN_NEXT" = 8;
+          "NOT_CONTAINS" = 9;
+          "CONTAINS_PARTIAL" = 10;
+          "NOT_CONTAINS_PARTIAL" = 11;
+          "CONTAINS_ALL" = 12;
+          "NOT_CONTAINS_ALL" = 13;
+          "COUNT_EQUALS" = 14;
+          "COUNT_NOT_EQUALS" = 15;
+          "COUNT_BIGGER" = 16;
+          "COUNT_SMALLER" = 17;
+          "EXISTS" = 18;
+          "NOT_EXISTS" = 19;
+        };
+        description = "Comparison action (RulePossibility).";
       };
 
       section = lib.mkOption {
@@ -157,14 +177,18 @@ let
       };
 
       arrAction = lib.mkOption {
-        type = lib.types.int;
-        default = 0;
-        description = ''
-          Action taken on media when deleteAfterDays elapses (ServarrAction):
-          0=DELETE, 1=UNMONITOR_DELETE_ALL, 2=UNMONITOR_DELETE_EXISTING,
-          3=UNMONITOR, 4=DO_NOTHING, 5=DELETE_SHOW_IF_EMPTY,
-          6=UNMONITOR_SHOW_IF_EMPTY, 7=CHANGE_QUALITY_PROFILE.
-        '';
+        type = enumFromAttrs {
+          "DELETE" = 0;
+          "UNMONITOR_DELETE_ALL" = 1;
+          "UNMONITOR_DELETE_EXISTING" = 2;
+          "UNMONITOR" = 3;
+          "DO_NOTHING" = 4;
+          "DELETE_SHOW_IF_EMPTY" = 5;
+          "UNMONITOR_SHOW_IF_EMPTY" = 6;
+          "CHANGE_QUALITY_PROFILE" = 7;
+        };
+        default = "DO_NOTHING";
+        description = "Action taken on media when deleteAfterDays elapses (ServarrAction).";
       };
 
       listExclusions = lib.mkOption {
@@ -226,7 +250,6 @@ in
           description = "Deletes movies that have been watched or around too long.";
           library = "Movies";
           dataType = "movie";
-          arrAction = 0;
           radarrServerName = "Radarr";
           collection.deleteAfterDays = 14;
           rules = [
@@ -234,7 +257,7 @@ in
               customVal = { ruleTypeId = 3; value = "1"; };
               operator = null;
               firstVal = [ 6 42 ];
-              action = 2;
+              action = "EQUALS";
               section = 0;
             }
           ];
