@@ -148,7 +148,7 @@ nixflix.maintainerr.rules = [
 ## Rule Logic Reference
 
 Rules within the same `section` are **ANDed** together; different sections are **ORed**.
-The first rule in each section must have `operator = null`; subsequent rules use
+The first rule in section `"0"` must have `operator = null`; subsequent rules use
 `operator = "0"` (AND) or `operator = "1"` (OR).
 
 `action` values correspond to `RulePossibility` in the Maintainerr source:
