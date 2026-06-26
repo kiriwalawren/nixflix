@@ -1,3 +1,6 @@
 {
-  imports = [ ./settings ];
+  imports = [
+    ./settings
+    ./templates
+  ];
 }

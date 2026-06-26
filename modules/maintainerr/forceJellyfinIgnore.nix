@@ -116,6 +116,7 @@ in
             ];
           }
         ];
+
         systemd.timers.maintainerr-jellyfin-ignore = {
           description = "Manage Jellyfin .ignore files for empty media folders";
           wantedBy = [ "timers.target" ];
