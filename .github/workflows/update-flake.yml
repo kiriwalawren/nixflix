@@ -31,7 +31,7 @@ jobs:
         run: nix flake update
 
       - name: Update non-flake pins
-        run: ./update.sh
+        run: nix develop --command bash -c "./update.sh"
 
       - name: Create Pull Request
         run: |
