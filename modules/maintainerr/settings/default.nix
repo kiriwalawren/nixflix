@@ -84,7 +84,6 @@ in
       description = "Configure Maintainerr settings via API";
       after = [
         "maintainerr.service"
-        "network-online.target"
       ]
       ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
       ++ optional config.nixflix.radarr.enable "radarr-config.service"

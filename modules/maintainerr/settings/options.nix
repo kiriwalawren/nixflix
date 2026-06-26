@@ -30,6 +30,18 @@ let
 in
 {
   options.nixflix.maintainerr.settings = {
+    forceJellyfinToIgnoreEmptyMediaFolders = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Forces jellyfin to ignore shows where all media files have been
+        removed but the folder itself still exists.
+
+        This likely represents the case of shows that have been entirely
+        watched and deleted, but are still monitored for future episodes by Sonarr.
+      '';
+    };
+
     jellyfin = {
       jellyfin_url = lib.mkOption {
         type = lib.types.str;

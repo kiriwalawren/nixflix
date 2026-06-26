@@ -16,10 +16,7 @@ in
   config = mkIf (config.nixflix.enable && cfg.enable) {
     systemd.services.maintainerr-overlays = {
       description = "Configure Maintainerr overlay settings via API";
-      after = [
-        "maintainerr.service"
-        "network-online.target"
-      ];
+      after = [ "maintainerr.service" ];
       requires = [ "maintainerr.service" ];
       wantedBy = [ "multi-user.target" ];
 

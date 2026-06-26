@@ -12,6 +12,7 @@ let
 in
 {
   imports = [
+    ./forceJellyfinIgnore.nix
     ./overlays
     ./rules
     ./settings
