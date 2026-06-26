@@ -10,6 +10,7 @@ let
   secrets = import ../../../lib/secrets { inherit lib; };
 
   maintainerrUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
+  jobsJson = builtins.toJSON cfg.settings.jobs;
 
   mkArrServerScript =
     type: server:
@@ -185,6 +186,13 @@ in
           + mkArrTypeScript "radarr" cfg.settings.radarr
           + mkArrTypeScript "sonarr" cfg.settings.sonarr
           + ''
+            echo "Applying job schedules..."
+            ${pkgs.curl}/bin/curl -sf -X PATCH \
+              -H "Content-Type: application/json" \
+              --data-binary ${escapeShellArg jobsJson} \
+              "${maintainerrUrl}/api/settings" \
+              | ${pkgs.jq}/bin/jq -e '. != null' > /dev/null
+
             echo "Maintainerr settings configured successfully."
           ''
         );

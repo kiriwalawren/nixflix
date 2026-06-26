@@ -65,6 +65,22 @@ in
     sonarr = lib.mkOption {
       type = lib.types.listOf (mkArrSubmodule "Sonarr");
     };
+
+    jobs = {
+      collection_handler_job_cron = lib.mkOption {
+        type = lib.types.str;
+        default = "0 0-23/12 * * *";
+        description = "Cron schedule for the collection handler job.";
+        example = "0 4 * * *";
+      };
+
+      rules_handler_job_cron = lib.mkOption {
+        type = lib.types.str;
+        default = "0 0-23/8 * * *";
+        description = "Cron schedule for the rules handler job.";
+        example = "0 */4 * * *";
+      };
+    };
   };
 
   config.nixflix.maintainerr.settings = {
