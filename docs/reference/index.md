@@ -30,6 +30,7 @@ Each option is documented with:
 - [Radarr](radarr/index.md) - Movie management
 - [Lidarr](lidarr/index.md) - Music management
 - [Prowlarr](prowlarr/index.md) - Indexer management
+- [Maintainerr](maintainerr/index.md) - Automated media cleanup ([rules example](../examples/maintainerr-rules.md))
 
 ### Media Server
 
