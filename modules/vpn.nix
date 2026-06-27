@@ -11,6 +11,9 @@ in
   options.nixflix.vpn = {
     enable = mkEnableOption ''
       WireGuard VPN. Configures Wireguard in a network namespace named `wg`.
+      This is independent of the host network namespace. The host network remains untouched.
+      This means that you can run another VPN client (Wireguard, Mullvad CLI, Tailscale, etc) on the host
+      if you wish and both VPNs will work independently.
 
       When enabled, most Nixflix services can also be added to the VPN vpnConfinement
       with `nixflix.<service>.vpn.enable = true;`.
