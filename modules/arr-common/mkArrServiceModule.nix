@@ -300,7 +300,10 @@ in
 
       systemd.services.${serviceName} = {
         description = capitalizedName;
-        environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings;
+        environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings
+        // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
+          ${apiKeyEnvVar} = toString cfg.config.apiKey;
+        };
 
         after = [
           "network.target"
@@ -331,9 +334,6 @@ in
         }
         // optionalAttrs apiKeyIsSecretRef {
           LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
-        }
-        // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
-          environment.${apiKeyEnvVar} = toString cfg.config.apiKey;
         };
       };
     }
