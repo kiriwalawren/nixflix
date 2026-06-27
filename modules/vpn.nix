@@ -9,7 +9,28 @@ let
 in
 {
   options.nixflix.vpn = {
-    enable = mkEnableOption "WireGuard VPN";
+    enable = mkEnableOption ''
+      WireGuard VPN. Configures Wireguard in a network namespace named `wg`.
+
+      When enabled, most Nixflix services can also be added to the VPN vpnConfinement
+      with `nixflix.<service>.vpn.enable = true;`.
+
+      Any systemd service can be added to the VPN confinement manually with the following code:
+
+      ```nix
+      systemd.services.<serviceName>.vpnConfinement = {
+        enable = true;
+        vpnNamespace = "wg";
+      };
+      vpnNamespaces.wg.portMappings = [
+        {
+          from = <servicePort>;
+          to = <servicePort>;
+          protocol = "tcp";
+        }
+      ];
+      ```
+    '';
 
     wgConfFile = mkOption {
       type = types.path;
