@@ -300,10 +300,11 @@ in
 
       systemd.services.${serviceName} = {
         description = capitalizedName;
-        environment = mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings
-        // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
-          ${apiKeyEnvVar} = toString cfg.config.apiKey;
-        };
+        environment =
+          mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings
+          // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
+            ${apiKeyEnvVar} = toString cfg.config.apiKey;
+          };
 
         after = [
           "network.target"
