@@ -571,7 +571,7 @@ in
 
       typeOptions = [
         {
-          type = "Movies";
+          type = "Movie";
           imageFetchers = [
             "TheMovieDb"
             "The Open Movie Database"
