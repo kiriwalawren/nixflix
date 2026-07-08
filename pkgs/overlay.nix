@@ -29,4 +29,15 @@ let
       )
   );
 in
-dirPkgs // filePkgs
+dirPkgs
+// filePkgs
+// {
+  pythonPackagesExtensions = _prev.pythonPackagesExtensions ++ [
+    (pyFinal: _pyPrev: {
+      invisible_core = pyFinal.callPackage ./python/invisible_core.nix { };
+      invisible_playwright = pyFinal.callPackage ./python/invisible_playwright.nix { };
+      playwright-captcha = pyFinal.callPackage ./python/playwright-captcha.nix { };
+      twocaptcha = pyFinal.callPackage ./python/2captcha-python.nix { };
+    })
+  ];
+}
