@@ -35,10 +35,6 @@ buildPythonPackage (_finalAttrs: {
     gitMinimal
   ];
 
-  pythonRelaxDeps = [
-    "invisible_core"
-    "playwright"
-  ];
   dependencies = [
     invisible_core
     playwright

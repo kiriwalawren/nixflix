@@ -141,52 +141,6 @@
               echo ""
             '';
           };
-
-          test =
-            let
-              libs = with pkgs; [
-                gtk3
-                glib
-                nss
-                cairo
-                pango
-                cups
-                dbus
-                libxcb
-                libX11
-                libXcursor
-                libXi
-                gcc.cc.lib
-                alsa-lib
-              ];
-
-              python = pkgs.python3.withPackages (
-                ps: with ps; [
-                  # dependencies
-                  fastapi
-                  invisible_playwright
-                  playwright
-                  playwright-captcha # package
-                  pydantic
-                  pydantic-settings
-
-                  # runtime dependencies
-                  uvicorn
-                ]
-              );
-            in
-            pkgs.mkShell {
-              packages = libs ++ [
-                pkgs.xvfb
-                python
-              ];
-
-              BYPARR_SRC = pkgs.byparr.src;
-
-              shellHook = ''
-                export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libs}:$LD_LIBRARY_PATH"
-              '';
-            };
         }
       );
     };
