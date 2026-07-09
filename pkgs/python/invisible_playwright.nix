@@ -14,17 +14,17 @@
   playwright,
 }:
 
-buildPythonPackage (finalAttrs: {
-  pname = "playwright";
+buildPythonPackage (_finalAttrs: {
+  pname = "invisible_playwright";
 
-  version = "firefox-13";
+  version = "0.3.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "feder-cr";
     repo = "invisible_playwright";
-    tag = "${finalAttrs.version}";
-    hash = "sha256-amCEaSZb++lDx3Pmvfmx0WEV7k1oOUy9Jr9HjRBm914=";
+    rev = "310bb215df207be3a329c80fcfecaed715fdf5f4";
+    hash = "sha256-Qq1Oxrtxl2VDwA9k2iSLue3bhxG+5VBh2q3dvHqDao0=";
   };
 
   build-system = [

@@ -18,19 +18,17 @@
   tqdm,
 }:
 
-buildPythonPackage (finalAttrs: {
+buildPythonPackage (_finalAttrs: {
   pname = "invisible_core";
-
-  # no actual release yet
-  version = "352f90c13a9aaef276bdc4bf552d348cd7e15eea";
+  version = "0.1.0";
 
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "feder-cr";
     repo = "invisible_core";
-    rev = "${finalAttrs.version}";
-    hash = "sha256-BiISHZFI/JStDVFeYXwZkRtthcbiaIe6iuDKFTJNmHs=";
+    rev = "897977f2e21f2c31dd2ef406b54df1ecce25fda1";
+    hash = "sha256-dzsrJHVoomipvV0jMqQf3TGJgRid+jUCHT8S7VfsIOA=";
   };
 
   build-system = [

@@ -37,7 +37,7 @@ dirPkgs
       invisible_core = pyFinal.callPackage ./python/invisible_core.nix { };
       invisible_playwright = pyFinal.callPackage ./python/invisible_playwright.nix { };
       playwright-captcha = pyFinal.callPackage ./python/playwright-captcha.nix { };
-      twocaptcha = pyFinal.callPackage ./python/2captcha-python.nix { };
+      twocaptcha_async = pyFinal.callPackage ./python/2captcha-python-async.nix { };
     })
   ];
 }

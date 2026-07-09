@@ -7,21 +7,20 @@
   setuptools,
 
   # dependencies
-  twocaptcha,
+  twocaptcha_async,
   playwright,
-
 }:
 
-buildPythonPackage (finalAttrs: {
+buildPythonPackage (_finalAttrs: {
   pname = "playwright-captcha";
-  version = "2bdd880b6dd2c27133dc971f425f83e04c6c3849";
+  version = "0.1.5";
 
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "techinz";
     repo = "playwright-captcha";
-    rev = "${finalAttrs.version}";
+    rev = "2bdd880b6dd2c27133dc971f425f83e04c6c3849";
     hash = "sha256-XiJeh44CTUnTdEQgeAUiEmfjs4HZ8H+rG8Avll6K/tc=";
   };
 
@@ -30,7 +29,7 @@ buildPythonPackage (finalAttrs: {
   ];
 
   dependencies = [
-    twocaptcha
+    twocaptcha_async
     playwright
   ];
 

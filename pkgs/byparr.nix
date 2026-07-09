@@ -7,7 +7,7 @@
   makeWrapper,
 
   python3,
-  xvfb
+  xvfb,
 }:
 
 let
@@ -28,12 +28,12 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "byparr";
-  version = "ecdd4c112a60c5fb22c781f142537e0b3399e568";
+  version = "0.1.0";
 
   src = fetchFromGitHub {
     owner = "ThePhaseless";
     repo = "Byparr";
-    rev = "${finalAttrs.version}";
+    rev = "ecdd4c112a60c5fb22c781f142537e0b3399e568";
     hash = "sha256-eIbWqbUNOcS0WVgszXPVIbDx0hhRH1d1o+K0JXAEdwY=";
   };
 

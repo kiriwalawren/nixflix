@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchFromGitHub,
+  fetchPypi,
 
   # build-system
   setuptools,
@@ -14,15 +14,14 @@
 }:
 
 buildPythonPackage (finalAttrs: {
-  pname = "2captcha-python";
-  version = "2.0.9";
+  pname = "2captcha-python-async";
+  version = "1.5.1";
   pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "2captcha";
-    repo = "2captcha-python";
-    tag = "v${finalAttrs.version}";
-    hash = "sha256-bfeWuCvtVIl5JED6nDVYOpmVNRAwPt2fj9gudLIWAOU=";
+  src = fetchPypi {
+    inherit (finalAttrs) version;
+    pname = "2captcha_python_async";
+    hash = "sha256-ydW3PdrCOovNwblrB19xZZRcDXmDb4Nw04AtnFirMjY=";
   };
 
   build-system = [
@@ -34,9 +33,6 @@ buildPythonPackage (finalAttrs: {
     httpx
     aiofiles
   ];
-
-  # Skip tests because they require network access.
-  doCheck = false;
 
   pythonImportsCheck = [ "twocaptcha" ];
 
