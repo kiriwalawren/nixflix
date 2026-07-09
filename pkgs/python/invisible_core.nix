@@ -16,8 +16,6 @@
   maxminddb,
   tzdata,
   tqdm,
-
-  firefox,
 }:
 
 buildPythonPackage (finalAttrs: {
@@ -34,13 +32,6 @@ buildPythonPackage (finalAttrs: {
     rev = "${finalAttrs.version}";
     hash = "sha256-BiISHZFI/JStDVFeYXwZkRtthcbiaIe6iuDKFTJNmHs=";
   };
-
-  postPatch = ''
-    substituteInPlace src/invisible_core/constants.py \
-      --replace-fail \
-        '"linux": "firefox",' \
-        '"linux": "${lib.getExe firefox}"',
-  '';
 
   build-system = [
     hatchling

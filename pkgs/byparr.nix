@@ -7,6 +7,7 @@
   makeWrapper,
 
   python3,
+  xvfb
 }:
 
 let
@@ -44,6 +45,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     makeWrapper ${python}/bin/python $out/bin/byparr \
       --add-flags "$out/share/byparr-${finalAttrs.version}/main.py" \
+      --prefix PATH : "${lib.makeBinPath [ xvfb ]}" \
       --prefix LD_LIBRARY_PATH : ${
         pkgs.lib.makeLibraryPath [
           pkgs.gtk3
