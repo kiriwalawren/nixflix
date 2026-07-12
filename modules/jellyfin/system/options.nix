@@ -637,8 +637,8 @@ in
 
   config.nixflix.jellyfin.system.pluginRepositories = {
     "Jellyfin Stable Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/kiriwalawren/Jellyfin-Stable-Plugin-Repo/bfc2c365d9d164fcc1d73b608265f62d0a185216/manifest.json";
-      hash = "sha256-fd1auhliBL4maySfnwRpsjiK7yQpiQTJb6ffozy/efo=";
+      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/398b7868ef9fb232f974b6d1aeb7034119134477/modules/jellyfin/system/jellyfin-stable-plugin-manifest.json";
+      hash = "sha256-JdOFlbXJQqKHoLvjU2mWBaZbfYXN+4hglzhNIE3mxN8=";
       enabled = true;
     };
   };

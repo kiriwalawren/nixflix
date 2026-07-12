@@ -33,14 +33,14 @@ update_manifest() {
 
 echo "Fetching Jellyfin Stable Plugin Repo..."
 UPR_SHA=$(curl -sf \
-  "https://api.github.com/repos/kiriwalawren/Jellyfin-Stable-Plugin-Repo/commits/main?per_page=1" |
+  "https://api.github.com/repos/kiriwalawren/nixflix/commits/main?per_page=1" |
   jq -r '.sha')
-UPR_URL="https://raw.githubusercontent.com/kiriwalawren/Jellyfin-Stable-Plugin-Repo/${UPR_SHA}/manifest.json"
+UPR_URL="https://raw.githubusercontent.com/kiriwalawren/nixflix/${UPR_SHA}/modules/jellyfin/system/jellyfin-stable-plugin-manifest.json"
 UPR_HASH=$(nix store prefetch-file --json "$UPR_URL" 2>/dev/null | jq -r '.hash')
 
 update_manifest "Stable Plugin Repo" \
   "$UPR_SHA" "$UPR_URL" "$UPR_HASH" \
-  'kiriwalawren/Jellyfin-Stable-Plugin-Repo/[0-9a-f]\{40\}/manifest'
+  'kiriwalawren/nixflix/[0-9a-f]\{40\}/modules/jellyfin/system/jellyfin-stable-plugin-manifest'
 
 UPR_MANIFEST=$(curl -sf "$UPR_URL")
 
