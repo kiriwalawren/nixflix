@@ -49,7 +49,7 @@ jobs:
 
           gh pr create \
             --title "chore: update flake.lock" \
-            --body "Automated flake.lock update.\n\nThis PR updates all flake inputs." \
+            --body "Automated flake.lock update." \
             --base main \
             --head "$BRANCH"
         env:
