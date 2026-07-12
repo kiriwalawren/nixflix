@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [3.0.0] - 2026-07-12
+
+### Breaking
+
+- Jellyfin manifest is pulled from this repository instead of a separate one.
+  - I accidentally deleted the old repository instead of archiving it, updates to 3.0.0 are **required**.
+
 ## [2.1.0] - 2026-06-26
 
 ### Added
