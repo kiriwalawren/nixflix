@@ -719,8 +719,8 @@ pkgs.testers.runNixOSTest {
         plugin_repo = system_config['PluginRepositories'][0]
         assert plugin_repo['Name'] == 'Jellyfin Stable Plugin Repo', \
             f"Plugin repo Name should be 'Jellyfin Stable Plugin Repo', got {plugin_repo.get('Name')}"
-        assert 'Jellyfin-Stable-Plugin-Repo' in plugin_repo['Url'], \
-            f"Plugin repo Url should point to Jellyfin-Stable-Plugin-Repo, got {plugin_repo.get('Url')}"
+        assert 'kiriwalawren/nixflix' in plugin_repo['Url'], \
+            f"Plugin repo Url should point to kiriwalawren/nixflix repo, got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
             f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
         assert system_config['EnableLegacyAuthorization'] == False, \
