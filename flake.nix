@@ -68,7 +68,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
-          inherit (pkgs) maintainerr;
+          inherit (pkgs) maintainerr byparr;
         }
       );
 
