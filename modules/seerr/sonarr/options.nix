@@ -7,120 +7,117 @@ with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
 
-  sonarrServerModule = types.submodule (
-    { config, ... }:
-    {
-      options = {
-        hostname = mkOption {
-          type = types.str;
-          default = "127.0.0.1";
-          description = "Sonarr hostname";
-        };
-
-        port = mkOption {
-          type = types.port;
-          default = 8989;
-          description = "Sonarr port";
-        };
-
-        apiKey = secrets.mkSecretOption {
-          description = "Sonarr API key.";
-        };
-
-        useSsl = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Use SSL to connect to Sonarr";
-        };
-
-        baseUrl = mkOption {
-          type = types.str;
-          default = "";
-          example = "/sonarr";
-          description = "Sonarr URL base";
-        };
-
-        activeProfileName = mkOption {
-          type = types.nullOr types.str;
-          default = null;
-          description = "Quality profile name. Defaults to first available quality profile in Seerr.";
-        };
-
-        activeDirectory = mkOption {
-          type = types.str;
-          default = head (config.nixflix.sonarr.mediaDirs or [ "/tv" ]);
-          defaultText = literalExpression ''head (config.nixflix.sonarr.mediaDirs or ["/tv"])'';
-          description = "Root folder for TV shows";
-        };
-
-        activeAnimeProfileName = mkOption {
-          type = types.nullOr types.str;
-          default = null;
-          description = "Anime quality profile name.";
-        };
-
-        activeAnimeDirectory = mkOption {
-          type = types.str;
-          default = "";
-          description = "Root folder for anime";
-        };
-
-        seriesType = mkOption {
-          type = types.enum [
-            "standard"
-            "daily"
-          ];
-          default = "standard";
-          description = "Series type for regular content";
-        };
-
-        animeSeriesType = mkOption {
-          type = types.enum [
-            "standard"
-            "anime"
-          ];
-          default = "standard";
-          description = "Series type for anime content";
-        };
-
-        enableSeasonFolders = mkOption {
-          type = types.bool;
-          default = true;
-          description = "Enable season folders";
-        };
-
-        is4k = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Is this a 4K Sonarr instance";
-        };
-
-        isDefault = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Is this the default Sonarr instance";
-        };
-
-        externalUrl = mkOption {
-          type = types.str;
-          default = "";
-          description = "External URL for Sonarr";
-        };
-
-        syncEnabled = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Enable automatic sync with Sonarr";
-        };
-
-        preventSearch = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Prevent Seerr from triggering searches";
-        };
+  sonarrServerModule = types.submodule {
+    options = {
+      hostname = mkOption {
+        type = types.str;
+        default = "127.0.0.1";
+        description = "Sonarr hostname";
       };
-    }
-  );
+
+      port = mkOption {
+        type = types.port;
+        default = 8989;
+        description = "Sonarr port";
+      };
+
+      apiKey = secrets.mkSecretOption {
+        description = "Sonarr API key.";
+      };
+
+      useSsl = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Use SSL to connect to Sonarr";
+      };
+
+      baseUrl = mkOption {
+        type = types.str;
+        default = "";
+        example = "/sonarr";
+        description = "Sonarr URL base";
+      };
+
+      activeProfileName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Quality profile name. Defaults to first available quality profile in Seerr.";
+      };
+
+      activeDirectory = mkOption {
+        type = types.str;
+        default = head (config.nixflix.sonarr.mediaDirs or [ "/tv" ]);
+        defaultText = literalExpression ''head (config.nixflix.sonarr.mediaDirs or ["/tv"])'';
+        description = "Root folder for TV shows";
+      };
+
+      activeAnimeProfileName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Anime quality profile name.";
+      };
+
+      activeAnimeDirectory = mkOption {
+        type = types.str;
+        default = "";
+        description = "Root folder for anime";
+      };
+
+      seriesType = mkOption {
+        type = types.enum [
+          "standard"
+          "daily"
+        ];
+        default = "standard";
+        description = "Series type for regular content";
+      };
+
+      animeSeriesType = mkOption {
+        type = types.enum [
+          "standard"
+          "anime"
+        ];
+        default = "standard";
+        description = "Series type for anime content";
+      };
+
+      enableSeasonFolders = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable season folders";
+      };
+
+      is4k = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Is this a 4K Sonarr instance";
+      };
+
+      isDefault = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Is this the default Sonarr instance";
+      };
+
+      externalUrl = mkOption {
+        type = types.str;
+        default = "";
+        description = "External URL for Sonarr";
+      };
+
+      syncEnabled = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable automatic sync with Sonarr";
+      };
+
+      preventSearch = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Prevent Seerr from triggering searches";
+      };
+    };
+  };
 
   defaultInstances =
     (optionalAttrs (config.nixflix.sonarr.enable or false) {
