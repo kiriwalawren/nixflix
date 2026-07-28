@@ -190,10 +190,10 @@ pkgs.testers.runNixOSTest {
     assert lidarr_data.get("databaseType") == "postgreSQL", \
         f"Lidarr not using PostgreSQL: {lidarr_data.get('databaseType')}"
 
-    # Verify PostgreSQL is using version 17
+    # Verify PostgreSQL version
     print("Verifying PostgreSQL version...")
     version_output = machine.succeed("sudo -u postgres psql -t -c 'SHOW server_version;'")
-    assert "17." in version_output, f"PostgreSQL version incorrect: {version_output}"
+    assert "18." in version_output, f"PostgreSQL version incorrect: {version_output}"
 
     print("PostgreSQL integration test successful! All services running with PostgreSQL enabled.")
   '';
