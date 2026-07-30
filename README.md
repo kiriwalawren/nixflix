@@ -24,7 +24,7 @@
 </h1>
 
 Nixflix is a declarative media server configuration manager for NixOS. The aim of the project is to automate
-all of the connective tissue required to get get Starr and Jellyfin services ([Sonarr](https://github.com/Sonarr/Sonarr), [Radarr](https://github.com/Radarr/Radarr), [Lidarr](https://github.com/Lidarr/Lidarr), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Jellyfin](https://github.com/jellyfin/jellyfin), [Seerr](https://github.com/seerr-team/seerr)) working
+all of the connective tissue required to get Starr and Jellyfin services ([Sonarr](https://github.com/Sonarr/Sonarr), [Radarr](https://github.com/Radarr/Radarr), [Lidarr](https://github.com/Lidarr/Lidarr), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Jellyfin](https://github.com/jellyfin/jellyfin), [Seerr](https://github.com/seerr-team/seerr)) working
 together. I want users to be able to configure this module and it just works.
 
 ## Why Nixflix?
@@ -43,7 +43,7 @@ All of these services have APIs, surely we can use this to automate the whole th
 
 Nixflix is:
 
-- ✅ **Opionated** — Don't you hate having to think for yourself?
+- ✅ **Opinionated** — Don't you hate having to think for yourself?
 - ✅ **API-based** — Nixflix uses official REST APIs of each service (with a couple minor exceptions)
 - ✅ **Idempotent** — All services safely execute repeatedly
 - ✅ **Commanding** — Your code is _the_ source of truth, no need to fear drift
@@ -66,7 +66,7 @@ Nixflix is:
 
 ## Documentation
 
-Checkout the [documentation](https://kiriwalawren.github.io/nixflix/) to get started.
+Check out the [documentation](https://kiriwalawren.github.io/nixflix/) to get started.
 
 ## Services
 
@@ -84,7 +84,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 ### Jellyfin
 
 - Basic server management
-- Libraries are automatically configured based on elected media managers
+- Libraries are automatically configured based on selected media managers
 - Plugin management
 - Subtitle downloader management
 
