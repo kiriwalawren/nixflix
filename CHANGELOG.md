@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - fix seerr sonarr activeDirectory default resolving host config ([#283](https://github.com/kiriwalawren/nixflix/pull/283))
+- fix \*arr rootfolders oneshot racing app startup ([#286](https://github.com/kiriwalawren/nixflix/pull/286))
 
 ## [3.0.0] - 2026-07-12
 
