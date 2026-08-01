@@ -275,6 +275,22 @@ pkgsUnfree.testers.runNixOSTest {
                 f"Category {cat['name']} directory mismatch: expected {cat['name']}, got {cat['dir']}"
 
     print("SABnzbd categories configuration verified successfully!")
+
+    for service, port, api_version, api_key, folder in [
+        ("sonarr", 8989, "v3", "sonarr222222222222222222222222222", "/media/tv"),
+        ("sonarr-anime", 8990, "v3", "sonarr222222222222222222222222222", "/media/tv"),
+        ("radarr", 7878, "v3", "radarr333333333333333333333333333", "/media/movies"),
+        ("lidarr", 8686, "v1", "lidarr444444444444444444444444444", "/media/music"),
+    ]:
+        machine.succeed(f"systemctl restart --no-block {service}.service; systemctl restart {service}-rootfolders.service")
+        machine.wait_for_unit(f"{service}-rootfolders.service", timeout=180)
+        folders = machine.succeed(
+            f"curl -s -H 'X-Api-Key: {api_key}' "
+            f"http://127.0.0.1:{port}/api/{api_version}/rootfolder"
+        )
+        assert folder in folders, f"{service} root folder missing after concurrent restart"
+        print(f"{service} root folders reconciled after a restart racing app startup!")
+
     print("All services are running successfully!")
   '';
 }

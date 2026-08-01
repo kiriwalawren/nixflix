@@ -12,6 +12,7 @@ let
     usesMediaDirs
     capitalizedName
     mkSecureCurl
+    mkWaitForApiScript
     ;
 in
 {
@@ -50,6 +51,7 @@ in
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
+            ExecStartPre = mkWaitForApiScript serviceName cfg.config;
           };
 
           script = ''
