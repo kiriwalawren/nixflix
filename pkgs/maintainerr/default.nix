@@ -18,19 +18,19 @@
 }:
 let
   pname = "maintainerr";
-  version = "3.18.0";
+  version = "3.21.1";
 
   src = fetchFromGitHub {
     owner = "Maintainerr";
     repo = "Maintainerr";
     tag = "v${version}";
-    hash = "sha256-z8qVz6/U9nGRVL1KHyQXwv9pu1/b15/solh1qS6T0xs=";
+    hash = "sha256-TSEL40Bg18OuL7ngK3U+nHVT1FS+0wvQMS3UxSpIDb0=";
   };
 
   offlineCache = yarn-berry_4.fetchYarnBerryDeps {
     inherit src;
     missingHashes = ./missing-hashes.json;
-    hash = "sha256-TKvLgQQYa6cv9vksdTAFDINM9BAHYzECxJaLYJrz7NA=";
+    hash = "sha256-0zOO0eaYhMBos068TK3u3svoWkxImOjB8X+h8wDO+hQ=";
   };
 in
 stdenv.mkDerivation {
