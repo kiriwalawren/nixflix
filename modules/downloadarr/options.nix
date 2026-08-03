@@ -37,7 +37,7 @@ let
         prowlarr = mkOption {
           type = types.str;
           default = "prowlarr";
-          description = "The categories to use for the Lidarr instance";
+          description = "The categories to use for the Prowlarr instance";
         };
       };
     };
@@ -215,7 +215,7 @@ let
     implementationName = "rTorrent";
 
     port = {
-      description = "Port of the download client. This competes with SABnzbd.";
+      description = "Port of the download client. Note: SABnzbd also defaults to port 8080, so set distinct ports when both are enabled.";
     };
 
     urlBase = {
@@ -318,7 +318,7 @@ in
         transmission = mkOption {
           type = transmissionType;
           default = { };
-          description = "Transmission Deluge download client definition for Starr services.";
+          description = "Transmission download client definition for Starr services.";
         };
 
         extraClients = mkOption {

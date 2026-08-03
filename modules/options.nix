@@ -254,7 +254,7 @@ in
             Setting this to any path, where the subpath is not owned by root, will fail! For example:
 
             ```nix
-            mediaDir = /home/user/data
+            downloadsDir = /home/user/data
             ```
 
             Is not supported, because `/home/user` is owned by `user`.
@@ -277,7 +277,7 @@ in
             Setting this to any path, where the subpath is not owned by root, will fail! For example:
 
             ```nix
-            mediaDir = /home/user/data
+            stateDir = /home/user/data
             ```
 
             Is not supported, because `/home/user` is owned by `user`.
