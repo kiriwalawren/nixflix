@@ -14,6 +14,7 @@ let
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     usesMediaDirs
     capitalizedName
+    capitalize
     serviceBase
     mkWaitForApiScript
     ;
@@ -170,8 +171,8 @@ in
       defaultText = literalExpression ''
         {
           auth = {
-            required = "Enabled";
-            method = "Forms";
+            required = capitalize config.nixflix.${serviceName}.config.hostConfig.authenticationRequired;
+            method = capitalize config.nixflix.${serviceName}.config.hostConfig.authenticationMethod;
           };
           server = {
             inherit (config.nixflix.${serviceName}.config.hostConfig) port urlBase;
@@ -201,6 +202,14 @@ in
       description = ''
         Attribute set of arbitrary config options.
         Please consult the documentation at the [wiki](https://wiki.servarr.com/useful-tools#using-environment-variables-for-config).
+
+        These values are translated into environment variables (e.g. `settings.auth.method`
+        becomes `${toUpper serviceBase}__AUTH__METHOD`), which ${capitalizedName} reads on
+        startup and are applied *in addition to and with higher precedence than* anything
+        configured through `config.hostConfig` via the API. `auth.required`/`auth.method`
+        and `server.port`/`server.urlBase` default to mirroring the corresponding
+        `config.hostConfig` values, so setting those is normally enough; only set these
+        directly to override that derived default.
 
         !!! warning
 
@@ -266,10 +275,13 @@ in
       nixflix.${serviceName} = {
         settings = {
           auth = {
-            required = "Enabled";
-            method = "Forms";
+            required = mkDefault (capitalize cfg.config.hostConfig.authenticationRequired);
+            method = mkDefault (capitalize cfg.config.hostConfig.authenticationMethod);
           };
-          server = { inherit (cfg.config.hostConfig) port urlBase; };
+          server = {
+            port = mkDefault cfg.config.hostConfig.port;
+            urlBase = mkDefault cfg.config.hostConfig.urlBase;
+          };
         };
       };
 
