@@ -5,12 +5,12 @@
 }:
 let
   serviceBase = builtins.elemAt (lib.splitString "-" serviceName) 0;
+  capitalize = s: lib.toUpper (builtins.substring 0 1 s) + builtins.substring 1 (-1) s;
 in
 {
-  inherit serviceBase;
+  inherit serviceBase capitalize;
   usesMediaDirs = !(lib.elem serviceName [ "prowlarr" ]);
-  capitalizedName =
-    lib.toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
+  capitalizedName = capitalize serviceName;
   isSonarr = serviceBase == "sonarr";
   isRadarr = serviceBase == "radarr";
   isLidarr = serviceBase == "lidarr";
