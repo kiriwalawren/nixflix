@@ -400,7 +400,6 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("jellyfin-plugins.service", timeout=360)
     machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-libraries.service", timeout=180)
-    machine.wait_for_unit("jellyfin-encoding-config.service", timeout=180)
     machine.wait_for_unit("jellyfin-branding-config.service", timeout=180)
 
     api_token = machine.succeed("cat /run/jellyfin/auth-token")
@@ -805,7 +804,48 @@ pkgs.testers.runNixOSTest {
         assert set(encoding_config['AllowOnDemandMetadataBasedKeyframeExtractionForExtensions']) == {'mkv', 'mp4'}, \
             f"AllowOnDemandMetadataBasedKeyframeExtractionForExtensions should be ['mkv', 'mp4'], got {encoding_config.get('AllowOnDemandMetadataBasedKeyframeExtractionForExtensions')}"
 
+        print("Verifying raw encoding.xml formats non-integer numbers without toString padding...")
+        machine.succeed(
+            "grep -qE '<TonemappingDesat>0\\.5</TonemappingDesat>' /var/lib/jellyfin/config/encoding.xml"
+        )
+
         print("All encoding configuration assertions passed!")
+
+    with subtest("Recover from a corrupted encoding.xml on restart (#274)"):
+        ENCODING_XML = "/var/lib/jellyfin/config/encoding.xml"
+
+        print("Simulating a corrupted encoding.xml with a stale, inaccessible TranscodingTempPath...")
+        machine.succeed("systemctl stop jellyfin.service")
+        machine.succeed(
+            "sed -i -E "
+            + "'s#<TranscodingTempPath>[^<]*</TranscodingTempPath>#"
+            + "<TranscodingTempPath>/var/cache/nonexistent-274/transcodes</TranscodingTempPath>#; "
+            + "s#<HardwareAccelerationType>[^<]*</HardwareAccelerationType>#"
+            + "<HardwareAccelerationType>bogus</HardwareAccelerationType>#' "
+            + ENCODING_XML
+        )
+        machine.succeed(f"grep -qF '/var/cache/nonexistent-274/transcodes' {ENCODING_XML}")
+        machine.succeed(f"grep -qF '<HardwareAccelerationType>bogus</HardwareAccelerationType>' {ENCODING_XML}")
+
+        print("Restarting Jellyfin with the corrupted config present...")
+        machine.succeed("systemctl start jellyfin.service")
+        machine.wait_for_unit("jellyfin.service", timeout=180)
+
+        print("Verifying encoding.xml was fully rewritten back to the configured values...")
+        machine.succeed(f"grep -qF '/custom/transcode/path' {ENCODING_XML}")
+        machine.succeed(f"grep -qF '<HardwareAccelerationType>vaapi</HardwareAccelerationType>' {ENCODING_XML}")
+        machine.fail(f"grep -qF 'nonexistent-274' {ENCODING_XML}")
+        machine.fail(f"grep -qF 'bogus' {ENCODING_XML}")
+
+        journal = machine.succeed("journalctl -u jellyfin --no-pager")
+        assert "UnauthorizedAccessException" not in journal, \
+            "Jellyfin should not hit UnauthorizedAccessException after the stale path is fixed"
+
+        print("Jellyfin recovered from a corrupted encoding.xml successfully!")
+
+    with subtest("Verify both network.xml and encoding.xml templates are installed"):
+        machine.succeed("test -f /var/lib/jellyfin/config/network.xml")
+        machine.succeed("test -f /var/lib/jellyfin/config/encoding.xml")
 
     with subtest("Verify branding configuration"):
         print("Querying branding configuration...")
