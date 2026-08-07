@@ -113,14 +113,21 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 ## Development
 
+Enter development shell:
+
 ```bash
-# Enter development shell
 nix develop
+```
 
-# Format code
+Format code:
+
+```bash
 nix fmt
+```
 
-# Check formatting and linting
+Check formatting and linting:
+
+```bash
 nix flake check
 ```
 
