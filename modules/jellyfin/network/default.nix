@@ -11,9 +11,9 @@ let
   cfg = config.nixflix.jellyfin;
   hostname = "${cfg.subdomain}.${nixflix.reverseProxy.domain}";
 
-  xml = import ./xml.nix { inherit lib; };
+  util = import ../util.nix { inherit lib; };
 
-  networkXmlContent = xml.mkXmlContent "NetworkConfiguration" cfg.network;
+  networkXmlContent = util.mkXmlContent "NetworkConfiguration" cfg.network;
 in
 {
   imports = [ ./options.nix ];
@@ -42,11 +42,13 @@ in
         ];
 
         serviceConfig = {
-          ExecStartPre = pkgs.writeShellScript "jellyfin-setup-config" ''
-            set -eu
+          ExecStartPre = [
+            (pkgs.writeShellScript "jellyfin-setup-config" ''
+              set -eu
 
-            ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
-          '';
+              ${pkgs.coreutils}/bin/install -m 640 /etc/jellyfin/network.xml.template '${cfg.configDir}/network.xml'
+            '')
+          ];
         };
       };
 
