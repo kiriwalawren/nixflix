@@ -63,6 +63,7 @@ in
               MusicFolder = lib.mkOption {
                 type = lib.types.str;
                 default = builtins.head config.nixflix.lidarr.mediaDirs;
+                defaultText = lib.literalExpression "builtins.head config.nixflix.lidarr.mediaDirs";
                 example = "/data/media/music";
                 description = ''
                   Folder where your music library is stored. Can be read-only.
