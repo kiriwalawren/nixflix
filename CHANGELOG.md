@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Reverted bug fix workaround ([#297](https://github.com/kiriwalawren/nixflix/pull/297))
+
 ### Fixed
 
 - fix seerr sonarr activeDirectory default resolving host config ([#283](https://github.com/kiriwalawren/nixflix/pull/283))
