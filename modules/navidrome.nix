@@ -176,8 +176,20 @@ in
           "vpn"
         ];
 
-        systemd.tmpfiles.settings.navidromeDirs."${cfg.settings.MusicFolder}"."d" = lib.mkForce {
-          group = ":${cfg.group}";
+        systemd = {
+          tmpfiles.settings.navidromeDirs = {
+            "${cfg.settings.DataFolder}"."d" = lib.mkForce {
+              mode = "755";
+              inherit (cfg) user group;
+            };
+            "${cfg.settings.CacheFolder}"."d" = lib.mkForce {
+              mode = "755";
+              inherit (cfg) user group;
+            };
+            "${cfg.settings.MusicFolder}"."d" = lib.mkForce {
+              group = ":${cfg.group}";
+            };
+          };
         };
 
         users = {
