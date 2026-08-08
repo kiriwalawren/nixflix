@@ -112,6 +112,8 @@ in
               };
             };
           };
+
+          description = "Configuration for Navidrome, see [Navidrome configuration](https://www.navidrome.org/docs/usage/configuration-options/) for supported values.";
         };
 
         connectionAddress = lib.mkOption {
