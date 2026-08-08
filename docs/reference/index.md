@@ -35,6 +35,7 @@ Each option is documented with:
 ### Media Server
 
 - [Jellyfin](jellyfin/index.md) - Media streaming server
+- [Navidrome](navidrome/index.md) - Music streaming server
 
 ### Download Clients
 

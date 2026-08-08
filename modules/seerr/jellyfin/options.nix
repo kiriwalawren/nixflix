@@ -80,12 +80,12 @@ in
         type = types.str;
         default =
           if config.nixflix.reverseProxy.enable then
-            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.reverseProxy.domain}${jellyfinBaseUrl}"
+            "${config.nixflix.reverseProxy.httpScheme}://${config.nixflix.jellyfin.subdomain}.${config.nixflix.reverseProxy.domain}${jellyfinBaseUrl}"
           else
             "";
         defaultText = literalExpression ''
           if config.nixflix.reverseProxy.enable != ""
-          then "$${config.nixflix.seerr.externalUrlScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.reverseProxy.domain}"
+          then "$${config.nixflix.reverseProxy.httpScheme}://$${config.nixflix.jellyfin.subdomain}.$${config.nixflix.reverseProxy.domain}"
           else "";
         '';
       };

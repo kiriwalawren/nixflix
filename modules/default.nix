@@ -18,6 +18,7 @@ in
     ./jellyfin
     ./lidarr.nix
     ./maintainerr
+    ./navidrome.nix
     ./options.nix
     ./postgres.nix
     ./prowlarr

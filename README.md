@@ -94,6 +94,11 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Automatic integration with Starr services
 - Automatic integration with Jellyfin libraries
 
+### Navidrome
+
+- Music Server
+- Supports OpenSubsonic API
+
 ### SABnzbd
 
 - Automatic integration with Starr services
