@@ -6,6 +6,7 @@
 let
   inherit (pkgs) lib;
   jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit lib; };
+  secrets = import ../../lib/secrets { inherit lib; };
   manifestHash =
     file:
     builtins.convertHash {
@@ -903,4 +904,38 @@ in
       radarrCfg = config.config.nixflix.radarr;
     in
     assertTest "settings-auth-overrides-hostconfig" (radarrCfg.settings.auth.method == "External");
+
+  nested-secret-in-list-jq-filter =
+    let
+      rawConfig = {
+        Entries = [
+          {
+            Name = "first";
+            Value._secret = secretFile;
+          }
+        ];
+      };
+      secretFile = pkgs.writeText "entry-value" "s3cr3t-value\n";
+      plainFile = pkgs.writeText "plain.json" (builtins.toJSON (secrets.stripSecretRefs rawConfig));
+      jqSecrets = secrets.mkNestedJqSecretArgs rawConfig;
+    in
+    pkgs.runCommand "unit-test-nested-secret-in-list-jq-filter"
+      {
+        nativeBuildInputs = [ pkgs.jq ];
+      }
+      ''
+        merged=$(
+          echo '{"Entries":[]}' \
+            | jq \
+                ${jqSecrets.flagsString} \
+                --argjson plain "$(cat ${plainFile})" \
+                '. * $plain | ${lib.concatStringsSep " | " jqSecrets.assignments}'
+        )
+
+        value=$(echo "$merged" | jq -r '.Entries[0].Value')
+        if [ "$value" != "s3cr3t-value" ]; then
+          echo "FAIL: expected substituted value, got '$value'" && exit 1
+        fi
+        echo 'PASS: nested-secret-in-list-jq-filter' > $out
+      '';
 }

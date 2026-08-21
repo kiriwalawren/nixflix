@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - fix \*arr rootfolders oneshot racing app startup ([#286](https://github.com/kiriwalawren/nixflix/pull/286))
 - fix \*arr `config.hostConfig` auth/port/urlBase values being ignored in favor of hardcoded `settings` env vars ([#289](https://github.com/kiriwalawren/nixflix/pull/289))
 - fix Jellyfin crash-looping on boot when a stale `TranscodingTempPath` in `encoding.xml` points at an inaccessible path after `cacheDir`/`encoding.transcodingTempPath` changes ([#291](https://github.com/kiriwalawren/nixflix/pull/291))
+- fix `_secret` refs nested inside lists being silently dropped and POSTed as `null`, e.g. the Jellyfin Webhook plugin's `GenericOptions` ([#302](https://github.com/kiriwalawren/nixflix/pull/302))
 
 ## [3.0.0] - 2026-07-12
 
