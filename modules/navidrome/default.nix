@@ -5,12 +5,18 @@
   ...
 }:
 let
-  inherit (import ../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.navidrome;
+
+  secrets = import ../../lib/secrets { inherit lib; };
 
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
+  imports = [
+    ./setupService.nix
+  ];
+
   options.nixflix.navidrome = lib.mkOption {
     type = lib.types.submodule {
       freeformType = lib.types.attrsOf lib.types.anything;
@@ -35,6 +41,58 @@ in
           type = lib.types.str;
           default = config.nixflix.globals.libraryOwner.group;
           description = "Group under which navidrome runs.";
+        };
+
+        users = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                username = lib.mkOption {
+                  type = lib.types.str;
+                  example = "username";
+                  default = null;
+                  description = "Username for the user.";
+                };
+
+                email = lib.mkOption {
+                  type = lib.types.str;
+                  example = "test@example.com";
+                  default = null;
+                  description = "The user's email.";
+                };
+
+                mutable = lib.mkOption {
+                  type = lib.types.bool;
+                  example = false;
+                  description = ''
+                    Functions like mutableUsers in NixOS users.users."user"
+                    If true, the first time the user is created, all configured options
+                    are overwritten. Any modifications from the GUI will take priority,
+                    and no nix configuration changes will have any effect.
+                    If false however, all options are overwritten as specified in the nix configuration,
+                    which means any change through the Jellyfin GUI will have no effect after a rebuild.
+
+                    Note: Passwords are only set during user creation and are never updated
+                    declaratively, regardless of the mutable setting. To change a user's password,
+                    use the Jellyfin web interface.
+                  '';
+                  default = true;
+                };
+
+                isAdmin = lib.mkOption {
+                  type = lib.types.bool;
+                  example = true;
+                  description = "Whether or not this user is an admin";
+                  default = false;
+                };
+
+                password = secrets.mkSecretOption {
+                  default = null;
+                  description = "User's password.";
+                };
+              };
+            }
+          );
         };
 
         settings = lib.mkOption {
@@ -169,10 +227,19 @@ in
         upstreamHost = cfg.connectionAddress;
       })
       {
+        assertions = [
+          {
+            assertion = lib.any (user: user.isAdmin) (lib.attrValues cfg.users);
+            message = "At least one Navidrome user must have isAdmin = true.";
+          }
+        ];
+      }
+      {
         services.navidrome = builtins.removeAttrs cfg [
           "connectionAddress"
           "reverseProxy"
           "subdomain"
+          "users"
           "vpn"
         ];
 
