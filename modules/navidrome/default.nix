@@ -15,6 +15,7 @@ in
 {
   imports = [
     ./setupService.nix
+    ./usersService.nix
   ];
 
   options.nixflix.navidrome = lib.mkOption {
@@ -47,15 +48,18 @@ in
           type = lib.types.attrsOf (
             lib.types.submodule {
               options = {
-                username = lib.mkOption {
-                  type = lib.types.str;
+                userName = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
                   example = "username";
                   default = null;
-                  description = "Username for the user.";
+                  description = ''
+                    Username for the user. Defaults to the attribute name (e.g. `users.kiri`
+                    defaults to username "kiri") when unset.
+                  '';
                 };
 
                 email = lib.mkOption {
-                  type = lib.types.str;
+                  type = lib.types.nullOr lib.types.str;
                   example = "test@example.com";
                   default = null;
                   description = "The user's email.";
@@ -70,11 +74,11 @@ in
                     are overwritten. Any modifications from the GUI will take priority,
                     and no nix configuration changes will have any effect.
                     If false however, all options are overwritten as specified in the nix configuration,
-                    which means any change through the Jellyfin GUI will have no effect after a rebuild.
+                    which means any change through the Navidrome GUI will have no effect after a rebuild.
 
                     Note: Passwords are only set during user creation and are never updated
                     declaratively, regardless of the mutable setting. To change a user's password,
-                    use the Jellyfin web interface.
+                    use the Navidrome web interface.
                   '';
                   default = true;
                 };
@@ -114,7 +118,7 @@ in
                   else if config.nixflix.reverseProxy.enable then
                     "127.0.0.1"
                   else
-                    "*";
+                    "0.0.0.0";
                 description = "Bind address for the WebUI";
               };
 
@@ -180,7 +184,7 @@ in
           default =
             if config.nixflix.vpn.enable && cfg.vpn.enable then
               config.vpnNamespaces.wg.namespaceAddress
-            else if cfg.settings.Address == "*" then
+            else if cfg.settings.Address == "*" || cfg.settings.Address == "0.0.0.0" then
               "127.0.0.1"
             else
               cfg.settings.Address;

@@ -14,6 +14,8 @@ let
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
   firstAdminName = head sortedAdminNames;
   firstAdminUser = adminUsers.${firstAdminName};
+  firstAdminUserName =
+    if firstAdminUser.userName != null then firstAdminUser.userName else firstAdminName;
 
   jqAdminSecrets = secrets.mkJqSecretArgs {
     inherit (firstAdminUser) password;
@@ -52,11 +54,11 @@ in
           sleep 1
         done
 
-        echo "Creating first admin user: ${firstAdminName}"
+        echo "Creating first admin user: ${firstAdminUserName}"
 
         ADMIN_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
           ${jqAdminSecrets.flagsString} \
-          --arg username "${firstAdminName}" \
+          --arg username ${escapeShellArg firstAdminUserName} \
           '{username: $username, password: ${jqAdminSecrets.refs.password}}')
 
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
@@ -71,10 +73,10 @@ in
         if [ "$HTTP_CODE" = "403" ]; then
           echo "Navidrome admin user already exists, skipping creation"
         elif [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-          echo "Failed to create admin user ${firstAdminName} (HTTP $HTTP_CODE): $BODY" >&2
+          echo "Failed to create admin user ${firstAdminUserName} (HTTP $HTTP_CODE): $BODY" >&2
           exit 1
         else
-          echo "Created admin user ${firstAdminName}"
+          echo "Created admin user ${firstAdminUserName}"
         fi
       '';
     };
