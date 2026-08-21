@@ -95,7 +95,7 @@ rec {
       value;
 
   # Collect every ._secret ref in a nested structure as a list of
-  # { path = ["key" "sub" ...]; file = "/runtime/path"; } records.
+  # { path = ["key" 0 "sub" ...]; file = "/runtime/path"; } records.
   collectSecretRefsRec =
     path: value:
     if isSecretRef value then
@@ -107,6 +107,8 @@ rec {
       ]
     else if builtins.isAttrs value && !(value ? __unfix__) then
       lib.concatLists (lib.mapAttrsToList (k: v: collectSecretRefsRec (path ++ [ k ]) v) value)
+    else if builtins.isList value then
+      lib.concatLists (lib.imap0 (i: v: collectSecretRefsRec (path ++ [ i ]) v) value)
     else
       [ ];
 
@@ -122,7 +124,11 @@ rec {
       assignments = map (
         ref:
         let
-          jqPath = "." + lib.concatMapStringsSep "" (k: ''["${k}"]'') ref.path;
+          jqPath =
+            "."
+            + lib.concatMapStringsSep "" (
+              k: if builtins.isInt k then "[${toString k}]" else ''["${k}"]''
+            ) ref.path;
         in
         "${jqPath} = ($" + ref.varName + ''Content | sub("\n+$"; ""))''
       ) indexedRefs;
