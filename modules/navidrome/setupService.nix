@@ -7,15 +7,15 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.navidrome;
 
-  adminUsers = filterAttrs (_: user: user.isAdmin) cfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
-  firstAdminUserName =
-    if firstAdminUser.userName != null then firstAdminUser.userName else firstAdminName;
+  firstAdminUser =
+    (getFirstAdmin {
+      inherit (cfg) users;
+      isAdmin = user: user.isAdmin;
+    }).user;
 
   jqAdminSecrets = secrets.mkJqSecretArgs {
     inherit (firstAdminUser) password;
@@ -54,11 +54,11 @@ in
           sleep 1
         done
 
-        echo "Creating first admin user: ${firstAdminUserName}"
+        echo "Creating first admin user: ${firstAdminUser.userName}"
 
         ADMIN_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
           ${jqAdminSecrets.flagsString} \
-          --arg username ${escapeShellArg firstAdminUserName} \
+          --arg username ${escapeShellArg firstAdminUser.userName} \
           '{username: $username, password: ${jqAdminSecrets.refs.password}}')
 
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
@@ -73,10 +73,10 @@ in
         if [ "$HTTP_CODE" = "403" ]; then
           echo "Navidrome admin user already exists, skipping creation"
         elif [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-          echo "Failed to create admin user ${firstAdminUserName} (HTTP $HTTP_CODE): $BODY" >&2
+          echo "Failed to create admin user ${firstAdminUser.userName} (HTTP $HTTP_CODE): $BODY" >&2
           exit 1
         else
-          echo "Created admin user ${firstAdminUserName}"
+          echo "Created admin user ${firstAdminUser.userName}"
         fi
       '';
     };

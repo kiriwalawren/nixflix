@@ -49,13 +49,10 @@ in
             lib.types.submodule {
               options = {
                 userName = lib.mkOption {
-                  type = lib.types.nullOr lib.types.str;
+                  type = lib.types.str;
                   example = "username";
                   default = null;
-                  description = ''
-                    Username for the user. Defaults to the attribute name (e.g. `users.kiri`
-                    defaults to username "kiri") when unset.
-                  '';
+                  description = "Username for the user.";
                 };
 
                 email = lib.mkOption {

@@ -22,6 +22,7 @@ pkgs.testers.runNixOSTest {
 
         users = {
           kiri = {
+            userName = "kiri";
             isAdmin = true;
             mutable = false;
             password._secret = pkgs.writeText "kiri_password" "321password";
@@ -29,6 +30,7 @@ pkgs.testers.runNixOSTest {
           };
 
           bob = {
+            userName = "bob";
             isAdmin = false;
             mutable = false;
             password = "password123";

@@ -7,15 +7,18 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
   inherit (config) nixflix;
   cfg = config.nixflix.jellyfin;
 
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
 
-  adminUsers = filterAttrs (_: user: user.policy.isAdministrator) cfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
+  firstAdmin = getFirstAdmin {
+    inherit (cfg) users;
+    isAdmin = user: user.policy.isAdministrator;
+  };
+  firstAdminName = firstAdmin.name;
+  firstAdminUser = firstAdmin.user;
 
   jqUserSecrets = secrets.mkJqSecretArgs {
     inherit (firstAdminUser) password;

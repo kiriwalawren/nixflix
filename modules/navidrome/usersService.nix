@@ -7,15 +7,15 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.navidrome;
 
-  adminUsers = filterAttrs (_: user: user.isAdmin) cfg.users;
-  sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);
-  firstAdminName = head sortedAdminNames;
-  firstAdminUser = adminUsers.${firstAdminName};
-  firstAdminUserName =
-    if firstAdminUser.userName != null then firstAdminUser.userName else firstAdminName;
+  firstAdminUser =
+    (getFirstAdmin {
+      inherit (cfg) users;
+      isAdmin = user: user.isAdmin;
+    }).user;
 
   jqLoginSecrets = secrets.mkJqSecretArgs { inherit (firstAdminUser) password; };
 
@@ -72,10 +72,10 @@ in
           fi
         }
 
-        echo "Logging in as ${firstAdminUserName}..."
+        echo "Logging in as ${firstAdminUser.userName}..."
         LOGIN_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
           ${jqLoginSecrets.flagsString} \
-          --arg username ${escapeShellArg firstAdminUserName} \
+          --arg username ${escapeShellArg firstAdminUser.userName} \
           '{username: $username, password: ${jqLoginSecrets.refs.password}}')
 
         LOGIN_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
@@ -88,7 +88,7 @@ in
         LOGIN_BODY=$(echo "$LOGIN_RESPONSE" | sed '$d')
 
         if [ "$LOGIN_HTTP_CODE" -lt 200 ] || [ "$LOGIN_HTTP_CODE" -ge 300 ]; then
-          echo "Failed to log in as ${firstAdminUserName} (HTTP $LOGIN_HTTP_CODE): $LOGIN_BODY" >&2
+          echo "Failed to log in as ${firstAdminUser.userName} (HTTP $LOGIN_HTTP_CODE): $LOGIN_BODY" >&2
           exit 1
         fi
 
