@@ -16,6 +16,7 @@ with lib;
       autobrr = 188;
       bazarr = 232;
       lidarr = 306;
+      navidrome = 282;
       prowlarr = 293;
       seerr = 262;
       sonarr = 274;

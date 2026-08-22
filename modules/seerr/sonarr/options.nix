@@ -133,7 +133,7 @@ let
         isDefault = true;
         externalUrl =
           if config.nixflix.reverseProxy.enable then
-            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
+            "${config.nixflix.reverseProxy.httpScheme}://${config.nixflix.sonarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr.config.hostConfig.urlBase}"
           else
             "";
       };
@@ -151,7 +151,7 @@ let
         isDefault = false;
         externalUrl =
           if config.nixflix.reverseProxy.enable then
-            "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
+            "${config.nixflix.reverseProxy.httpScheme}://${config.nixflix.sonarr-anime.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.sonarr-anime.config.hostConfig.urlBase}"
           else
             "";
       };

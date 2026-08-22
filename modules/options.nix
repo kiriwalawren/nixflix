@@ -114,6 +114,15 @@ in
             false;
         description = "Whether SSL is forced (derived).";
       };
+
+      httpScheme = mkOption {
+        type = types.str;
+        internal = true;
+        readOnly = true;
+        default =
+          if cfg.reverseProxy.enable && (cfg.nginx.forceSSL || cfg.caddy.tls.enable) then "https" else "http";
+        description = "The HTTP scheme to use for external URLs.";
+      };
     };
 
     nginx = {

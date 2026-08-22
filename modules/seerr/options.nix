@@ -25,8 +25,8 @@ in
     };
 
     externalUrlScheme = mkOption {
-      type = types.str;
-      default = "http";
+      type = types.nullOr types.str;
+      default = null;
       example = "https";
       description = ''
         Scheme to use for external linking to other services
@@ -105,10 +105,16 @@ in
     };
   };
 
-  config.assertions = [
-    {
-      assertion = config.nixflix.seerr.vpn.enable -> config.nixflix.vpn.enable;
-      message = "Cannot enable VPN routing for Seerr (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
-    }
-  ];
+  config = {
+    assertions = [
+      {
+        assertion = config.nixflix.seerr.vpn.enable -> config.nixflix.vpn.enable;
+        message = "Cannot enable VPN routing for Seerr (nixflix.seerr.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+      }
+    ];
+
+    warnings = lib.optional (
+      config.nixflix.seerr.externalUrlScheme != null
+    ) "nixflix.seerr.externalUrlScheme is deprecated; It will be removed in a future version.";
+  };
 }

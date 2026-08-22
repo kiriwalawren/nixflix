@@ -50,20 +50,6 @@ in
           description = "Base directory for qBittorrent downloads";
         };
 
-        vpn = {
-          enable = mkOption {
-            type = types.bool;
-            default = config.nixflix.vpn.enable;
-            defaultText = literalExpression "config.nixflix.vpn.enable";
-            description = ''
-              Whether to route qBittorrent traffic through the VPN.
-
-              When `false`, qBittorrent bypasses the VPN.
-              When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
-            '';
-          };
-        };
-
         categories = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
           default =
@@ -112,6 +98,20 @@ in
             [serverConfig documentation](https://search.nixos.org/options?channel=unstable&query=qbittorrent&show=services.qbittorrent.serverConfig)
             to see how to configure it.
           '';
+        };
+
+        vpn = {
+          enable = mkOption {
+            type = types.bool;
+            default = config.nixflix.vpn.enable;
+            defaultText = literalExpression "config.nixflix.vpn.enable";
+            description = ''
+              Whether to route qBittorrent traffic through the VPN.
+
+              When `false`, qBittorrent bypasses the VPN.
+              When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+            '';
+          };
         };
 
         subdomain = mkOption {

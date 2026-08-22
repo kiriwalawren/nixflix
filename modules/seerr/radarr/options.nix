@@ -103,7 +103,7 @@ let
       isDefault = true;
       externalUrl =
         if config.nixflix.reverseProxy.enable then
-          "${config.nixflix.seerr.externalUrlScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
+          "${config.nixflix.reverseProxy.httpScheme}://${config.nixflix.radarr.subdomain}.${config.nixflix.reverseProxy.domain}${config.nixflix.radarr.config.hostConfig.urlBase}"
         else
           "";
     };
