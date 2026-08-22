@@ -9,7 +9,8 @@ let
 in
 {
   imports = [
-    (import ./arr-common/mkArrServiceModule.nix { serviceName = "lidarr"; })
+    (import ../arr-common/mkArrServiceModule.nix { serviceName = "lidarr"; })
+    ./qualityProfiles.nix
   ];
 
   config.nixflix.lidarr = {
@@ -24,7 +25,7 @@ in
       rootFolders = lib.mkDefault (
         map (mediaDir: {
           path = mediaDir;
-          defaultQualityProfileId = 2;
+          defaultQualityProfileId = 1;
           defaultMetadataProfileId = 1;
           defaultMonitorOption = "all";
           defaultNewItemMonitorOption = "all";

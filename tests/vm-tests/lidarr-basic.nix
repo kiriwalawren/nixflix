@@ -102,6 +102,8 @@ pkgsUnfree.testers.runNixOSTest {
     };
 
   testScript = ''
+    import json
+
     start_all()
 
     # Wait for services to start (longer timeout for initial DB migrations)
@@ -123,7 +125,8 @@ pkgsUnfree.testers.runNixOSTest {
         "http://127.0.0.1:8686/api/v1/system/status"
     )
 
-    # Wait for root folders, delay profiles, and download clients services
+    # Wait for root folders, delay profiles, quality profiles, and download clients services
+    machine.wait_for_unit("lidarr-qualityprofiles.service", timeout=60)
     machine.wait_for_unit("lidarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("lidarr-delayprofiles.service", timeout=60)
     machine.wait_for_unit("lidarr-downloadclients.service", timeout=60)
@@ -136,8 +139,26 @@ pkgsUnfree.testers.runNixOSTest {
     print(f"Root folders: {folders}")
     assert "/media/music" in folders, "Root folder not created"
 
+    folders_list = json.loads(folders)
+    assert folders_list[0]['defaultQualityProfileId'] == 1, \
+        f"Expected root folder to use quality profile id=1 (Any), found {folders_list[0]['defaultQualityProfileId']}"
+
+    # Check that only the default "Any" quality profile remains (Lossless/Standard removed)
+    quality_profiles = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/qualityprofile"
+    )
+    profiles = json.loads(quality_profiles)
+    print(f"Quality profiles: {quality_profiles}")
+    assert len(profiles) == 1, f"Expected 1 quality profile, found {len(profiles)}"
+    assert profiles[0]['name'] == 'Any', f"Expected quality profile named 'Any', found {profiles[0]['name']}"
+    assert profiles[0]['upgradeAllowed'] == True, "Expected upgradeAllowed=true"
+    assert profiles[0]['cutoff'] == 1005, "Expected cutoff=1005 (Lossless)"
+    wav_item = next(i for i in profiles[0]['items'] if i.get('quality', {}).get('name') == 'WAV')
+    assert wav_item['allowed'] == False, "Expected WAV to be disallowed"
+    print("Default quality profile configured successfully!")
+
     # Check that SABnzbd download client was configured
-    import json
     clients = machine.succeed(
         "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
         "http://127.0.0.1:8686/api/v1/downloadclient"

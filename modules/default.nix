@@ -16,7 +16,7 @@ in
     ./flaresolverr.nix
     ./globals.nix
     ./jellyfin
-    ./lidarr.nix
+    ./lidarr
     ./maintainerr
     ./navidrome
     ./options.nix
