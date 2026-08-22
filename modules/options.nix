@@ -14,7 +14,7 @@ in
     ./globals.nix
     ./jellyfin
     ./seerr
-    ./lidarr.nix
+    ./lidarr
     ./postgres.nix
     ./prowlarr
     ./radarr.nix
