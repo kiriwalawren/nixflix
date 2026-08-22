@@ -367,15 +367,66 @@ let
     formatItems = [ ];
     id = 1;
   };
+
+  qualityProfileType = types.submodule {
+    freeformType = types.attrsOf types.anything;
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = "Name of the quality profile, shown in the Lidarr UI. Used to match against existing profiles.";
+      };
+      upgradeAllowed = mkOption {
+        type = types.bool;
+        description = "Whether Lidarr is allowed to upgrade an album to a better quality once the initial quality requirement is met.";
+      };
+      cutoff = mkOption {
+        type = types.int;
+        description = ''
+          The quality/group `id` at which Lidarr stops upgrading (only relevant when `upgradeAllowed = true`).
+          Must match one of the `id`s (or a `quality.id`) present in `items`.
+        '';
+      };
+      items = mkOption {
+        type = types.listOf types.attrs;
+        description = ''
+          Ordered list of qualities/quality groups this profile allows, from lowest to highest priority.
+          Each entry is either a single quality (`{ quality = { id; name; }; items = []; allowed; }`)
+          or a named group of qualities (`{ name; id; items = [ <quality items> ]; allowed; }`).
+        '';
+      };
+      minFormatScore = mkOption {
+        type = types.int;
+        default = 0;
+        description = "Minimum custom format score a release must meet to be grabbed.";
+      };
+      cutoffFormatScore = mkOption {
+        type = types.int;
+        default = 0;
+        description = "Custom format score at which Lidarr stops upgrading for format score alone.";
+      };
+      formatItems = mkOption {
+        type = types.listOf types.attrs;
+        default = [ ];
+        description = "Custom format scoring overrides for this profile (see Recyclarr for managed custom formats).";
+      };
+      id = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = ''
+          Lidarr's internal id for this profile. Ignored when reconciling — profiles are matched by
+          `name`, and the real instance id is substituted automatically — so this rarely needs to be set.
+        '';
+      };
+    };
+  };
 in
 {
   options.nixflix.lidarr.config.qualityProfiles = mkOption {
-    type = types.listOf types.attrs;
+    type = types.listOf qualityProfileType;
     default = [ ];
     description = ''
       List of quality profiles to configure via the API /qualityprofile endpoint.
-      Each profile is an attribute set matching the Lidarr quality profile schema,
-      matched and reconciled by `name` (Lidarr assigns `id` per-instance).
+      Each profile is matched and reconciled by `name` (Lidarr assigns `id` per-instance).
 
       A default "Any" profile is always included unless overridden by declaring
       your own profile named "Any". Profiles not declared here (by name) are deleted.
