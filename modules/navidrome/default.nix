@@ -245,6 +245,11 @@ in
         ];
 
         systemd = {
+          services.navidrome = {
+            after = config.nixflix.serviceDependencies;
+            requires = config.nixflix.serviceDependencies;
+          };
+
           tmpfiles.settings.navidromeDirs = {
             "${cfg.settings.DataFolder}"."d" = lib.mkForce {
               mode = "755";
