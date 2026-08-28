@@ -97,7 +97,7 @@ in
             `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Password_PBKDF2`.
             You can create a hash of your password with: `nix run git+https://codeberg.org/feathecutie/qbittorrent_password -- --password 'plain-text-password-here'`.
 
-            Then set `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Password_PBKDF2 = "@ByteArray(<hash-output-from-above-command>)"
+            Then set `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Password_PBKDF2 = "@ByteArray(output-from-above-command)"
 
             Further explanation can be found at the
             [serverConfig documentation](https://search.nixos.org/options?channel=unstable&query=qbittorrent&type=options#show=option%253Aservices.qbittorrent.serverConfig).
