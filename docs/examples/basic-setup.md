@@ -209,7 +209,7 @@ This example shows a working media server configuration based on a real producti
 
 - **PostgreSQL** - Database backend for better performance
 - **Nginx** (or **Caddy**) - Reverse proxy for all services
-- **theme.park** - UI theming (set to "plex" theme)
+- **theme.park** - UI theming (set to "overseer" theme)
 
 ### Automatic Integration
 
@@ -286,7 +286,7 @@ Replace these with your own values:
 - **Usenet providers**: Update server details for your providers
 - **VPN**: Replace `wireguard/conf` with the sops path to your wg-quick `.conf` file
 - **Accessible from**: Update `192.168.1.0/24` to your local network subnet
-- **Theme**: Change `"plex"` to another theme.park theme
+- **Theme**: Change `"overseer"` to another theme.park theme
 - **Jellyfin user**: Change `alice` to your username
 
 ## Next Steps
