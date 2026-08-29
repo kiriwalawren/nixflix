@@ -157,6 +157,15 @@ Here's a minimal configuration to get started:
         password = {_secret = config.sops.secrets."jellyfin/admin_password".path;};
       };
     };
+
+    navidrome = {
+      enable = true;
+      users.admin = {
+        userName = "admin";
+        isAdmin = true;
+        password = {_secret = config.sops.secrets."navidrome/admin_password".path;};
+      };
+    };
   };
 }
 ```
