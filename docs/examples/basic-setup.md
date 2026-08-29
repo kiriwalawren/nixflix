@@ -33,6 +33,7 @@ This example shows a working media server configuration based on a real producti
     "usenet/eweka/password" = {};
     "usenet/newsgroupdirect/username" = {};
     "usenet/newsgroupdirect/password" = {};
+    "navidrome/password" = {};
   };
 
   nixflix = {
@@ -165,6 +166,20 @@ This example shows a working media server configuration based on a real producti
       apiKey._secret = config.sops.secrets."seerr/api_key".path;
     };
 
+    navidrome = {
+      enable = true;
+      users = {
+        admin = {
+          userName = "admin";
+          isAdmin = true;
+          password._secret = config.sops.secrets."navidrome/password".path;
+        };
+      };
+      settings = {
+        MusicFolder = "/data/media/music";
+      };
+    };
+
     vpn = {
       enable = true;
       wgConfFile = config.sops.secrets."wireguard/conf".path;
@@ -182,6 +197,7 @@ This example shows a working media server configuration based on a real producti
 - **Sonarr Anime** - Anime shows
 - **Radarr** - Movies
 - **Lidarr** - Music
+- **Navidrome** - Music Server
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
@@ -238,6 +254,7 @@ This example shows a working media server configuration based on a real producti
 └── .state/
     ├── jellyfin/
     ├── lidarr/
+    ├── navidrome/
     ├── postgres/
     ├── prowlarr/
     ├── radarr/
@@ -259,6 +276,7 @@ This example shows a working media server configuration based on a real producti
 | qBittorrent | `http://qbittorrent.nixflix` | `http://localhost:8282` | `admin` |
 | Jellyfin | `http://jellyfin.nixflix` | `http://localhost:8096` | `admin` |
 | Seerr | `http://seerr.nixflix` | `http://localhost:5055` | `seerr` (local), `admin` (Jellyfin auth) |
+| Navidrome | `http://navidrome.nixflix` | `http://localhost:4533` | `admin` |
 
 ## Customization
 
