@@ -169,8 +169,8 @@ This example shows a working media server configuration based on a real producti
     navidrome = {
       enable = true;
       users = {
-        admin = {
-          userName = "admin";
+        "Alice" = { # name displayed in the UI
+          userName = "alice"; # username used to login
           isAdmin = true;
           password._secret = config.sops.secrets."navidrome/password".path;
         };
@@ -288,6 +288,7 @@ Replace these with your own values:
 - **Accessible from**: Update `192.168.1.0/24` to your local network subnet
 - **Theme**: Change `"overseer"` to another theme.park theme
 - **Jellyfin user**: Change `alice` to your username
+- **Navidrome user**: Change `alice` to your username
 
 ## Next Steps
 

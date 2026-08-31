@@ -52,7 +52,7 @@ in
                   type = lib.types.str;
                   example = "username";
                   default = null;
-                  description = "Username for the user.";
+                  description = "Username for the user (used to login).";
                 };
 
                 email = lib.mkOption {
