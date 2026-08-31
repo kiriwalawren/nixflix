@@ -278,7 +278,6 @@ in
         config.nixflix.enable
         && cfg.enable
         && cfg.config.apiKey != null
-        && cfg.config.hostConfig.password != null
       )
       {
         systemd.services."${serviceName}-config" =
