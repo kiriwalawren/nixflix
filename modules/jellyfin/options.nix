@@ -6,8 +6,8 @@
 }:
 with lib;
 let
-  stateDir = "${config.nixflix.stateDir}/jellyfin";
   secrets = import ../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.jellyfin;
 in
 {
   options.nixflix.jellyfin = {
@@ -51,15 +51,15 @@ in
 
     dataDir = mkOption {
       type = types.path;
-      default = stateDir;
+      default = "${config.nixflix.stateDir}/jellyfin";
       defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin"'';
       description = "Directory containing the Jellyfin data files";
     };
 
     configDir = mkOption {
       type = types.path;
-      default = "${stateDir}/config";
-      defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin/config"'';
+      default = "${cfg.dataDir}/config";
+      defaultText = literalExpression ''"''${config.nixflix.jellyfin.dataDir}/config"'';
       description = ''
         Directory containing the server configuration files,
         passed with `--configdir` see [configuration-directory](https://jellyfin.org/docs/general/administration/configuration/#configuration-directory)
@@ -77,8 +77,8 @@ in
 
     logDir = mkOption {
       type = types.path;
-      default = "${stateDir}/log";
-      defaultText = literalExpression ''"''${config.nixflix.stateDir}/jellyfin/log"'';
+      default = "${cfg.dataDir}/log";
+      defaultText = literalExpression ''"''${config.nixflix.jellyfin.dataDir}/log"'';
       description = ''
         Directory where the Jellyfin logs will be stored,
         passed with `--logdir` see [#log-directory](https://jellyfin.org/docs/general/administration/configuration/#log-directory)
