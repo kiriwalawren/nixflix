@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- fix(arr-common): silent failure of arr-config services not generating if `username` & `password` were both `null` ([#311](https://github.com/kiriwalawren/nixflix/pull/311))
+- fix(seer/sonarr): requirement on radarr and require `seerr-libraries` like seer/radarr ([#311](https://github.com/kiriwalawren/nixflix/pull/311))
 - fix navidrome dependency on `serviceDependencies` ([#306](https://github.com/kiriwalawren/nixflix/pull/306))
 - fix seerr sonarr activeDirectory default resolving host config ([#283](https://github.com/kiriwalawren/nixflix/pull/283))
 - fix \*arr rootfolders oneshot racing app startup ([#286](https://github.com/kiriwalawren/nixflix/pull/286))
