@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Default theme is set to `"catppuccin-mocha"`.
+
 ### Added
 
 - Lidarr metadata profile overrides service that creates, updates, and deletes metadata profiles to match `nixflix.lidarr.config.metadataProfiles` ([#293](https://github.com/kiriwalawren/nixflix/issues/293))

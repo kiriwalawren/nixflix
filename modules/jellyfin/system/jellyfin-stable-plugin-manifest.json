@@ -2525,6 +2525,14 @@
         "category": "Music",
         "versions": [
             {
+                "version": "4.0.0.0",
+                "changelog": "- Implement rate limiting (#45) @Shadowghost, @crobibero\n- Prefer artist then album artist (#23) @scampower3, @Shadowghost\n- Allow configuration of a custom LrcLib server (#42) @dc9dd6aa, @Shadowghost",
+                "targetAbi": "12.0.0.0",
+                "sourceUrl": "https://repo.jellyfin.org/files/plugin/lrclib-lyrics/lrclib-lyrics_4.0.0.0.zip",
+                "checksum": "77d3a8cfaf3be303a372cdf78726e78b",
+                "timestamp": "2026-08-30T17:38:06Z"
+            },
+            {
                 "version": "3.0.0.0",
                 "changelog": "- Jellyfin 10.11 support (#25) @crobibero\n- Update plugin name (#12) @thornbill\n- Update PluginConfiguration comment (#10) @scampower3",
                 "targetAbi": "10.11.0.0",

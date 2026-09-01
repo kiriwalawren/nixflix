@@ -44,7 +44,7 @@ This example shows a working media server configuration based on a real producti
 
     theme = {
       enable = true;
-      name = "overseerr";
+      name = "catppuccin-mocha";
     };
 
     # Reverse proxy (choose nginx or caddy, not both)
