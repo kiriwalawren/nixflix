@@ -826,6 +826,49 @@ in
     in
     assertTest "hostconfig-password-requires-username" (!result.success);
 
+  # lidarr metadata/quality profile assertions: at least one profile must be present
+  lidarr-qualityprofiles-empty-assertion =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+                lidarr = {
+                  enable = true;
+                  config.qualityProfiles = [ ];
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "lidarr-qualityprofiles-empty-assertion" (!result.success);
+
+  lidarr-metadataprofiles-empty-assertion =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+                lidarr = {
+                  enable = true;
+                  config.metadataProfiles = [ ];
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "lidarr-metadataprofiles-empty-assertion" (!result.success);
+
   # https://github.com/kiriwalawren/nixflix/issues/270
   # settings.auth/settings.server must mirror config.hostConfig so that the
   # environment variables actually reflect what the user configured there.

@@ -8,6 +8,21 @@ let
     inherit system;
     config.allowUnfree = true;
   };
+
+  inherit (import ../../modules/lidarr/metadataAlbumTypes.nix)
+    primaryAlbumTypeDefs
+    secondaryAlbumTypeDefs
+    releaseStatusDefs
+    ;
+
+  # Ascending-by-id `[ id name ]` pairs, matching how the schema endpoint orders responses
+  # once sorted the same way on the Python side.
+  idNamePairs =
+    defs:
+    map (d: [
+      d.id
+      d.name
+    ]) (builtins.sort (a: b: a.id < b.id) defs);
 in
 pkgsUnfree.testers.runNixOSTest {
   name = "lidarr-basic-test";
@@ -125,8 +140,9 @@ pkgsUnfree.testers.runNixOSTest {
         "http://127.0.0.1:8686/api/v1/system/status"
     )
 
-    # Wait for root folders, delay profiles, quality profiles, and download clients services
+    # Wait for root folders, delay profiles, quality profiles, metadata profiles, and download clients services
     machine.wait_for_unit("lidarr-qualityprofiles.service", timeout=60)
+    machine.wait_for_unit("lidarr-metadataprofiles.service", timeout=60)
     machine.wait_for_unit("lidarr-rootfolders.service", timeout=60)
     machine.wait_for_unit("lidarr-delayprofiles.service", timeout=60)
     machine.wait_for_unit("lidarr-downloadclients.service", timeout=60)
@@ -142,6 +158,8 @@ pkgsUnfree.testers.runNixOSTest {
     folders_list = json.loads(folders)
     assert folders_list[0]['defaultQualityProfileId'] == 1, \
         f"Expected root folder to use quality profile id=1 (Any), found {folders_list[0]['defaultQualityProfileId']}"
+    assert folders_list[0]['defaultMetadataProfileId'] == 1, \
+        f"Expected root folder to use metadata profile id=1 (Standard), found {folders_list[0]['defaultMetadataProfileId']}"
 
     # Check that only the default "Any" quality profile remains (Lossless/Standard removed)
     quality_profiles = machine.succeed(
@@ -157,6 +175,64 @@ pkgsUnfree.testers.runNixOSTest {
     wav_item = next(i for i in profiles[0]['items'] if i.get('quality', {}).get('name') == 'WAV')
     assert wav_item['allowed'] == False, "Expected WAV to be disallowed"
     print("Default quality profile configured successfully!")
+
+    # Check that the default "Standard" metadata profile is configured. Lidarr's
+    # built-in "None" profile is also expected to remain: it can't be reconciled
+    # away because Lidarr refuses to delete it.
+    metadata_profiles = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/metadataprofile"
+    )
+    m_profiles = json.loads(metadata_profiles)
+    print(f"Metadata profiles: {metadata_profiles}")
+    standard_profile = next((p for p in m_profiles if p['name'] == 'Standard'), None)
+    assert standard_profile is not None, \
+        f"Expected a metadata profile named 'Standard', found {m_profiles}"
+    album_item = next(
+        a for a in standard_profile['primaryAlbumTypes'] if a['albumType']['name'] == 'Album'
+    )
+    assert album_item['allowed'] == True, "Expected primary album type 'Album' to be allowed"
+    other_item = next(
+        a for a in standard_profile['primaryAlbumTypes'] if a['albumType']['name'] == 'Other'
+    )
+    assert other_item['allowed'] == False, "Expected primary album type 'Other' to be disallowed"
+    official_status = next(
+        r for r in standard_profile['releaseStatuses'] if r['releaseStatus']['name'] == 'Official'
+    )
+    assert official_status['allowed'] == True, "Expected release status 'Official' to be allowed"
+    print("Default metadata profile configured successfully!")
+
+    # Verify Lidarr's live set of primary/secondary album types and release statuses
+    # (from /api/v1/metadataprofile/schema) still matches what
+    # modules/lidarr/metadataAlbumTypes.nix hard-codes, so a future Lidarr upgrade that
+    # adds/removes/renames a type is caught here.
+    metadata_schema = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/metadataprofile/schema"
+    )
+    schema = json.loads(metadata_schema)
+
+    def sorted_pairs(items, key):
+        return sorted((item[key]['id'], item[key]['name']) for item in items)
+
+    expected_primary = [tuple(pair) for pair in ${builtins.toJSON (idNamePairs primaryAlbumTypeDefs)}]
+    expected_secondary = [tuple(pair) for pair in ${builtins.toJSON (idNamePairs secondaryAlbumTypeDefs)}]
+    expected_statuses = [tuple(pair) for pair in ${builtins.toJSON (idNamePairs releaseStatusDefs)}]
+
+    actual_primary = sorted_pairs(schema['primaryAlbumTypes'], 'albumType')
+    actual_secondary = sorted_pairs(schema['secondaryAlbumTypes'], 'albumType')
+    actual_statuses = sorted_pairs(schema['releaseStatuses'], 'releaseStatus')
+
+    assert actual_primary == expected_primary, \
+        f"Lidarr's primary album types changed (expected {expected_primary}, found {actual_primary}) " \
+        "- update primaryAlbumTypeDefs in modules/lidarr/metadataAlbumTypes.nix"
+    assert actual_secondary == expected_secondary, \
+        f"Lidarr's secondary album types changed (expected {expected_secondary}, found {actual_secondary}) " \
+        "- update secondaryAlbumTypeDefs in modules/lidarr/metadataAlbumTypes.nix"
+    assert actual_statuses == expected_statuses, \
+        f"Lidarr's release statuses changed (expected {expected_statuses}, found {actual_statuses}) " \
+        "- update releaseStatusDefs in modules/lidarr/metadataAlbumTypes.nix"
+    print("Lidarr's live album type/release status schema matches metadataAlbumTypes.nix!")
 
     # Check that SABnzbd download client was configured
     clients = machine.succeed(
