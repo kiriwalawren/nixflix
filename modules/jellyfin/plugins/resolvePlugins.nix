@@ -46,8 +46,9 @@ let
     // {
       manifest = builtins.fromJSON (
         builtins.readFile (
-          builtins.fetchurl {
+          pkgs.fetchurl {
             inherit (repo) url;
+            curlOptsList = ["-A" "Jellyfin-Server/${jellyfinVersion} (Nixflix plugin repository resolver)" "-L"];
             sha256 =
               let
                 inherit (repo) hash;
