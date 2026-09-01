@@ -25,3 +25,5 @@ jobs:
           git add modules/jellyfin/system/jellyfin-stable-plugin-manifest.json
           git commit -m "chore: update manifests"
           git push
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
