@@ -54,7 +54,7 @@ in
       };
       name = mkOption {
         type = types.str;
-        default = "overseerr";
+        default = "catppuccin-mocha";
         description = ''
           The name of any official theme or community theme supported by theme.park.
 
