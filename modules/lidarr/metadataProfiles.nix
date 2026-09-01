@@ -10,154 +10,68 @@ let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   mkWaitForApiScript = import ../arr-common/mkWaitForApiScript.nix { inherit lib pkgs; };
 
+  inherit (import ./metadataAlbumTypes.nix)
+    primaryAlbumTypeDefs
+    secondaryAlbumTypeDefs
+    releaseStatusDefs
+    ;
+
+  # Builds a submodule type with one `bool` option (default false) per entry in `defs`.
+  mkEnableFlagsType =
+    defs:
+    types.submodule {
+      options = listToAttrs (
+        map (
+          d:
+          nameValuePair d.option (mkOption {
+            type = types.bool;
+            default = false;
+            description = ''Whether the "${d.name}" type is allowed.'';
+          })
+        ) defs
+      );
+    };
+
+  # Expands an enable-flags attrset back into the `{ albumType = { id; name; }; allowed; }` /
+  # `{ releaseStatus = { id; name; }; allowed; }` list shape Lidarr's API expects.
+  expandAlbumTypes =
+    defs: flags:
+    map (d: {
+      albumType = {
+        inherit (d) id name;
+      };
+      allowed = flags.${d.option};
+    }) defs;
+  expandReleaseStatuses =
+    defs: flags:
+    map (d: {
+      releaseStatus = {
+        inherit (d) id name;
+      };
+      allowed = flags.${d.option};
+    }) defs;
+
+  primaryAlbumTypesType = mkEnableFlagsType primaryAlbumTypeDefs;
+  secondaryAlbumTypesType = mkEnableFlagsType secondaryAlbumTypeDefs;
+  releaseStatusesType = mkEnableFlagsType releaseStatusDefs;
+
   defaultMetadataProfile = {
     name = "Standard";
-    primaryAlbumTypes = [
-      {
-        albumType = {
-          id = 2;
-          name = "Single";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 4;
-          name = "Other";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 1;
-          name = "EP";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 3;
-          name = "Broadcast";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 0;
-          name = "Album";
-        };
-        allowed = true;
-      }
-    ];
-    secondaryAlbumTypes = [
-      {
-        albumType = {
-          id = 0;
-          name = "Studio";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 3;
-          name = "Spokenword";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 2;
-          name = "Soundtrack";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 7;
-          name = "Remix";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 9;
-          name = "Mixtape/Street";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 6;
-          name = "Live";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 4;
-          name = "Interview";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 8;
-          name = "DJ-mix";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 10;
-          name = "Demo";
-        };
-        allowed = false;
-      }
-      {
-        albumType = {
-          id = 1;
-          name = "Compilation";
-        };
-        allowed = true;
-      }
-      {
-        albumType = {
-          id = 11;
-          name = "Audio drama";
-        };
-        allowed = false;
-      }
-    ];
-    releaseStatuses = [
-      {
-        releaseStatus = {
-          id = 3;
-          name = "Pseudo-Release";
-        };
-        allowed = false;
-      }
-      {
-        releaseStatus = {
-          id = 1;
-          name = "Promotion";
-        };
-        allowed = false;
-      }
-      {
-        releaseStatus = {
-          id = 0;
-          name = "Official";
-        };
-        allowed = true;
-      }
-      {
-        releaseStatus = {
-          id = 2;
-          name = "Bootleg";
-        };
-        allowed = false;
-      }
-    ];
+    primaryAlbumTypes = {
+      enableSingle = true;
+      enableEP = true;
+      enableAlbum = true;
+    };
+    secondaryAlbumTypes = {
+      enableStudio = true;
+      enableSoundtrack = true;
+      enableRemix = true;
+      enableLive = true;
+      enableCompilation = true;
+    };
+    releaseStatuses = {
+      enableOfficial = true;
+    };
     id = 1;
   };
 
@@ -169,25 +83,19 @@ let
         description = "Name of the metadata profile, shown in the Lidarr UI. Used to match against existing profiles.";
       };
       primaryAlbumTypes = mkOption {
-        type = types.listOf types.attrs;
-        description = ''
-          Album types allowed as an artist's primary album types (e.g. Album, EP, Single).
-          Each entry is `{ albumType = { id; name; }; allowed; }`.
-        '';
+        type = primaryAlbumTypesType;
+        default = { };
+        description = "Enable flags for which album types are allowed as an artist's primary album type.";
       };
       secondaryAlbumTypes = mkOption {
-        type = types.listOf types.attrs;
-        description = ''
-          Album types allowed as secondary types (e.g. Live, Compilation, Remix).
-          Each entry is `{ albumType = { id; name; }; allowed; }`.
-        '';
+        type = secondaryAlbumTypesType;
+        default = { };
+        description = "Enable flags for which album types are allowed as secondary album types.";
       };
       releaseStatuses = mkOption {
-        type = types.listOf types.attrs;
-        description = ''
-          Release statuses allowed when selecting releases (e.g. Official, Promotion).
-          Each entry is `{ releaseStatus = { id; name; }; allowed; }`.
-        '';
+        type = releaseStatusesType;
+        default = { };
+        description = "Enable flags for which release statuses are allowed when selecting releases.";
       };
       id = mkOption {
         type = types.nullOr types.int;
@@ -204,14 +112,11 @@ in
   options.nixflix.lidarr.config.metadataProfiles = mkOption {
     type = types.listOf metadataProfileType;
     default = [ defaultMetadataProfile ];
-    defaultText = literalExpression ''[ <built-in "Standard" metadata profile> ]'';
     description = ''
       List of metadata profiles to configure via the API /metadataprofile endpoint.
       Each profile is matched and reconciled by `name` (Lidarr assigns `id` per-instance).
 
-      Defaults to a single "Standard" profile. At least one metadata profile must be present
-      (enforced via assertion) — Lidarr requires one to assign to root folders and artists.
-      Profiles not declared here (by name) are deleted.
+      Defaults to a single "Standard" profile. At least one metadata profile must be present.
     '';
   };
 
@@ -277,7 +182,12 @@ in
           ${concatMapStringsSep "\n" (
             profileConfig:
             let
-              profileJson = builtins.toJSON profileConfig;
+              profileForApi = profileConfig // {
+                primaryAlbumTypes = expandAlbumTypes primaryAlbumTypeDefs profileConfig.primaryAlbumTypes;
+                secondaryAlbumTypes = expandAlbumTypes secondaryAlbumTypeDefs profileConfig.secondaryAlbumTypes;
+                releaseStatuses = expandReleaseStatuses releaseStatusDefs profileConfig.releaseStatuses;
+              };
+              profileJson = builtins.toJSON profileForApi;
               profileName = profileConfig.name;
             in
             ''
