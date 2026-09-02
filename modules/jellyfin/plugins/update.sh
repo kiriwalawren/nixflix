@@ -31,31 +31,18 @@ update_manifest() {
     -exec sed -i "s|${old_sha}|${new_sha}|g; s|${old_hash}|${new_hash}|g" {} \;
 }
 
-echo "Fetching Jellyfin Stable Plugin Repo..."
+echo "Fetching Jellyfin Universal Plugin Repo Manifest..."
 UPR_SHA=$(curl -sf \
   "https://api.github.com/repos/kiriwalawren/nixflix/commits/main?per_page=1" |
   jq -r '.sha')
-UPR_URL="https://raw.githubusercontent.com/kiriwalawren/nixflix/${UPR_SHA}/modules/jellyfin/system/jellyfin-stable-plugin-manifest.json"
+UPR_URL="https://raw.githubusercontent.com/kiriwalawren/nixflix/${UPR_SHA}/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json"
 UPR_HASH=$(nix store prefetch-file --json "$UPR_URL" 2>/dev/null | jq -r '.hash')
 
-update_manifest "Stable Plugin Repo" \
+update_manifest "Universal Plugin Repo" \
   "$UPR_SHA" "$UPR_URL" "$UPR_HASH" \
-  'kiriwalawren/nixflix/[0-9a-f]\{40\}/modules/jellyfin/system/jellyfin-stable-plugin-manifest'
+  'kiriwalawren/nixflix/[0-9a-f]\{40\}/modules/jellyfin/system/jellyfin-universal-plugin-manifest'
 
 UPR_MANIFEST=$(curl -sf "$UPR_URL")
-
-echo "Fetching SubBuzz manifest..."
-SUBBUZZ_SHA=$(curl -sf \
-  "https://api.github.com/repos/josdion/subbuzz/commits?path=repo/jellyfin_10.11.json&per_page=1" |
-  jq -r '.[0].sha')
-SUBBUZZ_URL="https://raw.githubusercontent.com/josdion/subbuzz/${SUBBUZZ_SHA}/repo/jellyfin_10.11.json"
-SUBBUZZ_MANIFEST_HASH=$(nix store prefetch-file --json "$SUBBUZZ_URL" 2>/dev/null | jq -r '.hash')
-
-update_manifest "SubBuzz manifest" \
-  "$SUBBUZZ_SHA" "$SUBBUZZ_URL" "$SUBBUZZ_MANIFEST_HASH" \
-  'josdion/subbuzz/[0-9a-f]\{40\}/repo'
-
-SUBBUZZ_MANIFEST=$(curl -sf "$SUBBUZZ_URL")
 
 # === Part 2: Update plugin version + download hashes ===
 
@@ -107,17 +94,11 @@ lookup_in_manifest() {
        end' 2>/dev/null
 }
 
-MANIFESTS=("$UPR_MANIFEST" "$SUBBUZZ_MANIFEST")
-
 while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
-  latest_info=""
-  for manifest in "${MANIFESTS[@]}"; do
-    latest_info=$(lookup_in_manifest "$plugin_name" "$manifest")
-    [[ -n "$latest_info" ]] && break
-  done
+  latest_info=$(lookup_in_manifest "$plugin_name" "$UPR_MANIFEST")
 
   if [[ -z "$latest_info" ]]; then
-    echo "  $plugin_name: not found in any manifest, skipping"
+    echo "  $plugin_name: not found in manifest, skipping"
     continue
   fi
 

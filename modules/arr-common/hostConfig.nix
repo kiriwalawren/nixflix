@@ -273,145 +273,137 @@ in
       ];
     })
 
-    (mkIf
-      (
-        config.nixflix.enable
-        && cfg.enable
-        && cfg.config.apiKey != null
-        && cfg.config.hostConfig.password != null
-      )
-      {
-        systemd.services."${serviceName}-config" =
-          let
-            hc = cfg.config.hostConfig;
-            jqSecrets = secrets.mkJqSecretArgs {
-              inherit (cfg.config) apiKey;
-              inherit (hc)
-                username
-                password
-                sslCertPassword
-                proxyUsername
-                proxyPassword
-                ;
-            };
-          in
-          {
-            description = "Configure ${serviceName} via API";
-            after = [ "${serviceName}.service" ];
-            # DO NOT ADD `requires` here — <service>-config restarts
-            # the service and would enter failed state as a result
-            wantedBy = [ "multi-user.target" ];
-
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              ExecStartPre = mkWaitForApiScript serviceName cfg.config;
-              ExecStartPost = mkWaitForApiScript serviceName cfg.config;
-            };
-
-            script = ''
-              set -eu
-
-              BASE_URL="http://${hc.bindAddress}:${builtins.toString hc.port}${hc.urlBase}/api/${cfg.config.apiVersion}"
-
-              echo "Fetching current host configuration..."
-              HOST_CONFIG=$(${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/config/host";
-                  extraArgs = "-f";
-                }
-              } 2>/dev/null)
-
-              if [ -z "$HOST_CONFIG" ]; then
-                echo "Failed to fetch host configuration"
-                exit 1
-              fi
-
-              CONFIG_ID=$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.id')
-
-              echo "Building configuration..."
-              NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
-                ${jqSecrets.flagsString} \
-                --argjson id "$CONFIG_ID" \
-                --arg bindAddress ${escapeShellArg hc.bindAddress} \
-                --arg authenticationMethod ${escapeShellArg hc.authenticationMethod} \
-                --arg authenticationRequired ${escapeShellArg hc.authenticationRequired} \
-                --arg logLevel ${escapeShellArg hc.logLevel} \
-                --arg consoleLogLevel ${escapeShellArg hc.consoleLogLevel} \
-                --arg branch ${escapeShellArg hc.branch} \
-                --arg sslCertPath ${escapeShellArg hc.sslCertPath} \
-                --arg urlBase ${escapeShellArg hc.urlBase} \
-                --arg instanceName ${escapeShellArg hc.instanceName} \
-                --arg applicationUrl ${escapeShellArg hc.applicationUrl} \
-                --arg updateMechanism ${escapeShellArg hc.updateMechanism} \
-                --arg updateScriptPath ${escapeShellArg hc.updateScriptPath} \
-                --arg proxyType ${escapeShellArg hc.proxyType} \
-                --arg proxyHostname ${escapeShellArg hc.proxyHostname} \
-                --arg proxyBypassFilter ${escapeShellArg hc.proxyBypassFilter} \
-                --arg certificateValidation ${escapeShellArg hc.certificateValidation} \
-                --arg backupFolder ${escapeShellArg hc.backupFolder} \
-                '{
-                  id: $id,
-                  bindAddress: $bindAddress,
-                  port: ${builtins.toString hc.port},
-                  sslPort: ${builtins.toString hc.sslPort},
-                  enableSsl: ${boolToString hc.enableSsl},
-                  launchBrowser: ${boolToString hc.launchBrowser},
-                  authenticationMethod: $authenticationMethod,
-                  authenticationRequired: $authenticationRequired,
-                  analyticsEnabled: ${boolToString hc.analyticsEnabled},
-                  username: ${jqSecrets.refs.username},
-                  password: ${jqSecrets.refs.password},
-                  passwordConfirmation: ${jqSecrets.refs.password},
-                  logLevel: $logLevel,
-                  logSizeLimit: ${builtins.toString hc.logSizeLimit},
-                  consoleLogLevel: $consoleLogLevel,
-                  branch: $branch,
-                  apiKey: ${jqSecrets.refs.apiKey},
-                  sslCertPath: $sslCertPath,
-                  sslCertPassword: ${jqSecrets.refs.sslCertPassword},
-                  urlBase: $urlBase,
-                  instanceName: $instanceName,
-                  applicationUrl: $applicationUrl,
-                  updateAutomatically: ${boolToString hc.updateAutomatically},
-                  updateMechanism: $updateMechanism,
-                  updateScriptPath: $updateScriptPath,
-                  proxyEnabled: ${boolToString hc.proxyEnabled},
-                  proxyType: $proxyType,
-                  proxyHostname: $proxyHostname,
-                  proxyPort: ${builtins.toString hc.proxyPort},
-                  proxyUsername: ${jqSecrets.refs.proxyUsername},
-                  proxyPassword: ${jqSecrets.refs.proxyPassword},
-                  proxyBypassFilter: $proxyBypassFilter,
-                  proxyBypassLocalAddresses: ${boolToString hc.proxyBypassLocalAddresses},
-                  certificateValidation: $certificateValidation,
-                  backupFolder: $backupFolder,
-                  backupInterval: ${builtins.toString hc.backupInterval},
-                  backupRetention: ${builtins.toString hc.backupRetention},
-                  trustCgnatIpAddresses: ${boolToString hc.trustCgnatIpAddresses}
-                }')
-
-              echo "Updating ${capitalizedName} configuration via API..."
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/config/host/$CONFIG_ID";
-                  method = "PUT";
-                  headers = {
-                    "Content-Type" = "application/json";
-                  };
-                  data = "$NEW_CONFIG";
-                  extraArgs = "-f";
-                }
-              } > /dev/null
-
-              echo "Configuration updated successfully"
-
-              echo "Restarting ${serviceName} service..."
-              systemctl restart ${serviceName}.service
-              echo "${capitalizedName} service restarted"
-            '';
+    (mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null) {
+      systemd.services."${serviceName}-config" =
+        let
+          hc = cfg.config.hostConfig;
+          jqSecrets = secrets.mkJqSecretArgs {
+            inherit (cfg.config) apiKey;
+            inherit (hc)
+              username
+              password
+              sslCertPassword
+              proxyUsername
+              proxyPassword
+              ;
           };
-      }
-    )
+        in
+        {
+          description = "Configure ${serviceName} via API";
+          after = [ "${serviceName}.service" ];
+          # DO NOT ADD `requires` here — <service>-config restarts
+          # the service and would enter failed state as a result
+          wantedBy = [ "multi-user.target" ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStartPre = mkWaitForApiScript serviceName cfg.config;
+            ExecStartPost = mkWaitForApiScript serviceName cfg.config;
+          };
+
+          script = ''
+            set -eu
+
+            BASE_URL="http://${hc.bindAddress}:${builtins.toString hc.port}${hc.urlBase}/api/${cfg.config.apiVersion}"
+
+            echo "Fetching current host configuration..."
+            HOST_CONFIG=$(${
+              mkSecureCurl cfg.config.apiKey {
+                url = "$BASE_URL/config/host";
+                extraArgs = "-f";
+              }
+            } 2>/dev/null)
+
+            if [ -z "$HOST_CONFIG" ]; then
+              echo "Failed to fetch host configuration"
+              exit 1
+            fi
+
+            CONFIG_ID=$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.id')
+
+            echo "Building configuration..."
+            NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
+              ${jqSecrets.flagsString} \
+              --argjson id "$CONFIG_ID" \
+              --arg bindAddress ${escapeShellArg hc.bindAddress} \
+              --arg authenticationMethod ${escapeShellArg hc.authenticationMethod} \
+              --arg authenticationRequired ${escapeShellArg hc.authenticationRequired} \
+              --arg logLevel ${escapeShellArg hc.logLevel} \
+              --arg consoleLogLevel ${escapeShellArg hc.consoleLogLevel} \
+              --arg branch ${escapeShellArg hc.branch} \
+              --arg sslCertPath ${escapeShellArg hc.sslCertPath} \
+              --arg urlBase ${escapeShellArg hc.urlBase} \
+              --arg instanceName ${escapeShellArg hc.instanceName} \
+              --arg applicationUrl ${escapeShellArg hc.applicationUrl} \
+              --arg updateMechanism ${escapeShellArg hc.updateMechanism} \
+              --arg updateScriptPath ${escapeShellArg hc.updateScriptPath} \
+              --arg proxyType ${escapeShellArg hc.proxyType} \
+              --arg proxyHostname ${escapeShellArg hc.proxyHostname} \
+              --arg proxyBypassFilter ${escapeShellArg hc.proxyBypassFilter} \
+              --arg certificateValidation ${escapeShellArg hc.certificateValidation} \
+              --arg backupFolder ${escapeShellArg hc.backupFolder} \
+              '{
+                id: $id,
+                bindAddress: $bindAddress,
+                port: ${builtins.toString hc.port},
+                sslPort: ${builtins.toString hc.sslPort},
+                enableSsl: ${boolToString hc.enableSsl},
+                launchBrowser: ${boolToString hc.launchBrowser},
+                authenticationMethod: $authenticationMethod,
+                authenticationRequired: $authenticationRequired,
+                analyticsEnabled: ${boolToString hc.analyticsEnabled},
+                username: ${jqSecrets.refs.username},
+                password: ${jqSecrets.refs.password},
+                passwordConfirmation: ${jqSecrets.refs.password},
+                logLevel: $logLevel,
+                logSizeLimit: ${builtins.toString hc.logSizeLimit},
+                consoleLogLevel: $consoleLogLevel,
+                branch: $branch,
+                apiKey: ${jqSecrets.refs.apiKey},
+                sslCertPath: $sslCertPath,
+                sslCertPassword: ${jqSecrets.refs.sslCertPassword},
+                urlBase: $urlBase,
+                instanceName: $instanceName,
+                applicationUrl: $applicationUrl,
+                updateAutomatically: ${boolToString hc.updateAutomatically},
+                updateMechanism: $updateMechanism,
+                updateScriptPath: $updateScriptPath,
+                proxyEnabled: ${boolToString hc.proxyEnabled},
+                proxyType: $proxyType,
+                proxyHostname: $proxyHostname,
+                proxyPort: ${builtins.toString hc.proxyPort},
+                proxyUsername: ${jqSecrets.refs.proxyUsername},
+                proxyPassword: ${jqSecrets.refs.proxyPassword},
+                proxyBypassFilter: $proxyBypassFilter,
+                proxyBypassLocalAddresses: ${boolToString hc.proxyBypassLocalAddresses},
+                certificateValidation: $certificateValidation,
+                backupFolder: $backupFolder,
+                backupInterval: ${builtins.toString hc.backupInterval},
+                backupRetention: ${builtins.toString hc.backupRetention},
+                trustCgnatIpAddresses: ${boolToString hc.trustCgnatIpAddresses}
+              }')
+
+            echo "Updating ${capitalizedName} configuration via API..."
+            ${
+              mkSecureCurl cfg.config.apiKey {
+                url = "$BASE_URL/config/host/$CONFIG_ID";
+                method = "PUT";
+                headers = {
+                  "Content-Type" = "application/json";
+                };
+                data = "$NEW_CONFIG";
+                extraArgs = "-f";
+              }
+            } > /dev/null
+
+            echo "Configuration updated successfully"
+
+            echo "Restarting ${serviceName} service..."
+            systemctl restart ${serviceName}.service
+            echo "${capitalizedName} service restarted"
+          '';
+        };
+    })
   ];
 }

@@ -211,18 +211,16 @@ in
     systemd.services.seerr-sonarr = {
       description = "Configure Seerr Sonarr integration";
       after = [
-        "seerr-radarr.service"
+        "seerr-libraries.service"
       ]
-      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
-      ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+      ++ optional nixflix.sonarr-anime.enable "sonarr-anime-config.service";
 
       requires = [
-        "seerr-radarr.service"
+        "seerr-libraries.service"
       ]
-      ++ optional (cfg.radarr != { }) "seerr-radarr.service"
       ++ optional nixflix.sonarr.enable "sonarr-config.service"
-      ++ optional (nixflix.sonarr-anime.enable or false) "sonarr-anime-config.service";
+      ++ optional nixflix.sonarr-anime.enable "sonarr-anime-config.service";
 
       wantedBy = [ "multi-user.target" ];
 

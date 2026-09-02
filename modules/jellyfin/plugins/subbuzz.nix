@@ -1,6 +1,5 @@
-{ config, lib, ... }:
+{ lib, ... }:
 let
-  cfg = config.nixflix.jellyfin.plugins.subbuzz;
   secrets = import ../../../lib/secrets { inherit lib; };
 
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
@@ -375,14 +374,5 @@ in
       };
     };
     default = { };
-  };
-
-  config.nixflix.jellyfin = lib.mkIf cfg.enable {
-    system.pluginRepositories = {
-      "SubBuzz" = {
-        url = "https://raw.githubusercontent.com/josdion/subbuzz/f7c7985a00fe0910f548e3574a592fe8bb7f8ce4/repo/jellyfin_10.11.json";
-        hash = "16h3ncx7n4wfb08r1n6xf3hg432lr2nf2mxafk3n99rm6d1r7ck2";
-      };
-    };
   };
 }

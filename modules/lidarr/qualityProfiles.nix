@@ -423,122 +423,126 @@ in
 {
   options.nixflix.lidarr.config.qualityProfiles = mkOption {
     type = types.listOf qualityProfileType;
-    default = [ ];
+    default = [ defaultQualityProfile ];
+    defaultText = literalExpression ''[ <built-in "Any" quality profile> ]'';
     description = ''
       List of quality profiles to configure via the API /qualityprofile endpoint.
       Each profile is matched and reconciled by `name` (Lidarr assigns `id` per-instance).
 
-      A default "Any" profile is always included unless overridden by declaring
-      your own profile named "Any". Profiles not declared here (by name) are deleted.
+      Defaults to a single "Any" profile. At least one quality profile must be present
+      (enforced via assertion) — Lidarr requires one to assign to root folders and artists.
+      Profiles not declared here (by name) are deleted.
     '';
   };
 
-  config.systemd.services."lidarr-qualityprofiles" =
-    mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null)
-      (
-        let
-          userNames = map (p: p.name) cfg.config.qualityProfiles;
-          mergedProfiles =
-            cfg.config.qualityProfiles
-            ++ optional (!(elem defaultQualityProfile.name userNames)) defaultQualityProfile;
-        in
+  config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
+    {
+      assertions = [
         {
-          description = "Configure Lidarr quality profiles via API";
-          after = [ "lidarr-config.service" ] ++ config.nixflix.serviceDependencies;
-          requires = [ "lidarr-config.service" ] ++ config.nixflix.serviceDependencies;
-          before = [ "lidarr-rootfolders.service" ];
-          requiredBy = [ "lidarr-rootfolders.service" ];
-          wantedBy = [ "multi-user.target" ];
+          assertion = cfg.config.qualityProfiles != [ ];
+          message = "nixflix.lidarr.config.qualityProfiles must contain at least one quality profile.";
+        }
+      ];
+    }
+    (mkIf (cfg.config.apiKey != null) {
+      systemd.services."lidarr-qualityprofiles" = {
+        description = "Configure Lidarr quality profiles via API";
+        after = [ "lidarr-config.service" ] ++ config.nixflix.serviceDependencies;
+        requires = [ "lidarr-config.service" ] ++ config.nixflix.serviceDependencies;
+        before = [ "lidarr-rootfolders.service" ];
+        requiredBy = [ "lidarr-rootfolders.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStartPre = mkWaitForApiScript "lidarr" cfg.config;
-          };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStartPre = mkWaitForApiScript "lidarr" cfg.config;
+        };
 
-          script = ''
-            set -eu
+        script = ''
+          set -eu
 
-            BASE_URL="http://${cfg.config.hostConfig.bindAddress}:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
+          BASE_URL="http://${cfg.config.hostConfig.bindAddress}:${builtins.toString cfg.config.hostConfig.port}${cfg.config.hostConfig.urlBase}/api/${cfg.config.apiVersion}"
 
-            echo "Fetching existing quality profiles..."
-            QUALITY_PROFILES=$(${
-              mkSecureCurl cfg.config.apiKey {
-                url = "$BASE_URL/qualityprofile";
-                extraArgs = "-Sf";
-              }
-            } 2>/dev/null)
+          echo "Fetching existing quality profiles..."
+          QUALITY_PROFILES=$(${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/qualityprofile";
+              extraArgs = "-Sf";
+            }
+          } 2>/dev/null)
 
-            CONFIGURED_NAMES=$(cat <<'EOF'
-            ${builtins.toJSON (map (p: p.name) mergedProfiles)}
-            EOF
-            )
+          CONFIGURED_NAMES=$(cat <<'EOF'
+          ${builtins.toJSON (map (p: p.name) cfg.config.qualityProfiles)}
+          EOF
+          )
 
-            echo "Removing quality profiles not in configuration..."
-            echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
-              PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
-              PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
+          echo "Removing quality profiles not in configuration..."
+          echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
+            PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
+            PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
 
-              if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
-                echo "Deleting quality profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
+            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
+              echo "Deleting quality profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
+              ${
+                mkSecureCurl cfg.config.apiKey {
+                  url = "$BASE_URL/qualityprofile/$PROFILE_ID";
+                  method = "DELETE";
+                  extraArgs = "-Sf";
+                }
+              } >/dev/null 2>&1 || echo "Warning: Failed to delete quality profile $PROFILE_NAME (may be in use)"
+            fi
+          done
+
+          ${concatMapStringsSep "\n" (
+            profileConfig:
+            let
+              profileJson = builtins.toJSON profileConfig;
+              profileName = profileConfig.name;
+            in
+            ''
+              echo "Processing quality profile: ${profileName}"
+
+              EXISTING_PROFILE=$(echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg profileName} '.[] | select(.name == $name) | @json' || echo "")
+
+              if [ -n "$EXISTING_PROFILE" ]; then
+                EXISTING_ID=$(echo "$EXISTING_PROFILE" | ${pkgs.jq}/bin/jq -r '.id')
+                echo "Quality profile ${profileName} already exists (ID: $EXISTING_ID), updating..."
+                UPDATED_PROFILE=$(echo ${escapeShellArg profileJson} | ${pkgs.jq}/bin/jq --argjson id "$EXISTING_ID" '.id = $id')
                 ${
                   mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/qualityprofile/$PROFILE_ID";
-                    method = "DELETE";
+                    url = "$BASE_URL/qualityprofile/$EXISTING_ID";
+                    method = "PUT";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$UPDATED_PROFILE";
                     extraArgs = "-Sf";
                   }
-                } >/dev/null 2>&1 || echo "Warning: Failed to delete quality profile $PROFILE_NAME (may be in use)"
+                } > /dev/null
+                echo "Quality profile ${profileName} updated"
+              else
+                echo "Quality profile ${profileName} does not exist, creating..."
+                NEW_PROFILE=$(echo ${escapeShellArg profileJson} | ${pkgs.jq}/bin/jq 'del(.id)')
+                ${
+                  mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/qualityprofile";
+                    method = "POST";
+                    headers = {
+                      "Content-Type" = "application/json";
+                    };
+                    data = "$NEW_PROFILE";
+                    extraArgs = "-Sf";
+                  }
+                } > /dev/null
+                echo "Quality profile ${profileName} created"
               fi
-            done
+            ''
+          ) cfg.config.qualityProfiles}
 
-            ${concatMapStringsSep "\n" (
-              profileConfig:
-              let
-                profileJson = builtins.toJSON profileConfig;
-                profileName = profileConfig.name;
-              in
-              ''
-                echo "Processing quality profile: ${profileName}"
-
-                EXISTING_PROFILE=$(echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg profileName} '.[] | select(.name == $name) | @json' || echo "")
-
-                if [ -n "$EXISTING_PROFILE" ]; then
-                  EXISTING_ID=$(echo "$EXISTING_PROFILE" | ${pkgs.jq}/bin/jq -r '.id')
-                  echo "Quality profile ${profileName} already exists (ID: $EXISTING_ID), updating..."
-                  UPDATED_PROFILE=$(echo ${escapeShellArg profileJson} | ${pkgs.jq}/bin/jq --argjson id "$EXISTING_ID" '.id = $id')
-                  ${
-                    mkSecureCurl cfg.config.apiKey {
-                      url = "$BASE_URL/qualityprofile/$EXISTING_ID";
-                      method = "PUT";
-                      headers = {
-                        "Content-Type" = "application/json";
-                      };
-                      data = "$UPDATED_PROFILE";
-                      extraArgs = "-Sf";
-                    }
-                  } > /dev/null
-                  echo "Quality profile ${profileName} updated"
-                else
-                  echo "Quality profile ${profileName} does not exist, creating..."
-                  NEW_PROFILE=$(echo ${escapeShellArg profileJson} | ${pkgs.jq}/bin/jq 'del(.id)')
-                  ${
-                    mkSecureCurl cfg.config.apiKey {
-                      url = "$BASE_URL/qualityprofile";
-                      method = "POST";
-                      headers = {
-                        "Content-Type" = "application/json";
-                      };
-                      data = "$NEW_PROFILE";
-                      extraArgs = "-Sf";
-                    }
-                  } > /dev/null
-                  echo "Quality profile ${profileName} created"
-                fi
-              ''
-            ) mergedProfiles}
-
-            echo "Lidarr quality profiles configuration complete"
-          '';
-        }
-      );
+          echo "Lidarr quality profiles configuration complete"
+        '';
+      };
+    })
+  ]);
 }

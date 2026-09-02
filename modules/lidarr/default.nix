@@ -11,6 +11,7 @@ in
   imports = [
     (import ../arr-common/mkArrServiceModule.nix { serviceName = "lidarr"; })
     ./qualityProfiles.nix
+    ./metadataProfiles.nix
   ];
 
   config.nixflix.lidarr = {
