@@ -69,6 +69,18 @@ in
       };
     };
 
+    secretsYamlFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Yaml file containing configuration secrets. See https://docs.beets.io/en/latest/reference/config.html.
+
+        This file with get merged with `nixflix.beets.settings` at run time.
+
+        Plugins: see https://docs.beets.io/en/latest/plugins/index.html
+      '';
+    };
+
     settings = lib.mkOption {
       type = lib.types.submodule {
         freeformType = yamlFormat.type;
@@ -168,7 +180,11 @@ in
         };
       };
       default = { };
-      description = "Conifguration for Beets. See https://docs.beets.io/en/latest/reference/config.html.";
+      description = ''
+        Conifguration for Beets. See https://docs.beets.io/en/latest/reference/config.html.
+
+        Plugins: see https://docs.beets.io/en/latest/plugins/index.html
+      '';
     };
   };
 
