@@ -160,6 +160,10 @@ in
               over file placement.
             '';
           }
+          {
+            assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+            message = "Cannot enable VPN routing for Beets (nixflix.beets.vpn.enable = true) when VPN is not enabled. Please set nixflix.vpn.enable = true.";
+          }
         ];
 
         users.users.${cfg.user} = {
@@ -205,7 +209,6 @@ in
             "network-online.target"
             "nixflix-setup-dirs.service"
           ];
-          wantedBy = [ "multi-user.target" ];
 
           serviceConfig = {
             Type = "oneshot";
@@ -233,16 +236,18 @@ in
             plugins = defaultPlugins;
 
             fetchart = {
-              cautious = "yes";
               sources = [
                 "filesystem"
                 { coverart = "release"; }
                 { coverart = "releasegroup"; }
+                # "itunes"
+                # "amazon"
+                # "albumart"
               ];
             };
 
             embedart = {
-              ifempty = "yes";
+              ifempty = true;
             };
           };
         };
