@@ -76,7 +76,6 @@ let
   };
 
   metadataProfileType = types.submodule {
-    freeformType = types.attrsOf types.anything;
     options = {
       name = mkOption {
         type = types.str;
