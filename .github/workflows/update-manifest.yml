@@ -23,19 +23,24 @@ jobs:
       - name: Fetch upstream manifest
         run: |
           NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
-          JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)#jellyfin.version")
+          JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")
           curl -fsSL https://obelo.us/upr -H "User-Agent: jellyfin/${JELLYFIN_VERSION}" -o modules/jellyfin/system/jellyfin-universal-plugin-manifest.json
 
       - name: Commit, open PR, and enable auto-merge if changed
         run: |
           BRANCH="update-jellyfin-manifest"
-          git diff --exit-code && echo "No changes." && exit 0
+          MANIFEST="modules/jellyfin/system/jellyfin-universal-plugin-manifest.json"
+
+          if [[ -z "$(git status --porcelain -- "$MANIFEST")" ]]; then
+            echo "No changes."
+            exit 0
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add modules/jellyfin/system/jellyfin-stable-plugin-manifest.json
+          git add "$MANIFEST"
           git commit -m "chore: update manifests"
           git push origin "$BRANCH"
 
