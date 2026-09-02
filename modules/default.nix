@@ -11,6 +11,7 @@ let
 in
 {
   imports = [
+    ./beets.nix
     ./caddy
     ./downloadarr
     ./flaresolverr.nix

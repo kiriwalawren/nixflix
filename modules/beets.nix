@@ -39,6 +39,20 @@ in
       description = "Directory containing the beets data files";
     };
 
+    vpn = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = config.nixflix.vpn.enable;
+        defaultText = lib.literalExpression "config.nixflix.vpn.enable";
+        description = ''
+          Whether to route beets traffic through the VPN.
+
+          When `false`, beets bypasses the VPN.
+          When `true`, beets is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+        '';
+      };
+    };
+
     settings = lib.types.submodule {
       freeformType = yamlFormat.type;
       options = {
@@ -110,42 +124,43 @@ in
     };
   };
 
-  # programs.beets = {
-  #   enable = true;
-  #
-  #   settings = {
-  #     directory = builtins.head config.nixflix.lidarr.mediaDirs;
-  #     library = libraryPath;
-  #
-  #     import = {
-  #       move = false;
-  #       copy = false;
-  #       write = true;
-  #       timid = true;
-  #       log = "/var/log/beets-import.log";
-  #     };
-  #
-  #
-  #     fetchart = {
-  #       # Ideally this would be set, but if the only art that exists is <1000, I still want to fetch
-  #       # it.
-  #       # minwidth = 1000;
-  #       cautious = "yes";
-  #       sources = [
-  #         "filesystem"
-  #         { coverart = "release"; }
-  #         { coverart = "releasegroup"; }
-  #       ];
-  #     };
-  #
-  #     embedart = {
-  #       ifempty = "yes";
-  #     };
-  #
-  #     # replaygain = {
-  #     #   auto = false;
-  #     #   backend = "ffmpeg";
-  #     # };
-  #   };
-  # };
+  config = lib.mkIf (config.nixflix.enable && cfg.enable) (
+    lib.mkMerge [
+      {
+        services.qbittorrent = builtins.removeAttrs cfg [
+          "dataDir"
+          "vpn"
+        ];
+
+        nixflix.beets = {
+          settings = {
+            fetchart = {
+              cautious = "yes";
+              sources = [
+                "filesystem"
+                { coverart = "release"; }
+                { coverart = "releasegroup"; }
+              ];
+            };
+
+            embedart = {
+              ifempty = "yes";
+            };
+
+            # replaygain = {
+            #   auto = false;
+            #   backend = "ffmpeg";
+            # };
+          };
+        };
+      }
+
+      (lib.mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
+        systemd.services.beets.vpnConfinement = {
+          enable = true;
+          vpnNamespace = "wg";
+        };
+      })
+    ]
+  );
 }
