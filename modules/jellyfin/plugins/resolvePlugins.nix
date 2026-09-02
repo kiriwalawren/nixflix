@@ -32,6 +32,13 @@ let
       in
       lib.filter (match: normalizeTargetAbi match.targetAbi == highestTargetAbi) matches;
 
+  preferNonFallbackMatches =
+    matches:
+    let
+      nonFallbackMatches = lib.filter (match: !match.fallback) matches;
+    in
+    if nonFallbackMatches == [ ] then matches else nonFallbackMatches;
+
   repoPluginDirName = pluginName: pluginVersion: "${pluginName}_${pluginVersion}";
 
   namedPluginRepositories = lib.mapAttrsToList (
@@ -88,7 +95,7 @@ let
           if plugin.name == pluginName then
             map
               (release: {
-                inherit (repo) name url;
+                inherit (repo) name url fallback;
                 inherit (release) sourceUrl version targetAbi;
                 timestamp = release.timestamp or "";
                 changelog = release.changelog or "";
@@ -124,8 +131,9 @@ let
 
       selectedMatches = if lib.length matchingAbi == 1 then matchingAbi else versionMatches;
 
-      selectedCompatibleMatches =
-        if lib.length matchingAbi > 0 then matchingAbi else highestByTargetAbi compatibleAbi;
+      selectedCompatibleMatches = preferNonFallbackMatches (
+        if lib.length matchingAbi > 0 then matchingAbi else highestByTargetAbi compatibleAbi
+      );
 
       matchingRepositoriesSummary = lib.concatStringsSep ", " (
         lib.unique (map (match: match.name) selectedCompatibleMatches)

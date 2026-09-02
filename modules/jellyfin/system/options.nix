@@ -352,19 +352,32 @@ in
                 Supports SRI (`sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=`) or nix32 (`0vbarvv9dkcpxby8c3akbcgh41k72iy75craghb3vpf8fnzaikji`) formats.
               '';
             };
+
+            fallback = mkOption {
+              type = types.bool;
+              default = false;
+              internal = true;
+              description = ''
+                Whether this repository is a last-resort match when resolving
+                `fromRepo` plugins by name. If a plugin version is found in
+                both a fallback repository and a non-fallback repository, the
+                non-fallback repository is used without raising an ambiguity
+                error. Only the bundled Jellyfin Universal Plugin Repo sets this.
+              '';
+            };
           };
         });
       default = { };
       defaultText = literalExpression ''
         {
-          "Jellyfin Stable" = {
+          "Jellyfin Universal Plugin Repo" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
             hash = "1ykrpwya7px7dz4h92994kpqlf5jd429z7r4dckbw13236x5mpbx";
             enabled = true;
           };
         }
       '';
-      description = "Configure which plugin repositories you use. Jellyfin Stable is always present in the set. Adding new plugin repositories will not remove it.";
+      description = "Configure which plugin repositories you use. Jellyfin Universal Plugin Repo is always present in the set. Adding new plugin repositories will not remove it.";
     };
 
     enableExternalContentInSuggestions = mkOption {
@@ -636,10 +649,11 @@ in
   };
 
   config.nixflix.jellyfin.system.pluginRepositories = {
-    "Jellyfin Stable Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/f7448426d88c4ff6744055f0cb9f8720246b1ea2/modules/jellyfin/system/jellyfin-stable-plugin-manifest.json";
-      hash = "sha256-t28S+tNYijLBljgex3+PXK/hwHze2gUOPvfuCsIKvoY=";
+    "Jellyfin Universal Plugin Repo" = {
+      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/02d20d0e9f2c2514ef6f367413f40fcbeb883991/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+      hash = "sha256-/ObJHwYg6SAk51wE6cyMd/FjoasJVm/pgbTDqBeELxc=";
       enabled = true;
+      fallback = true;
     };
   };
 }

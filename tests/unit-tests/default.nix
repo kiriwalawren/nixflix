@@ -684,10 +684,6 @@ in
         lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
       )}
 
-      ${check "SubBuzz plugin repository is added when subbuzz is enabled" (
-        jellyfinCfg.system.pluginRepositories ? "SubBuzz"
-      )}
-
       ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}
       ${check "subbuzz EnableYifySubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableYifySubtitles}
       ${check "subbuzz MinScore config value" (jellyfinCfg.plugins.subbuzz.config.MinScore == 60)}

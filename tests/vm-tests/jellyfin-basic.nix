@@ -212,9 +212,9 @@ pkgs.testers.runNixOSTest {
               "hevc"
             ];
             pluginRepositories = lib.mkForce {
-              "Jellyfin Stable Plugin Repo" = {
-                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/f7448426d88c4ff6744055f0cb9f8720246b1ea2/modules/jellyfin/system/jellyfin-stable-plugin-manifest.json";
-                hash = "sha256-t28S+tNYijLBljgex3+PXK/hwHze2gUOPvfuCsIKvoY=";
+              "Jellyfin Universal Plugin Repo" = {
+                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/02d20d0e9f2c2514ef6f367413f40fcbeb883991/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+                hash = "sha256-/ObJHwYg6SAk51wE6cyMd/FjoasJVm/pgbTDqBeELxc=";
                 enabled = true;
               };
             };
@@ -716,8 +716,8 @@ pkgs.testers.runNixOSTest {
         assert len(system_config['PluginRepositories']) == 1, \
             f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
         plugin_repo = system_config['PluginRepositories'][0]
-        assert plugin_repo['Name'] == 'Jellyfin Stable Plugin Repo', \
-            f"Plugin repo Name should be 'Jellyfin Stable Plugin Repo', got {plugin_repo.get('Name')}"
+        assert plugin_repo['Name'] == 'Jellyfin Universal Plugin Repo', \
+            f"Plugin repo Name should be 'Jellyfin Universal Plugin Repo', got {plugin_repo.get('Name')}"
         assert 'kiriwalawren/nixflix' in plugin_repo['Url'], \
             f"Plugin repo Url should point to kiriwalawren/nixflix repo, got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
