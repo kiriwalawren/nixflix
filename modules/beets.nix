@@ -73,6 +73,10 @@ in
       type = lib.types.submodule {
         freeformType = yamlFormat.type;
         options = {
+          lyrics = {
+            auto = lib.mkEnableOption "Whether to enable lyric fetching.";
+          };
+
           directory = lib.mkOption {
             type = lib.types.path;
             default = builtins.head config.nixflix.lidarr.mediaDirs;
@@ -221,6 +225,8 @@ in
 
         systemd.services.beets = {
           description = "beets music metadata manager";
+          # Oneshot start blocks activation until `beet import` finishes; let the timer restart it instead.
+          restartIfChanged = false;
           after = [
             "network-online.target"
             "nixflix-setup-dirs.service"
@@ -248,6 +254,8 @@ in
               cfg.dataDir
               config.nixflix.mediaDir
             ];
+            # A full-library import holds far more fds at once than the 1024 systemd default allows.
+            LimitNOFILE = 65536;
           };
         };
       }
