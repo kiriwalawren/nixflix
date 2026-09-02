@@ -137,6 +137,28 @@ in
               example = "/some/other/path";
               description = "File that beets logs untaggable albums/tracks to for later review.";
             };
+            incremental = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              example = false;
+              description = ''
+                Whether to record imported directories and skip them on later imports.
+                Since the beets timer re-imports `directory` repeatedly, this avoids
+                reprocessing (and re-querying MusicBrainz for) files that were already
+                tagged on a previous run.
+              '';
+            };
+            incremental_skip_later = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              example = false;
+              description = ''
+                Whether directories skipped by `quiet_fallback` (no confident match) are
+                retried on future imports instead of being permanently excluded. Since
+                quiet mode cannot interactively prompt the `edit`/`mbsubmit` plugins,
+                this keeps ambiguous albums up for retry instead of abandoning them.
+              '';
+            };
           };
 
         };
