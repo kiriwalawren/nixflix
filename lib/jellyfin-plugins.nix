@@ -27,7 +27,7 @@ let
           Optional repository name from `nixflix.jellyfin.system.pluginRepositories`.
           Leave unset to resolve by plugin name across all enabled repositories.
         '';
-        example = "Jellyfin Stable";
+        example = "Jellyfin Universal Plugin Repo";
       };
     };
   };
