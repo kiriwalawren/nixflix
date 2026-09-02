@@ -176,6 +176,13 @@ in
                 echo "Fetching Maintainerr collections..."
                 COLLECTIONS=$(${pkgs.curl}/bin/curl -sf "${maintainerrUrl}/api/collections")
 
+                JELLYFIN_USER_ID=$(${pkgs.curl}/bin/curl -sf "${maintainerrUrl}/api/settings" \
+                  | ${pkgs.jq}/bin/jq -r '.jellyfin_user_id // empty')
+                if [ -z "$JELLYFIN_USER_ID" ]; then
+                  echo "Warning: could not determine Jellyfin user id from Maintainerr settings; skipping ignore-file management." >&2
+                  exit 0
+                fi
+
                 process_collection() {
                   local collection_name="$1"
                   local COLLECTION_ID COLLECTION_MEDIA MEDIA_SERVER_ID ITEM_PATH
@@ -200,7 +207,7 @@ in
 
                     ITEM_PATH=$(${pkgs.curl}/bin/curl -sf \
                       -H "X-Emby-Token: $JELLYFIN_API_KEY" \
-                      "$JELLYFIN_URL/Items/$MEDIA_SERVER_ID?Fields=Path" \
+                      "$JELLYFIN_URL/Users/$JELLYFIN_USER_ID/Items/$MEDIA_SERVER_ID?Fields=Path" \
                       | ${pkgs.jq}/bin/jq -r '.Path // empty') || {
                       echo "  Warning: failed to get path for Jellyfin item $MEDIA_SERVER_ID" >&2
                       continue
