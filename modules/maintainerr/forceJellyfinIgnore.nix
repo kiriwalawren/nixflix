@@ -52,6 +52,15 @@ in
                 section = 0;
               }
               {
+                operator = "1";
+                firstVal = [
+                  2
+                  1
+                ];
+                action = 19;
+                section = 0;
+              }
+              {
                 customVal = {
                   ruleTypeId = 3;
                   value = "0";
@@ -84,6 +93,19 @@ in
             sonarrServerName = "Sonarr Anime";
             rules = [
               {
+                customVal = {
+                  ruleTypeId = 0;
+                  value = "0";
+                };
+                firstVal = [
+                  2
+                  1
+                ];
+                action = 2;
+                section = 0;
+              }
+              {
+                operator = "1";
                 firstVal = [
                   2
                   1
