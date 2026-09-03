@@ -290,7 +290,7 @@ in
             User = cfg.user;
             Group = cfg.group;
             WorkingDirectory = cfg.dataDir;
-            ExecStart = "${lib.getExe cfg.package} -vv --config '${configFile}' import -q '${cfg.settings.directory}'";
+            ExecStart = "${lib.getExe cfg.package} -v --config '${configFile}' import -q '${cfg.settings.directory}'";
 
             NoNewPrivileges = true;
             PrivateTmp = true;
