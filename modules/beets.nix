@@ -7,10 +7,21 @@
 let
   cfg = config.nixflix.beets;
   yamlFormat = pkgs.formats.yaml { };
+  secrets = import ../lib/secrets { inherit lib; };
 
   baseConfigFile = yamlFormat.generate "beets-config" cfg.settings;
   mergedConfigFile = "/run/beets/config.yaml";
-  configFile = if cfg.secretsYamlFile == null then baseConfigFile else mergedConfigFile;
+
+  getFirstAdmin = import ../lib/getFirstAdmin.nix { inherit lib; };
+  firstAdminUser =
+    (getFirstAdmin {
+      inherit (config.nixflix.navidrome) users;
+      isAdmin = user: user.isAdmin;
+    }).user;
+
+  hasSubsonicPassword = config.nixflix.navidrome.enable && firstAdminUser.password != null;
+  needsRuntimeMerge = cfg.secretsYamlFile != null || hasSubsonicPassword;
+  configFile = if needsRuntimeMerge then mergedConfigFile else baseConfigFile;
 
   defaultPlugins = [
     "badfiles"
@@ -26,15 +37,32 @@ let
     "musicbrainz"
     "missing"
     "scrub"
-  ];
+  ]
+  ++ lib.optional config.nixflix.navidrome.enable "subsonicupdate";
 in
 {
   options.nixflix.beets = {
     enable = lib.mkEnableOption "Beets";
 
-    package = lib.mkPackageOption pkgs "beets" {
-      example = "(pkgs.beets.override { pluginOverrides = { beatport.enable = false; }; })";
-      extraDescription = ''
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.python3.pkgs.toPythonApplication (
+        pkgs.python3.pkgs.beets.override {
+          pluginOverrides = builtins.listToAttrs (
+            map (name: {
+              inherit name;
+              value.enable = true;
+            }) defaultPlugins
+          );
+        }
+      );
+      defaultText = lib.literalExpression ''
+        pkgs.python3.pkgs.toPythonApplication (pkgs.python3.pkgs.beets.override { pluginOverrides = ...; })
+      '';
+      example = lib.literalExpression "(pkgs.python3.pkgs.toPythonApplication (pkgs.python3.pkgs.beets.override { pluginOverrides = { beatport.enable = false; }; }))";
+      description = ''
+        The beets package to use.
+
         Can be used to specify extensions.
       '';
     };
@@ -277,7 +305,7 @@ in
             # A full-library import holds far more fds at once than the 1024 systemd default allows.
             LimitNOFILE = 65536;
           }
-          // lib.optionalAttrs (cfg.secretsYamlFile != null) {
+          // lib.optionalAttrs needsRuntimeMerge {
             # /run/beets is created here (owned by cfg.user:cfg.group) before ExecStartPre runs,
             # and systemd implicitly adds it to ReadWritePaths despite ProtectSystem = "strict".
             RuntimeDirectory = "beets";
@@ -288,9 +316,16 @@ in
               "+"
               + pkgs.writeShellScript "beets-merge-secrets" ''
                 set -euo pipefail
-                ${pkgs.yq-go}/bin/yq eval-all \
-                  'select(fileIndex == 0) * select(fileIndex == 1)' \
-                  ${baseConfigFile} ${cfg.secretsYamlFile} > ${mergedConfigFile}
+                ${pkgs.coreutils}/bin/cp ${baseConfigFile} ${mergedConfigFile}
+                ${lib.optionalString hasSubsonicPassword ''
+                  SUBSONIC_PASS=${secrets.toShellValue firstAdminUser.password}
+                  ${pkgs.yq-go}/bin/yq eval -i '.subsonic.pass = strenv(SUBSONIC_PASS)' ${mergedConfigFile}
+                ''}
+                ${lib.optionalString (cfg.secretsYamlFile != null) ''
+                  ${pkgs.yq-go}/bin/yq eval-all -i \
+                    'select(fileIndex == 0) * select(fileIndex == 1)' \
+                    ${mergedConfigFile} ${cfg.secretsYamlFile}
+                ''}
                 ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${mergedConfigFile}
                 ${pkgs.coreutils}/bin/chmod 600 ${mergedConfigFile}
               '';
@@ -308,6 +343,14 @@ in
         nixflix.beets = {
           settings = {
             plugins = defaultPlugins;
+
+            lyrics.synced = true;
+
+            subsonic = lib.mkIf config.nixflix.navidrome.enable {
+              url = "http://${config.nixflix.navidrome.connectionAddress}:${toString config.nixflix.navidrome.settings.Port}";
+              user = firstAdminUser.userName;
+              auth = "password";
+            };
 
             fetchart = {
               sources = [
