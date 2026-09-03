@@ -8,6 +8,10 @@ let
   cfg = config.nixflix.beets;
   yamlFormat = pkgs.formats.yaml { };
 
+  baseConfigFile = yamlFormat.generate "beets-config" cfg.settings;
+  mergedConfigFile = "/run/beets/config.yaml";
+  configFile = if cfg.secretsYamlFile == null then baseConfigFile else mergedConfigFile;
+
   defaultPlugins = [
     "badfiles"
     "chroma"
@@ -259,7 +263,7 @@ in
             User = cfg.user;
             Group = cfg.group;
             WorkingDirectory = cfg.dataDir;
-            ExecStart = "${lib.getExe cfg.package} --config '${yamlFormat.generate "beets-config" cfg.settings}' import -q '${cfg.settings.directory}'";
+            ExecStart = "${lib.getExe cfg.package} --config '${configFile}' import -q '${cfg.settings.directory}'";
 
             NoNewPrivileges = true;
             PrivateTmp = true;
@@ -272,6 +276,30 @@ in
             ];
             # A full-library import holds far more fds at once than the 1024 systemd default allows.
             LimitNOFILE = 65536;
+          }
+          // lib.optionalAttrs (cfg.secretsYamlFile != null) {
+            # /run/beets is created here (owned by cfg.user:cfg.group) before ExecStartPre runs,
+            # and systemd implicitly adds it to ReadWritePaths despite ProtectSystem = "strict".
+            RuntimeDirectory = "beets";
+
+            # "+" runs the command as root, bypassing User=/Group= and all sandboxing, so it can
+            # read a root-owned secrets file and write into the RuntimeDirectory as beets.
+            ExecStartPre =
+              "+"
+              + pkgs.writeShellScript "beets-merge-secrets" ''
+                set -euo pipefail
+                ${pkgs.yq-go}/bin/yq eval-all \
+                  'select(fileIndex == 0) * select(fileIndex == 1)' \
+                  ${baseConfigFile} ${cfg.secretsYamlFile} > ${mergedConfigFile}
+                ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${mergedConfigFile}
+                ${pkgs.coreutils}/bin/chmod 600 ${mergedConfigFile}
+              '';
+
+            ExecStartPost =
+              "+"
+              + pkgs.writeShellScript "beets-cleanup-secrets" ''
+                ${pkgs.coreutils}/bin/rm -f ${mergedConfigFile}
+              '';
           };
         };
       }
