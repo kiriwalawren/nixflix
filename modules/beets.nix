@@ -19,8 +19,7 @@ let
       isAdmin = user: user.isAdmin;
     }).user;
 
-  hasSubsonicPassword = config.nixflix.navidrome.enable && firstAdminUser.password != null;
-  needsRuntimeMerge = cfg.secretsYamlFile != null || hasSubsonicPassword;
+  needsRuntimeMerge = cfg.secretsYamlFile != null || config.nixflix.navidrome.enable;
   configFile = if needsRuntimeMerge then mergedConfigFile else baseConfigFile;
 
   defaultPlugins = [
@@ -291,7 +290,7 @@ in
             User = cfg.user;
             Group = cfg.group;
             WorkingDirectory = cfg.dataDir;
-            ExecStart = "${lib.getExe cfg.package} --config '${configFile}' import -q '${cfg.settings.directory}'";
+            ExecStart = "${lib.getExe cfg.package} -vv --config '${configFile}' import -q '${cfg.settings.directory}'";
 
             NoNewPrivileges = true;
             PrivateTmp = true;
@@ -317,15 +316,15 @@ in
               + pkgs.writeShellScript "beets-merge-secrets" ''
                 set -euo pipefail
                 ${pkgs.coreutils}/bin/cp ${baseConfigFile} ${mergedConfigFile}
-                ${lib.optionalString hasSubsonicPassword ''
-                  SUBSONIC_PASS=${secrets.toShellValue firstAdminUser.password}
-                  ${pkgs.yq-go}/bin/yq eval -i '.subsonic.pass = strenv(SUBSONIC_PASS)' ${mergedConfigFile}
+                ${lib.optionalString config.nixflix.navidrome.enable ''
+                  SUBSONIC_PASS=${secrets.toShellValue firstAdminUser.password} ${pkgs.yq-go}/bin/yq eval -i '.subsonic.pass = strenv(SUBSONIC_PASS)' ${mergedConfigFile}
                 ''}
                 ${lib.optionalString (cfg.secretsYamlFile != null) ''
                   ${pkgs.yq-go}/bin/yq eval-all -i \
                     'select(fileIndex == 0) * select(fileIndex == 1)' \
                     ${mergedConfigFile} ${cfg.secretsYamlFile}
                 ''}
+
                 ${pkgs.coreutils}/bin/chown ${cfg.user}:${cfg.group} ${mergedConfigFile}
                 ${pkgs.coreutils}/bin/chmod 600 ${mergedConfigFile}
               '';
@@ -344,7 +343,10 @@ in
           settings = {
             plugins = defaultPlugins;
 
-            lyrics.synced = true;
+            lyrics = {
+              print = true;
+              synced = true;
+            };
 
             subsonic = lib.mkIf config.nixflix.navidrome.enable {
               url = "http://${config.nixflix.navidrome.connectionAddress}:${toString config.nixflix.navidrome.settings.Port}";

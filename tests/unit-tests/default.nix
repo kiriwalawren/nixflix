@@ -978,3 +978,361 @@ in
         echo 'PASS: nested-secret-in-list-jq-filter' > $out
       '';
 }
+// (
+  let
+    # Runs the real prestart script against a local file instead of /run/beets,
+    # skipping chown/chmod (no "beets" user exists in the build sandbox).
+    mkBeetsMergedConfig = preScript: ''
+      sed \
+        -e '/chown/d' -e '/chmod/d' \
+        -e 's#/run/beets/config.yaml#'"$PWD"'/config.yaml#g' \
+        "${preScript}" > ./prestart.sh
+      chmod +x ./prestart.sh
+      bash ./prestart.sh
+    '';
+  in
+  {
+    beets-service-generation =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              beets.enable = true;
+            };
+          }
+        ];
+        systemdUnits = config.config.systemd.services;
+        systemdTimers = config.config.systemd.timers;
+      in
+      assertTest "beets-service-generation" (
+        systemdUnits ? beets && systemdTimers ? beets && config.config.users.users ? beets
+      );
+
+    beets-default-no-runtime-merge =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              beets.enable = true;
+            };
+          }
+        ];
+        svc = config.config.systemd.services.beets.serviceConfig;
+      in
+      pkgs.runCommand "unit-test-beets-default-no-runtime-merge" { } ''
+        ${check "no ExecStartPre without secrets or a navidrome password" (!(svc ? ExecStartPre))}
+        ${check "no ExecStartPost without secrets or a navidrome password" (!(svc ? ExecStartPost))}
+        ${check "no RuntimeDirectory without secrets or a navidrome password" (!(svc ? RuntimeDirectory))}
+        ${check "ExecStart does not reference /run/beets" (!lib.hasInfix "/run/beets" svc.ExecStart)}
+        echo 'PASS: beets-default-no-runtime-merge' > $out
+      '';
+
+    beets-secrets-yaml-file-wiring =
+      let
+        secretsFile = pkgs.writeText "beets-secrets.yaml" ''
+          musicbrainz:
+            user: mbuser
+            pass: mbpass
+        '';
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              beets = {
+                enable = true;
+                secretsYamlFile = secretsFile;
+              };
+            };
+          }
+        ];
+        svc = config.config.systemd.services.beets.serviceConfig;
+        preScript = lib.removePrefix "+" svc.ExecStartPre;
+      in
+      pkgs.runCommand "unit-test-beets-secrets-yaml-file-wiring" { nativeBuildInputs = [ pkgs.yq-go ]; }
+        ''
+          ${check "RuntimeDirectory set to beets" (svc.RuntimeDirectory == "beets")}
+          ${check "ExecStartPre is root-escalated" (lib.hasPrefix "+" svc.ExecStartPre)}
+          ${check "ExecStartPost is root-escalated" (lib.hasPrefix "+" svc.ExecStartPost)}
+          ${check "ExecStart reads the runtime-merged config" (
+            lib.hasInfix "/run/beets/config.yaml" svc.ExecStart
+          )}
+
+          ${mkBeetsMergedConfig preScript}
+
+          mbUser=$(yq eval '.musicbrainz.user' ./config.yaml)
+          mbPass=$(yq eval '.musicbrainz.pass' ./config.yaml)
+          if [ "$mbUser" != "mbuser" ] || [ "$mbPass" != "mbpass" ]; then
+            echo "FAIL: expected secrets file to be merged in, got user='$mbUser' pass='$mbPass'" && exit 1
+          fi
+
+          baseDirectory=$(yq eval '.directory' ./config.yaml)
+          if [ -z "$baseDirectory" ] || [ "$baseDirectory" = "null" ]; then
+            echo "FAIL: base settings were lost during the merge" && exit 1
+          fi
+
+          echo 'PASS: beets-secrets-yaml-file-wiring' > $out
+        '';
+
+    beets-subsonic-settings-when-navidrome-enabled =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              navidrome = {
+                enable = true;
+                users.admin = {
+                  userName = "navadmin";
+                  isAdmin = true;
+                };
+              };
+              beets.enable = true;
+            };
+          }
+        ];
+        beetsCfg = config.config.nixflix.beets;
+      in
+      pkgs.runCommand "unit-test-beets-subsonic-settings-when-navidrome-enabled" { } ''
+        ${check "subsonic.user matches navidrome first admin" (
+          beetsCfg.settings.subsonic.user == "navadmin"
+        )}
+        ${check "subsonic.auth is password" (beetsCfg.settings.subsonic.auth == "password")}
+        ${check "subsonic.url is set" (lib.hasPrefix "http://" beetsCfg.settings.subsonic.url)}
+        ${check "subsonicupdate plugin is included" (
+          builtins.elem "subsonicupdate" beetsCfg.settings.plugins
+        )}
+        echo 'PASS: beets-subsonic-settings-when-navidrome-enabled' > $out
+      '';
+
+    beets-subsonic-absent-when-navidrome-disabled =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              beets.enable = true;
+            };
+          }
+        ];
+        beetsCfg = config.config.nixflix.beets;
+      in
+      assertTest "beets-subsonic-absent-when-navidrome-disabled" (
+        !(beetsCfg.settings ? subsonic) && !(builtins.elem "subsonicupdate" beetsCfg.settings.plugins)
+      );
+
+    # Guards that a navidrome password never lands in cfg.settings, which
+    # renders straight to a world-readable Nix store file.
+    beets-subsonic-password-never-in-nix-settings =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              navidrome = {
+                enable = true;
+                users.admin = {
+                  userName = "navadmin";
+                  isAdmin = true;
+                  password = "should-never-reach-the-nix-store";
+                };
+              };
+              beets.enable = true;
+            };
+          }
+        ];
+        subsonicSettings = config.config.nixflix.beets.settings.subsonic;
+      in
+      assertTest "beets-subsonic-password-never-in-nix-settings" (!(subsonicSettings ? pass));
+
+    # Regression test: SUBSONIC_PASS must actually reach yq's subprocess env,
+    # not just appear in the script source (a prior bug left it unexported).
+    beets-subsonic-password-plain-string-merge =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              navidrome = {
+                enable = true;
+                users.admin = {
+                  userName = "navadmin";
+                  isAdmin = true;
+                  password = "plaintextpassword123";
+                };
+              };
+              beets.enable = true;
+            };
+          }
+        ];
+        svc = config.config.systemd.services.beets.serviceConfig;
+        preScript = lib.removePrefix "+" svc.ExecStartPre;
+      in
+      pkgs.runCommand "unit-test-beets-subsonic-password-plain-string-merge"
+        { nativeBuildInputs = [ pkgs.yq-go ]; }
+        ''
+          ${check "RuntimeDirectory present when navidrome supplies a password" (
+            svc.RuntimeDirectory == "beets"
+          )}
+
+          ${mkBeetsMergedConfig preScript}
+
+          pass=$(yq eval '.subsonic.pass' ./config.yaml)
+          if [ "$pass" != "plaintextpassword123" ]; then
+            echo "FAIL: expected subsonic.pass to be 'plaintextpassword123', got '$pass'" && exit 1
+          fi
+          user=$(yq eval '.subsonic.user' ./config.yaml)
+          if [ "$user" != "navadmin" ]; then
+            echo "FAIL: expected subsonic.user to still be 'navadmin', got '$user'" && exit 1
+          fi
+
+          echo 'PASS: beets-subsonic-password-plain-string-merge' > $out
+        '';
+
+    beets-subsonic-password-secret-ref-merge =
+      let
+        secretFile = pkgs.writeText "navidrome-admin-password" "s3cr3t \"nav\" $pass\n";
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              navidrome = {
+                enable = true;
+                users.admin = {
+                  userName = "navadmin";
+                  isAdmin = true;
+                  password._secret = secretFile;
+                };
+              };
+              beets.enable = true;
+            };
+          }
+        ];
+        svc = config.config.systemd.services.beets.serviceConfig;
+        preScript = lib.removePrefix "+" svc.ExecStartPre;
+      in
+      pkgs.runCommand "unit-test-beets-subsonic-password-secret-ref-merge"
+        { nativeBuildInputs = [ pkgs.yq-go ]; }
+        ''
+          if grep -qF 's3cr3t' "${preScript}"; then
+            echo "FAIL: prestart script must never embed the secret plaintext directly" && exit 1
+          fi
+
+          ${mkBeetsMergedConfig preScript}
+
+          pass=$(yq eval '.subsonic.pass' ./config.yaml)
+          if [ "$pass" != 's3cr3t "nav" $pass' ]; then
+            echo "FAIL: expected subsonic.pass read from the secret file, got '$pass'" && exit 1
+          fi
+
+          echo 'PASS: beets-subsonic-password-secret-ref-merge' > $out
+        '';
+
+    # Confirms secretsYamlFile wins over the navidrome-derived password by
+    # actually running the merge, not by inferring it from command order.
+    beets-combined-secrets-and-subsonic-password-precedence =
+      let
+        secretsFile = pkgs.writeText "beets-secrets-combined.yaml" ''
+          subsonic:
+            pass: from-secrets-file
+        '';
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              navidrome = {
+                enable = true;
+                users.admin = {
+                  userName = "navadmin";
+                  isAdmin = true;
+                  password = "from-navidrome";
+                };
+              };
+              beets = {
+                enable = true;
+                secretsYamlFile = secretsFile;
+              };
+            };
+          }
+        ];
+        svc = config.config.systemd.services.beets.serviceConfig;
+        preScript = lib.removePrefix "+" svc.ExecStartPre;
+      in
+      pkgs.runCommand "unit-test-beets-combined-secrets-and-subsonic-password-precedence"
+        { nativeBuildInputs = [ pkgs.yq-go ]; }
+        ''
+          ${mkBeetsMergedConfig preScript}
+
+          pass=$(yq eval '.subsonic.pass' ./config.yaml)
+          if [ "$pass" != "from-secrets-file" ]; then
+            echo "FAIL: expected secretsYamlFile to win over the navidrome-derived password, got '$pass'" && exit 1
+          fi
+
+          echo 'PASS: beets-combined-secrets-and-subsonic-password-precedence' > $out
+        '';
+
+    beets-lidarr-move-conflict-assertion =
+      let
+        result = builtins.tryEval (
+          let
+            config = evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  lidarr.enable = true;
+                  beets = {
+                    enable = true;
+                    settings.import.move = true;
+                  };
+                };
+              }
+            ];
+          in
+          config.config.system.build.toplevel.drvPath
+        );
+      in
+      assertTest "beets-lidarr-move-conflict-assertion" (!result.success);
+
+    beets-vpn-enable-requires-global-vpn-assertion =
+      let
+        result = builtins.tryEval (
+          let
+            config = evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  beets = {
+                    enable = true;
+                    vpn.enable = true;
+                  };
+                };
+              }
+            ];
+          in
+          config.config.system.build.toplevel.drvPath
+        );
+      in
+      assertTest "beets-vpn-enable-requires-global-vpn-assertion" (!result.success);
+
+    beets-vpn-confinement-enabled =
+      let
+        config = evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              vpn.enable = true;
+              beets = {
+                enable = true;
+                vpn.enable = true;
+              };
+            };
+          }
+        ];
+        vpnConfinement = config.config.systemd.services.beets.vpnConfinement;
+      in
+      assertTest "beets-vpn-confinement-enabled" (
+        vpnConfinement.enable && vpnConfinement.vpnNamespace == "wg"
+      );
+  }
+)
