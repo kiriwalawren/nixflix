@@ -13,6 +13,7 @@ in
   imports = [
     ./caddy
     ./downloadarr
+    ./droppedneedle
     ./flaresolverr.nix
     ./globals.nix
     ./jellyfin
@@ -25,6 +26,7 @@ in
     ./radarr.nix
     ./recyclarr
     ./seerr
+    ./slskd
     ./sonarr-anime.nix
     ./sonarr.nix
     ./torrentClients
