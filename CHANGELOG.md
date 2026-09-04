@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
+
 ## [3.1.0] - 2026-09-04
 
 ### Changed
@@ -12,7 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
 - Added Jellyfin Universal Plugin Repo manifest so users don't have to add plugin manifests manually anymore ([#321](https://github.com/kiriwalawren/nixflix/pull/321))
 - Lidarr metadata profile overrides service that creates, updates, and deletes metadata profiles to match `nixflix.lidarr.config.metadataProfiles` ([#293](https://github.com/kiriwalawren/nixflix/issues/293))
 - Lidarr quality profile overrides service that creates, updates, and deletes quality profiles to match `nixflix.lidarr.config.qualityProfiles` ([#294](https://github.com/kiriwalawren/nixflix/issues/294))
