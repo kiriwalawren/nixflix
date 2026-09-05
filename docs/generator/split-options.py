@@ -182,6 +182,7 @@ def get_service_title(service: str) -> str:
         "rtorrent": "rTorrent",
         "vpn": "VPN",
         "postgres": "PostgreSQL",
+        "droppedneedle": "DroppedNeedle",
     }
     return special_titles.get(service, special_case_to_title(service))
 
@@ -190,6 +191,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     # Service descriptions for index pages
     service_descriptions = {
         "core": "Top-level nixflix configuration options that apply to the entire system.",
+        "droppedneedle": "[DroppedNeedle](https://github.com/DroppedNeedle/DroppedNeedle). A complete request-to-library workflow, plus the playback and discovery you’d expect from a real music app. All self-hosted, all yours.",
         "sonarr": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for TV shows.",
         "sonarr-anime": "[Sonarr](https://github.com/Sonarr/Sonarr) is a PVR for Usenet and BitTorrent users for anime TV shows.",
         "radarr": "[Radarr](https://github.com/Radarr/Radarr) is a PVR for Usenet and BitTorrent users for movies.",
