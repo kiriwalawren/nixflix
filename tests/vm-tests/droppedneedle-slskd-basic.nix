@@ -35,7 +35,26 @@ pkgsUnfree.testers.runNixOSTest {
           apiKey._secret = pkgs.writeText "slskd-apikey" "0123456789abcdef0123456789abcdef";
         };
 
-        droppedneedle.enable = true;
+        droppedneedle = {
+          enable = true;
+          settings.users = {
+            admin = {
+              userName = "admin";
+              email = "admin@example.com";
+              role = "admin";
+              mutable = false;
+              password._secret = pkgs.writeText "droppedneedle-admin-password" "testpassword123456";
+            };
+            viewer = {
+              userName = "viewer";
+              role = "user";
+              mutable = false;
+              password._secret = pkgs.writeText "droppedneedle-viewer-password" "viewerpassword123456";
+              quota.requestCount = 10;
+              quota.requestDays = 30;
+            };
+          };
+        };
       };
     };
 
@@ -66,6 +85,65 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_until_succeeds(
         "curl -fsS http://127.0.0.1:8688/health | jq -e '.status == \"ok\"'",
         timeout=300,
+    )
+
+    # First-admin creation (setupService.nix) and declarative user config
+    # (users/default.nix) both run as oneshots chained off droppedneedle.service.
+    machine.wait_for_unit("droppedneedle-create-admin.service", timeout=60)
+    machine.wait_for_unit("droppedneedle-users-config.service", timeout=60)
+
+    machine.succeed(
+        "curl -fsS -X POST -H 'Content-Type: application/json' "
+        "-d '{\"username\":\"admin\",\"password\":\"testpassword123456\"}' "
+        "http://127.0.0.1:8688/api/v1/auth/login "
+        "| jq -e '.user.username == \"admin\" and .user.role == \"admin\"'"
+    )
+
+    machine.succeed(
+        "TOKEN=$(curl -fsS -X POST -H 'Content-Type: application/json' "
+        "-d '{\"username\":\"admin\",\"password\":\"testpassword123456\"}' "
+        "http://127.0.0.1:8688/api/v1/auth/login | jq -r .token); "
+        "USERS=$(curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users); "
+        "echo \"$USERS\" | jq -e '([.users[].username] | sort) == [\"admin\",\"viewer\"]'; "
+        "echo \"$USERS\" | jq -e '.users[] | select(.username==\"viewer\") | .role == \"user\"'; "
+        "VIEWER_ID=$(echo \"$USERS\" | jq -r '.users[] | select(.username==\"viewer\") | .id'); "
+        "curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users/$VIEWER_ID/quota "
+        "| jq -e '.override.request_quota_count == 10 and .override.request_quota_days == 30 and .override.storage_quota_gb == null'"
+    )
+
+    # mutable = false: a change made through the API (standing in for the web
+    # UI, since there's no admin endpoint to update anything else about a
+    # user) must be reverted the next time droppedneedle-users-config runs.
+    machine.succeed(
+        "TOKEN=$(curl -fsS -X POST -H 'Content-Type: application/json' "
+        "-d '{\"username\":\"admin\",\"password\":\"testpassword123456\"}' "
+        "http://127.0.0.1:8688/api/v1/auth/login | jq -r .token); "
+        "VIEWER_ID=$(curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users | jq -r '.users[] | select(.username==\"viewer\") | .id'); "
+        "curl -fsS -X PATCH -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' "
+        "-d '{\"role\":\"trusted\"}' "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users/$VIEWER_ID/role; "
+        "curl -fsS -X PUT -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' "
+        "-d '{\"request_quota_count\":999,\"request_quota_days\":999,\"storage_quota_gb\":999}' "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users/$VIEWER_ID/quota"
+    )
+
+    machine.systemctl("restart droppedneedle-users-config.service")
+    machine.wait_for_unit("droppedneedle-users-config.service", timeout=60)
+
+    machine.succeed(
+        "TOKEN=$(curl -fsS -X POST -H 'Content-Type: application/json' "
+        "-d '{\"username\":\"admin\",\"password\":\"testpassword123456\"}' "
+        "http://127.0.0.1:8688/api/v1/auth/login | jq -r .token); "
+        "VIEWER_ID=$(curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users | jq -r '.users[] | select(.username==\"viewer\") | .id'); "
+        "curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users | jq -e '.users[] | select(.username==\"viewer\") | .role == \"user\"'; "
+        "curl -fsS -H \"Authorization: Bearer $TOKEN\" "
+        "http://127.0.0.1:8688/api/v1/auth/admin/users/$VIEWER_ID/quota "
+        "| jq -e '.override.request_quota_count == 10 and .override.request_quota_days == 30'"
     )
 
     # SLSKD_DOWNLOADS_PATH wiring: both services share the same directory

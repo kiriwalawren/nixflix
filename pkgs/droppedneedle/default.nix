@@ -15,13 +15,13 @@
 }:
 let
   pname = "droppedneedle";
-  version = "2.11.1";
+  version = "2.12.0";
 
   src = fetchFromGitHub {
     owner = "DroppedNeedle";
     repo = "DroppedNeedle";
     tag = "v${version}";
-    hash = "sha256-pILSyM8YYEp9g0fRc9y09As3AV6vQ4wj28QtbBbrRiQ=";
+    hash = "sha256-Iovi2msVdE/argo4zhY2JQcAgqwfiaQr2BuHC9AKdYM=";
   };
 
   # frontend/pnpm-lock.yaml pins esbuild 0.27.7 (a transitive Vite dependency);

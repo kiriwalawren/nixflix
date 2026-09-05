@@ -68,7 +68,15 @@ in
         apiKey = secrets.mkSecretOption {
           nullable = true;
           default = null;
-          description = "API key securing slskd's own REST API. Consumed by clients such as DroppedNeedle.";
+          description = ''
+            API key securing slskd's own REST API. Consumed by clients such as DroppedNeedle.
+
+            Can be created with the following:
+
+            ```bash
+            openssl rand -hex 16
+            ```
+          '';
         };
 
         openFirewall = mkOption {
