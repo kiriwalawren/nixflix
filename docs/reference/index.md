@@ -31,6 +31,7 @@ Each option is documented with:
 - [Lidarr](lidarr/index.md) - Music management
 - [Prowlarr](prowlarr/index.md) - Indexer management
 - [Maintainerr](maintainerr/index.md) - Automated media cleanup ([rules example](../examples/maintainerr-rules.md))
+- [DroppedNeedle](droppedneedle/index.md) - Automated music discovery, request, download and management
 
 ### Media Server
 

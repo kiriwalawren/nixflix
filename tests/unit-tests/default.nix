@@ -977,4 +977,65 @@ in
         fi
         echo 'PASS: nested-secret-in-list-jq-filter' > $out
       '';
+
+  # droppedneedle: at least one configured user must have role = "admin"
+  droppedneedle-users-requires-admin-assertion =
+    let
+      result = builtins.tryEval (
+        let
+          config = evalConfig [
+            {
+              nixflix = {
+                enable = true;
+                droppedneedle = {
+                  enable = true;
+                  settings.users.viewer = {
+                    userName = "viewer";
+                    role = "user";
+                    password = "testpassword123456";
+                  };
+                };
+              };
+            }
+          ];
+        in
+        config.config.system.build.toplevel.drvPath
+      );
+    in
+    assertTest "droppedneedle-users-requires-admin-assertion" (!result.success);
+
+  # Positive case for the assertion above. This deliberately does not force
+  # config.system.build.toplevel like the negative case does above: that also
+  # evaluates unrelated NixOS assertions (no root filesystem, no bootloader)
+  # which always fail for this minimal stub config regardless of
+  # droppedneedle, so it can't be used to prove *our* assertion didn't fire.
+  droppedneedle-users-with-admin-does-not-assert =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            droppedneedle = {
+              enable = true;
+              settings.users.admin = {
+                userName = "admin";
+                role = "admin";
+                password = "testpassword123456";
+              };
+            };
+          };
+        }
+      ];
+      isDroppedneedleAdminFailure =
+        a:
+        a.assertion == false
+        && (
+          let
+            msg = builtins.tryEval a.message;
+          in
+          msg.success && lib.hasInfix "DroppedNeedle" msg.value
+        );
+      failing = builtins.filter isDroppedneedleAdminFailure config.config.assertions;
+    in
+    assertTest "droppedneedle-users-with-admin-does-not-assert" (failing == [ ]);
 }

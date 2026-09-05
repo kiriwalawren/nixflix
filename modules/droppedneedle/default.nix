@@ -11,6 +11,11 @@ let
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
+  imports = [
+    ./setupService.nix
+    ./users
+  ];
+
   options.nixflix.droppedneedle = {
     enable = mkEnableOption "DroppedNeedle music request and discovery app";
 
