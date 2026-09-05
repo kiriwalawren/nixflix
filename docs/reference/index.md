@@ -37,6 +37,10 @@ Each option is documented with:
 - [Jellyfin](jellyfin/index.md) - Media streaming server
 - [Navidrome](navidrome/index.md) - Music streaming server
 
+### Notifications
+
+- [Notif](notif/index.md)
+
 ### Download Clients
 
 - [Downloadarr](downloadarr/index.md)
