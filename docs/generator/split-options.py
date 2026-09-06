@@ -199,6 +199,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         "seerr": "[Seerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
         "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
+        "notif": 'Notif is a service that configures "Connect" notifications in each Starr service.',
         "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",
         "vpn": "WireGuard VPN configuration for confining services to a network namespace.",
         "postgres": "[PostgreSQL](https://www.postgresql.org/) database backend for Arr services.",

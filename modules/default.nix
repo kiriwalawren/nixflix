@@ -19,6 +19,7 @@ in
     ./lidarr
     ./maintainerr
     ./navidrome
+    ./notif
     ./options.nix
     ./postgres.nix
     ./prowlarr
