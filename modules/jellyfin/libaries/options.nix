@@ -119,7 +119,7 @@ let
 
       enableRealtimeMonitor = mkOption {
         type = types.bool;
-        default = true;
+        default = !config.nixflix.notif.jellyfin.enable;
         description = "Monitor the library folders for file changes in real-time";
       };
 
