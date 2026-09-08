@@ -178,15 +178,42 @@ pkgsUnfree.testers.runNixOSTest {
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings | jq -e '.collection_handler_job_cron == \"0 0-23/12 * * *\"'")
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/settings | jq -e '.rules_handler_job_cron == \"0 0-23/8 * * *\"'")
 
-    # Validate rule groups created by forceJellyfinIgnore (6df31e9 + 79a925b)
-    machine.succeed("curl -fsS http://127.0.0.1:6246/api/rules | jq -e 'length == 2'")
-    machine.succeed("curl -fsS http://127.0.0.1:6246/api/rules | jq -e 'map(.name) | sort == [\"Anime To Ignore\", \"Shows To Ignore\"]'")
+    # forceJellyfinIgnore no longer declares any Maintainerr rule groups; it scans the
+    # filesystem directly instead (see modules/maintainerr/forceJellyfinIgnore.nix)
+    machine.succeed("curl -fsS http://127.0.0.1:6246/api/rules | jq -e 'length == 0'")
 
     # Validate jellyfin-ignore timer is active (6df31e9)
     machine.succeed("systemctl is-active maintainerr-jellyfin-ignore.timer")
 
+    # Fixture: one show/anime folder with a video file, one with none
+    machine.succeed(
+        "mkdir -p /media/tv/HasVideo/Season01",
+        "touch '/media/tv/HasVideo/Season01/episode.mkv'",
+        "mkdir -p /media/tv/EmptyShow",
+        "mkdir -p /media/anime/HasVideoAnime/Season01",
+        "touch '/media/anime/HasVideoAnime/Season01/episode.mp4'",
+        "mkdir -p /media/anime/EmptyAnime",
+    )
+
     # Trigger jellyfin-ignore service manually and verify it exits cleanly (6df31e9)
     machine.succeed("systemctl start maintainerr-jellyfin-ignore.service")
+
+    # Empty folders get a .ignore marker; folders containing video files do not
+    machine.succeed("test -f /media/tv/EmptyShow/.ignore")
+    machine.succeed("test -f /media/anime/EmptyAnime/.ignore")
+    machine.fail("test -f /media/tv/HasVideo/.ignore")
+    machine.fail("test -f /media/anime/HasVideoAnime/.ignore")
+
+    # Adding a video file to a previously-ignored folder removes its .ignore marker
+    # (proves this is driven by disk state, not a Jellyfin/Maintainerr feedback loop)
+    machine.succeed("touch /media/tv/EmptyShow/newepisode.mkv")
+    machine.succeed("systemctl start maintainerr-jellyfin-ignore.service")
+    machine.fail("test -f /media/tv/EmptyShow/.ignore")
+
+    # Removing it again restores the .ignore marker
+    machine.succeed("rm /media/tv/EmptyShow/newepisode.mkv")
+    machine.succeed("systemctl start maintainerr-jellyfin-ignore.service")
+    machine.succeed("test -f /media/tv/EmptyShow/.ignore")
 
     # Validate overlay settings are applied (d32f332)
     machine.succeed("curl -fsS http://127.0.0.1:6246/api/overlays/settings | jq -e '.enabled == true'")
