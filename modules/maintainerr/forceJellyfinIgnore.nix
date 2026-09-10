@@ -79,13 +79,13 @@ in
             ProtectHome = true;
             ReadWritePaths = mediaDirsToScan;
             PrivateTmp = true;
-            ExecStart = pkgs.writeShellScript "maintainerr-jellyfin-ignore" (''
+            ExecStart = pkgs.writeShellScript "maintainerr-jellyfin-ignore" ''
               set -euo pipefail
 
               ${concatMapStrings mkScanMediaDirBlock mediaDirsToScan}
 
               echo "Jellyfin ignore file management complete."
-            '');
+            '';
           };
         };
       };
