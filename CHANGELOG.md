@@ -8,15 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Updated `nixflix.seerr.externalUrlScheme` deprecation instructions
 - Radarr's default Recyclarr quality profile now sets `min_format_score` to `180` instead of `1000`, to prefer media acquisition ([#305](https://github.com/kiriwalawren/nixflix/issues/305))
 
 ### Added
 
 - Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
 
-### Changed
+### Fixed
 
-- Updated `nixflix.seerr.externalUrlScheme` deprecation instructions
+- Fix jellyfin auto ignore empty folders ([#333](https://github.com/kiriwalawren/nixflix/pull/333))
 
 ## [3.1.0] - 2026-09-04
 
