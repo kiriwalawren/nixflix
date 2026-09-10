@@ -113,8 +113,8 @@ in
       }
     ];
 
-    warnings = lib.optional (
-      config.nixflix.seerr.externalUrlScheme != null
-    ) "nixflix.seerr.externalUrlScheme is deprecated; It will be removed in a future version.";
+    warnings =
+      lib.optional (config.nixflix.seerr.externalUrlScheme != null)
+        "nixflix.seerr.externalUrlScheme is deprecated; it does not need to be set; It will be removed in a future version.";
   };
 }
