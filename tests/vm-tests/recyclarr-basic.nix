@@ -164,6 +164,12 @@ pkgsUnfree.testers.runNixOSTest {
     assert radarr_profile_names == {"[SQP] SQP-1 (1080p)"}, \
         f"Expected only '[SQP] SQP-1 (1080p)' in Radarr after cleanup, found: {radarr_profile_names}"
 
+    # The guide ships SQP-1 with a minimum score of 1000, which is adjusted
+    # by default to lower value in order to improve media acquisition
+    radarr_min_format_score = radarr_profiles_list[0]['minFormatScore']
+    assert radarr_min_format_score == 180, \
+        f"Expected Radarr minFormatScore of 180, found: {radarr_min_format_score}"
+
     # Check that quality profiles were created by recyclarr for Sonarr
     sonarr_profiles = machine.succeed(
         "curl -s -H 'X-Api-Key: efgh5678efgh5678efgh5678efgh5678' "

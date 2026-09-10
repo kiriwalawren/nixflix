@@ -27,6 +27,9 @@ in
           else
             "0896c29d74de619df168d23b98104b22"; # [SQP] SQP-1 (1080p)
         reset_unmatched_scores.enabled = true;
+
+        # Lower minimal score to allow better media acquisition
+        min_format_score = 180;
       }
     ];
   };
