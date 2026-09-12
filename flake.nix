@@ -128,6 +128,7 @@
             nativeBuildInputs = [
               treefmt.config.build.wrapper
               pkgs.yarn-berry_4.yarn-berry-fetcher
+              pkgs.jq
             ]
             ++ (lib.attrValues treefmt.config.build.programs);
 

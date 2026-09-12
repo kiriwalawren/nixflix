@@ -49,6 +49,62 @@ UPR_MANIFEST=$(curl -sf "$UPR_URL")
 echo ""
 echo "=== Updating Jellyfin plugin versions ==="
 
+update_plugins() {
+  current_plugins_json="$(cat modules/jellyfin/plugins/plugins.json)"
+  plugins_json="{"
+  # We want to split on newline when iterating over JSON for plugins and versions
+  IFS=$'\n'
+  for plugin in $(echo "$UPR_MANIFEST" | jq -c '.[]');
+  do
+    # Exclude plugins starting with "!" (i.e. the universal plugins repo plugin)
+    if [[ $(echo "$plugin" | jq -r '.name') =~ ^! ]]; then
+      continue
+    fi
+    versions_json="["
+    for version in $(echo "$plugin" | jq -c '.versions[]');
+    do
+      local local_plugin="$(echo "$current_plugins_json" | jq ".$(echo "$plugin" | jq '.name')")"
+      if [ "$local_plugin" != "null" ]; then
+        for local_version in $(echo "$local_plugin" | jq -c '.versions[]'); do
+          if [ "$(echo "$version" | jq '.version')" = "$(echo "$local_version" | jq '.version')" ]; then
+            versions_json="$versions_json$local_version,"
+            continue 2
+          fi
+        done
+      fi
+      local hash="$(nix flake prefetch --json "$(echo "$version" | jq -r '.sourceUrl')" | jq '.hash')"
+      if [ -n "$hash" ]; then
+        # Only add version if hash is set, otherwise, skip it (usually due to 404 on sourceUrl)
+        echo "New version of $(echo "$plugin" | jq '.name') found: $(echo "$version" | jq '.version')"
+        versions_json="$versions_json
+          {
+            \"version\": $(echo "$version" | jq '.version'),
+            \"changelog\": $(echo "$version" | jq '.changelog'),
+            \"targetAbi\": $(echo "$version" | jq '.targetAbi'),
+            \"url\": $(echo "$version" | jq '.sourceUrl'),
+            \"hash\": $hash,
+            \"timestamp\": $(echo "$version" | jq '.timestamp')
+          },"
+      fi
+    done;
+    versions_json="$(echo $versions_json | sed "s/,*$/]/")" 
+
+    plugins_json="$plugins_json
+      $(echo $plugin | jq '.name'): {
+        \"guid\": $(echo "$plugin" | jq '.guid'),
+        \"overview\": $(echo "$plugin" | jq '.overview'),
+        \"description\": $(echo "$plugin" | jq '.description'),
+        \"owner\": $(echo "$plugin" | jq '.owner'),
+        \"category\": $(echo "$plugin" | jq '.category'),
+        \"imageUrl\": $(echo "$plugin" | jq '.imageUrl'),
+        \"versions\": $versions_json
+      },"
+  done;
+  echo $plugins_json | sed "s/,$/}/" | jq > modules/jellyfin/plugins/plugins.json
+}
+
+update_plugins
+
 discover_fromrepo() {
   find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" -print0 |
     xargs -0 gawk '
