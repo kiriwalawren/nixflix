@@ -3,51 +3,111 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
-# === Part 1: Update manifest hashes ===
-
-echo "=== Updating Jellyfin plugin manifests ==="
-
-update_manifest() {
-  local name="$1"
-  local new_sha="$2"
-  local new_url="$3"
-  local new_hash="$4"
-  local sha_pattern="$5"
-
-  local old_sha
-  old_sha=$(grep -roh "$sha_pattern" "$REPO_ROOT" --include="*.nix" | head -1 | grep -o '[0-9a-f]\{40\}')
-
-  if [[ "$new_sha" == "$old_sha" ]]; then
-    echo "  $name: already at ${new_sha:0:8}"
-    return
-  fi
-
-  local old_hash_file old_hash
-  old_hash_file=$(grep -rl "$old_sha" "$REPO_ROOT" --include="*.nix" | head -1)
-  old_hash=$(grep -A3 "$old_sha" "$old_hash_file" | grep 'hash = ' | head -1 | sed 's/.*hash = "\(.*\)".*/\1/')
-
-  echo "  $name: ${old_sha:0:8} → ${new_sha:0:8}"
-  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" \
-    -exec sed -i "s|${old_sha}|${new_sha}|g; s|${old_hash}|${new_hash}|g" {} \;
-}
+# === Part 1: Fetch UPR manifest ===
 
 echo "Fetching Jellyfin Universal Plugin Repo Manifest..."
-UPR_SHA=$(curl -sf \
-  "https://api.github.com/repos/kiriwalawren/nixflix/commits/main?per_page=1" |
-  jq -r '.sha')
-UPR_URL="https://raw.githubusercontent.com/kiriwalawren/nixflix/${UPR_SHA}/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json"
-UPR_HASH=$(nix store prefetch-file --json "$UPR_URL" 2>/dev/null | jq -r '.hash')
+NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
+JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")
+UPR_URL="https://obelo.us/upr"
+UPR_MANIFEST=$(curl -sfA "jellyfin/$JELLYFIN_VERSION (https://github.com/kiriwalawren/nixflix)" "$UPR_URL")
 
-update_manifest "Universal Plugin Repo" \
-  "$UPR_SHA" "$UPR_URL" "$UPR_HASH" \
-  'kiriwalawren/nixflix/[0-9a-f]\{40\}/modules/jellyfin/system/jellyfin-universal-plugin-manifest'
-
-UPR_MANIFEST=$(curl -sf "$UPR_URL")
-
-# === Part 2: Update plugin version + download hashes ===
+# === Part 2: Update plugin versions JSON ===
 
 echo ""
-echo "=== Updating Jellyfin plugin versions ==="
+echo "=== Updating Jellyfin plugin versions JSON ==="
+
+update_plugins() {
+  # These are the keys which we use to identify a version, since the `version` alone isn't
+  # gaurenteed to be unique (e.g. two identical versions with different `targetAbi`s)
+  VERSION_COMPARE_KEYS_FILTER='{checksum, sourceUrl, targetAbi, timestamp, version} | with_entries(select(.value != null))'
+  current_plugins_json="$(cat modules/jellyfin/plugins/plugins.json)"
+  plugins_json="{}"
+  # We want to split on newline when iterating over JSON for plugins and versions
+  IFS=$'\n'
+
+  for plugin in $(echo "$UPR_MANIFEST" | jq -c '.[]');
+  do
+    # Exclude plugins starting with "!" (i.e. the universal plugins repo plugin)
+    if [[ $(echo "$plugin" | jq -r '.name') =~ ^! ]]; then
+      continue
+    fi
+    local guid="$(echo "$plugin" | jq -r '.guid')"
+    # Also, a plugin called "Xtream Library" has changed guids for some reason,
+    # and UPR still provides the old one, so let's skip it when we find it:
+    if [ $guid = a1b2c3d4-e5f6-7890-abcd-ef1234567890 ]; then
+      continue
+    fi
+    # There are two plugins with the exact same name, "Missing Episodes", so let's skip the one which:
+    # - Seems to be entirely vibecoded (12 commits with copilot, then nothing for 6 months)
+    # - Is likely much less useful (just provides API endpoints for missing episodes)
+    if [ $guid = 3e7a8e72-8a85-4b2d-9f3c-1a2b3c4d5e6f ]; then
+      continue
+    fi
+    # Similar to above, but this duplicate plugin just seems to have the same functionality as the
+    # existing ListenBrainz plugin
+    if [ $guid = b8e7f6a5-4d3c-2b1a-0f9e-8d7c6b5a4f3e ]; then
+      continue
+    fi
+    # UPR adds " [✓*]" to some plugin names for some reason, so we have to remove them
+    name="$(echo "$plugin" | jq '.name' | sed 's/ \[✓*\]"$/"/')"
+    # Remove the UPR metadata added to the description, it isn't really helpful and just generates
+    # noisy diffs
+    description="$(echo "$plugin" | jq '.description' | sed 's~  \\n  \\nUniversal Repo:  \\nGenerated: [0-9]\{2\}:[0-9]\{2\} UTC  \\nSource: https://.*  \\n.*"$~"~')"
+
+    versions_json="[]"
+    # Try to load existing plugin object, so that if multiple versions of the 
+    local existing_plugin="$(echo "$plugins_json" | jq -c ."$name")"
+    if [ "$existing_plugin" != null ]; then
+      if [ "$(echo "$existing_plugin" | jq .guid)" = "$(echo "$plugin" | jq .guid)" ]; then
+        # It exists, so let's add new versions to it
+        versions_json="$(echo "$existing_plugin" | jq .versions)"
+      else
+        # Plugin with identical name but different GUID found. Let's exit here, so that when the
+        # pipeline fails, a maintainer can choose to skip one of them from the plugins json
+        # manually, like shown above.
+        echo "Duplicate plugin $name found, please block one of them from being included"
+        exit 1
+      fi
+    fi
+
+    for version in $(echo "$plugin" | jq -c '.versions[]');
+    do
+      for existing_version in $(echo "$versions_json" | jq -c '.[]'); do
+        if [ "$(echo "$version" | jq -c $VERSION_COMPARE_KEYS_FILTER)" = "$(echo "$existing_version" | jq -c $VERSION_COMPARE_KEYS_FILTER)" ]; then
+          # Existing version exists which appears to be identical, so let's skip it
+          continue 2
+        fi
+      done
+      local local_plugin="$(echo "$current_plugins_json" | jq ".$name")"
+      # Checking if we already have this version hash locally, saving time in getting the nix hash
+      if [ "$local_plugin" != "null" ]; then
+        for local_version in $(echo "$local_plugin" | jq -c '.versions[]'); do
+          if [ "$(echo "$version" | jq -c $VERSION_COMPARE_KEYS_FILTER)" = "$(echo "$local_version" | jq -c $VERSION_COMPARE_KEYS_FILTER)" ]; then
+            versions_json="$(echo "$versions_json[$local_version]" | jq -sc "add")"
+            continue 2
+          fi
+        done
+      fi
+      local hash="$(nix flake prefetch --json "$(echo "$version" | jq -r '.sourceUrl')" | jq '.hash')"
+      if [ -n "$hash" ]; then
+        # Only add version if hash is set, otherwise, skip it (usually due to 404 on sourceUrl)
+        echo "New or updated version of $name found: $(echo "$version" | jq '.version')"
+        versions_json="$(echo "$versions_json" | jq ". +=[$(echo "$version" | jq -c "{changelog, checksum, sourceUrl, targetAbi, timestamp, version} + {hash: $hash} | with_entries(select(.value != null))")]")"
+      fi
+    done;
+    # Have to do it this way to avoid "Argument list too long" error due to adding versions_json
+    plugins_json="$(echo "$plugins_json{$name: $(echo "$plugin{\"description\": $description}{\"versions\": $versions_json}" | jq -sc "add | {guid, overview, description, owner, category, imageUrl, versions} | with_entries(select(.value != null))")}" | jq -sc "add")"
+  done;
+  # Sort the plugins for consistency
+  echo "$plugins_json" | jq -S > modules/jellyfin/plugins/plugins.json
+}
+
+update_plugins
+
+# === Part 3: Update plugin versions + download hashes for tests & examples ===
+
+echo ""
+echo "=== Updating example/test Jellyfin plugin versions ==="
 
 discover_fromrepo() {
   find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" -print0 |

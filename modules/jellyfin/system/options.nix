@@ -647,13 +647,4 @@ in
       '';
     };
   };
-
-  config.nixflix.jellyfin.system.pluginRepositories = {
-    "Jellyfin Universal Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-      hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
-      enabled = true;
-      fallback = true;
-    };
-  };
 }

@@ -352,6 +352,7 @@ in
                 };
               };
               plugins."Intro Skipper" = {
+                enable = true;
                 package = jellyfinPlugins.fromRepo {
                   version = "12.0.4.0";
                   hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
@@ -772,13 +773,13 @@ in
       )}
 
       ${check "Open Subtitles plugin directory name in service script" (
-        lib.hasInfix "Open Subtitles_25.0.0.0" pluginService.script
+        lib.hasInfix "Open-Subtitles-" pluginService.script
       )}
       ${check "subbuzz plugin directory name in service script" (
-        lib.hasInfix "subbuzz_1.5.0.0" pluginService.script
+        lib.hasInfix "subbuzz-" pluginService.script
       )}
       ${check "Subtitle Extract plugin directory name in service script" (
-        lib.hasInfix "Subtitle Extract_8.0.0.0" pluginService.script
+        lib.hasInfix "Subtitle-Extract-" pluginService.script
       )}
 
       ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}
