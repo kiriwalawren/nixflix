@@ -44,8 +44,8 @@ in
       plugins.AniDB = mkIf config.nixflix.sonarr-anime.enable {
         package = mkDefault (
           jellyfinPlugins.fromRepo {
-            version = "11.0.0.0";
-            hash = "sha256-Rtvxq6NxQSrRyhYdsyWXY+SoDPW4S0471gmiLTUjaSk=";
+            version = "13.0.0.0";
+            hash = "sha256-TiMl1kloW43CpKrLGaU9uZxrHi/oZHTA8Eu7MsRDneM=";
           }
         );
         config = {

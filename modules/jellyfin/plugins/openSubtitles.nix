@@ -8,8 +8,8 @@ in
   options.nixflix.jellyfin.plugins."Open Subtitles" = lib.mkOption {
     type = jellyfinPlugins.mkPluginModule {
       packageDefault = jellyfinPlugins.fromRepo {
-        version = "24.0.0.0";
-        hash = "sha256-b6sgmgBlvhUAhFuq0p/EjB3604NGBkpS4NP33n1hfKc=";
+        version = "25.0.0.0";
+        hash = "sha256-If7p65jk2tbRJsKBSKJFrnW8/++MaDcRK0azfc8gco0=";
       };
 
       configOption = lib.mkOption {
