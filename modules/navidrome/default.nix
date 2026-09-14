@@ -276,8 +276,6 @@ in
             // lib.optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
               uid = lib.mkForce config.nixflix.globals.uids.${cfg.user};
             };
-
-          groups.${cfg.group} = lib.mkForce { };
         };
       }
     ]
