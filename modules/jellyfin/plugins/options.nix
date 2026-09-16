@@ -38,10 +38,6 @@ in
             # ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
           };
         };
-
-        "Intro Skipper" = {
-          package = myJellyfinPlugin;
-        };
       }
     '';
   };

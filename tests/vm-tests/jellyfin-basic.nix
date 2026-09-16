@@ -374,12 +374,12 @@ pkgs.testers.runNixOSTest {
           };
 
           plugins = {
-            "Comic Vine" = {
+            "Intro Skipper" = {
               package = jellyfinPlugins.fromRepo {
-                version = "2.0.0.0";
-                hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
+                version = "12.0.4.0";
+                hash = "sha256-rCIHoArkW3H8pP3r0Y1W+xiiJZBtE1kxXwMjnbQ1yUg=";
               };
-              config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
+              config.PreferredAudioLanguage._secret = pkgs.writeText "intro-skipper-language" "introskipperlang1111111111111111111";
             };
           };
         };

@@ -325,13 +325,13 @@ in
       manifest = pkgs.writeText "jellyfin-plugin-repo-service-generation.json" (
         builtins.toJSON [
           {
-            guid = "33333333-3333-3333-3333-333333333333";
-            name = "Comic Vine";
+            guid = "c83d86bb-a1e0-4c35-a113-e2101cf4ee6b";
+            name = "Intro Skipper";
             versions = [
               {
-                version = "2.0.0.0";
+                version = "12.0.4.0";
                 inherit targetAbi;
-                sourceUrl = "https://repo.jellyfin.org/files/plugin/comic-vine/comic-vine_2.0.0.0.zip";
+                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.4.0/intro-skipper-v12.0.4.0.zip";
               }
             ];
           }
@@ -351,10 +351,10 @@ in
                   enabled = true;
                 };
               };
-              plugins."Comic Vine" = {
+              plugins."Intro Skipper" = {
                 package = jellyfinPlugins.fromRepo {
-                  version = "2.0.0.0";
-                  hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
+                  version = "12.0.4.0";
+                  hash = "sha256-rCIHoArkW3H8pP3r0Y1W+xiiJZBtE1kxXwMjnbQ1yUg=";
                 };
               };
               users.admin = {
@@ -372,10 +372,10 @@ in
         config.config.systemd.services ? jellyfin-plugins
       )}
       ${check "repo-managed plugins resolve to package sync commands" (
-        lib.hasInfix "Syncing packaged plugin: Comic Vine" pluginService.script
+        lib.hasInfix "Syncing packaged plugin: Intro Skipper" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Comic Vine_2.0.0.0" pluginService.script
+        lib.hasInfix "Intro Skipper_12.0.4.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out

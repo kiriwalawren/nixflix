@@ -53,6 +53,34 @@ let
     in
     if nonFallbackMatches == [ ] then matches else nonFallbackMatches;
 
+  dedupeMatches =
+    matches:
+    let
+      folded =
+        lib.foldl'
+          (
+            acc: match:
+            let
+              key = "${match.name} ${match.sourceUrl} ${match.version} ${match.targetAbi}";
+            in
+            if acc.seen ? ${key} then
+              acc
+            else
+              {
+                seen = acc.seen // {
+                  ${key} = true;
+                };
+                result = acc.result ++ [ match ];
+              }
+          )
+          {
+            seen = { };
+            result = [ ];
+          }
+          matches;
+    in
+    folded.result;
+
   repoPluginDirName = pluginName: pluginVersion: "${pluginName}_${pluginVersion}";
 
   namedPluginRepositories = lib.mapAttrsToList (
@@ -102,33 +130,35 @@ let
         else
           lib.filter (repo: repo.name == repositoryName) repositoriesWithManifest;
 
-      versionMatches = lib.concatMap (
-        repo:
+      versionMatches = dedupeMatches (
         lib.concatMap (
-          plugin:
-          if stripVerificationBadge plugin.name == pluginName then
-            map
-              (release: {
-                inherit (repo) name url fallback;
-                inherit (release) sourceUrl version targetAbi;
-                timestamp = release.timestamp or "";
-                changelog = release.changelog or "";
-                guid = plugin.guid or "";
-                category = plugin.category or "";
-                description = plugin.description or "";
-                overview = plugin.overview or "";
-                owner = plugin.owner or "";
-                imageUrl = plugin.imageUrl or "";
-              })
-              (
-                lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
-                  plugin.versions or [ ]
+          repo:
+          lib.concatMap (
+            plugin:
+            if stripVerificationBadge plugin.name == pluginName then
+              map
+                (release: {
+                  inherit (repo) name url fallback;
+                  inherit (release) sourceUrl version targetAbi;
+                  timestamp = release.timestamp or "";
+                  changelog = release.changelog or "";
+                  guid = plugin.guid or "";
+                  category = plugin.category or "";
+                  description = plugin.description or "";
+                  overview = plugin.overview or "";
+                  owner = plugin.owner or "";
+                  imageUrl = plugin.imageUrl or "";
+                })
+                (
+                  lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
+                    plugin.versions or [ ]
+                  )
                 )
-              )
-          else
-            [ ]
-        ) repo.manifest
-      ) matchingRepositories;
+            else
+              [ ]
+          ) repo.manifest
+        ) matchingRepositories
+      );
 
       matchingAbi = lib.filter (
         match: normalizeTargetAbi match.targetAbi == normalizedJellyfinVersion
