@@ -772,13 +772,13 @@ in
       )}
 
       ${check "Open Subtitles plugin directory name in service script" (
-        lib.hasInfix "Open Subtitles_24.0.0.0" pluginService.script
+        lib.hasInfix "Open Subtitles_25.0.0.0" pluginService.script
       )}
       ${check "subbuzz plugin directory name in service script" (
-        lib.hasInfix "subbuzz_1.4.1.0" pluginService.script
+        lib.hasInfix "subbuzz_1.5.0.0" pluginService.script
       )}
       ${check "Subtitle Extract plugin directory name in service script" (
-        lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
+        lib.hasInfix "Subtitle Extract_8.0.0.0" pluginService.script
       )}
 
       ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}

@@ -116,6 +116,10 @@ while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
   sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
   sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
 
+  # Propagate the plugin directory name into any tests asserting on it.
+  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" \
+    -exec sed -i "s|${plugin_name}_${current_version}|${plugin_name}_${latest_version}|g" {} \;
+
 done < <(discover_fromrepo)
 
 echo ""
