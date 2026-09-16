@@ -377,7 +377,7 @@ pkgs.testers.runNixOSTest {
             "Intro Skipper" = {
               package = jellyfinPlugins.fromRepo {
                 version = "12.0.4.0";
-                hash = "sha256-rCIHoArkW3H8pP3r0Y1W+xiiJZBtE1kxXwMjnbQ1yUg=";
+                hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
               };
               config.PreferredAudioLanguage._secret = pkgs.writeText "intro-skipper-language" "introskipperlang1111111111111111111";
             };
