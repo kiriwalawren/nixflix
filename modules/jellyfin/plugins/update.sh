@@ -87,7 +87,7 @@ lookup_in_manifest() {
   local manifest_json="$2"
   echo "$manifest_json" | jq -r \
     --arg name "$plugin_name" \
-    '[.[] | select(.name == $name) | .versions[]]
+    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[]]
      | if length == 0 then empty
        else sort_by(.version | split(".") | map(tonumber)) | last
        | (.version + "\t" + .sourceUrl)

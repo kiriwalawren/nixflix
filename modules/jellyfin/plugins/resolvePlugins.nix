@@ -11,6 +11,12 @@ let
 
   normalizeTargetAbi = targetAbi: lib.removeSuffix ".0" targetAbi;
 
+  stripVerificationBadge =
+    name:
+    lib.foldl' (
+      acc: badge: if lib.hasSuffix badge acc then lib.removeSuffix badge acc else acc
+    ) name [ " [✓✓✓]" " [✓✓]" " [✓]" ];
+
   versionSeries = version: lib.concatStringsSep "." (lib.take 2 (lib.splitVersion version));
 
   highestByTargetAbi =
@@ -92,7 +98,7 @@ let
         repo:
         lib.concatMap (
           plugin:
-          if plugin.name == pluginName then
+          if stripVerificationBadge plugin.name == pluginName then
             map
               (release: {
                 inherit (repo) name url fallback;
