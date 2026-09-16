@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Set
 from collections import defaultdict
+
+
+def filtered_parts(parts: List[str]) -> List[str]:
+    """Drop wildcard segments ('*', '<name>') so option paths at different
+    depths collapse to the same prefix."""
+    return [p for p in parts if p not in ("*", "<name>")]
 
 
 def load_options(json_path: Path) -> Dict[str, Any]:
@@ -46,8 +53,7 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         # collapsing multiple depths to the same prefix don't inflate the count.
         seen_prefixes: set[str] = set()
         for i in range(3, len(parts)):
-            # Skip '*' and '<name>' parts when building the prefix
-            prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
+            prefix_parts = filtered_parts(parts[2:i])
             if prefix_parts:
                 prefix = ".".join(prefix_parts)
                 if prefix not in seen_prefixes:
@@ -104,8 +110,7 @@ def categorize_options_hierarchical(
             continue
 
         # Get the option path without the "nixflix.{service}." prefix
-        # Filter out '*' and '<name>' parts to match how complex_groups are built
-        option_path_parts = [p for p in parts[2:] if p not in ("*", "<name>")]
+        option_path_parts = filtered_parts(parts[2:])
         option_path = ".".join(option_path_parts) if option_path_parts else None
 
         # Check if this exact option path is a complex group (parent option)
@@ -115,8 +120,7 @@ def categorize_options_hierarchical(
             # Find the deepest complex group this option belongs to
             page_key = "index"
             for i in range(3, len(parts)):
-                # Skip '*' and '<name>' parts when building the prefix
-                prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
+                prefix_parts = filtered_parts(parts[2:i])
                 if prefix_parts:
                     prefix = ".".join(prefix_parts)
                     if prefix in complex_groups[service]:
@@ -335,8 +339,6 @@ def write_service_docs(
 
 def special_case_to_title(s: str) -> str:
     """Convert camelCase or snake_case to Title Case, preserving initialisms."""
-    import re
-
     # Handle snake_case
     s = s.replace("_", " ")
     # Handle kebab case
