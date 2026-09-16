@@ -650,8 +650,8 @@ in
 
   config.nixflix.jellyfin.system.pluginRepositories = {
     "Jellyfin Universal Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/2d2ec8586e619bc8b5451be6feb175a71dc38831/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-      hash = "sha256-FADPMKYe+VAqWqMjYCzxHxPsHlTWh/59St6SjlHrCx4=";
+      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0f2f430362eb59b21badab2ef64438b0c97ad061/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+      hash = "sha256-krsTYP7B8OqRwVj070BWM7cufw2dGrciZCbV3ws8CXY=";
       enabled = true;
       fallback = true;
     };
