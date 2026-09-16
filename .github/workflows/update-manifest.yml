@@ -22,8 +22,18 @@ jobs:
 
       - name: Fetch upstream manifest
         run: |
+          pad_version() {
+            local IFS='.'
+            local -a parts
+            read -ra parts <<< "$1"
+            while [[ "${#parts[@]}" -lt 4 ]]; do
+              parts+=("0")
+            done
+            echo "${parts[*]}"
+          }
+
           NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
-          JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")
+          JELLYFIN_VERSION=$(pad_version "$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")")
           curl -fsSL https://obelo.us/upr -H "User-Agent: jellyfin/${JELLYFIN_VERSION}" -o modules/jellyfin/system/jellyfin-universal-plugin-manifest.json
 
       - name: Commit, open PR, and enable auto-merge if changed

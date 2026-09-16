@@ -10,7 +10,8 @@ let
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 
   padVersion =
-    n: version: lib.concatStringsSep "." (lib.take n (lib.splitVersion version ++ lib.genList (_: "0") n));
+    n: version:
+    lib.concatStringsSep "." (lib.take n (lib.splitVersion version ++ lib.genList (_: "0") n));
 
   normalizeTargetAbi = padVersion 4;
 
