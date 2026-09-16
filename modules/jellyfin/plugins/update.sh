@@ -87,7 +87,7 @@ lookup_in_manifest() {
   local manifest_json="$2"
   echo "$manifest_json" | jq -r \
     --arg name "$plugin_name" \
-    '[.[] | select(.name == $name) | .versions[]]
+    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[]]
      | if length == 0 then empty
        else sort_by(.version | split(".") | map(tonumber)) | last
        | (.version + "\t" + .sourceUrl)
@@ -115,6 +115,10 @@ while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
   echo "  $plugin_name: $current_version → $latest_version"
   sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
   sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
+
+  # Propagate the plugin directory name into any tests asserting on it.
+  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" \
+    -exec sed -i "s|${plugin_name}_${current_version}|${plugin_name}_${latest_version}|g" {} \;
 
 done < <(discover_fromrepo)
 

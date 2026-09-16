@@ -321,6 +321,22 @@ in
 
   jellyfin-plugin-repo-service-generation =
     let
+      targetAbi = "${pkgs.jellyfin.version}.0";
+      manifest = pkgs.writeText "jellyfin-plugin-repo-service-generation.json" (
+        builtins.toJSON [
+          {
+            guid = "33333333-3333-3333-3333-333333333333";
+            name = "Comic Vine";
+            versions = [
+              {
+                version = "2.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://repo.jellyfin.org/files/plugin/comic-vine/comic-vine_2.0.0.0.zip";
+              }
+            ];
+          }
+        ]
+      );
       config = evalConfig [
         {
           nixflix = {
@@ -328,10 +344,17 @@ in
 
             jellyfin = {
               enable = true;
-              plugins.Bookshelf = {
+              system.pluginRepositories = lib.mkForce {
+                "Test Repo" = {
+                  url = builtins.unsafeDiscardStringContext "file://${manifest}";
+                  hash = manifestHash manifest;
+                  enabled = true;
+                };
+              };
+              plugins."Comic Vine" = {
                 package = jellyfinPlugins.fromRepo {
-                  version = "13.0.0.0";
-                  hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                  version = "2.0.0.0";
+                  hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
                 };
               };
               users.admin = {
@@ -349,10 +372,10 @@ in
         config.config.systemd.services ? jellyfin-plugins
       )}
       ${check "repo-managed plugins resolve to package sync commands" (
-        lib.hasInfix "Syncing packaged plugin: Bookshelf" pluginService.script
+        lib.hasInfix "Syncing packaged plugin: Comic Vine" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Bookshelf_13.0.0.0" pluginService.script
+        lib.hasInfix "Comic Vine_2.0.0.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
@@ -749,13 +772,13 @@ in
       )}
 
       ${check "Open Subtitles plugin directory name in service script" (
-        lib.hasInfix "Open Subtitles_24.0.0.0" pluginService.script
+        lib.hasInfix "Open Subtitles_25.0.0.0" pluginService.script
       )}
       ${check "subbuzz plugin directory name in service script" (
-        lib.hasInfix "subbuzz_1.4.1.0" pluginService.script
+        lib.hasInfix "subbuzz_1.5.0.0" pluginService.script
       )}
       ${check "Subtitle Extract plugin directory name in service script" (
-        lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
+        lib.hasInfix "Subtitle Extract_8.0.0.0" pluginService.script
       )}
 
       ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}

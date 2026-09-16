@@ -213,8 +213,8 @@ pkgs.testers.runNixOSTest {
             ];
             pluginRepositories = lib.mkForce {
               "Jellyfin Universal Plugin Repo" = {
-                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/9bd61380363c07d35ee3e4cb0253c998cda422fe/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-                hash = "sha256-hvuHFrGWwxRveRLPJdCwv0X6CmG7ZWvORte47YcaE/Q=";
+                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+                hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
                 enabled = true;
               };
             };
@@ -374,10 +374,10 @@ pkgs.testers.runNixOSTest {
           };
 
           plugins = {
-            "Bookshelf" = {
+            "Comic Vine" = {
               package = jellyfinPlugins.fromRepo {
-                version = "13.0.0.0";
-                hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                version = "2.0.0.0";
+                hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
               };
               config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
             };
@@ -874,14 +874,14 @@ pkgs.testers.runNixOSTest {
         )
         plugins = json.loads(plugins_json)
 
-        bookshelf_plugins = [p for p in plugins if p['Name'] == 'Bookshelf']
-        assert len(bookshelf_plugins) == 1, \
-            f"Expected 1 Bookshelf plugin, found {len(bookshelf_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
-        bookshelf = bookshelf_plugins[0]
-        plugin_id = bookshelf['Id']
-        print(f"Bookshelf plugin installed with id: {plugin_id}")
+        comicvine_plugins = [p for p in plugins if p['Name'] == 'Comic Vine']
+        assert len(comicvine_plugins) == 1, \
+            f"Expected 1 Comic Vine plugin, found {len(comicvine_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+        comicvine = comicvine_plugins[0]
+        plugin_id = comicvine['Id']
+        print(f"Comic Vine plugin installed with id: {plugin_id}")
 
-        print("Querying Bookshelf plugin configuration...")
+        print("Querying Comic Vine plugin configuration...")
         plugin_config_json = machine.succeed(
             f'curl -f -H {auth_header} {base_url}/Plugins/{plugin_id}/Configuration'
         )
@@ -891,8 +891,8 @@ pkgs.testers.runNixOSTest {
             f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
 
         print("Verifying packaged plugin sync...")
-        machine.succeed("test -d '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0'")
-        machine.succeed("test -f '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/Comic Vine_2.0.0.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/Comic Vine_2.0.0.0/Jellyfin.Plugin.ComicVine.dll'")
 
         print("All plugin management assertions passed!")
   '';
