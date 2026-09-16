@@ -9,7 +9,12 @@ let
   buildJellyfinPlugin = import ../../../lib/build-jellyfin-plugin.nix { inherit pkgs; };
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 
-  normalizeTargetAbi = targetAbi: lib.removeSuffix ".0" targetAbi;
+  padVersion =
+    n: version: lib.concatStringsSep "." (lib.take n (lib.splitVersion version ++ lib.genList (_: "0") n));
+
+  normalizeTargetAbi = padVersion 4;
+
+  normalizedJellyfinVersion = padVersion 4 jellyfinVersion;
 
   stripVerificationBadge =
     name:
@@ -125,7 +130,7 @@ let
       ) matchingRepositories;
 
       matchingAbi = lib.filter (
-        match: normalizeTargetAbi match.targetAbi == jellyfinVersion
+        match: normalizeTargetAbi match.targetAbi == normalizedJellyfinVersion
       ) versionMatches;
 
       compatibleAbi = lib.filter (
@@ -133,8 +138,8 @@ let
         let
           normalizedTargetAbi = normalizeTargetAbi match.targetAbi;
         in
-        versionSeries normalizedTargetAbi == versionSeries jellyfinVersion
-        && !lib.versionOlder jellyfinVersion normalizedTargetAbi
+        versionSeries normalizedTargetAbi == versionSeries normalizedJellyfinVersion
+        && !lib.versionOlder normalizedJellyfinVersion normalizedTargetAbi
       ) versionMatches;
 
       selectedMatches = if lib.length matchingAbi == 1 then matchingAbi else versionMatches;
