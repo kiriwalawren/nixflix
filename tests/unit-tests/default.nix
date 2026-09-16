@@ -321,6 +321,22 @@ in
 
   jellyfin-plugin-repo-service-generation =
     let
+      targetAbi = "${pkgs.jellyfin.version}.0";
+      manifest = pkgs.writeText "jellyfin-plugin-repo-service-generation.json" (
+        builtins.toJSON [
+          {
+            guid = "33333333-3333-3333-3333-333333333333";
+            name = "Bookshelf";
+            versions = [
+              {
+                version = "13.0.0.0";
+                inherit targetAbi;
+                sourceUrl = "https://repo.jellyfin.org/files/plugin/bookshelf/bookshelf_13.0.0.0.zip";
+              }
+            ];
+          }
+        ]
+      );
       config = evalConfig [
         {
           nixflix = {
@@ -328,6 +344,13 @@ in
 
             jellyfin = {
               enable = true;
+              system.pluginRepositories = lib.mkForce {
+                "Test Repo" = {
+                  url = builtins.unsafeDiscardStringContext "file://${manifest}";
+                  hash = manifestHash manifest;
+                  enabled = true;
+                };
+              };
               plugins.Bookshelf = {
                 package = jellyfinPlugins.fromRepo {
                   version = "13.0.0.0";
