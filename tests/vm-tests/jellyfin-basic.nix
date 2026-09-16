@@ -874,25 +874,25 @@ pkgs.testers.runNixOSTest {
         )
         plugins = json.loads(plugins_json)
 
-        comicvine_plugins = [p for p in plugins if p['Name'] == 'Comic Vine']
-        assert len(comicvine_plugins) == 1, \
-            f"Expected 1 Comic Vine plugin, found {len(comicvine_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
-        comicvine = comicvine_plugins[0]
-        plugin_id = comicvine['Id']
-        print(f"Comic Vine plugin installed with id: {plugin_id}")
+        introskipper_plugins = [p for p in plugins if p['Name'] == 'Intro Skipper']
+        assert len(introskipper_plugins) == 1, \
+            f"Expected 1 Intro Skipper plugin, found {len(introskipper_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+        introskipper = introskipper_plugins[0]
+        plugin_id = introskipper['Id']
+        print(f"Intro Skipper plugin installed with id: {plugin_id}")
 
-        print("Querying Comic Vine plugin configuration...")
+        print("Querying Intro Skipper plugin configuration...")
         plugin_config_json = machine.succeed(
             f'curl -f -H {auth_header} {base_url}/Plugins/{plugin_id}/Configuration'
         )
         plugin_config = json.loads(plugin_config_json)
 
-        assert plugin_config.get('ComicVineApiKey') == 'comicvineapikey1111111111111111111', \
-            f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
+        assert plugin_config.get('PreferredAudioLanguage') == 'introskipperlang1111111111111111111', \
+            f"PreferredAudioLanguage should be 'introskipperlang1111111111111111111', got {plugin_config.get('PreferredAudioLanguage')}"
 
         print("Verifying packaged plugin sync...")
-        machine.succeed("test -d '/var/lib/jellyfin/plugins/Comic Vine_2.0.0.0'")
-        machine.succeed("test -f '/var/lib/jellyfin/plugins/Comic Vine_2.0.0.0/Jellyfin.Plugin.ComicVine.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0/IntroSkipper.dll'")
 
         print("All plugin management assertions passed!")
   '';
