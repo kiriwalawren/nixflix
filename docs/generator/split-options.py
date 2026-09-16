@@ -223,6 +223,50 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     )
 
 
+def get_child_pages(page_key: str, all_page_keys: List[str]) -> List[str]:
+    """Return the direct child page_keys of the given page (non-recursive).
+
+    A page's children are the other pages nested immediately below it in the
+    dot-path hierarchy, skipping over any intermediate namespace levels that
+    don't have their own page.
+    """
+    prefix_parts = [] if page_key == "index" else page_key.split(".")
+
+    candidates = []
+    for q in all_page_keys:
+        if q == page_key or q == "index":
+            continue
+        q_parts = q.split(".")
+        if q_parts[: len(prefix_parts)] == prefix_parts and len(q_parts) > len(
+            prefix_parts
+        ):
+            candidates.append(q)
+
+    def is_descendant_of_another(q: str) -> bool:
+        q_parts = q.split(".")
+        return any(
+            other != q and q_parts[: len(other.split("."))] == other.split(".")
+            for other in candidates
+        )
+
+    return sorted(q for q in candidates if not is_descendant_of_another(q))
+
+
+def render_additional_options_section(page_key: str, children: List[str]) -> str:
+    prefix_parts = [] if page_key == "index" else page_key.split(".")
+
+    md = "## Additional Options\n\n"
+    md += "This page has the following additional configuration options:\n\n"
+    for child in children:
+        child_parts = child.split(".")
+        rel_parts = child_parts[len(prefix_parts) :]
+        rel_path = "/".join(rel_parts) + "/index.md"
+        title = get_page_nav_title(child_parts[-1])
+        md += f"- [{title}]({rel_path})\n"
+    md += "\n"
+    return md
+
+
 def write_service_docs(
     output_dir: Path, categorized: Dict[str, Dict[str, List[tuple]]]
 ):
@@ -232,6 +276,8 @@ def write_service_docs(
 
         service_dir = output_dir / service
         service_dir.mkdir(parents=True, exist_ok=True)
+
+        all_page_keys = list(pages.keys())
 
         for page_key, options in pages.items():
             if not options:
@@ -260,6 +306,10 @@ def write_service_docs(
                 f.write(
                     f"    This page documents {len(options)} configuration options.\n\n"
                 )
+
+                children = get_child_pages(page_key, all_page_keys)
+                if children:
+                    f.write(render_additional_options_section(page_key, children))
 
                 def get_sort_key(name: str) -> tuple:
                     # Determine the hoisted options for this page
