@@ -283,7 +283,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.slskd.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = cfg.settings.soulseek.listen_port;
           to = cfg.settings.soulseek.listen_port;

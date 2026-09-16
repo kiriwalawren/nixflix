@@ -272,7 +272,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.qbittorrent.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = service.webuiPort;
           to = service.webuiPort;

@@ -69,7 +69,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.jellyfin.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = cfg.network.internalHttpPort;
           to = cfg.network.internalHttpPort;

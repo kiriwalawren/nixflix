@@ -244,7 +244,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.sabnzbd.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = cfg.settings.misc.port;
           to = cfg.settings.misc.port;

@@ -207,7 +207,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.maintainerr.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = cfg.port;
           to = cfg.port;

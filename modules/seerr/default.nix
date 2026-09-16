@@ -278,7 +278,7 @@ in
         enable = true;
         vpnNamespace = "wg";
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${config.systemd.services.seerr.vpnConfinement.vpnNamespace}.portMappings = [
         {
           from = cfg.port;
           to = cfg.port;
