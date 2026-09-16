@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Set
 from collections import defaultdict
+
+
+def filtered_parts(parts: List[str]) -> List[str]:
+    """Drop wildcard segments ('*', '<name>') so option paths at different
+    depths collapse to the same prefix."""
+    return [p for p in parts if p not in ("*", "<name>")]
 
 
 def load_options(json_path: Path) -> Dict[str, Any]:
@@ -46,8 +53,7 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         # collapsing multiple depths to the same prefix don't inflate the count.
         seen_prefixes: set[str] = set()
         for i in range(3, len(parts)):
-            # Skip '*' and '<name>' parts when building the prefix
-            prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
+            prefix_parts = filtered_parts(parts[2:i])
             if prefix_parts:
                 prefix = ".".join(prefix_parts)
                 if prefix not in seen_prefixes:
@@ -104,8 +110,7 @@ def categorize_options_hierarchical(
             continue
 
         # Get the option path without the "nixflix.{service}." prefix
-        # Filter out '*' and '<name>' parts to match how complex_groups are built
-        option_path_parts = [p for p in parts[2:] if p not in ("*", "<name>")]
+        option_path_parts = filtered_parts(parts[2:])
         option_path = ".".join(option_path_parts) if option_path_parts else None
 
         # Check if this exact option path is a complex group (parent option)
@@ -115,8 +120,7 @@ def categorize_options_hierarchical(
             # Find the deepest complex group this option belongs to
             page_key = "index"
             for i in range(3, len(parts)):
-                # Skip '*' and '<name>' parts when building the prefix
-                prefix_parts = [p for p in parts[2:i] if p not in ("*", "<name>")]
+                prefix_parts = filtered_parts(parts[2:i])
                 if prefix_parts:
                     prefix = ".".join(prefix_parts)
                     if prefix in complex_groups[service]:
@@ -223,6 +227,50 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     )
 
 
+def get_child_pages(page_key: str, all_page_keys: List[str]) -> List[str]:
+    """Return the direct child page_keys of the given page (non-recursive).
+
+    A page's children are the other pages nested immediately below it in the
+    dot-path hierarchy, skipping over any intermediate namespace levels that
+    don't have their own page.
+    """
+    prefix_parts = [] if page_key == "index" else page_key.split(".")
+
+    candidates = []
+    for q in all_page_keys:
+        if q == page_key or q == "index":
+            continue
+        q_parts = q.split(".")
+        if q_parts[: len(prefix_parts)] == prefix_parts and len(q_parts) > len(
+            prefix_parts
+        ):
+            candidates.append(q)
+
+    def is_descendant_of_another(q: str) -> bool:
+        q_parts = q.split(".")
+        return any(
+            other != q and q_parts[: len(other.split("."))] == other.split(".")
+            for other in candidates
+        )
+
+    return sorted(q for q in candidates if not is_descendant_of_another(q))
+
+
+def render_additional_options_section(page_key: str, children: List[str]) -> str:
+    prefix_parts = [] if page_key == "index" else page_key.split(".")
+
+    md = "## Additional Options\n\n"
+    md += "This page has the following additional configuration options:\n\n"
+    for child in children:
+        child_parts = child.split(".")
+        rel_parts = child_parts[len(prefix_parts) :]
+        rel_path = "/".join(rel_parts) + "/index.md"
+        title = get_page_nav_title(child_parts[-1])
+        md += f"- [{title}]({rel_path})\n"
+    md += "\n"
+    return md
+
+
 def write_service_docs(
     output_dir: Path, categorized: Dict[str, Dict[str, List[tuple]]]
 ):
@@ -232,6 +280,8 @@ def write_service_docs(
 
         service_dir = output_dir / service
         service_dir.mkdir(parents=True, exist_ok=True)
+
+        all_page_keys = list(pages.keys())
 
         for page_key, options in pages.items():
             if not options:
@@ -261,6 +311,10 @@ def write_service_docs(
                     f"    This page documents {len(options)} configuration options.\n\n"
                 )
 
+                children = get_child_pages(page_key, all_page_keys)
+                if children:
+                    f.write(render_additional_options_section(page_key, children))
+
                 def get_sort_key(name: str) -> tuple:
                     # Determine the hoisted options for this page
                     if page_key == "index":
@@ -285,8 +339,6 @@ def write_service_docs(
 
 def special_case_to_title(s: str) -> str:
     """Convert camelCase or snake_case to Title Case, preserving initialisms."""
-    import re
-
     # Handle snake_case
     s = s.replace("_", " ")
     # Handle kebab case
