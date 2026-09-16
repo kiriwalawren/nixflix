@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Made Nix module options more discoverable in docs ([#345](https://github.com/kiriwalawren/nixflix/issues/345))
 - Updated `nixflix.seerr.externalUrlScheme` deprecation instructions
 - Radarr's default Recyclarr quality profile now sets `min_format_score` to `180` instead of `1000`, to prefer media acquisition ([#305](https://github.com/kiriwalawren/nixflix/issues/305))
 
