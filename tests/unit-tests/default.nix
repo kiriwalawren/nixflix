@@ -326,12 +326,12 @@ in
         builtins.toJSON [
           {
             guid = "33333333-3333-3333-3333-333333333333";
-            name = "Bookshelf";
+            name = "Comic Vine";
             versions = [
               {
-                version = "13.0.0.0";
+                version = "2.0.0.0";
                 inherit targetAbi;
-                sourceUrl = "https://repo.jellyfin.org/files/plugin/bookshelf/bookshelf_13.0.0.0.zip";
+                sourceUrl = "https://repo.jellyfin.org/files/plugin/comic-vine/comic-vine_2.0.0.0.zip";
               }
             ];
           }
@@ -351,10 +351,10 @@ in
                   enabled = true;
                 };
               };
-              plugins.Bookshelf = {
+              plugins."Comic Vine" = {
                 package = jellyfinPlugins.fromRepo {
-                  version = "13.0.0.0";
-                  hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                  version = "2.0.0.0";
+                  hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
                 };
               };
               users.admin = {
@@ -372,10 +372,10 @@ in
         config.config.systemd.services ? jellyfin-plugins
       )}
       ${check "repo-managed plugins resolve to package sync commands" (
-        lib.hasInfix "Syncing packaged plugin: Bookshelf" pluginService.script
+        lib.hasInfix "Syncing packaged plugin: Comic Vine" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Bookshelf_13.0.0.0" pluginService.script
+        lib.hasInfix "Comic Vine_2.0.0.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
