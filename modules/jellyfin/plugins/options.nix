@@ -9,7 +9,7 @@ in
       Jellyfin plugins to manage declaratively.
 
       Each key is the plugin name exactly as it appears in the Jellyfin
-      repository manifest (e.g. "Anime", "Bookshelf", "Trakt"). Plugin names
+      repository manifest (e.g. "Anime", "Comic Vine", "Trakt"). Plugin names
       must be unique across all configured plugin repositories.
 
       Plugins are installed from `package`. This can either be a normal Nix
@@ -26,10 +26,10 @@ in
     default = { };
     example = literalExpression ''
       {
-        "Bookshelf" = {
+        "Comic Vine" = {
           package = nixflix.lib.jellyfinPlugins.fromRepo {
-            version = "13.0.0.0";
-            hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+            version = "2.0.0.0";
+            hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
           };
           config = {
             # Plain string (visible in Nix store)
@@ -37,10 +37,6 @@ in
             # Or as a secret (read from file at activation time)
             # ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
           };
-        };
-
-        "Intro Skipper" = {
-          package = myJellyfinPlugin;
         };
       }
     '';

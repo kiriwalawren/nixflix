@@ -14,8 +14,8 @@ in
   options.nixflix.jellyfin.plugins.subbuzz = lib.mkOption {
     type = jellyfinPlugins.mkPluginModule {
       packageDefault = jellyfinPlugins.fromRepo {
-        version = "1.4.1.0";
-        hash = "sha256-MtHFChAU2ZAtWROSbqxKW8fle8UeAhUt1jIEvw/VZjs=";
+        version = "1.5.0.0";
+        hash = "sha256-4Ib4RqZQiFaMS6j31NdL5oWerB2lC+pCZe0PIYN9bj8=";
       };
 
       configOption = lib.mkOption {

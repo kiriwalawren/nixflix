@@ -222,8 +222,6 @@ in
           // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
             uid = mkForce config.nixflix.globals.uids.${cfg.user};
           };
-
-        groups.${service.group} = mkForce { };
       };
 
       systemd.tmpfiles = {

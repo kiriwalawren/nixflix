@@ -9,7 +9,21 @@ let
   buildJellyfinPlugin = import ../../../lib/build-jellyfin-plugin.nix { inherit pkgs; };
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 
-  normalizeTargetAbi = targetAbi: lib.removeSuffix ".0" targetAbi;
+  padVersion =
+    n: version:
+    lib.concatStringsSep "." (lib.take n (lib.splitVersion version ++ lib.genList (_: "0") n));
+
+  normalizeTargetAbi = padVersion 4;
+
+  normalizedJellyfinVersion = padVersion 4 jellyfinVersion;
+
+  stripVerificationBadge =
+    name:
+    lib.foldl' (acc: badge: if lib.hasSuffix badge acc then lib.removeSuffix badge acc else acc) name [
+      " [✓✓✓]"
+      " [✓✓]"
+      " [✓]"
+    ];
 
   versionSeries = version: lib.concatStringsSep "." (lib.take 2 (lib.splitVersion version));
 
@@ -38,6 +52,34 @@ let
       nonFallbackMatches = lib.filter (match: !match.fallback) matches;
     in
     if nonFallbackMatches == [ ] then matches else nonFallbackMatches;
+
+  dedupeMatches =
+    matches:
+    let
+      folded =
+        lib.foldl'
+          (
+            acc: match:
+            let
+              key = "${match.name} ${match.sourceUrl} ${match.version} ${match.targetAbi}";
+            in
+            if acc.seen ? ${key} then
+              acc
+            else
+              {
+                seen = acc.seen // {
+                  ${key} = true;
+                };
+                result = acc.result ++ [ match ];
+              }
+          )
+          {
+            seen = { };
+            result = [ ];
+          }
+          matches;
+    in
+    folded.result;
 
   repoPluginDirName = pluginName: pluginVersion: "${pluginName}_${pluginVersion}";
 
@@ -88,36 +130,38 @@ let
         else
           lib.filter (repo: repo.name == repositoryName) repositoriesWithManifest;
 
-      versionMatches = lib.concatMap (
-        repo:
+      versionMatches = dedupeMatches (
         lib.concatMap (
-          plugin:
-          if plugin.name == pluginName then
-            map
-              (release: {
-                inherit (repo) name url fallback;
-                inherit (release) sourceUrl version targetAbi;
-                timestamp = release.timestamp or "";
-                changelog = release.changelog or "";
-                guid = plugin.guid or "";
-                category = plugin.category or "";
-                description = plugin.description or "";
-                overview = plugin.overview or "";
-                owner = plugin.owner or "";
-                imageUrl = plugin.imageUrl or "";
-              })
-              (
-                lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
-                  plugin.versions or [ ]
+          repo:
+          lib.concatMap (
+            plugin:
+            if stripVerificationBadge plugin.name == pluginName then
+              map
+                (release: {
+                  inherit (repo) name url fallback;
+                  inherit (release) sourceUrl version targetAbi;
+                  timestamp = release.timestamp or "";
+                  changelog = release.changelog or "";
+                  guid = plugin.guid or "";
+                  category = plugin.category or "";
+                  description = plugin.description or "";
+                  overview = plugin.overview or "";
+                  owner = plugin.owner or "";
+                  imageUrl = plugin.imageUrl or "";
+                })
+                (
+                  lib.filter (release: pluginVersion == "latest" || release.version == pluginVersion) (
+                    plugin.versions or [ ]
+                  )
                 )
-              )
-          else
-            [ ]
-        ) repo.manifest
-      ) matchingRepositories;
+            else
+              [ ]
+          ) repo.manifest
+        ) matchingRepositories
+      );
 
       matchingAbi = lib.filter (
-        match: normalizeTargetAbi match.targetAbi == jellyfinVersion
+        match: normalizeTargetAbi match.targetAbi == normalizedJellyfinVersion
       ) versionMatches;
 
       compatibleAbi = lib.filter (
@@ -125,8 +169,8 @@ let
         let
           normalizedTargetAbi = normalizeTargetAbi match.targetAbi;
         in
-        versionSeries normalizedTargetAbi == versionSeries jellyfinVersion
-        && !lib.versionOlder jellyfinVersion normalizedTargetAbi
+        versionSeries normalizedTargetAbi == versionSeries normalizedJellyfinVersion
+        && !lib.versionOlder normalizedJellyfinVersion normalizedTargetAbi
       ) versionMatches;
 
       selectedMatches = if lib.length matchingAbi == 1 then matchingAbi else versionMatches;

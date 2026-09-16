@@ -321,6 +321,22 @@ in
 
   jellyfin-plugin-repo-service-generation =
     let
+      targetAbi = "${pkgs.jellyfin.version}.0";
+      manifest = pkgs.writeText "jellyfin-plugin-repo-service-generation.json" (
+        builtins.toJSON [
+          {
+            guid = "c83d86bb-a1e0-4c35-a113-e2101cf4ee6b";
+            name = "Intro Skipper";
+            versions = [
+              {
+                version = "12.0.4.0";
+                inherit targetAbi;
+                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.4.0/intro-skipper-v12.0.4.0.zip";
+              }
+            ];
+          }
+        ]
+      );
       config = evalConfig [
         {
           nixflix = {
@@ -328,10 +344,17 @@ in
 
             jellyfin = {
               enable = true;
-              plugins.Bookshelf = {
+              system.pluginRepositories = lib.mkForce {
+                "Test Repo" = {
+                  url = builtins.unsafeDiscardStringContext "file://${manifest}";
+                  hash = manifestHash manifest;
+                  enabled = true;
+                };
+              };
+              plugins."Intro Skipper" = {
                 package = jellyfinPlugins.fromRepo {
-                  version = "13.0.0.0";
-                  hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                  version = "12.0.4.0";
+                  hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
                 };
               };
               users.admin = {
@@ -349,10 +372,10 @@ in
         config.config.systemd.services ? jellyfin-plugins
       )}
       ${check "repo-managed plugins resolve to package sync commands" (
-        lib.hasInfix "Syncing packaged plugin: Bookshelf" pluginService.script
+        lib.hasInfix "Syncing packaged plugin: Intro Skipper" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Bookshelf_13.0.0.0" pluginService.script
+        lib.hasInfix "Intro Skipper_12.0.4.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
@@ -749,13 +772,13 @@ in
       )}
 
       ${check "Open Subtitles plugin directory name in service script" (
-        lib.hasInfix "Open Subtitles_24.0.0.0" pluginService.script
+        lib.hasInfix "Open Subtitles_25.0.0.0" pluginService.script
       )}
       ${check "subbuzz plugin directory name in service script" (
-        lib.hasInfix "subbuzz_1.4.1.0" pluginService.script
+        lib.hasInfix "subbuzz_1.5.0.0" pluginService.script
       )}
       ${check "Subtitle Extract plugin directory name in service script" (
-        lib.hasInfix "Subtitle Extract_7.0.0.0" pluginService.script
+        lib.hasInfix "Subtitle Extract_8.0.0.0" pluginService.script
       )}
 
       ${check "subbuzz EnableOpenSubtitles config value" jellyfinCfg.plugins.subbuzz.config.EnableOpenSubtitles}

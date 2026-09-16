@@ -84,6 +84,7 @@ let
         ];
         description = ''
           The type of media library.
+
           - movies: Movie library
           - tvshows: TV Shows library
           - music: Music library
@@ -294,6 +295,7 @@ let
         default = "AllowAll";
         description = ''
           Control which types of embedded subtitles to allow:
+
           - AllowAll: Allow all embedded subtitles
           - AllowText: Allow only text-based embedded subtitles
           - AllowImage: Allow only image-based embedded subtitles
@@ -391,13 +393,13 @@ in
       Jellyfin media libraries to manage declaratively.
 
       By default, libraries are automatically created for enabled Arr services:
+
       - Shows: Created when Sonarr is enabled
       - Movies: Created when Radarr is enabled
       - Music: Created when Lidarr is enabled
       - Anime: Created when either Sonarr anime or Radarr anime is enabled
 
-      Default libraries can be removed with the following:
-      - nixflix.jellyfin.libraries.Movies = lib.mkForce {};
+      Default libraries can be removed with the following: `nixflix.jellyfin.libraries.Movies = lib.mkForce {};`
     '';
     type = types.attrsOf (types.nullOr libraryModule);
     default = { };

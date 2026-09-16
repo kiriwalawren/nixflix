@@ -213,8 +213,8 @@ pkgs.testers.runNixOSTest {
             ];
             pluginRepositories = lib.mkForce {
               "Jellyfin Universal Plugin Repo" = {
-                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/9bd61380363c07d35ee3e4cb0253c998cda422fe/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-                hash = "sha256-hvuHFrGWwxRveRLPJdCwv0X6CmG7ZWvORte47YcaE/Q=";
+                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+                hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
                 enabled = true;
               };
             };
@@ -374,12 +374,12 @@ pkgs.testers.runNixOSTest {
           };
 
           plugins = {
-            "Bookshelf" = {
+            "Intro Skipper" = {
               package = jellyfinPlugins.fromRepo {
-                version = "13.0.0.0";
-                hash = "sha256-16jaQRh1rIFE27nSSEWNF7UjVsPJDaRf24Ews0BZGas=";
+                version = "12.0.4.0";
+                hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
               };
-              config.ComicVineApiKey._secret = pkgs.writeText "comic-vine-apikey" "comicvineapikey1111111111111111111";
+              config.PreferredAudioLanguage._secret = pkgs.writeText "intro-skipper-language" "introskipperlang1111111111111111111";
             };
           };
         };
@@ -874,25 +874,25 @@ pkgs.testers.runNixOSTest {
         )
         plugins = json.loads(plugins_json)
 
-        bookshelf_plugins = [p for p in plugins if p['Name'] == 'Bookshelf']
-        assert len(bookshelf_plugins) == 1, \
-            f"Expected 1 Bookshelf plugin, found {len(bookshelf_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
-        bookshelf = bookshelf_plugins[0]
-        plugin_id = bookshelf['Id']
-        print(f"Bookshelf plugin installed with id: {plugin_id}")
+        introskipper_plugins = [p for p in plugins if p['Name'] == 'Intro Skipper']
+        assert len(introskipper_plugins) == 1, \
+            f"Expected 1 Intro Skipper plugin, found {len(introskipper_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+        introskipper = introskipper_plugins[0]
+        plugin_id = introskipper['Id']
+        print(f"Intro Skipper plugin installed with id: {plugin_id}")
 
-        print("Querying Bookshelf plugin configuration...")
+        print("Querying Intro Skipper plugin configuration...")
         plugin_config_json = machine.succeed(
             f'curl -f -H {auth_header} {base_url}/Plugins/{plugin_id}/Configuration'
         )
         plugin_config = json.loads(plugin_config_json)
 
-        assert plugin_config.get('ComicVineApiKey') == 'comicvineapikey1111111111111111111', \
-            f"ComicVineApiKey should be 'comicvineapikey1111111111111111111', got {plugin_config.get('ComicVineApiKey')}"
+        assert plugin_config.get('PreferredAudioLanguage') == 'introskipperlang1111111111111111111', \
+            f"PreferredAudioLanguage should be 'introskipperlang1111111111111111111', got {plugin_config.get('PreferredAudioLanguage')}"
 
         print("Verifying packaged plugin sync...")
-        machine.succeed("test -d '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0'")
-        machine.succeed("test -f '/var/lib/jellyfin/plugins/Bookshelf_13.0.0.0/Jellyfin.Plugin.Bookshelf.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0/IntroSkipper.dll'")
 
         print("All plugin management assertions passed!")
   '';

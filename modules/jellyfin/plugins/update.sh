@@ -87,11 +87,21 @@ lookup_in_manifest() {
   local manifest_json="$2"
   echo "$manifest_json" | jq -r \
     --arg name "$plugin_name" \
-    '[.[] | select(.name == $name) | .versions[]]
+    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[]]
      | if length == 0 then empty
        else sort_by(.version | split(".") | map(tonumber)) | last
        | (.version + "\t" + .sourceUrl)
        end' 2>/dev/null
+}
+
+lookup_source_url_for_version() {
+  local plugin_name="$1"
+  local version="$2"
+  local manifest_json="$3"
+  echo "$manifest_json" | jq -r \
+    --arg name "$plugin_name" --arg version "$version" \
+    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[] | select(.version == $version) | .sourceUrl]
+     | first // empty' 2>/dev/null
 }
 
 while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
@@ -115,6 +125,16 @@ while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
   echo "  $plugin_name: $current_version → $latest_version"
   sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
   sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
+
+  # Fixture manifests may embed the old sourceUrl literally; keep it in sync.
+  old_source_url=$(lookup_source_url_for_version "$plugin_name" "$current_version" "$UPR_MANIFEST")
+  if [[ -n "$old_source_url" && "$old_source_url" != "$source_url" ]]; then
+    sed -i "s|${old_source_url}|${source_url}|g" "$nix_file"
+  fi
+
+  # Propagate the plugin directory name into any tests asserting on it.
+  find "$REPO_ROOT" -name "*.nix" -not -path "*/.git/*" \
+    -exec sed -i "s|${plugin_name}_${current_version}|${plugin_name}_${latest_version}|g" {} \;
 
 done < <(discover_fromrepo)
 
