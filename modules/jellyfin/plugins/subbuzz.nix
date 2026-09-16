@@ -15,7 +15,7 @@ in
     type = jellyfinPlugins.mkPluginModule {
       packageDefault = jellyfinPlugins.fromRepo {
         version = "1.5.0.0";
-        hash = "sha256-dKTVCTrrt/f4s81JU851PdFiTzyXrToSIxXL6GhJ380=";
+        hash = "sha256-4Ib4RqZQiFaMS6j31NdL5oWerB2lC+pCZe0PIYN9bj8=";
       };
 
       configOption = lib.mkOption {
