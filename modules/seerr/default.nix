@@ -27,11 +27,7 @@ in
       inherit hostname;
       inherit (cfg.reverseProxy) expose;
       inherit (cfg) port;
-      upstreamHost =
-        if config.nixflix.vpn.enable && cfg.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
-        else
-          "127.0.0.1";
+      upstreamHost = cfg.connectionAddress;
       themeParkService = "overseerr";
     })
     {

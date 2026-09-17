@@ -105,7 +105,7 @@ in
       readOnly = true;
       default =
         if config.nixflix.vpn.enable && cfg.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
+          config.vpnNamespaces.${config.systemd.services.sabnzbd.vpnConfinement.vpnNamespace}.namespaceAddress
         else
           "127.0.0.1";
       description = "Address for connecting to this service.";

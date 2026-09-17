@@ -111,7 +111,7 @@ in
                 type = lib.types.str;
                 default =
                   if config.nixflix.vpn.enable && cfg.vpn.enable then
-                    config.vpnNamespaces.wg.namespaceAddress
+                    config.vpnNamespaces.${config.systemd.services.navidrome.vpnConfinement.vpnNamespace}.namespaceAddress
                   else if config.nixflix.reverseProxy.enable then
                     "127.0.0.1"
                   else
@@ -180,7 +180,7 @@ in
           readOnly = true;
           default =
             if config.nixflix.vpn.enable && cfg.vpn.enable then
-              config.vpnNamespaces.wg.namespaceAddress
+              config.vpnNamespaces.${config.systemd.services.navidrome.vpnConfinement.vpnNamespace}.namespaceAddress
             else if cfg.settings.Address == "*" || cfg.settings.Address == "0.0.0.0" then
               "127.0.0.1"
             else
@@ -278,6 +278,19 @@ in
             };
         };
       }
+      (lib.mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
+        systemd.services.navidrome.vpnConfinement = {
+          enable = true;
+          vpnNamespace = "wg";
+        };
+        vpnNamespaces.${config.systemd.services.navidrome.vpnConfinement.vpnNamespace}.portMappings = [
+          {
+            from = cfg.settings.Port;
+            to = cfg.settings.Port;
+            protocol = "tcp";
+          }
+        ];
+      })
     ]
   );
 }

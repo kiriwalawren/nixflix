@@ -25,7 +25,7 @@ in
       port = cfg.network.internalHttpPort;
       upstreamHost =
         if config.nixflix.vpn.enable && cfg.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
+          config.vpnNamespaces.${config.systemd.services.jellyfin.vpnConfinement.vpnNamespace}.namespaceAddress
         else
           "127.0.0.1";
       disableBuffering = true;
