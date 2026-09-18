@@ -116,6 +116,13 @@ in
               When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
             '';
           };
+
+          namespace = mkOption {
+            type = types.str;
+            default = config.nixflix.vpn.namespace;
+            defaultText = literalExpression "config.nixflix.vpn.namespace";
+            description = "Name of the VPN network namespace to confine qBittorrent to when `vpn.enable = true`.";
+          };
         };
 
         subdomain = mkOption {
@@ -156,7 +163,7 @@ in
             type = types.str;
             default =
               if config.nixflix.vpn.enable && cfg.vpn.enable then
-                config.vpnNamespaces.${config.systemd.services.qbittorrent.vpnConfinement.vpnNamespace}.namespaceAddress
+                config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
               else if config.nixflix.reverseProxy.enable then
                 "127.0.0.1"
               else
@@ -270,9 +277,9 @@ in
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.qbittorrent.vpnConfinement = {
         enable = true;
-        vpnNamespace = "wg";
+        vpnNamespace = cfg.vpn.namespace;
       };
-      vpnNamespaces.${config.systemd.services.qbittorrent.vpnConfinement.vpnNamespace}.portMappings = [
+      vpnNamespaces.${cfg.vpn.namespace}.portMappings = [
         {
           from = service.webuiPort;
           to = service.webuiPort;

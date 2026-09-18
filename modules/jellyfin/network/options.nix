@@ -41,6 +41,13 @@ in
           When `true`, Jellyfin is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
+
+      namespace = mkOption {
+        type = types.str;
+        default = config.nixflix.vpn.namespace;
+        defaultText = literalExpression "config.nixflix.vpn.namespace";
+        description = "Name of the VPN network namespace to confine Jellyfin to when `vpn.enable = true`.";
+      };
     };
 
     connectionAddress = mkOption {
@@ -153,7 +160,7 @@ in
         default =
           if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
             [
-              config.vpnNamespaces.${config.systemd.services.jellyfin.vpnConfinement.vpnNamespace}.namespaceAddress
+              config.vpnNamespaces.${config.nixflix.jellyfin.vpn.namespace}.namespaceAddress
             ]
           else if config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable then
             [ "127.0.0.1" ]

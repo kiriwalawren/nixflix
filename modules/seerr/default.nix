@@ -272,9 +272,9 @@ in
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.seerr.vpnConfinement = {
         enable = true;
-        vpnNamespace = "wg";
+        vpnNamespace = cfg.vpn.namespace;
       };
-      vpnNamespaces.${config.systemd.services.seerr.vpnConfinement.vpnNamespace}.portMappings = [
+      vpnNamespaces.${cfg.vpn.namespace}.portMappings = [
         {
           from = cfg.port;
           to = cfg.port;

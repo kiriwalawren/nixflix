@@ -24,9 +24,7 @@ in
           type = types.str;
           default =
             if config.nixflix.vpn.enable && cfg.vpn.enable then
-              config.vpnNamespaces.${
-                config.systemd.services.${serviceName}.vpnConfinement.vpnNamespace
-              }.namespaceAddress
+              config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
             else if config.nixflix.reverseProxy.enable then
               "127.0.0.1"
             else

@@ -28,10 +28,9 @@ pkgsUnfree.testers.runNixOSTest {
       nixflix = {
         enable = true;
 
-        vpn.enable = false;
-
         slskd = {
           enable = true;
+          vpn.enable = false;
           username._secret = pkgs.writeText "slskd-username" "testuser";
           password._secret = pkgs.writeText "slskd-password" "testpassword123";
           apiKey._secret = pkgs.writeText "slskd-apikey" "0123456789abcdef0123456789abcdef";

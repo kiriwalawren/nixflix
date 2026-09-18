@@ -142,6 +142,13 @@ in
               (requires `nixflix.vpn.enable = true`).
             '';
           };
+
+          namespace = mkOption {
+            type = types.str;
+            default = config.nixflix.vpn.namespace;
+            defaultText = literalExpression "config.nixflix.vpn.namespace";
+            description = "Name of the VPN network namespace to confine slskd to when `vpn.enable = true`.";
+          };
         };
 
         connectionAddress = mkOption {
@@ -149,7 +156,7 @@ in
           readOnly = true;
           default =
             if config.nixflix.vpn.enable && cfg.vpn.enable then
-              config.vpnNamespaces.${config.systemd.services.slskd.vpnConfinement.vpnNamespace}.namespaceAddress
+              config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
             else
               "127.0.0.1";
           description = "Address at which this service is reachable (derived).";
@@ -281,9 +288,9 @@ in
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.slskd.vpnConfinement = {
         enable = true;
-        vpnNamespace = "wg";
+        vpnNamespace = cfg.vpn.namespace;
       };
-      vpnNamespaces.${config.systemd.services.slskd.vpnConfinement.vpnNamespace}.portMappings = [
+      vpnNamespaces.${cfg.vpn.namespace}.portMappings = [
         {
           from = cfg.settings.soulseek.listen_port;
           to = cfg.settings.soulseek.listen_port;
