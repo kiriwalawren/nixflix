@@ -91,6 +91,13 @@ in
           When `true`, Seerr is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
         '';
       };
+
+      namespace = mkOption {
+        type = types.str;
+        default = config.nixflix.vpn.namespace;
+        defaultText = literalExpression "config.nixflix.vpn.namespace";
+        description = "Name of the VPN network namespace to confine Seerr to when `vpn.enable = true`.";
+      };
     };
 
     connectionAddress = mkOption {
@@ -98,7 +105,7 @@ in
       readOnly = true;
       default =
         if config.nixflix.vpn.enable && config.nixflix.seerr.vpn.enable then
-          config.vpnNamespaces.wg.namespaceAddress
+          config.vpnNamespaces.${config.nixflix.seerr.vpn.namespace}.namespaceAddress
         else
           "127.0.0.1";
       description = "Address for connecting to this service.";
