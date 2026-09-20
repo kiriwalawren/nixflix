@@ -213,8 +213,8 @@ pkgs.testers.runNixOSTest {
             ];
             pluginRepositories = lib.mkForce {
               "Jellyfin Universal Plugin Repo" = {
-                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-                hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
+                url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/78fe4493e39f3f4099eea678a0ca572ece6039b5/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
+                hash = "sha256-TwHoKFWCgXS+JS1V4hqabooa8fOVjE/mgpTXPJCcZ6U=";
                 enabled = true;
               };
             };
