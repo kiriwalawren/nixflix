@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fix `radarr-config` failing to apply host settings on Radarr 6.4.4 by sending `allowedHosts` in the host config payload ([#355](https://github.com/kiriwalawren/nixflix/issues/355))
 - Fix redundant group configuration causing mediaUsers failure ([#341](https://github.com/kiriwalawren/nixflix/pull/341))
 - Fix jellyfin auto ignore empty folders ([#333](https://github.com/kiriwalawren/nixflix/pull/333))
 
