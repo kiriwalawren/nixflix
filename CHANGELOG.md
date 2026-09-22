@@ -88,22 +88,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     1. ```bash
        sudo -su postgres
        ```
-
     1. ```bash
        cd /var/lib/postgresql/
        ```
-
     1. ```bash
        stateDir=/your/custom/stateDir  # replace with your nixflix.stateDir value
        version=$(cat $stateDir/postgres/PG_VERSION)
        ```
-
     1. ```bash
        # Move and fix ownership
        mv $stateDir/postgres /var/lib/postgresql/$version
        chown -R postgres:postgres /var/lib/postgresql/$version
        ```
-
     1. ```bash
        exit
        ```
@@ -181,7 +177,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `/data/.state/postgres` will need to be moved to `/var/lib/postgresql/<version>`.
     - You can find `version` by running `sudo cat /data/.state/postgres/PG_VERSION`.
     - I also had to delete my `/var/lib/jellyfin` and `/var/lib/seerr` folders entirely after running the following (you may not have to, though):
-
       ```sh
       sudo systemctl stop jellyfin-api-key jellyfin-branding-config jellyfin-libraries jellyfin-plugins jellyfin-setup-wizard jellyfin-system-config jellyfin-users-config jellyfin seerr-jellyfin seerr-env seerr-setup seerr-user-settings seerr-wait-for-db seerr
       ```
@@ -193,28 +188,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     1. ```bash
        sudo -su postgres
        ```
-
     1. ```bash
        cd /var/lib/postgresql/
        ```
-
     1. ```bash
        old=16
        new=17
        ```
-
     1. ```bash
        pg_old=$(nix-build --no-out-link -E "with import <nixpkgs> {}; \
                postgresql_${old:?}.withPackages (p: [ p.pgvector p.vectorchord ])")
        pg_new=$(nix-build --no-out-link -E "with import <nixpkgs> {}; \
                postgresql_${new:?}.withPackages (p: [ p.pgvector p.vectorchord ])")
        ```
-
     1. ```bash
        # Init the new database
        $pg_new/bin/initdb -D /var/lib/postgresql/$new || exit 1
        ```
-
     1. ```bash
        # Check the upgrade
        $pg_new/bin/pg_upgrade \
@@ -227,7 +217,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
          --new-options "-c shared_preload_libraries='vchord.so'" \
          --check # remove when ready to migrate
        ```
-
     1. ```bash
        # Perform the upgrade
        $pg_new/bin/pg_upgrade \
@@ -276,7 +265,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - If using `nixflix.inputs.nixpkgs.follows`, update your `flake.lock`.
   - **Without PostgreSQL:** rename `/data/.state/jellyseerr` to `/data/.state/seerr` and update ownership to `seerr:seerr`, or set `nixflix.seerr.dataDir = "/data/.state/jellyseerr"` and change ownership to `seerr:seerr`.
   - **With PostgreSQL:** data is preserved. To keep existing data, set `nixflix.seerr.user = "jellyseerr"` and `nixflix.seerr.group = "jellyseerr"`. If you see collation version warnings, refresh them:
-
     ```sh
     sudo -u postgres psql -c "ALTER DATABASE jellyseerr REFRESH COLLATION VERSION;"
     # repeat for each database (radarr, sonarr, prowlarr, lidarr, etc.)
