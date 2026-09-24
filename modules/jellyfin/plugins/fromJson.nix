@@ -8,6 +8,10 @@ let
   cfg = config.nixflix.jellyfin;
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
   buildJellyfinPlugin = import ../../../lib/build-jellyfin-plugin.nix { inherit pkgs; };
+  selectVersions = import ./selectVersions.nix {
+    inherit lib;
+    jellyfinVersion = cfg.package.version;
+  };
 in
 {
   options.nixflix.jellyfin.plugins =
@@ -19,31 +23,15 @@ in
         "subbuzz" = import ./subbuzz.nix { inherit lib; };
         "Subtitle Extract" = import ./subtitleExtract.nix { inherit lib; };
       };
-
-      # Target abi is always 4 components long, and Jellyfin Version needs to be the same length,
-      # or versionAtLeast will return `false` despite the only difference in versions being the
-      # number of segments.
-      jellyfinVersion = lib.versions.pad 4 (lib.getVersion cfg.package);
-
-      versionFilter =
-        version:
-        (lib.strings.versionAtLeast jellyfinVersion version.targetAbi)
-        && (
-          lib.strings.versionOlder jellyfinVersion "12" || lib.strings.versionAtLeast version.targetAbi "12"
-        );
-      selectVersion =
-        versions:
-        let
-          filteredVersions = lib.sortOn (version: version.version) (builtins.filter versionFilter versions);
-        in
-        if ((builtins.length filteredVersions) == 0) then null else lib.lists.last filteredVersions;
-
     in
     builtins.mapAttrs (
       name: plugin:
       let
-        version = selectVersion plugin.versions;
+        versions = selectVersions plugin.versions;
         package =
+          let
+            version = if (versions == [ ]) then null else lib.lists.last versions;
+          in
           if (version == null) then
             null
           else

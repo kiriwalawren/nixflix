@@ -382,6 +382,48 @@ in
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
     '';
 
+  jellyfin-plugin-repo-relaxed-version-check =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              system.pluginRepositories = lib.mkForce {
+                "LAPSE Repo" = {
+                  url = "https://raw.githubusercontent.com/Schwponaco-org/lapse-jellyfin-plugin/refs/heads/main/manifest.json";
+                  hash = "sha256:1fwgrxizfrjpffdn56lr7rz180mkkmsbqgmz8z845wrb2wdg7pl4";
+                  enabled = true;
+                };
+              };
+              plugins."LAPSE" = {
+                enable = true;
+                package = jellyfinPlugins.fromRepo {
+                  version = "2.0.1.0";
+                  hash = "sha256-A9C6P/m17axgmsWC4E3CFP1M/zcSmo+8mgh1cAD4Rls=";
+                  relaxVersionCheck = true;
+                };
+              };
+              users.admin = {
+                password = "testpassword";
+                policy.isAdministrator = true;
+              };
+            };
+          };
+        }
+      ];
+      pluginService = config.config.systemd.services.jellyfin-plugins;
+    in
+    pkgs.runCommand "unit-test-jellyfin-plugin-repo-relaxed-version-check" { } ''
+      ${check "Plugin with incompatible target ABI installed with relaxed version check" (
+        lib.hasInfix "LAPSE_2.0.1.0" pluginService.script
+      )}
+
+      echo 'PASS: jellyfin-plugin-repo-relax-version-check' > $out
+    '';
+
   jellyfin-plugin-repo-ambiguity-assertion =
     let
       targetAbi = "${pkgs.jellyfin.version}.0";
