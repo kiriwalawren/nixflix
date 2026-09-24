@@ -245,6 +245,7 @@ in
       inherit (cfg.config.hostConfig) port;
       upstreamHost = cfg.connectionAddress;
       themeParkService = serviceBase;
+      websocketUpgrade = true;
     })
     {
       assertions = [

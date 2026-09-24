@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Fix redundant group configuration causing mediaUsers failure ([#341](https://github.com/kiriwalawren/nixflix/pull/341))
 - Fix jellyfin auto ignore empty folders ([#333](https://github.com/kiriwalawren/nixflix/pull/333))
+- Added missing websocket support to arrs nginx config ([#354](https://github.com/kiriwalawren/nixflix/pull/354))
 
 ## [3.1.0] - 2026-09-04
 
