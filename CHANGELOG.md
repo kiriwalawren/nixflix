@@ -15,12 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
+- `nixflix.prowlarr.config.indexers.*.schemaName` to set a custom indexer display name and configure multiple indexers from the same schema ([#353](https://github.com/kiriwalawren/nixflix/issues/353))
 
 ### Fixed
 
 - Fix redundant group configuration causing mediaUsers failure ([#341](https://github.com/kiriwalawren/nixflix/pull/341))
 - Fix jellyfin auto ignore empty folders ([#333](https://github.com/kiriwalawren/nixflix/pull/333))
 - Added missing websocket support to arrs nginx config ([#354](https://github.com/kiriwalawren/nixflix/pull/354))
+- Resolve `_secret` references in additional Prowlarr indexer fields instead of sending them unresolved ([#353](https://github.com/kiriwalawren/nixflix/issues/353))
 
 ## [3.1.0] - 2026-09-04
 
