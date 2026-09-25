@@ -375,6 +375,8 @@ pkgs.testers.runNixOSTest {
 
           plugins = {
             "Intro Skipper" = {
+              # This plugin has a pre-configured package, so it needs to be enabled explicitly
+              enable = true;
               package = jellyfinPlugins.fromRepo {
                 version = "12.0.4.0";
                 hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
