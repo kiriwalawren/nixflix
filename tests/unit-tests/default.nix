@@ -154,6 +154,16 @@ in
                     name = "1337x";
                     apiKey._secret = "/run/secrets/1337x-api";
                   }
+                  {
+                    name = "My Tracker";
+                    schemaName = "Generic Torznab";
+                    trackerId._secret = "/run/secrets/tracker-id";
+                  }
+                  {
+                    name = "Other Tracker";
+                    schemaName = "Generic Torznab";
+                    baseUrl = "http://127.0.0.1:9117/other";
+                  }
                 ];
               };
             };
@@ -161,10 +171,25 @@ in
         }
       ];
       systemdUnits = config.config.systemd.services;
-      hasAllServices =
-        systemdUnits ? prowlarr && systemdUnits ? prowlarr-config && systemdUnits ? prowlarr-indexers;
+      indexersScript = systemdUnits.prowlarr-indexers.script;
     in
-    assertTest "prowlarr-service-generation" hasAllServices;
+    pkgs.runCommand "unit-test-prowlarr-service-generation" { } ''
+      ${check "prowlarr services are generated" (
+        systemdUnits ? prowlarr && systemdUnits ? prowlarr-config && systemdUnits ? prowlarr-indexers
+      )}
+      ${check "schemaName is used for schema lookup" (
+        lib.hasInfix "--arg name 'Generic Torznab' '.[] | select(.name == $name)" indexersScript
+      )}
+      ${check "display names are applied to indexers from the same schema" (
+        lib.hasInfix "--arg name 'My Tracker' '.name = $name" indexersScript
+        && lib.hasInfix "--arg name 'Other Tracker' '.name = $name" indexersScript
+      )}
+      ${check "secrets are read at runtime" (
+        lib.hasInfix "--rawfile nixflixSecret1Content /run/secrets/1337x-api" indexersScript
+        && lib.hasInfix "--rawfile nixflixSecret0Content /run/secrets/tracker-id" indexersScript
+      )}
+      echo 'PASS: prowlarr-service-generation' > $out
+    '';
 
   # Test that prowlarr with indexers generates correct systemd units
   sabnzbd-service-generation =
