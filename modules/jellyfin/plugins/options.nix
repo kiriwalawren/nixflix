@@ -1,44 +1,55 @@
-{ lib, ... }:
+{
+  lib,
+  ...
+}:
 with lib;
 let
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
 in
 {
-  options.nixflix.jellyfin.plugins = mkOption {
-    description = ''
-      Jellyfin plugins to manage declaratively.
+  options.nixflix.jellyfin.plugins =
 
-      Each key is the plugin name exactly as it appears in the Jellyfin
-      repository manifest (e.g. "Anime", "Comic Vine", "Trakt"). Plugin names
-      must be unique across all configured plugin repositories.
+    mkOption {
+      description = ''
+        Jellyfin plugins to manage declaratively.
 
-      Plugins are installed from `package`. This can either be a normal Nix
-      derivation, or a repository lookup created with
-      `nixflix.lib.jellyfinPlugins.fromRepo`.
+        Each key is the plugin name exactly as it appears in the Jellyfin
+        repository manifest (e.g. "Anime", "Comic Vine", "Trakt"). Plugin names
+        must be unique across all configured plugin repositories.
 
-      Plugin changes (installs, removals, version updates) cause Jellyfin to
-      restart automatically. Plan plugin changes for maintenance windows to
-      avoid interrupting active streams.
-    '';
-    type = types.submodule {
-      freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { enableDefault = true; });
+        Plugins are installed from `package`. This can either be a normal Nix
+        derivation, or a repository lookup created with
+        `nixflix.lib.jellyfinPlugins.fromRepo`.
+
+        We provide a default package for most Jellyfin plugins. To use them, just
+        find it's name in the sub-options, and set
+        `"nixflix.jellyfin.plugins."<name>".enable = true;`.
+
+        Plugin changes (installs, removals, version updates) cause Jellyfin to
+        restart automatically. Plan plugin changes for maintenance windows to
+        avoid interrupting active streams.
+      '';
+      type = types.submodule {
+        freeformType = types.attrsOf (jellyfinPlugins.mkPluginModule { enableDefault = true; });
+      };
+      default = { };
+      example = literalExpression ''
+        {
+          "Comic Vine" = {
+            package = nixflix.lib.jellyfinPlugins.fromRepo {
+              version = "2.0.0.0";
+              hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
+            };
+            config = {
+              # Plain string (visible in Nix store)
+              ComicVineApiKey = "my-api-key";
+              # Or as a secret (read from file at activation time)
+              # ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
+            };
+          };
+          # For plugins with pre-configured packages
+          "Intro Skipper".enable = true;
+        }
+      '';
     };
-    default = { };
-    example = literalExpression ''
-      {
-        "Comic Vine" = {
-          package = nixflix.lib.jellyfinPlugins.fromRepo {
-            version = "2.0.0.0";
-            hash = "sha256-mpGs92mLaseab2OuWLuD0TpBuZ7VnJjAH6vTX5R9zAM=";
-          };
-          config = {
-            # Plain string (visible in Nix store)
-            ComicVineApiKey = "my-api-key";
-            # Or as a secret (read from file at activation time)
-            # ComicVineApiKey._secret = "/run/secrets/comic-vine-api-key";
-          };
-        };
-      }
-    '';
-  };
 }
