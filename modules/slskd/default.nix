@@ -47,13 +47,6 @@ in
           description = "Directory where completed Soulseek downloads are stored.";
         };
 
-        incompleteDir = mkOption {
-          type = types.path;
-          default = "${config.nixflix.downloadsDir}/.incomplete-slskd";
-          defaultText = literalExpression ''"''${nixflix.downloadsDir}/.incomplete-slskd"'';
-          description = "Directory where in-progress Soulseek downloads are stored.";
-        };
-
         username = secrets.mkSecretOption {
           nullable = true;
           default = null;
@@ -115,6 +108,24 @@ in
                   type = types.port;
                   default = 50300;
                   description = "Port on which slskd listens for incoming Soulseek peer connections.";
+                };
+              };
+
+              directories = {
+                incomplete = mkOption {
+                  type = types.path;
+                  default = "${cfg.downloadsDir}/incomplete";
+                  defaultText = literalExpression "$${cfg.downloadsDir}/incomplete";
+                  example = "/data/downloads/incomplete";
+                  description = "Directory to store incomplete download files";
+                };
+
+                downloads = mkOption {
+                  type = types.path;
+                  default = "${cfg.downloadsDir}/complete";
+                  defaultText = literalExpression "$${cfg.downloadsDir}/complete";
+                  example = "/data/downloads/complete";
+                  description = "The path where downloaded files are saved.";
                 };
               };
 
@@ -238,8 +249,12 @@ in
           mode = "0770";
           inherit (cfg) user group;
         };
-        ${cfg.incompleteDir}.d = {
-          mode = "0750";
+        ${cfg.settings.directories.downloads}.d = {
+          mode = "0770";
+          inherit (cfg) user group;
+        };
+        ${cfg.settings.directories.incomplete}.d = {
+          mode = "0770";
           inherit (cfg) user group;
         };
         ${runFolder}.d = {
@@ -283,7 +298,6 @@ in
           "connectionAddress"
           "dataDir"
           "downloadsDir"
-          "incompleteDir"
           "password"
           "reverseProxy"
           "settings"
@@ -294,12 +308,7 @@ in
         // {
           domain = null;
           inherit environmentFile;
-          settings = recursiveUpdate {
-            directories = {
-              downloads = cfg.downloadsDir;
-              incomplete = cfg.incompleteDir;
-            };
-          } (secrets.stripSecretRefs cfg.settings);
+          settings = secrets.stripSecretRefs cfg.settings;
         };
 
       systemd.services.slskd = {
