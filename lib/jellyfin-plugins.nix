@@ -29,6 +29,16 @@ let
         '';
         example = "Jellyfin Universal Plugin Repo";
       };
+
+      relaxVersionCheck = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Whether the performed version check should be relaxed for plugins known to work on the configured Jellyfin version, only checking that the target ABI is less than the Jellyfin version.
+
+          Not recommended to enable, use only if you're 100% sure the plugin supports the configured Jellyfin version!
+        '';
+      };
     };
   };
 
@@ -130,8 +140,14 @@ in
       version,
       hash,
       repository ? null,
+      relaxVersionCheck ? false,
     }:
     {
-      inherit version hash repository;
+      inherit
+        version
+        hash
+        repository
+        relaxVersionCheck
+        ;
     };
 }

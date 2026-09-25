@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
+- Automatically set default package for most Jellyfin plugins, also removing the Universal Plugin
+  Repository from the system configuration. ([#339](https://github.com/kiriwalawren/nixflix/pull/339)).
+  If you previously enabled a plugin just by setting a package, you'll now want to just set `enable = true;` instead.
 
 ### Fixed
 
