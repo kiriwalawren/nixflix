@@ -72,6 +72,13 @@ in
           recommend leaving this `false`.
         '';
       };
+
+      namespace = mkOption {
+        type = types.str;
+        default = config.nixflix.vpn.namespace;
+        defaultText = literalExpression "config.nixflix.vpn.namespace";
+        description = "Name of the VPN network namespace to confine ${capitalizedName} to when `vpn.enable = true`.";
+      };
     };
 
     connectionAddress = mkOption {
@@ -354,9 +361,9 @@ in
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.${serviceName}.vpnConfinement = {
         enable = true;
-        vpnNamespace = "wg";
+        vpnNamespace = cfg.vpn.namespace;
       };
-      vpnNamespaces.wg.portMappings = [
+      vpnNamespaces.${cfg.vpn.namespace}.portMappings = [
         {
           from = cfg.config.hostConfig.port;
           to = cfg.config.hostConfig.port;

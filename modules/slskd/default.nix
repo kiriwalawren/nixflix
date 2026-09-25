@@ -1,0 +1,349 @@
+{
+  config,
+  lib,
+  ...
+}:
+with lib;
+let
+  inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
+  secrets = import ../../lib/secrets { inherit lib; };
+  cfg = config.nixflix.slskd;
+  hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
+
+  runFolder = "/run/slskd";
+  environmentFile = "${runFolder}/env";
+in
+{
+  options.nixflix.slskd = mkOption {
+    type = types.submodule {
+      freeformType = types.attrsOf types.anything;
+      options = {
+        enable = mkEnableOption "slskd Soulseek client";
+
+        user = mkOption {
+          type = types.str;
+          default = "slskd";
+          description = "User under which slskd runs.";
+        };
+
+        group = mkOption {
+          type = types.str;
+          default = config.nixflix.globals.libraryOwner.group;
+          defaultText = literalExpression "config.nixflix.globals.libraryOwner.group";
+          description = "Group under which slskd runs.";
+        };
+
+        dataDir = mkOption {
+          type = types.path;
+          default = "${config.nixflix.stateDir}/slskd";
+          defaultText = literalExpression ''"''${nixflix.stateDir}/slskd"'';
+          description = "Directory holding slskd's generated credentials file. slskd's own application state lives under /var/lib/slskd (managed by the upstream systemd StateDirectory).";
+        };
+
+        downloadsDir = mkOption {
+          type = types.path;
+          default = "${config.nixflix.downloadsDir}/slskd";
+          defaultText = literalExpression ''"''${nixflix.downloadsDir}/slskd"'';
+          description = "Directory where completed Soulseek downloads are stored.";
+        };
+
+        username = secrets.mkSecretOption {
+          nullable = true;
+          default = null;
+          description = "Web UI username. Required when `nixflix.slskd.enable = true`.";
+        };
+
+        password = secrets.mkSecretOption {
+          nullable = true;
+          default = null;
+          description = "Web UI password. Required when `nixflix.slskd.enable = true`.";
+        };
+
+        apiKey = secrets.mkSecretOption {
+          nullable = true;
+          default = null;
+          description = ''
+            API key securing slskd's own REST API. Consumed by clients such as DroppedNeedle.
+
+            Can be created with the following:
+
+            ```bash
+            openssl rand -hex 16
+            ```
+          '';
+        };
+
+        openFirewall = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Open the Soulseek peer listen port (`settings.soulseek.listen_port`) in the firewall.";
+        };
+
+        settings = mkOption {
+          type = types.submodule {
+            freeformType = types.attrsOf types.anything;
+            options = {
+              web = {
+                port = mkOption {
+                  type = types.port;
+                  default = 5030;
+                  description = "Port on which the slskd web UI/API listens.";
+                };
+              };
+
+              soulseek = {
+                username = secrets.mkSecretOption {
+                  nullable = true;
+                  default = null;
+                  description = "Soulseek network username. Required when `nixflix.slskd.enable = true`.";
+                };
+
+                password = secrets.mkSecretOption {
+                  nullable = true;
+                  default = null;
+                  description = "Soulseek network password. Required when `nixflix.slskd.enable = true`.";
+                };
+
+                listen_port = mkOption {
+                  type = types.port;
+                  default = 50300;
+                  description = "Port on which slskd listens for incoming Soulseek peer connections.";
+                };
+              };
+
+              directories = {
+                incomplete = mkOption {
+                  type = types.path;
+                  default = "${cfg.downloadsDir}/incomplete";
+                  defaultText = literalExpression "$${cfg.downloadsDir}/incomplete";
+                  example = "/data/downloads/incomplete";
+                  description = "Directory to store incomplete download files";
+                };
+
+                downloads = mkOption {
+                  type = types.path;
+                  default = "${cfg.downloadsDir}/complete";
+                  defaultText = literalExpression "$${cfg.downloadsDir}/complete";
+                  example = "/data/downloads/complete";
+                  description = "The path where downloaded files are saved.";
+                };
+              };
+
+              shares.directories = mkOption {
+                type = types.listOf types.path;
+                default = if config.nixflix.lidarr.enable then config.nixflix.lidarr.mediaDirs else [ ];
+                defaultText = literalExpression "if config.nixflix.lidarr.enabled then config.nixflix.lidarr.mediaDirs else [ ]";
+                example = [ "/data/media/music" ];
+                description = "Directories shared with the Soulseek network.";
+              };
+            };
+          };
+          default = { };
+          description = ''
+            Extra/overriding [slskd settings](https://github.com/slskd/slskd/blob/master/docs/config.md),
+            passed straight through to `services.slskd.settings` on top of the
+            `directories` defaults derived from the options above (e.g. `downloadsDir`).
+          '';
+        };
+
+        subdomain = mkOption {
+          type = types.str;
+          default = "slskd";
+          description = "Subdomain prefix for reverse proxy routing.";
+        };
+
+        reverseProxy = {
+          expose = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether to expose the slskd web UI via the reverse proxy.";
+          };
+        };
+
+        vpn = {
+          enable = mkOption {
+            type = types.bool;
+            default = true;
+            description = ''
+              Whether to route slskd traffic through the VPN.
+
+              When `true`, slskd is confined to the WireGuard network namespace
+              (requires `nixflix.vpn.enable = true`).
+            '';
+          };
+
+          namespace = mkOption {
+            type = types.str;
+            default = config.nixflix.vpn.namespace;
+            defaultText = literalExpression "config.nixflix.vpn.namespace";
+            description = "Name of the VPN network namespace to confine slskd to when `vpn.enable = true`.";
+          };
+        };
+
+        connectionAddress = mkOption {
+          type = types.str;
+          readOnly = true;
+          default =
+            if config.nixflix.vpn.enable && cfg.vpn.enable then
+              config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
+            else
+              "127.0.0.1";
+          description = "Address at which this service is reachable (derived).";
+        };
+      };
+    };
+    default = { };
+    description = ''
+      slskd Soulseek client configuration.
+
+      Any option accepted by [`services.slskd`](https://search.nixos.org/options?channel=unstable&query=slskd&type=options)
+      that isn't overridden above (e.g. `package`, `nginx`) can be set directly
+      here too (e.g. `nixflix.slskd.package = ...;`) and is passed straight
+      through.
+    '';
+  };
+
+  config = mkIf (config.nixflix.enable && cfg.enable) (mkMerge [
+    (mkVirtualHost {
+      inherit hostname;
+      inherit (cfg.reverseProxy) expose;
+      port = cfg.settings.web.port;
+      upstreamHost = cfg.connectionAddress;
+    })
+    {
+      assertions = [
+        {
+          assertion = cfg.vpn.enable -> config.nixflix.vpn.enable;
+          message = "nixflix.slskd.vpn.enable = true requires nixflix.vpn.enable = true.";
+        }
+        {
+          assertion = cfg.password != null;
+          message = "nixflix.slskd.enable = true requires nixflix.slskd.password to be set.";
+        }
+        {
+          assertion = cfg.username != null;
+          message = "nixflix.slskd.enable = true requires nixflix.slskd.username to be set.";
+        }
+      ];
+
+      users = {
+        users.${cfg.user} =
+          mkForce {
+            inherit (cfg) group;
+            isSystemUser = true;
+          }
+          // optionalAttrs (config.nixflix.globals.uids ? ${cfg.user}) {
+            uid = mkForce config.nixflix.globals.uids.${cfg.user};
+          };
+
+        groups.${cfg.group} = mkForce { };
+      };
+
+      systemd.tmpfiles.settings."10-slskd" = {
+        ${cfg.dataDir}.d = {
+          mode = "0750";
+          inherit (cfg) user group;
+        };
+        # Group-writable (not the usual 0750): nixflix.droppedneedle's user
+        # reads/moves completed downloads from here too, via the same group.
+        ${cfg.downloadsDir}.d = {
+          mode = "0770";
+          inherit (cfg) user group;
+        };
+        ${cfg.settings.directories.downloads}.d = {
+          mode = "0770";
+          inherit (cfg) user group;
+        };
+        ${cfg.settings.directories.incomplete}.d = {
+          mode = "0770";
+          inherit (cfg) user group;
+        };
+        ${runFolder}.d = {
+          mode = "0755";
+          inherit (cfg) user;
+          inherit (cfg) group;
+        };
+      };
+
+      systemd.services.slskd-env = {
+        description = "Create slskd environment file";
+        after = [ "nixflix-setup-dirs.service" ];
+        requires = [ "nixflix-setup-dirs.service" ];
+        before = [ "slskd.service" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          UMask = "0077";
+        };
+
+        script = ''
+          set -euo pipefail
+
+          umask 077
+          cat > ${environmentFile} <<EOF
+          SLSKD_SLSK_USERNAME=${secrets.toShellValue cfg.settings.soulseek.username}
+          SLSKD_SLSK_PASSWORD=${secrets.toShellValue cfg.settings.soulseek.password}
+          SLSKD_USERNAME=${secrets.toShellValue cfg.username}
+          SLSKD_PASSWORD=${secrets.toShellValue cfg.password}
+          ${optionalString (cfg.apiKey != null) "SLSKD_API_KEY=${secrets.toShellValue cfg.apiKey}"}
+          EOF
+
+          chown ${cfg.user}:${cfg.group} ${environmentFile}
+        '';
+      };
+
+      services.slskd =
+        (builtins.removeAttrs cfg [
+          "apiKey"
+          "connectionAddress"
+          "dataDir"
+          "downloadsDir"
+          "password"
+          "reverseProxy"
+          "settings"
+          "subdomain"
+          "username"
+          "vpn"
+        ])
+        // {
+          domain = null;
+          inherit environmentFile;
+          settings = secrets.stripSecretRefs cfg.settings;
+        };
+
+      systemd.services.slskd = {
+        after = [
+          "nixflix-setup-dirs.service"
+          "slskd-env.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+        requires = [
+          "nixflix-setup-dirs.service"
+          "slskd-env.service"
+        ]
+        ++ config.nixflix.serviceDependencies;
+
+        restartTriggers = [ (builtins.toJSON cfg.settings) ];
+      };
+    }
+    (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
+      systemd.services.slskd.vpnConfinement = {
+        enable = true;
+        vpnNamespace = cfg.vpn.namespace;
+      };
+      vpnNamespaces.${cfg.vpn.namespace}.portMappings = [
+        {
+          from = cfg.settings.soulseek.listen_port;
+          to = cfg.settings.soulseek.listen_port;
+          protocol = "tcp";
+        }
+        {
+          from = cfg.settings.web.port;
+          to = cfg.settings.web.port;
+          protocol = "tcp";
+        }
+      ];
+    })
+  ]);
+}
