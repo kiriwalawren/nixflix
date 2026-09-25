@@ -352,19 +352,6 @@ in
                 Supports SRI (`sha256-Uc6ovnXI3T0WfCqzcnwUZwYCH1tTDYb86pfNlvbOam0=`) or nix32 (`0vbarvv9dkcpxby8c3akbcgh41k72iy75craghb3vpf8fnzaikji`) formats.
               '';
             };
-
-            fallback = mkOption {
-              type = types.bool;
-              default = false;
-              internal = true;
-              description = ''
-                Whether this repository is a last-resort match when resolving
-                `fromRepo` plugins by name. If a plugin version is found in
-                both a fallback repository and a non-fallback repository, the
-                non-fallback repository is used without raising an ambiguity
-                error. Only the bundled Jellyfin Universal Plugin Repo sets this.
-              '';
-            };
           };
         });
       default = { };
@@ -645,15 +632,6 @@ in
       description = ''
         Enable legacy authorization mode for backwards compatibility.
       '';
-    };
-  };
-
-  config.nixflix.jellyfin.system.pluginRepositories = {
-    "Jellyfin Universal Plugin Repo" = {
-      url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-      hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
-      enabled = true;
-      fallback = true;
     };
   };
 }
