@@ -131,7 +131,8 @@ in
 
               shares.directories = mkOption {
                 type = types.listOf types.path;
-                default = [ ];
+                default = if config.nixflix.lidarr.enable then config.nixflix.lidarr.mediaDirs else [ ];
+                defaultText = literalExpression "if config.nixflix.lidarr.enabled then config.nixflix.lidarr.mediaDirs else [ ]";
                 example = [ "/data/media/music" ];
                 description = "Directories shared with the Soulseek network.";
               };
