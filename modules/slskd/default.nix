@@ -10,7 +10,8 @@ let
   cfg = config.nixflix.slskd;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
-  environmentFile = "${cfg.dataDir}/environment";
+  runFolder = "/run/slskd";
+  environmentFile = "${runFolder}/env";
 in
 {
   options.nixflix.slskd = mkOption {
@@ -53,6 +54,18 @@ in
           description = "Directory where in-progress Soulseek downloads are stored.";
         };
 
+        username = secrets.mkSecretOption {
+          nullable = true;
+          default = null;
+          description = "Web UI username. Required when `nixflix.slskd.enable = true`.";
+        };
+
+        password = secrets.mkSecretOption {
+          nullable = true;
+          default = null;
+          description = "Web UI password. Required when `nixflix.slskd.enable = true`.";
+        };
+
         apiKey = secrets.mkSecretOption {
           nullable = true;
           default = null;
@@ -77,29 +90,11 @@ in
           type = types.submodule {
             freeformType = types.attrsOf types.anything;
             options = {
-              web.port = mkOption {
-                type = types.port;
-                default = 5030;
-                description = "Port on which the slskd web UI/API listens.";
-              };
-
-              authentication = {
-                disabled = mkOption {
-                  type = types.bool;
-                  default = false;
-                  description = "Whether to disable authentication";
-                };
-
-                username = secrets.mkSecretOption {
-                  nullable = true;
-                  default = null;
-                  description = "Web UI username. Required when `nixflix.slskd.enable = true`.";
-                };
-
-                password = secrets.mkSecretOption {
-                  nullable = true;
-                  default = null;
-                  description = "Web UI password. Required when `nixflix.slskd.enable = true`.";
+              web = {
+                port = mkOption {
+                  type = types.port;
+                  default = 5030;
+                  description = "Port on which the slskd web UI/API listens.";
                 };
               };
 
@@ -210,12 +205,12 @@ in
           message = "nixflix.slskd.vpn.enable = true requires nixflix.vpn.enable = true.";
         }
         {
-          assertion = cfg.settings.authentication.password != null;
-          message = "nixflix.slskd.enable = true requires nixflix.slskd.settings.authentication.password to be set.";
+          assertion = cfg.password != null;
+          message = "nixflix.slskd.enable = true requires nixflix.slskd.password to be set.";
         }
         {
-          assertion = cfg.settings.authentication.username != null;
-          message = "nixflix.slskd.enable = true requires nixflix.slskd.settings.authentication.username to be set.";
+          assertion = cfg.username != null;
+          message = "nixflix.slskd.enable = true requires nixflix.slskd.username to be set.";
         }
       ];
 
@@ -247,10 +242,15 @@ in
           mode = "0750";
           inherit (cfg) user group;
         };
+        ${runFolder}.d = {
+          mode = "0755";
+          inherit (cfg) user;
+          inherit (cfg) group;
+        };
       };
 
-      systemd.services.slskd-secrets = {
-        description = "Materialize slskd secrets";
+      systemd.services.slskd-env = {
+        description = "Create slskd environment file";
         after = [ "nixflix-setup-dirs.service" ];
         requires = [ "nixflix-setup-dirs.service" ];
         before = [ "slskd.service" ];
@@ -258,22 +258,22 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          User = cfg.user;
-          Group = cfg.group;
           UMask = "0077";
         };
 
         script = ''
+          set -euo pipefail
+
           umask 077
           cat > ${environmentFile} <<EOF
           SLSKD_SLSK_USERNAME=${secrets.toShellValue cfg.settings.soulseek.username}
           SLSKD_SLSK_PASSWORD=${secrets.toShellValue cfg.settings.soulseek.password}
-          SLSKD_USERNAME=${secrets.toShellValue cfg.settings.authentication.username}
-          SLSKD_PASSWORD=${secrets.toShellValue cfg.settings.authentication.password}
-          ${optionalString (
-            cfg.apiKey != null
-          ) "SLSKD_API_KEY=${secrets.toShellValue cfg.settings.authentication.apiKey}"}
+          SLSKD_USERNAME=${secrets.toShellValue cfg.username}
+          SLSKD_PASSWORD=${secrets.toShellValue cfg.password}
+          ${optionalString (cfg.apiKey != null) "SLSKD_API_KEY=${secrets.toShellValue cfg.apiKey}"}
           EOF
+
+          chown ${cfg.user}:${cfg.group} ${environmentFile}
         '';
       };
 
@@ -284,9 +284,11 @@ in
           "dataDir"
           "downloadsDir"
           "incompleteDir"
+          "password"
           "reverseProxy"
           "settings"
           "subdomain"
+          "username"
           "vpn"
         ])
         // {
@@ -303,12 +305,12 @@ in
       systemd.services.slskd = {
         after = [
           "nixflix-setup-dirs.service"
-          "slskd-secrets.service"
+          "slskd-env.service"
         ]
         ++ config.nixflix.serviceDependencies;
         requires = [
           "nixflix-setup-dirs.service"
-          "slskd-secrets.service"
+          "slskd-env.service"
         ]
         ++ config.nixflix.serviceDependencies;
 
