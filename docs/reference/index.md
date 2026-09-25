@@ -53,6 +53,10 @@ Each option is documented with:
 
 - [qBittorrent](torrentClients/qbittorrent/index.md)
 
+#### Soulseek
+
+- [slskd](slskd/index.md)
+
 ### Infrastructure
 
 - [Nginx](nginx/index.md) - Nginx reverse proxy

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Soulseek downloader - slskd ([#336](https://github.com/kiriwalawren/nixflix/pull/336))
 - Notif Service for configuring notification connectors in Starr apps ([#324](https://github.com/kiriwalawren/nixflix/pull/324))
 - `nixflix.prowlarr.config.indexers.*.schemaName` to set a custom indexer display name and configure multiple indexers from the same schema ([#353](https://github.com/kiriwalawren/nixflix/issues/353))
 - Automatically set default package for most Jellyfin plugins, also removing the Universal Plugin
