@@ -213,5 +213,16 @@ pkgsUnfree.testers.runNixOSTest {
     print("Media management configured successfully!")
 
     machine.succeed("pgrep -u testuser Radarr")
+
+    # Radarr must be able to hardlink qBittorrent downloads into its media dir
+    machine.succeed("systemctl show -p UMask --value qbittorrent | grep -qx 0002")
+    machine.succeed("runuser -u qbittorrent -- sh -c 'umask 0002; touch /data/downloads/torrent/radarr/test.mkv'")
+    machine.succeed(
+        "nsenter -t $(systemctl show -p MainPID --value radarr) -m -- "
+        "setpriv --reuid=testuser --regid=media --clear-groups "
+        "ln /data/downloads/torrent/radarr/test.mkv /media/movies/test.mkv"
+    )
+    links = machine.succeed("stat -c %h /media/movies/test.mkv").strip()
+    assert links == "2", f"Expected hardlink count 2, found {links}"
   '';
 }

@@ -225,10 +225,6 @@ in
         inherit (cfg) user group;
         mode = "0755";
       };
-
-      systemd.services.${serviceName}.serviceConfig.ReadWritePaths = [
-        cfg.config.mediaManagement.recycleBin
-      ];
     })
 
     (mkIf (cfg.config.apiKey != null) {
