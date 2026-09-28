@@ -31,9 +31,6 @@ in
       }) cfg.mediaDirs
     );
 
-    systemd.services.${serviceName}.serviceConfig = {
-      SupplementaryGroups = [ globals.libraryOwner.group ];
-      ReadWritePaths = cfg.mediaDirs ++ [ config.nixflix.downloadsDir ];
-    };
+    systemd.services.${serviceName}.serviceConfig.SupplementaryGroups = [ globals.libraryOwner.group ];
   };
 }

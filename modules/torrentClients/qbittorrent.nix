@@ -264,6 +264,7 @@ in
       systemd.services.qbittorrent = {
         after = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         requires = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
+        serviceConfig.UMask = "0002";
         preStart = lib.mkIf (cfg.categories != { }) (
           lib.mkAfter ''
             cp -f '${categoriesFile}' '${configPath}/categories.json'
