@@ -418,8 +418,8 @@ in
               enable = true;
               system.pluginRepositories = lib.mkForce {
                 "LAPSE Repo" = {
-                  url = "https://raw.githubusercontent.com/Schwponaco-org/lapse-jellyfin-plugin/refs/heads/main/manifest.json";
-                  hash = "sha256:1fwgrxizfrjpffdn56lr7rz180mkkmsbqgmz8z845wrb2wdg7pl4";
+                  url = "https://raw.githubusercontent.com/Schwponaco-org/lapse-jellyfin-plugin/8a3cc7cfb568449d84a7602d0a16f14f7b9139f5/manifest.json";
+                  hash = "sha256:1hcxgdlhydvz5m8rph25gzwn6wqysz2v2ra5saa9xlqlybml7pqf";
                   enabled = true;
                 };
               };
