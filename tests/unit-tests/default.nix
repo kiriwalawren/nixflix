@@ -409,6 +409,21 @@ in
 
   jellyfin-plugin-repo-relaxed-version-check =
     let
+      manifest = pkgs.writeText "jellyfin-plugin-relaxed-version-check.json" (
+        builtins.toJSON [
+          {
+            guid = "486090e1-ca92-46e1-8549-9f6bb914a1d0";
+            name = "LAPSE";
+            versions = [
+              {
+                version = "2.0.1.0";
+                targetAbi = "10.11.0.0";
+                sourceUrl = "https://github.com/Schwponaco-org/lapse-jellyfin-plugin/releases/download/v2.0.1/lapse-jellyfin-plugin-v2.0.1.zip";
+              }
+            ];
+          }
+        ]
+      );
       config = evalConfig [
         {
           nixflix = {
@@ -418,8 +433,8 @@ in
               enable = true;
               system.pluginRepositories = lib.mkForce {
                 "LAPSE Repo" = {
-                  url = "https://raw.githubusercontent.com/Schwponaco-org/lapse-jellyfin-plugin/8a3cc7cfb568449d84a7602d0a16f14f7b9139f5/manifest.json";
-                  hash = "sha256:1hcxgdlhydvz5m8rph25gzwn6wqysz2v2ra5saa9xlqlybml7pqf";
+                  url = builtins.unsafeDiscardStringContext "file://${manifest}";
+                  hash = manifestHash manifest;
                   enabled = true;
                 };
               };
