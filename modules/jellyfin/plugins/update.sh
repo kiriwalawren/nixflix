@@ -9,7 +9,30 @@ echo "Fetching Jellyfin Universal Plugin Repo Manifest..."
 NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
 JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")
 UPR_URL="https://obelo.us/upr"
-UPR_MANIFEST=$(curl -sfA "jellyfin/$JELLYFIN_VERSION (https://github.com/kiriwalawren/nixflix)" "$UPR_URL")
+
+fetch_manifest() {
+  # Yes, it genuinely can take that long -_-
+  # (much longer actually, when I tried for 12.4 when 12.1 was the latest version (over 4 hours, and still not done))
+  local attempts_left=100
+  local manifest="[{}]"
+  
+  until [ $attempts_left = 0 ]; do
+    manifest="$(curl -sfA "jellyfin/$JELLYFIN_VERSION (https://github.com/kiriwalawren/nixflix)" "$UPR_URL")"
+    if [ $(echo "$manifest" | jq length) = 1 ]; then
+      attempts_left=$((attempts_left-1))
+      sleep 10
+    else
+      attempts_left=0
+    fi
+  done
+  echo "$manifest"
+}
+
+UPR_MANIFEST=$(fetch_manifest)
+if [ $(echo "$UPR_MANIFEST" | jq length) = 1 ]; then
+  echo "ERROR: UPR manifest wasn't inintialized in time"
+  exit 1
+fi
 
 # === Part 2: Update plugin versions JSON ===
 
