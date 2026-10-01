@@ -92,6 +92,14 @@ pkgsUnfree.testers.runNixOSTest {
         seerr = {
           enable = true;
           apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
+          radarr.Radarr = {
+            apiKey._secret = pkgs.writeText "seerr-radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+            activeProfileName = "[SQP] SQP-1 (1080p)";
+          };
+          sonarr.Sonarr = {
+            apiKey._secret = pkgs.writeText "seerr-sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
+            activeProfileName = "WEB-1080p (Alternative)";
+          };
         };
       };
 
@@ -152,6 +160,15 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_unit("seerr-setup.service", timeout=300)
     machine.wait_for_unit("seerr-radarr.service", timeout=300)
     machine.wait_for_unit("seerr-sonarr.service", timeout=300)
+
+    # Verify seerr-radarr/seerr-sonarr are ordered after recyclarr so they
+    # don't race it for custom quality profiles (issue #348)
+    for unit in ["seerr-radarr.service", "seerr-sonarr.service"]:
+        deps = machine.succeed(f"systemctl show {unit} -p After,Wants,Requires")
+        assert "recyclarr.service" in deps, \
+            f"{unit} missing ordering on recyclarr.service"
+        assert "recyclarr-cleanup-profiles.service" in deps, \
+            f"{unit} missing dependency on recyclarr-cleanup-profiles.service"
 
     # Check that quality profiles were created by recyclarr for Radarr
     radarr_profiles = machine.succeed(
