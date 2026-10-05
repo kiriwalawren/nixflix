@@ -6,7 +6,7 @@ let
     (types.submodule {
       options._secret = mkOption {
         type = types.oneOf [
-          types.str
+          types.nonEmptyStr
           types.path
         ];
         description = "Path to a file containing the secret value";
