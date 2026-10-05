@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fix Recyclarr Custom Quality Profile causes Seerr to fail on first run ([#367](https://github.com/kiriwalawren/nixflix/pull/367))
 - Fix Starr apps failing to hardlink downloads into media directories by removing leftover per-directory `ReadWritePaths` bind mounts and setting qBittorrent's `UMask` to `0002` ([#347](https://github.com/kiriwalawren/nixflix/issues/347)).
   Torrents downloaded before this fix keep mode `0644`. To make them hardlinkable, run `sudo chmod -R g+w /data/downloads/torrent` once (adjust the path if you changed `nixflix.torrentClients.qbittorrent.downloadsDir`).
 - Fix `radarr-config` failing to apply host settings on Radarr 6.4.4 by sending `allowedHosts` in the host config payload ([#355](https://github.com/kiriwalawren/nixflix/issues/355))
