@@ -16,6 +16,7 @@ in
   imports = [
     ./setupService.nix
     ./usersService.nix
+    ./plugins
   ];
 
   options.nixflix.navidrome = lib.mkOption {
@@ -245,6 +246,7 @@ in
       {
         services.navidrome = builtins.removeAttrs cfg [
           "connectionAddress"
+          "plugins"
           "reverseProxy"
           "subdomain"
           "users"

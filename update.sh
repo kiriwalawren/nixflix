@@ -8,3 +8,6 @@ while IFS= read -r -d '' script; do
   bash "$script"
   echo ""
 done < <(find "$REPO_ROOT" -name "update.sh" -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "$REPO_ROOT/update.sh" -print0 | sort -z)
+
+echo "==> Formatting"
+(cd "$REPO_ROOT" && nix fmt)
