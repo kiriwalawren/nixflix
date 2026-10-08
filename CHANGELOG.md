@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
+- `nixflix.<sonarr|sonarr-anime|radarr|lidarr>.config.metadata` to configure metadata consumers (Settings → Metadata), e.g. Plex series match files and episode mappings ([#373](https://github.com/kiriwalawren/nixflix/pull/373))
 
 ## [3.2.0] - 2026-10-05
 
