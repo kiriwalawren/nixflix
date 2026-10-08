@@ -80,6 +80,31 @@ pkgsUnfree.testers.runNixOSTest {
             extraFileExtensions = "srt,ass,ssa";
             enableMediaInfo = false;
           };
+          metadata = {
+            XbmcMetadata = {
+              enable = true;
+              fields = {
+                artistMetadata = true;
+                albumMetadata = true;
+                artistImages = true;
+                albumImages = true;
+              };
+            };
+            RoksboxMetadata = {
+              enable = true;
+              fields = {
+                trackMetadata = true;
+                artistImages = true;
+                albumImages = true;
+              };
+            };
+            WdtvMetadata = {
+              enable = false;
+              fields = {
+                trackMetadata = true;
+              };
+            };
+          };
         };
       };
 
@@ -305,6 +330,39 @@ pkgsUnfree.testers.runNixOSTest {
     assert mm['extraFileExtensions'] == 'srt,ass,ssa', "extraFileExtensions not set"
     assert mm['enableMediaInfo'] == False, "enableMediaInfo not set"
     print("Media management configured successfully!")
+
+    # Wait for metadata service and verify metadata consumers
+    machine.wait_for_unit("lidarr-metadata.service", timeout=60)
+
+    metadata = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/metadata"
+    )
+    print(f"Metadata: {metadata}")
+    consumers = {m['implementation']: m for m in json.loads(metadata)}
+    expected_metadata = {
+        'XbmcMetadata': (True, {
+            'artistMetadata': True,
+            'albumMetadata': True,
+            'artistImages': True,
+            'albumImages': True,
+        }),
+        'RoksboxMetadata': (True, {
+            'trackMetadata': True,
+            'artistImages': True,
+            'albumImages': True,
+        }),
+        'WdtvMetadata': (False, {
+            'trackMetadata': True,
+        }),
+    }
+    for implementation, (enabled, fields) in expected_metadata.items():
+        consumer = consumers[implementation]
+        assert consumer['enable'] == enabled, f"{implementation} enable not set"
+        actual_fields = {f['name']: f['value'] for f in consumer['fields']}
+        for name, value in fields.items():
+            assert actual_fields[name] == value, f"{implementation}.{name} not set"
+    print("Metadata configured successfully!")
 
     machine.succeed("pgrep -u testuser Lidarr")
   '';
