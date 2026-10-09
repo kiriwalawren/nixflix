@@ -9,6 +9,7 @@ in
       nixflix.navidrome.plugins.lyrics = {
         allLibraries = lib.mkDefault true;
         allowWriteAccess = lib.mkDefault true;
+        config.durationToleranceSeconds = 5;
       };
     }
     (lib.mkIf (config.nixflix.enable && cfg.enable && (pluginCfg.enable or false)) {
