@@ -1,5 +1,4 @@
-{ config, lib, ... }:
-{
+{ config, lib, ... }: {
   assertions = [
     {
       assertion = config.nixflix.sonarr-anime.enable -> config.nixflix.sonarr-anime.config.apiKey != null;

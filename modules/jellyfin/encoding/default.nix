@@ -27,9 +27,7 @@ in
     environment.etc."jellyfin/encoding.xml.template".text = encodingXmlContent;
 
     systemd.services.jellyfin = {
-      restartTriggers = [
-        encodingXmlContent
-      ];
+      restartTriggers = [ encodingXmlContent ];
 
       serviceConfig.ExecStartPre = [
         (pkgs.writeShellScript "jellyfin-setup-encoding-config" ''

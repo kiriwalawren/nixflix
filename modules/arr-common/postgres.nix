@@ -28,11 +28,7 @@ in
         cfg.settings.postgres.mainDb
         cfg.settings.postgres.logDb
       ];
-      ensureUsers = [
-        {
-          name = cfg.user;
-        }
-      ];
+      ensureUsers = [ { name = cfg.user; } ];
     };
 
     systemd.services = {

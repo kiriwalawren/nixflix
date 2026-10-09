@@ -254,12 +254,8 @@ in
           }
         );
         default = [
-          {
-            provider = "lrclib";
-          }
-          {
-            provider = "lyrics.ovh";
-          }
+          { provider = "lrclib"; }
+          { provider = "lyrics.ovh"; }
         ];
         description = "Lyrics providers (use the \"+\" button to add more)";
       };

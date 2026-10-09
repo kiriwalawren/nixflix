@@ -12,99 +12,97 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "recyclarr-basic-test";
 
-  nodes.machine =
-    { pkgs, lib, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, lib, ... }: {
+    imports = [ nixosModules ];
 
-      networking.useDHCP = true;
+    networking.useDHCP = true;
 
-      virtualisation = {
-        cores = 4;
-        memorySize = 4096;
-        diskSize = 3 * 1024;
+    virtualisation = {
+      cores = 4;
+      memorySize = 4096;
+      diskSize = 3 * 1024;
+    };
+
+    nixflix = {
+      enable = true;
+
+      radarr = {
+        enable = true;
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+        };
       };
 
-      nixflix = {
+      sonarr = {
+        enable = true;
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpassword456";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
+        };
+      };
+
+      sonarr-anime = {
+        enable = true;
+        mediaDirs = [ "/media/anime" ];
+        config = {
+          hostConfig = {
+            port = 8990;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-anime-password" "testpassword789";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "ijkl9012ijkl9012ijkl9012ijkl9012";
+        };
+      };
+
+      recyclarr = {
+        enable = true;
+        cleanupUnmanagedProfiles.enable = true;
+      };
+
+      jellyfin = {
         enable = true;
 
-        radarr = {
-          enable = true;
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+
+        users = {
+          admin = {
+            password._secret = pkgs.writeText "kiri_password" "321password";
+            policy.isAdministrator = true;
           };
         };
 
-        sonarr = {
-          enable = true;
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpassword456";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
-          };
-        };
-
-        sonarr-anime = {
-          enable = true;
-          mediaDirs = [ "/media/anime" ];
-          config = {
-            hostConfig = {
-              port = 8990;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-anime-password" "testpassword789";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "ijkl9012ijkl9012ijkl9012ijkl9012";
-          };
-        };
-
-        recyclarr = {
-          enable = true;
-          cleanupUnmanagedProfiles.enable = true;
-        };
-
-        jellyfin = {
-          enable = true;
-
-          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-
-          users = {
-            admin = {
-              password._secret = pkgs.writeText "kiri_password" "321password";
-              policy.isAdministrator = true;
-            };
-          };
-
-          # Disable AniDB to keep test pure
-          plugins.AniDB.enable = false;
-          libraries.Anime.typeOptions = lib.mkForce [ ];
-        };
-
-        seerr = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
-          radarr.Radarr = {
-            apiKey._secret = pkgs.writeText "seerr-radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
-            activeProfileName = "[SQP] SQP-1 (1080p)";
-          };
-          sonarr.Sonarr = {
-            apiKey._secret = pkgs.writeText "seerr-sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
-            activeProfileName = "WEB-1080p (Alternative)";
-          };
-        };
+        # Disable AniDB to keep test pure
+        plugins.AniDB.enable = false;
+        libraries.Anime.typeOptions = lib.mkForce [ ];
       };
 
-      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
+      seerr = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
+        radarr.Radarr = {
+          apiKey._secret = pkgs.writeText "seerr-radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+          activeProfileName = "[SQP] SQP-1 (1080p)";
+        };
+        sonarr.Sonarr = {
+          apiKey._secret = pkgs.writeText "seerr-sonarr-apikey" "efgh5678efgh5678efgh5678efgh5678";
+          activeProfileName = "WEB-1080p (Alternative)";
+        };
+      };
     };
+
+    systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
+  };
 
   testScript = ''
     import json

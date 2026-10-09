@@ -6,7 +6,10 @@ _: {
   ];
   programs.mdformat.enable = true;
   programs.black.enable = true;
-  programs.nixfmt.enable = true;
+  programs.nixfmt = {
+    enable = true;
+    strict = true;
+  };
   programs.deadnix.enable = true;
   programs.statix.enable = true;
   programs.actionlint.enable = true;

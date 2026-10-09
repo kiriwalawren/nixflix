@@ -20,11 +20,7 @@ let
     ])
     // {
       pluginRepositories = lib.mapAttrsToList (
-        name: repo:
-        repo
-        // {
-          inherit name;
-        }
+        name: repo: repo // { inherit name; }
       ) cfg.system.pluginRepositories;
     }
   );

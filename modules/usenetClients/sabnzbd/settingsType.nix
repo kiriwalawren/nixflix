@@ -1,7 +1,4 @@
-{
-  lib,
-  config,
-}:
+{ lib, config }:
 let
   inherit (lib) types mkOption;
   secrets = import ../../../lib/secrets { inherit lib; };
@@ -38,12 +35,8 @@ let
         example = 443;
         description = "Port of the server.";
       };
-      username = secrets.mkSecretOption {
-        description = "Username for server authentication.";
-      };
-      password = secrets.mkSecretOption {
-        description = "Password for server authentication.";
-      };
+      username = secrets.mkSecretOption { description = "Username for server authentication."; };
+      password = secrets.mkSecretOption { description = "Password for server authentication."; };
       connections = mkOption {
         type = types.int;
         default = 10;
@@ -190,9 +183,7 @@ let
         '';
       };
 
-      nzb_key = secrets.mkSecretOption {
-        description = "NZB key for adding downloads via URL.";
-      };
+      nzb_key = secrets.mkSecretOption { description = "NZB key for adding downloads via URL."; };
 
       port = mkOption {
         type = types.port;

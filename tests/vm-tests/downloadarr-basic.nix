@@ -12,57 +12,55 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "downloadarr-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      sonarr = {
         enable = true;
-
-        sonarr = {
-          enable = true;
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpassword123";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
         };
+      };
 
-        radarr = {
-          enable = true;
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+      radarr = {
+        enable = true;
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpassword123";
           };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
         };
+      };
 
-        torrentClients.qbittorrent = {
-          enable = true;
-          webuiPort = 8282;
-          password = "test123";
-          serverConfig = {
-            LegalNotice.Accepted = true;
-            Preferences.WebUI = {
-              Username = "admin";
-              LocalHostAuth = false;
-              Locale = "en";
-            };
+      torrentClients.qbittorrent = {
+        enable = true;
+        webuiPort = 8282;
+        password = "test123";
+        serverConfig = {
+          LegalNotice.Accepted = true;
+          Preferences.WebUI = {
+            Username = "admin";
+            LocalHostAuth = false;
+            Locale = "en";
           };
         };
       };
     };
+  };
 
   testScript = ''
     import json

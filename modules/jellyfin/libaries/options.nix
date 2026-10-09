@@ -432,12 +432,8 @@ in
       typeOptions = [
         {
           type = "Series";
-          imageFetchers = [
-            "TheMovieDb"
-          ];
-          imageFetcherOrder = [
-            "TheMovieDb"
-          ];
+          imageFetchers = [ "TheMovieDb" ];
+          imageFetcherOrder = [ "TheMovieDb" ];
           metadataFetchers = [
             "TheMovieDb"
             "The Open Movie Database"
@@ -449,18 +445,10 @@ in
         }
         {
           type = "Season";
-          imageFetchers = [
-            "TheMovieDb"
-          ];
-          imageFetcherOrder = [
-            "TheMovieDb"
-          ];
-          metadataFetchers = [
-            "TheMovieDb"
-          ];
-          metadataFetcherOrder = [
-            "TheMovieDb"
-          ];
+          imageFetchers = [ "TheMovieDb" ];
+          imageFetcherOrder = [ "TheMovieDb" ];
+          metadataFetchers = [ "TheMovieDb" ];
+          metadataFetcherOrder = [ "TheMovieDb" ];
         }
         {
           type = "Episode";

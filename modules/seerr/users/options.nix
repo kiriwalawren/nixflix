@@ -1,5 +1,4 @@
-{ lib, ... }:
-with lib;
+{ lib, ... }: with lib;
 {
   options.nixflix.seerr.settings = {
     users = mkOption {

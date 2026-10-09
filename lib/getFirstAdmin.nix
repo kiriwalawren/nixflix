@@ -1,9 +1,6 @@
 { lib }:
 with lib;
-{
-  users,
-  isAdmin,
-}:
+{ users, isAdmin }:
 let
   adminUsers = filterAttrs (_: isAdmin) users;
   sortedAdminNames = sort (a: b: a < b) (attrNames adminUsers);

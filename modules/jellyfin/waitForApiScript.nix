@@ -1,7 +1,4 @@
-{
-  pkgs,
-  jellyfinCfg,
-}:
+{ pkgs, jellyfinCfg }:
 let
   baseUrl =
     if jellyfinCfg.network.baseUrl == "" then

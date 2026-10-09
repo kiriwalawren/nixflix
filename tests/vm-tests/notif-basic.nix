@@ -12,84 +12,82 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "notif-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        cores = 4;
-        memorySize = 4096;
-        diskSize = 3 * 1024;
-      };
-
-      nixflix = {
-        enable = true;
-
-        recyclarr.enable = false;
-
-        sonarr = {
-          enable = true;
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
-          };
-        };
-
-        radarr = {
-          enable = true;
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
-          };
-        };
-
-        lidarr = {
-          enable = true;
-          mediaDirs = [ "/media/music" ];
-          config = {
-            hostConfig = {
-              port = 8686;
-              username = "admin";
-              password._secret = pkgs.writeText "lidarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh";
-          };
-        };
-
-        jellyfin = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-
-          users.admin = {
-            password._secret = pkgs.writeText "jellyfin-admin-password" "321password";
-            policy.isAdministrator = true;
-          };
-        };
-
-        navidrome = {
-          enable = true;
-          users.admin = {
-            userName = "admin";
-            isAdmin = true;
-            mutable = false;
-            password._secret = pkgs.writeText "navidrome-admin-password" "navidromepassword123";
-          };
-        };
-      };
-
-      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = pkgs.lib.mkForce 300;
+    virtualisation = {
+      cores = 4;
+      memorySize = 4096;
+      diskSize = 3 * 1024;
     };
+
+    nixflix = {
+      enable = true;
+
+      recyclarr.enable = false;
+
+      sonarr = {
+        enable = true;
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
+        };
+      };
+
+      radarr = {
+        enable = true;
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "abcd1234abcd1234abcd1234abcd1234";
+        };
+      };
+
+      lidarr = {
+        enable = true;
+        mediaDirs = [ "/media/music" ];
+        config = {
+          hostConfig = {
+            port = 8686;
+            username = "admin";
+            password._secret = pkgs.writeText "lidarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "lidarr-apikey" "5678efgh5678efgh5678efgh5678efgh";
+        };
+      };
+
+      jellyfin = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+
+        users.admin = {
+          password._secret = pkgs.writeText "jellyfin-admin-password" "321password";
+          policy.isAdministrator = true;
+        };
+      };
+
+      navidrome = {
+        enable = true;
+        users.admin = {
+          userName = "admin";
+          isAdmin = true;
+          mutable = false;
+          password._secret = pkgs.writeText "navidrome-admin-password" "navidromepassword123";
+        };
+      };
+    };
+
+    systemd.services.jellyfin.serviceConfig.TimeoutStartSec = pkgs.lib.mkForce 300;
+  };
 
   testScript = ''
     import json

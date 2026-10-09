@@ -17,9 +17,7 @@ let
       isAdmin = user: user.isAdmin;
     }).user;
 
-  jqAdminSecrets = secrets.mkJqSecretArgs {
-    inherit (firstAdminUser) password;
-  };
+  jqAdminSecrets = secrets.mkJqSecretArgs { inherit (firstAdminUser) password; };
 
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.settings.Port}";
 in

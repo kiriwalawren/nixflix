@@ -9,13 +9,7 @@ let
   secrets = import ../../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ../authUtil.nix {
-    inherit
-      lib
-      pkgs
-      cfg
-      ;
-  };
+  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;

@@ -8,87 +8,85 @@ pkgs.testers.runNixOSTest {
 
   meta.timeout = 900;
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+      postgres.enable = true;
+      stateDir = "/var/lib/nixflix";
+
+      prowlarr = {
         enable = true;
-        postgres.enable = true;
-        stateDir = "/var/lib/nixflix";
-
-        prowlarr = {
-          enable = true;
-          config = {
-            hostConfig = {
-              port = 9696;
-              username = "admin";
-              password._secret = pkgs.writeText "prowlarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            password._secret = pkgs.writeText "prowlarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
         };
+      };
 
-        sonarr = {
-          enable = true;
-          user = "sonarr";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+      sonarr = {
+        enable = true;
+        user = "sonarr";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        sonarr-anime = {
-          enable = true;
-          user = "sonarr-anime";
-          mediaDirs = [ "/media/anime" ];
-          config = {
-            hostConfig = {
-              port = 8990;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+      sonarr-anime = {
+        enable = true;
+        user = "sonarr-anime";
+        mediaDirs = [ "/media/anime" ];
+        config = {
+          hostConfig = {
+            port = 8990;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        radarr = {
-          enable = true;
-          user = "radarr";
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+      radarr = {
+        enable = true;
+        user = "radarr";
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
         };
+      };
 
-        lidarr = {
-          enable = true;
-          user = "lidarr";
-          mediaDirs = [ "/media/music" ];
-          config = {
-            hostConfig = {
-              port = 8686;
-              username = "admin";
-              password._secret = pkgs.writeText "lidarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
+      lidarr = {
+        enable = true;
+        user = "lidarr";
+        mediaDirs = [ "/media/music" ];
+        config = {
+          hostConfig = {
+            port = 8686;
+            username = "admin";
+            password._secret = pkgs.writeText "lidarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
         };
       };
     };
+  };
 
   testScript = ''
     import json

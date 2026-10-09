@@ -268,9 +268,7 @@ in
               mode = "755";
               inherit (cfg) user group;
             };
-            "${cfg.settings.MusicFolder}"."d" = lib.mkForce {
-              group = ":${cfg.group}";
-            };
+            "${cfg.settings.MusicFolder}"."d" = lib.mkForce { group = ":${cfg.group}"; };
           };
         };
 

@@ -1,3 +1,1 @@
-{
-  imports = [ ./sabnzbd ];
-}
+{ imports = [ ./sabnzbd ]; }

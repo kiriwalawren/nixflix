@@ -1,5 +1,4 @@
-{ lib, ... }:
-with lib;
+{ lib, ... }: with lib;
 rec {
   # Nix option names whose PascalCase form requires special handling
   # (e.g. acronyms where naive first-char uppercasing is insufficient).

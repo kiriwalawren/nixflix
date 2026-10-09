@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
-with lib;
+{ config, lib, ... }: with lib;
 {
   options.nixflix.jellyfin.branding = {
     customCss = mkOption {

@@ -12,99 +12,97 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "maintainerr-basic-test";
 
-  nodes.machine =
-    { ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        diskSize = 3 * 1024;
-        memorySize = 4096;
-        cores = 4;
-      };
+    virtualisation = {
+      diskSize = 3 * 1024;
+      memorySize = 4096;
+      cores = 4;
+    };
 
-      environment.systemPackages = [ pkgs.jq ];
+    environment.systemPackages = [ pkgs.jq ];
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      maintainerr.enable = true;
+
+      maintainerr.settings.forceJellyfinToIgnoreEmptyMediaFolders = true;
+
+      maintainerr.overlays.templates = [
+        {
+          name = "Test Pill";
+          description = "Custom test overlay template";
+          mode = "poster";
+          canvasWidth = 1000;
+          canvasHeight = 1500;
+          elements = [ ];
+          isDefault = true;
+        }
+      ];
+
+      jellyfin = {
         enable = true;
 
-        maintainerr.enable = true;
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
 
-        maintainerr.settings.forceJellyfinToIgnoreEmptyMediaFolders = true;
-
-        maintainerr.overlays.templates = [
-          {
-            name = "Test Pill";
-            description = "Custom test overlay template";
-            mode = "poster";
-            canvasWidth = 1000;
-            canvasHeight = 1500;
-            elements = [ ];
-            isDefault = true;
-          }
-        ];
-
-        jellyfin = {
-          enable = true;
-
-          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-
-          users = {
-            admin = {
-              password._secret = pkgs.writeText "kiri_password" "321password";
-              policy.isAdministrator = true;
-            };
+        users = {
+          admin = {
+            password._secret = pkgs.writeText "kiri_password" "321password";
+            policy.isAdministrator = true;
           };
         };
+      };
 
-        seerr = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
-        };
+      seerr = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
+      };
 
-        sonarr = {
-          enable = true;
-          user = "sonarr";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+      sonarr = {
+        enable = true;
+        user = "sonarr";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        sonarr-anime = {
-          enable = true;
-          user = "sonarr-anime";
-          mediaDirs = [ "/media/anime" ];
-          config = {
-            hostConfig = {
-              port = 8990;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+      sonarr-anime = {
+        enable = true;
+        user = "sonarr-anime";
+        mediaDirs = [ "/media/anime" ];
+        config = {
+          hostConfig = {
+            port = 8990;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        radarr = {
-          enable = true;
-          user = "radarr";
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+      radarr = {
+        enable = true;
+        user = "radarr";
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

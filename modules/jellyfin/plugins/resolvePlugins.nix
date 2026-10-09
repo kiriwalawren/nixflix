@@ -162,9 +162,7 @@ let
   resolvePluginResult =
     pluginName: pluginCfg:
     if pluginCfg.package == null || lib.isDerivation pluginCfg.package then
-      {
-        inherit pluginCfg;
-      }
+      { inherit pluginCfg; }
     else
       let
         sourceSpec = jellyfinPlugins.fromRepo pluginCfg.package;

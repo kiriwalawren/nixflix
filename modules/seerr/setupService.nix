@@ -10,30 +10,16 @@ let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
 
-  authUtil = import ./authUtil.nix {
-    inherit
-      lib
-      pkgs
-      cfg
-      ;
-  };
+  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
-  jqSetupSecrets = secrets.mkJqSecretArgs {
-    password = cfg.jellyfin.adminPassword;
-  };
+  jqSetupSecrets = secrets.mkJqSecretArgs { password = cfg.jellyfin.adminPassword; };
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.seerr-setup = {
       description = "Complete Seerr initial setup with Jellyfin";
-      after = [
-        "seerr.service"
-      ]
-      ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
-      requires = [
-        "seerr.service"
-      ]
-      ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
+      after = [ "seerr.service" ] ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
+      requires = [ "seerr.service" ] ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
