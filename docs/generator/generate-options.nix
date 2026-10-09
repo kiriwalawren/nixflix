@@ -1,7 +1,4 @@
-{
-  pkgs,
-  lib,
-}:
+{ pkgs, lib }:
 let
   nixflixModule = import ../../modules;
 
@@ -87,16 +84,11 @@ in
   inherit (optionsDoc) optionsCommonMark;
   inherit (optionsDoc) optionsJSON;
 
-  optionsDocs =
-    pkgs.runCommand "nixflix-options-docs"
-      {
-        nativeBuildInputs = [ pkgs.python3 ];
-      }
-      ''
-        mkdir -p $out/reference
+  optionsDocs = pkgs.runCommand "nixflix-options-docs" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+    mkdir -p $out/reference
 
-        python3 ${./split-options.py} \
-          ${optionsDoc.optionsJSON}/share/doc/nixos/options.json \
-          $out/reference/
-      '';
+    python3 ${./split-options.py} \
+      ${optionsDoc.optionsJSON}/share/doc/nixos/options.json \
+      $out/reference/
+  '';
 }

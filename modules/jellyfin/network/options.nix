@@ -159,9 +159,7 @@ in
         type = types.listOf types.str;
         default =
           if config.nixflix.vpn.enable && config.nixflix.jellyfin.vpn.enable then
-            [
-              config.vpnNamespaces.${config.nixflix.jellyfin.vpn.namespace}.namespaceAddress
-            ]
+            [ config.vpnNamespaces.${config.nixflix.jellyfin.vpn.namespace}.namespaceAddress ]
           else if config.nixflix.reverseProxy.enable && !config.nixflix.jellyfin.vpn.enable then
             [ "127.0.0.1" ]
           else

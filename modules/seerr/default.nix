@@ -186,10 +186,7 @@ in
             config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
           ) "recyclarr-cleanup-profiles.service";
 
-          wants = [
-            "network-online.target"
-          ]
-          ++ optional config.nixflix.recyclarr.enable "recyclarr.service";
+          wants = [ "network-online.target" ] ++ optional config.nixflix.recyclarr.enable "recyclarr.service";
 
           requires = [
             "nixflix-setup-dirs.service"
@@ -258,15 +255,11 @@ in
               "~@resources"
             ];
           }
-          // optionalAttrs (cfg.apiKey != null) {
-            EnvironmentFile = "/run/seerr/env";
-          };
+          // optionalAttrs (cfg.apiKey != null) { EnvironmentFile = "/run/seerr/env"; };
         };
       };
 
-      networking.firewall = mkIf cfg.openFirewall {
-        allowedTCPPorts = [ cfg.port ];
-      };
+      networking.firewall = mkIf cfg.openFirewall { allowedTCPPorts = [ cfg.port ]; };
 
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {

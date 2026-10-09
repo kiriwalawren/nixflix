@@ -12,36 +12,34 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "slskd-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        diskSize = 4 * 1024;
-        memorySize = 4096;
-        cores = 4;
-      };
+    virtualisation = {
+      diskSize = 4 * 1024;
+      memorySize = 4096;
+      cores = 4;
+    };
 
-      environment.systemPackages = [ pkgs.jq ];
+    environment.systemPackages = [ pkgs.jq ];
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      slskd = {
         enable = true;
+        vpn.enable = false;
+        username._secret = pkgs.writeText "slskd-username" "testuser";
+        password._secret = pkgs.writeText "slskd-password" "testpassword123";
+        apiKey._secret = pkgs.writeText "slskd-apikey" "0123456789abcdef0123456789abcdef";
 
-        slskd = {
-          enable = true;
-          vpn.enable = false;
-          username._secret = pkgs.writeText "slskd-username" "testuser";
-          password._secret = pkgs.writeText "slskd-password" "testpassword123";
-          apiKey._secret = pkgs.writeText "slskd-apikey" "0123456789abcdef0123456789abcdef";
-
-          settings.soulseek = {
-            username._secret = pkgs.writeText "soulseek-username" "soulseekuser";
-            password._secret = pkgs.writeText "soulseek-password" "soulseekpassword";
-          };
+        settings.soulseek = {
+          username._secret = pkgs.writeText "soulseek-username" "soulseekuser";
+          password._secret = pkgs.writeText "soulseek-password" "soulseekpassword";
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

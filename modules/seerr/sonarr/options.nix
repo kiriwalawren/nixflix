@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, lib, ... }:
 with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
@@ -21,9 +17,7 @@ let
         description = "Sonarr port";
       };
 
-      apiKey = secrets.mkSecretOption {
-        description = "Sonarr API key.";
-      };
+      apiKey = secrets.mkSecretOption { description = "Sonarr API key."; };
 
       useSsl = mkOption {
         type = types.bool;

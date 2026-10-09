@@ -302,14 +302,10 @@ in
           home = cfg.dataDir;
           isSystemUser = true;
         }
-        // optionalAttrs (globals.uids ? ${cfg.user}) {
-          uid = globals.uids.${cfg.user};
-        };
+        // optionalAttrs (globals.uids ? ${cfg.user}) { uid = globals.uids.${cfg.user}; };
       };
 
-      networking.firewall = mkIf cfg.openFirewall {
-        allowedTCPPorts = [ cfg.config.hostConfig.port ];
-      };
+      networking.firewall = mkIf cfg.openFirewall { allowedTCPPorts = [ cfg.config.hostConfig.port ]; };
 
       systemd.tmpfiles.settings."10-${serviceName}" = {
         "${cfg.dataDir}".d = {
@@ -331,10 +327,7 @@ in
           "nixflix-setup-dirs.service"
         ]
         ++ config.nixflix.serviceDependencies;
-        requires = [
-          "nixflix-setup-dirs.service"
-        ]
-        ++ config.nixflix.serviceDependencies;
+        requires = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {

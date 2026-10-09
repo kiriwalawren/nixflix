@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+{ lib, ... }: {
   options.nixflix.maintainerr.overlays.templates = lib.mkOption {
     type = lib.types.listOf (
       lib.types.submodule {

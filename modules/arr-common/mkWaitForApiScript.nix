@@ -1,7 +1,4 @@
-{
-  lib,
-  pkgs,
-}:
+{ lib, pkgs }:
 serviceName: serviceConfig:
 pkgs.writeShellScript "${serviceName}-wait-for-api" (
   let

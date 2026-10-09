@@ -75,8 +75,7 @@ let
       configOption ? null,
     }:
     lib.types.submodule (
-      { name, ... }:
-      {
+      { name, ... }: {
         options = {
           package = mkPackageOption packageDefault;
 

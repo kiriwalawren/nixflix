@@ -1,7 +1,4 @@
-{
-  pkgs,
-  lib,
-}:
+{ pkgs, lib }:
 let
   optionsGenerator = import ./generate-options.nix { inherit pkgs lib; };
 in

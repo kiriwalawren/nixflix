@@ -15,8 +15,7 @@ in
   options.nixflix.prowlarr.config.indexers = mkOption {
     type = types.listOf (
       types.submodule (
-        { config, ... }:
-        {
+        { config, ... }: {
           freeformType = types.attrsOf types.anything;
           options = {
             name = mkOption {

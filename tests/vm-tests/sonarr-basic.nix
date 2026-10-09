@@ -12,95 +12,93 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "sonarr-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      sonarr = {
         enable = true;
-
-        sonarr = {
-          enable = true;
-          user = "testuser";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
-            delayProfiles = [
-              {
-                enableUsenet = true;
-                enableTorrent = true;
-                preferredProtocol = "torrent";
-                usenetDelay = 0;
-                torrentDelay = 360;
-                bypassIfHighestQuality = true;
-                bypassIfAboveCustomFormatScore = false;
-                minimumCustomFormatScore = 0;
-                order = 2147483647;
-                tags = [ ];
-                id = 1;
-              }
-            ];
-            mediaManagement = {
-              autoUnmonitorPreviouslyDownloadedEpisodes = true;
-              recycleBin = "/var/lib/recyclebin";
-              recycleBinCleanupDays = 14;
-              downloadPropersAndRepacks = "doNotPrefer";
-              createEmptySeriesFolders = true;
-              deleteEmptyFolders = false;
-              fileDate = "localAirDate";
-              rescanAfterRefresh = "never";
-              setPermissionsLinux = true;
-              chmodFolder = "775";
-              chownGroup = "media";
-              episodeTitleRequired = "never";
-              skipFreeSpaceCheckWhenImporting = true;
-              minimumFreeSpaceWhenImporting = 200;
-              copyUsingHardlinks = false;
-              importExtraFiles = true;
-              extraFileExtensions = "srt,ass,ssa";
-              enableMediaInfo = false;
-            };
+        user = "testuser";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "0123456789abcdef0123456789abcdef";
+          delayProfiles = [
+            {
+              enableUsenet = true;
+              enableTorrent = true;
+              preferredProtocol = "torrent";
+              usenetDelay = 0;
+              torrentDelay = 360;
+              bypassIfHighestQuality = true;
+              bypassIfAboveCustomFormatScore = false;
+              minimumCustomFormatScore = 0;
+              order = 2147483647;
+              tags = [ ];
+              id = 1;
+            }
+          ];
+          mediaManagement = {
+            autoUnmonitorPreviouslyDownloadedEpisodes = true;
+            recycleBin = "/var/lib/recyclebin";
+            recycleBinCleanupDays = 14;
+            downloadPropersAndRepacks = "doNotPrefer";
+            createEmptySeriesFolders = true;
+            deleteEmptyFolders = false;
+            fileDate = "localAirDate";
+            rescanAfterRefresh = "never";
+            setPermissionsLinux = true;
+            chmodFolder = "775";
+            chownGroup = "media";
+            episodeTitleRequired = "never";
+            skipFreeSpaceCheckWhenImporting = true;
+            minimumFreeSpaceWhenImporting = 200;
+            copyUsingHardlinks = false;
+            importExtraFiles = true;
+            extraFileExtensions = "srt,ass,ssa";
+            enableMediaInfo = false;
           };
         };
+      };
 
-        torrentClients.qbittorrent = {
-          enable = true;
-          webuiPort = 8282;
-          password = "test123";
-          serverConfig = {
-            LegalNotice.Accepted = true;
-            Preferences = {
-              WebUI = {
-                Username = "admin";
-                Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
-              };
-              General.Locale = "en";
+      torrentClients.qbittorrent = {
+        enable = true;
+        webuiPort = 8282;
+        password = "test123";
+        serverConfig = {
+          LegalNotice.Accepted = true;
+          Preferences = {
+            WebUI = {
+              Username = "admin";
+              Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
             };
+            General.Locale = "en";
           };
         };
+      };
 
-        usenetClients.sabnzbd = {
-          enable = true;
-          settings = {
-            misc = {
-              api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
-              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-            };
+      usenetClients.sabnzbd = {
+        enable = true;
+        settings = {
+          misc = {
+            api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
+            port = 8080;
+            host = "127.0.0.1";
+            url_base = "/sabnzbd";
           };
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

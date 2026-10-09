@@ -37,17 +37,13 @@ let
   expandAlbumTypes =
     defs: flags:
     map (d: {
-      albumType = {
-        inherit (d) id name;
-      };
+      albumType = { inherit (d) id name; };
       allowed = flags.${d.option};
     }) defs;
   expandReleaseStatuses =
     defs: flags:
     map (d: {
-      releaseStatus = {
-        inherit (d) id name;
-      };
+      releaseStatus = { inherit (d) id name; };
       allowed = flags.${d.option};
     }) defs;
 

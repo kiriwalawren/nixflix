@@ -12,61 +12,59 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "prowlarr-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      networking.useDHCP = true;
-      virtualisation.cores = 4;
+    networking.useDHCP = true;
+    virtualisation.cores = 4;
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      prowlarr = {
         enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            password._secret = pkgs.writeText "prowlarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";
+        };
+      };
 
-        prowlarr = {
-          enable = true;
-          config = {
-            hostConfig = {
-              port = 9696;
-              username = "admin";
-              password._secret = pkgs.writeText "prowlarr-password" "testpassword123";
+      flaresolverr.enable = true;
+
+      torrentClients.qbittorrent = {
+        enable = true;
+        webuiPort = 8282;
+        password = "test123";
+        serverConfig = {
+          LegalNotice.Accepted = true;
+          Preferences = {
+            WebUI = {
+              Username = "admin";
+              Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
             };
-            apiKey._secret = pkgs.writeText "prowlarr-apikey" "fedcba9876543210fedcba9876543210";
+            General.Locale = "en";
           };
         };
+      };
 
-        flaresolverr.enable = true;
-
-        torrentClients.qbittorrent = {
-          enable = true;
-          webuiPort = 8282;
-          password = "test123";
-          serverConfig = {
-            LegalNotice.Accepted = true;
-            Preferences = {
-              WebUI = {
-                Username = "admin";
-                Password_PBKDF2 = "@ByteArray(mLsFJ3Dsd3+uZt52Vu9FxA==:ON7uV17wWL0mlay5m5i7PYeBusWa7dgiH+eJG8wC/t+zihfqauUTS0q6DKTwsB5YtbOcmztixnuezjjApywXlw==)";
-              };
-              General.Locale = "en";
-            };
-          };
-        };
-
-        usenetClients.sabnzbd = {
-          enable = true;
-          settings = {
-            misc = {
-              api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
-              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-            };
+      usenetClients.sabnzbd = {
+        enable = true;
+        settings = {
+          misc = {
+            api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
+            port = 8080;
+            host = "127.0.0.1";
+            url_base = "/sabnzbd";
           };
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

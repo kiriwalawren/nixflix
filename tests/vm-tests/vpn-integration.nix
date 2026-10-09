@@ -53,65 +53,63 @@ pkgs.testers.runNixOSTest {
     };
 
     # nixflix client using the generic WireGuard provider
-    client =
-      { pkgs, ... }:
-      {
-        imports = [ nixosModules ];
+    client = { pkgs, ... }: {
+      imports = [ nixosModules ];
 
-        networking.enableIPv6 = false;
+      networking.enableIPv6 = false;
 
-        # Without this, getaddrinfo("server") inside the wg namespace returns the
-        # IPv6 address first (2001:db8:1::2), which wg setconf stores as the endpoint.
-        # Since the namespace has no IPv6 route via the veth, the WireGuard handshake
-        # never completes. Forcing IPv4 precedence fixes the endpoint resolution.
-        environment.etc."gai.conf".text = "precedence ::ffff:0:0/96  100\n";
+      # Without this, getaddrinfo("server") inside the wg namespace returns the
+      # IPv6 address first (2001:db8:1::2), which wg setconf stores as the endpoint.
+      # Since the namespace has no IPv6 route via the veth, the WireGuard handshake
+      # never completes. Forcing IPv4 precedence fixes the endpoint resolution.
+      environment.etc."gai.conf".text = "precedence ::ffff:0:0/96  100\n";
 
-        virtualisation.cores = 4;
+      virtualisation.cores = 4;
 
-        environment.systemPackages = with pkgs; [
-          dig
-          tcpdump
-        ];
+      environment.systemPackages = with pkgs; [
+        dig
+        tcpdump
+      ];
 
-        # vpn-confinement routes WireGuard's own UDP via veth/bridge (source 192.168.15.x).
-        # Without MASQUERADE the server can't route back to 192.168.15.x, so the
-        # WireGuard handshake never completes.
-        networking.firewall.extraCommands = ''
-          iptables -t nat -A POSTROUTING -s 192.168.15.0/24 -j MASQUERADE
-        '';
+      # vpn-confinement routes WireGuard's own UDP via veth/bridge (source 192.168.15.x).
+      # Without MASQUERADE the server can't route back to 192.168.15.x, so the
+      # WireGuard handshake never completes.
+      networking.firewall.extraCommands = ''
+        iptables -t nat -A POSTROUTING -s 192.168.15.0/24 -j MASQUERADE
+      '';
 
-        nixflix = {
+      nixflix = {
+        enable = true;
+
+        vpn = {
           enable = true;
+          wgConfFile = pkgs.writeText "wg0.conf" ''
+            [Interface]
+            Address = 10.100.0.2/24
+            PrivateKey = ${clientPrivateKey}
+            DNS = 10.100.0.1
 
-          vpn = {
-            enable = true;
-            wgConfFile = pkgs.writeText "wg0.conf" ''
-              [Interface]
-              Address = 10.100.0.2/24
-              PrivateKey = ${clientPrivateKey}
-              DNS = 10.100.0.1
+            [Peer]
+            PublicKey = ${serverPublicKey}
+            Endpoint = server:51820
+            AllowedIPs = 0.0.0.0/0
+          '';
+          accessibleFrom = [ "192.168.1.0/24" ];
+        };
 
-              [Peer]
-              PublicKey = ${serverPublicKey}
-              Endpoint = server:51820
-              AllowedIPs = 0.0.0.0/0
-            '';
-            accessibleFrom = [ "192.168.1.0/24" ];
-          };
-
-          radarr = {
-            enable = true;
-            vpn.enable = true; # confined to WG netns
-            config = {
-              hostConfig = {
-                username = "admin";
-                password._secret = pkgs.writeText "radarr-password" "testpass";
-              };
-              apiKey._secret = pkgs.writeText "radarr-apikey" "radarr11111111111111111111111111";
+        radarr = {
+          enable = true;
+          vpn.enable = true; # confined to WG netns
+          config = {
+            hostConfig = {
+              username = "admin";
+              password._secret = pkgs.writeText "radarr-password" "testpass";
             };
+            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr11111111111111111111111111";
           };
         };
       };
+    };
   };
 
   testScript = ''

@@ -12,43 +12,41 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "qbittorrent-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      environment.systemPackages = with pkgs; [
-        jq
-        curl
-      ];
+    environment.systemPackages = with pkgs; [
+      jq
+      curl
+    ];
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      torrentClients.qbittorrent = {
         enable = true;
+        webuiPort = 8282;
+        password = "test123";
+        downloadsDir = "/downloads/torrent";
 
-        torrentClients.qbittorrent = {
-          enable = true;
-          webuiPort = 8282;
-          password = "test123";
-          downloadsDir = "/downloads/torrent";
+        categories = {
+          movies = "/downloads/torrent/movies";
+          tv = "/downloads/torrent/tv";
+        };
 
-          categories = {
-            movies = "/downloads/torrent/movies";
-            tv = "/downloads/torrent/tv";
-          };
-
-          serverConfig = {
-            LegalNotice.Accepted = true;
-            Preferences.WebUI = {
-              Username = "admin";
-              LocalHostAuth = false;
-              Locale = "en";
-            };
+        serverConfig = {
+          LegalNotice.Accepted = true;
+          Preferences.WebUI = {
+            Username = "admin";
+            LocalHostAuth = false;
+            Locale = "en";
           };
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, lib, ... }:
 let
   secrets = import ../../../lib/secrets { inherit lib; };
 
@@ -21,9 +17,7 @@ let
           example = "http://localhost:7878";
         };
 
-        apiKey = secrets.mkSecretOption {
-          description = "API Key for ${name} server";
-        };
+        apiKey = secrets.mkSecretOption { description = "API Key for ${name} server"; };
       };
     };
 
@@ -70,13 +64,9 @@ in
       };
     };
 
-    radarr = lib.mkOption {
-      type = lib.types.listOf (mkArrSubmodule "Radarr");
-    };
+    radarr = lib.mkOption { type = lib.types.listOf (mkArrSubmodule "Radarr"); };
 
-    sonarr = lib.mkOption {
-      type = lib.types.listOf (mkArrSubmodule "Sonarr");
-    };
+    sonarr = lib.mkOption { type = lib.types.listOf (mkArrSubmodule "Sonarr"); };
 
     jobs = {
       collection_handler_job_cron = lib.mkOption {

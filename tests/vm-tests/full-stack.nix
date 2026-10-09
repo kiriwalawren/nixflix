@@ -12,106 +12,104 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "full-stack-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        cores = 4;
-        memorySize = 4096;
-        diskSize = 3 * 1024;
+    virtualisation = {
+      cores = 4;
+      memorySize = 4096;
+      diskSize = 3 * 1024;
+    };
+
+    nixflix = {
+      enable = true;
+
+      # Verify that folders can be nested
+      mediaDir = "/srv/media";
+      stateDir = "/srv/media/.state";
+
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            password._secret = pkgs.writeText "prowlarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+        };
       };
 
-      nixflix = {
+      sonarr = {
         enable = true;
-
-        # Verify that folders can be nested
-        mediaDir = "/srv/media";
-        stateDir = "/srv/media/.state";
-
-        prowlarr = {
-          enable = true;
-          config = {
-            hostConfig = {
-              port = 9696;
-              username = "admin";
-              password._secret = pkgs.writeText "prowlarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+        user = "sonarr";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        sonarr = {
-          enable = true;
-          user = "sonarr";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+      sonarr-anime = {
+        enable = true;
+        user = "sonarr-anime";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8990;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-anime-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
         };
+      };
 
-        sonarr-anime = {
-          enable = true;
-          user = "sonarr-anime";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8990;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-anime-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
+      radarr = {
+        enable = true;
+        user = "radarr";
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
         };
+      };
 
-        radarr = {
-          enable = true;
-          user = "radarr";
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+      lidarr = {
+        enable = true;
+        user = "lidarr";
+        mediaDirs = [ "/media/music" ];
+        config = {
+          hostConfig = {
+            port = 8686;
+            username = "admin";
+            password._secret = pkgs.writeText "lidarr-password" "testpass";
           };
+          apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
         };
+      };
 
-        lidarr = {
-          enable = true;
-          user = "lidarr";
-          mediaDirs = [ "/media/music" ];
-          config = {
-            hostConfig = {
-              port = 8686;
-              username = "admin";
-              password._secret = pkgs.writeText "lidarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
-          };
-        };
-
-        usenetClients.sabnzbd = {
-          enable = true;
-          settings = {
-            misc = {
-              api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
-              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-            };
+      usenetClients.sabnzbd = {
+        enable = true;
+        settings = {
+          misc = {
+            api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbdnzb666666666666666666666";
+            port = 8080;
+            host = "127.0.0.1";
+            url_base = "/sabnzbd";
           };
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

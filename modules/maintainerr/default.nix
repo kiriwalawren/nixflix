@@ -148,10 +148,7 @@ in
         ]
         ++ config.nixflix.serviceDependencies;
         wants = [ "network-online.target" ];
-        requires = [
-          "nixflix-setup-dirs.service"
-        ]
-        ++ config.nixflix.serviceDependencies;
+        requires = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         wantedBy = [ "multi-user.target" ];
 
         environment = {
@@ -205,9 +202,7 @@ in
         };
       };
 
-      networking.firewall = mkIf cfg.openFirewall {
-        allowedTCPPorts = [ cfg.port ];
-      };
+      networking.firewall = mkIf cfg.openFirewall { allowedTCPPorts = [ cfg.port ]; };
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
       systemd.services.maintainerr.vpnConfinement = {

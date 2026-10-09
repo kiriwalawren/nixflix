@@ -1,16 +1,10 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, lib, ... }:
 let
   inherit (config) nixflix;
   cfg = config.nixflix.sonarr;
 in
 {
-  imports = [
-    (import ./arr-common/mkArrServiceModule.nix { serviceName = "sonarr"; })
-  ];
+  imports = [ (import ./arr-common/mkArrServiceModule.nix { serviceName = "sonarr"; }) ];
 
   config.nixflix.sonarr = {
     group = lib.mkDefault "media";

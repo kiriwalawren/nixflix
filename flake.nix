@@ -60,11 +60,7 @@
       nixosModules.nixflix = self.nixosModules.default;
 
       packages = perSystem (
-        {
-          system,
-          pkgs,
-          ...
-        }:
+        { system, pkgs, ... }:
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
@@ -73,12 +69,7 @@
       );
 
       apps = perSystem (
-        {
-          system,
-          pkgs,
-          ...
-        }:
-        {
+        { system, pkgs, ... }: {
           docs-serve = {
             type = "app";
             program = toString (
@@ -118,12 +109,7 @@
       );
 
       devShells = perSystem (
-        {
-          pkgs,
-          treefmt,
-          ...
-        }:
-        {
+        { pkgs, treefmt, ... }: {
           default = pkgs.mkShell {
             nativeBuildInputs = [
               treefmt.config.build.wrapper

@@ -12,69 +12,67 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = "sabnzbd-basic-test";
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      environment.systemPackages = with pkgs; [
-        jq
-        curl
-      ];
+    environment.systemPackages = with pkgs; [
+      jq
+      curl
+    ];
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      usenetClients.sabnzbd = {
         enable = true;
-
-        usenetClients.sabnzbd = {
-          enable = true;
-          downloadsDir = "/downloads/usenet";
-          settings = {
-            misc = {
-              api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
-              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
-              port = 8080;
-              host = "127.0.0.1";
-              url_base = "/sabnzbd";
-              ignore_samples = true;
-              direct_unpack = true;
-              article_tries = 5;
-              cache_limit = "512M";
-            };
-            servers = [
-              {
-                name = "TestServer";
-                host = "news.example.com";
-                port = 563;
-                username._secret = pkgs.writeText "eweka-username" "testuser";
-                password._secret = pkgs.writeText "eweka-password" "test,pass'123";
-                connections = 10;
-                ssl = true;
-                priority = 0;
-                retention = 3000;
-              }
-            ];
-            categories = [
-              {
-                name = "tv";
-                dir = "tv";
-                priority = 0;
-                pp = 3;
-                script = "None";
-              }
-              {
-                name = "movies";
-                dir = "movies";
-                priority = 1;
-                pp = 2;
-                script = "None";
-              }
-            ];
+        downloadsDir = "/downloads/usenet";
+        settings = {
+          misc = {
+            api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey123456789abcdef";
+            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+            port = 8080;
+            host = "127.0.0.1";
+            url_base = "/sabnzbd";
+            ignore_samples = true;
+            direct_unpack = true;
+            article_tries = 5;
+            cache_limit = "512M";
           };
+          servers = [
+            {
+              name = "TestServer";
+              host = "news.example.com";
+              port = 563;
+              username._secret = pkgs.writeText "eweka-username" "testuser";
+              password._secret = pkgs.writeText "eweka-password" "test,pass'123";
+              connections = 10;
+              ssl = true;
+              priority = 0;
+              retention = 3000;
+            }
+          ];
+          categories = [
+            {
+              name = "tv";
+              dir = "tv";
+              priority = 0;
+              pp = 3;
+              script = "None";
+            }
+            {
+              name = "movies";
+              dir = "movies";
+              priority = 1;
+              pp = 2;
+              script = "None";
+            }
+          ];
         };
       };
     };
+  };
 
   testScript = ''
     start_all()

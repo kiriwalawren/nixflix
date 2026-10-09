@@ -25,109 +25,107 @@ in
 pkgsUnfree.testers.runNixOSTest {
   name = testName;
 
-  nodes.machine =
-    { pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        cores = 4;
-        memorySize = 4096;
-        diskSize = 3 * 1024;
+    virtualisation = {
+      cores = 4;
+      memorySize = 4096;
+      diskSize = 3 * 1024;
+    };
+
+    nixflix = {
+      enable = true;
+
+      jellyfin = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+        users = {
+          admin = {
+            password._secret = pkgs.writeText "kiri_password" "321password";
+            policy.isAdministrator = true;
+          };
+        };
       };
 
-      nixflix = {
+      seerr = {
         enable = true;
+        apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
+      };
 
-        jellyfin = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-          users = {
-            admin = {
-              password._secret = pkgs.writeText "kiri_password" "321password";
-              policy.isAdministrator = true;
-            };
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            password._secret = pkgs.writeText "prowlarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
+        };
+      };
+
+      sonarr = {
+        enable = true;
+        user = "sonarr";
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            port = 8989;
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+        };
+      };
+
+      # Custom subdomain to test subdomain override
+      radarr = {
+        enable = true;
+        user = "radarr";
+        mediaDirs = [ "/media/movies" ];
+        subdomain = "movies";
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+        };
+      };
+
+      # Lidarr has expose=false to test unexposed services
+      lidarr = {
+        enable = true;
+        user = "lidarr";
+        mediaDirs = [ "/media/music" ];
+        reverseProxy.expose = false;
+        config = {
+          hostConfig = {
+            port = 8686;
+            username = "admin";
+            password._secret = pkgs.writeText "lidarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
+        };
+      };
+
+      usenetClients.sabnzbd = {
+        enable = true;
+        downloadsDir = "/downloads/usenet";
+        settings = {
+          misc = {
+            api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
+            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666";
+            port = 8080;
+            host = "127.0.0.1";
           };
         };
-
-        seerr = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
-        };
-
-        prowlarr = {
-          enable = true;
-          config = {
-            hostConfig = {
-              port = 9696;
-              username = "admin";
-              password._secret = pkgs.writeText "prowlarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "prowlarr-apikey" "prowlarr11111111111111111111111111";
-          };
-        };
-
-        sonarr = {
-          enable = true;
-          user = "sonarr";
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              port = 8989;
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
-          };
-        };
-
-        # Custom subdomain to test subdomain override
-        radarr = {
-          enable = true;
-          user = "radarr";
-          mediaDirs = [ "/media/movies" ];
-          subdomain = "movies";
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
-          };
-        };
-
-        # Lidarr has expose=false to test unexposed services
-        lidarr = {
-          enable = true;
-          user = "lidarr";
-          mediaDirs = [ "/media/music" ];
-          reverseProxy.expose = false;
-          config = {
-            hostConfig = {
-              port = 8686;
-              username = "admin";
-              password._secret = pkgs.writeText "lidarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "lidarr-apikey" "lidarr444444444444444444444444444";
-          };
-        };
-
-        usenetClients.sabnzbd = {
-          enable = true;
-          downloadsDir = "/downloads/usenet";
-          settings = {
-            misc = {
-              api_key._secret = pkgs.writeText "sabnzbd-apikey" "sabnzbd555555555555555555555555555";
-              nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "sabnzbd666666666666666666666666666";
-              port = 8080;
-              host = "127.0.0.1";
-            };
-          };
-        };
-      }
-      // proxyConfig;
-    };
+      };
+    }
+    // proxyConfig;
+  };
 
   testScript = ''
     start_all()

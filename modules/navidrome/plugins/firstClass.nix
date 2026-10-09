@@ -1,5 +1,4 @@
-{ pkgs }:
-{
+{ pkgs }: {
   "apple-music".package = pkgs.pkgsCross.wasi32.navidromePlugins.apple-music;
   "audiomuseai".package = pkgs.pkgsCross.wasi32.navidromePlugins.audiomuseai;
   "discord-rich-presence" = {

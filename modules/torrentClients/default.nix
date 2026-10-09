@@ -1,3 +1,1 @@
-{
-  imports = [ ./qbittorrent.nix ];
-}
+{ imports = [ ./qbittorrent.nix ]; }

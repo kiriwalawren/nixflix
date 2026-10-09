@@ -37,9 +37,7 @@ in
       };
 
       systemd.services.jellyfin = {
-        restartTriggers = [
-          networkXmlContent
-        ];
+        restartTriggers = [ networkXmlContent ];
 
         serviceConfig = {
           ExecStartPre = [

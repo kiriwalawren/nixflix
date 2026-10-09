@@ -1,5 +1,4 @@
-{ lib }:
-rec {
+{ lib }: rec {
   mkNonConfigOptions =
     {
       enableDefault ? false,
@@ -52,8 +51,7 @@ rec {
       enableDefault ? false,
     }:
     lib.types.submodule (
-      { name, ... }:
-      {
+      { name, ... }: {
         options =
           (mkNonConfigOptions {
             inherit enableDefault;
@@ -61,9 +59,7 @@ rec {
           })
           // {
             config = lib.mkOption {
-              type = lib.types.submodule {
-                freeformType = lib.types.attrsOf lib.types.anything;
-              };
+              type = lib.types.submodule { freeformType = lib.types.attrsOf lib.types.anything; };
               default = { };
               description = ''
                 Plugin configuration. Strongly typed for plugins with a generated `./<name>-plugin.nix`, else freeform.

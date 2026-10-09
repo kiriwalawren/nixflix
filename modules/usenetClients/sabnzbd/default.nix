@@ -19,9 +19,7 @@ let
   templateIni = iniGenerator.generateSabnzbdIni cfg.settings;
 in
 {
-  imports = [
-    ./categoriesService.nix
-  ];
+  imports = [ ./categoriesService.nix ];
 
   options.nixflix.usenetClients.sabnzbd = {
     enable = mkOption {
@@ -241,9 +239,7 @@ in
         };
       };
 
-      networking.firewall = mkIf cfg.openFirewall {
-        allowedTCPPorts = [ cfg.settings.misc.port ];
-      };
+      networking.firewall = mkIf cfg.openFirewall { allowedTCPPorts = [ cfg.settings.misc.port ]; };
 
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {

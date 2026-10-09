@@ -1,7 +1,4 @@
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 with lib;
 let
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };

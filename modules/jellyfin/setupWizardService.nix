@@ -20,9 +20,7 @@ let
   firstAdminName = firstAdmin.name;
   firstAdminUser = firstAdmin.user;
 
-  jqUserSecrets = secrets.mkJqSecretArgs {
-    inherit (firstAdminUser) password;
-  };
+  jqUserSecrets = secrets.mkJqSecretArgs { inherit (firstAdminUser) password; };
 
   baseUrl =
     if cfg.network.baseUrl == "" then

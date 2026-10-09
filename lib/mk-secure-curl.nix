@@ -1,7 +1,4 @@
-{
-  lib,
-  pkgs,
-}:
+{ lib, pkgs }:
 apiKeyValue:
 {
   url,

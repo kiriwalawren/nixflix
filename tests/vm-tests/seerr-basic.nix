@@ -6,84 +6,82 @@
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
 
-  nodes.machine =
-    { lib, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { lib, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation = {
-        cores = 4;
-        memorySize = 4096;
-        diskSize = 3 * 1024;
+    virtualisation = {
+      cores = 4;
+      memorySize = 4096;
+      diskSize = 3 * 1024;
+    };
+
+    nixflix = {
+      enable = true;
+
+      recyclarr.enable = false;
+
+      sonarr = {
+        enable = true;
+        mediaDirs = [ "/media/tv" ];
+        config = {
+          hostConfig = {
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+        };
       };
 
-      nixflix = {
+      sonarr-anime = {
+        enable = true;
+        user = "sonarr-anime";
+        mediaDirs = [ "/media/anime" ];
+        config = {
+          hostConfig = {
+            username = "admin";
+            password._secret = pkgs.writeText "sonarr-anime-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
+        };
+      };
+
+      radarr = {
+        enable = true;
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpass";
+          };
+          apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
+        };
+      };
+
+      jellyfin = {
         enable = true;
 
-        recyclarr.enable = false;
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
 
-        sonarr = {
-          enable = true;
-          mediaDirs = [ "/media/tv" ];
-          config = {
-            hostConfig = {
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-apikey" "sonarr222222222222222222222222222";
+        users = {
+          admin = {
+            password._secret = pkgs.writeText "kiri_password" "321password";
+            policy.isAdministrator = true;
           };
         };
 
-        sonarr-anime = {
-          enable = true;
-          user = "sonarr-anime";
-          mediaDirs = [ "/media/anime" ];
-          config = {
-            hostConfig = {
-              username = "admin";
-              password._secret = pkgs.writeText "sonarr-anime-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "sonarr-anime-apikey" "sonarr222222222222222222222222222";
-          };
-        };
-
-        radarr = {
-          enable = true;
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpass";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" "radarr333333333333333333333333333";
-          };
-        };
-
-        jellyfin = {
-          enable = true;
-
-          apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
-
-          users = {
-            admin = {
-              password._secret = pkgs.writeText "kiri_password" "321password";
-              policy.isAdministrator = true;
-            };
-          };
-
-          # Disable AniDB to keep test pure
-          plugins.AniDB.enable = false;
-          libraries.Anime.typeOptions = lib.mkForce [ ];
-        };
-
-        seerr = {
-          enable = true;
-          apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
-        };
+        # Disable AniDB to keep test pure
+        plugins.AniDB.enable = false;
+        libraries.Anime.typeOptions = lib.mkForce [ ];
       };
 
-      systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
+      seerr = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
+      };
     };
+
+    systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
+  };
 
   testScript = ''
     start_all()

@@ -314,12 +314,8 @@ let
                   "Weekend"
                 ];
               };
-              startHour = mkOption {
-                type = types.ints.between 0 23;
-              };
-              endHour = mkOption {
-                type = types.ints.between 0 23;
-              };
+              startHour = mkOption { type = types.ints.between 0 23; };
+              endHour = mkOption { type = types.ints.between 0 23; };
             };
           }
         );

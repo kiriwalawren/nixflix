@@ -1,8 +1,4 @@
-{
-  lib,
-  config,
-  ...
-}:
+{ lib, config, ... }:
 with lib;
 let
   mkStrOption =
@@ -238,17 +234,13 @@ in
           };
         });
       default = [
-        {
-          itemType = "Movie";
-        }
+        { itemType = "Movie"; }
         {
           itemType = "MusicVideo";
           disabledMetadataFetchers = [ "The Open Movie Database" ];
           disabledImageFetchers = [ "The Open Movie Database" ];
         }
-        {
-          itemType = "Series";
-        }
+        { itemType = "Series"; }
         {
           itemType = "MusicAlbum";
           disabledMetadataFetchers = [ "TheAudioDB" ];
@@ -257,15 +249,9 @@ in
           itemType = "MusicArtist";
           disabledMetadataFetchers = [ "TheAudioDB" ];
         }
-        {
-          itemType = "BoxSet";
-        }
-        {
-          itemType = "Season";
-        }
-        {
-          itemType = "Episode";
-        }
+        { itemType = "BoxSet"; }
+        { itemType = "Season"; }
+        { itemType = "Episode"; }
       ];
       description = ''
         Configure metadata fetching options for different media types.
@@ -409,9 +395,7 @@ in
 
     corsHosts = mkOption {
       type = with types; listOf str;
-      default = [
-        "*"
-      ];
+      default = [ "*" ];
     };
 
     activityLogRetentionDays = mkOption {
