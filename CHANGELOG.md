@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
+
 ## [3.2.0] - 2026-10-05
 
 ### Changed
