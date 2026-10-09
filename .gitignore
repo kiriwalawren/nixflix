@@ -1,6 +1,7 @@
 /result
 .direnv/
 .envrc
+__pycache__/
 
 docs/reference/*/
 !docs/reference/index.md

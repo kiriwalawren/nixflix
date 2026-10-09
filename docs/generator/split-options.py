@@ -14,6 +14,53 @@ def filtered_parts(parts: List[str]) -> List[str]:
     return [p for p in parts if p not in ("*", "<name>")]
 
 
+def split_option_name(name: str) -> List[str]:
+    """Split a Nix option path into segments, respecting nixpkgs's quoting of dotted names like "ACdb.tv"."""
+    segments = []
+    i = 0
+    n = len(name)
+    while i < n:
+        if name[i] == '"':
+            i += 1
+            buf = []
+            while i < n and name[i] != '"':
+                if name[i] == "\\" and i + 1 < n:
+                    buf.append(name[i + 1])
+                    i += 2
+                else:
+                    buf.append(name[i])
+                    i += 1
+            segments.append("".join(buf))
+            i += 1  # skip closing quote
+            if i < n and name[i] == ".":
+                i += 1
+        else:
+            j = name.find(".", i)
+            if j == -1:
+                segments.append(name[i:])
+                i = n
+            else:
+                segments.append(name[i:j])
+                i = j + 1
+    return segments
+
+
+_SAFE_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def quote_segment(seg: str) -> str:
+    """Quote a segment (inverse of split_option_name) if it isn't a plain identifier."""
+    if _SAFE_SEGMENT_RE.match(seg):
+        return seg
+    escaped = seg.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def join_segments(parts: List[str]) -> str:
+    """Inverse of split_option_name: join raw segments back into one path string."""
+    return ".".join(quote_segment(p) for p in parts)
+
+
 def load_options(json_path: Path) -> Dict[str, Any]:
     with open(json_path) as f:
         all_options = json.load(f)
@@ -25,13 +72,13 @@ def load_options(json_path: Path) -> Dict[str, Any]:
 
 
 def get_option_hierarchy(option_name: str) -> List[str]:
-    parts = option_name.split(".")
+    parts = split_option_name(option_name)
     if len(parts) < 2 or parts[0] != "nixflix":
         return []
 
     hierarchy = []
     for i in range(2, len(parts) + 1):
-        hierarchy.append(".".join(parts[:i]))
+        hierarchy.append(join_segments(parts[:i]))
     return hierarchy
 
 
@@ -43,7 +90,7 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         if not name.startswith("nixflix."):
             continue
 
-        parts = name.split(".")
+        parts = split_option_name(name)
         if len(parts) < 4:
             continue
 
@@ -55,7 +102,7 @@ def find_common_parent_groups(options: Dict[str, Any]) -> Dict[str, Set[str]]:
         for i in range(3, len(parts)):
             prefix_parts = filtered_parts(parts[2:i])
             if prefix_parts:
-                prefix = ".".join(prefix_parts)
+                prefix = join_segments(prefix_parts)
                 if prefix not in seen_prefixes:
                     service_paths[service][prefix] += 1
                     seen_prefixes.add(prefix)
@@ -76,7 +123,7 @@ def discover_services(options: Dict[str, Any]) -> List[str]:
     for name in options.keys():
         if not name.startswith("nixflix."):
             continue
-        parts = name.split(".")
+        parts = split_option_name(name)
         if len(parts) >= 2:
             service = parts[1]
             services.add(service)
@@ -97,7 +144,7 @@ def categorize_options_hierarchical(
         if not name.startswith("nixflix."):
             continue
 
-        parts = name.split(".")
+        parts = split_option_name(name)
 
         if len(parts) == 2:
             categorized["core"]["index"].append((name, opt))
@@ -111,7 +158,7 @@ def categorize_options_hierarchical(
 
         # Get the option path without the "nixflix.{service}." prefix
         option_path_parts = filtered_parts(parts[2:])
-        option_path = ".".join(option_path_parts) if option_path_parts else None
+        option_path = join_segments(option_path_parts) if option_path_parts else None
 
         # Check if this exact option path is a complex group (parent option)
         if option_path and option_path in complex_groups[service]:
@@ -122,7 +169,7 @@ def categorize_options_hierarchical(
             for i in range(3, len(parts)):
                 prefix_parts = filtered_parts(parts[2:i])
                 if prefix_parts:
-                    prefix = ".".join(prefix_parts)
+                    prefix = join_segments(prefix_parts)
                     if prefix in complex_groups[service]:
                         page_key = prefix
 
@@ -187,6 +234,8 @@ def get_service_title(service: str) -> str:
         "vpn": "VPN",
         "postgres": "PostgreSQL",
         "slskd": "slskd",
+        "audiomuseai": "AudioMuse-AI",
+        "listenbrainz-daily-playlist": "ListenBrainz Daily Playlist",
     }
     return special_titles.get(service, special_case_to_title(service))
 
@@ -225,7 +274,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
     page_nav_title = get_page_nav_title(page_key)
     return (
         f"{base_title} - {page_nav_title}",
-        f"Configuration options for {service} {page_key.replace('.', ' ')}.",
+        f"Configuration options for {service} {' '.join(split_option_name(page_key))}.",
     )
 
 
@@ -236,22 +285,23 @@ def get_child_pages(page_key: str, all_page_keys: List[str]) -> List[str]:
     dot-path hierarchy, skipping over any intermediate namespace levels that
     don't have their own page.
     """
-    prefix_parts = [] if page_key == "index" else page_key.split(".")
+    prefix_parts = [] if page_key == "index" else split_option_name(page_key)
 
     candidates = []
     for q in all_page_keys:
         if q == page_key or q == "index":
             continue
-        q_parts = q.split(".")
+        q_parts = split_option_name(q)
         if q_parts[: len(prefix_parts)] == prefix_parts and len(q_parts) > len(
             prefix_parts
         ):
             candidates.append(q)
 
     def is_descendant_of_another(q: str) -> bool:
-        q_parts = q.split(".")
+        q_parts = split_option_name(q)
         return any(
-            other != q and q_parts[: len(other.split("."))] == other.split(".")
+            other != q
+            and q_parts[: len(split_option_name(other))] == split_option_name(other)
             for other in candidates
         )
 
@@ -259,15 +309,15 @@ def get_child_pages(page_key: str, all_page_keys: List[str]) -> List[str]:
 
 
 def render_additional_options_section(page_key: str, children: List[str]) -> str:
-    prefix_parts = [] if page_key == "index" else page_key.split(".")
+    prefix_parts = [] if page_key == "index" else split_option_name(page_key)
 
     md = "## Additional Options\n\n"
     md += "This page has the following additional configuration options:\n\n"
     for child in children:
-        child_parts = child.split(".")
+        child_parts = split_option_name(child)
         rel_parts = child_parts[len(prefix_parts) :]
         rel_path = "/".join(rel_parts) + "/index.md"
-        title = get_page_nav_title(child_parts[-1])
+        title = get_single_segment_title(child_parts[-1])
         md += f"- [{title}]({rel_path})\n"
     md += "\n"
     return md
@@ -295,7 +345,7 @@ def write_service_docs(
                 filepath = service_dir / "index.md"
             else:
                 # Create nested directory structure with index.md files
-                parts = page_key.split(".")
+                parts = split_option_name(page_key)
                 current_dir = service_dir
                 for part in parts:
                     current_dir = current_dir / part
@@ -354,21 +404,24 @@ def special_case_to_title(s: str) -> str:
     return " ".join(word[0].upper() + word[1:] for word in s.split() if word)
 
 
+# Only special cases that need custom handling (mainly acronyms)
+_NAV_TITLE_SPECIAL_CASES = {
+    "gui": "GUI",
+    "vpn": "VPN",
+}
+
+
+def get_single_segment_title(seg: str) -> str:
+    """Human-readable title for one already-atomic path segment, never re-split."""
+    return _NAV_TITLE_SPECIAL_CASES.get(seg, get_service_title(seg))
+
+
 def get_page_nav_title(page_key: str) -> str:
-    """Get human-readable title for navigation"""
-    # Only special cases that need custom handling (mainly acronyms)
-    special_cases = {
-        "gui": "GUI",
-        "vpn": "VPN",
-    }
-
-    # Handle nested paths like "config.delayProfiles"
-    parts = page_key.split(".")
+    """Human-readable title for a full, possibly multi-segment page key."""
+    parts = split_option_name(page_key)
     if len(parts) > 1:
-        titles = [special_cases.get(p, get_service_title(p)) for p in parts]
-        return " - ".join(titles)
-
-    return special_cases.get(page_key, get_service_title(page_key))
+        return " - ".join(get_single_segment_title(p) for p in parts)
+    return get_single_segment_title(page_key)
 
 
 def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
@@ -379,7 +432,7 @@ def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
         if page_key == "index":
             continue
 
-        parts = page_key.split(".")
+        parts = split_option_name(page_key)
         current = tree
 
         for i, part in enumerate(parts):
@@ -395,12 +448,12 @@ def build_hierarchical_nav(pages: Dict[str, List[tuple]]) -> Dict:
 
 
 def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
-    """Write navigation tree recursively with explicit file paths"""
+    """Write navigation tree recursively; every node gets a section header, even with no page of its own."""
     indent_str = "    " * indent
 
     for key in sorted(tree.keys()):
         node = tree[key]
-        title = get_page_nav_title(key)
+        title = get_single_segment_title(key)
         current_path = path + [key]
 
         if "_page_key" in node:
@@ -414,8 +467,9 @@ def write_nav_tree(f, tree: Dict, service: str, path: List[str], indent: int):
             if node["_children"]:
                 write_nav_tree(f, node["_children"], service, current_path, indent + 1)
         elif node["_children"]:
-            # Intermediate node without its own page - just recurse into children
-            write_nav_tree(f, node["_children"], service, current_path, indent)
+            # No page of its own -- still give it a section header of its own.
+            f.write(f"{indent_str}- {title}:\n")
+            write_nav_tree(f, node["_children"], service, current_path, indent + 1)
 
 
 def generate_nav_yaml(categorized: Dict[str, Dict[str, List[tuple]]], output_dir: Path):

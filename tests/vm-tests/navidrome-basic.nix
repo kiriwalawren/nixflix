@@ -20,6 +20,25 @@ pkgs.testers.runNixOSTest {
       navidrome = {
         enable = true;
 
+        plugins = {
+          "lyrics".enable = true;
+          "apple-music" = {
+            enable = true;
+            config = {
+              cache_ttl_days = 14;
+              countries = "us,ca";
+              enable_album_images = false;
+            };
+          };
+          "audiomuseai" = {
+            enable = true;
+            config = {
+              apiUrl = "http://audiomuseai.example.com:8000";
+              apiToken._secret = pkgs.writeText "audiomuseai_api_token" "test-audiomuseai-secret-token";
+            };
+          };
+        };
+
         users = {
           kiri = {
             userName = "kiri";
@@ -84,5 +103,65 @@ pkgs.testers.runNixOSTest {
     assert bob["email"] == "bob@example.com", f"bob email mismatch, got {bob['email']}"
 
     print("All Navidrome user assertions passed!")
+
+    print("Checking lyrics plugin was installed...")
+    machine.succeed("ls /nix/store/*-navidrome-*/share/plugins/nd-lyrics.ndp")
+
+    print("Checking LyricsPriority includes the plugin...")
+    configfile = machine.succeed(
+        "systemctl show navidrome.service -p ExecStart --value | grep -oP -- '--configfile \\S+' | awk '{print $2}'"
+    ).strip()
+    machine.succeed(f"grep -q nd-lyrics {configfile}")
+
+    print("All Navidrome lyrics plugin assertions passed!")
+
+    machine.wait_for_unit("navidrome-plugins-config.service", timeout=180)
+
+    print("Checking nd-lyrics plugin config round-trip...")
+    lyrics_plugin_json = machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' {base_url}/api/plugin/nd-lyrics"
+    )
+    lyrics_plugin = json.loads(lyrics_plugin_json)
+    assert lyrics_plugin["enabled"] == True, f"Expected nd-lyrics enabled, got {lyrics_plugin['enabled']}"
+
+    print("Checking apple-music plugin config round-trip...")
+    apple_music_json = machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' {base_url}/api/plugin/apple-music"
+    )
+    apple_music = json.loads(apple_music_json)
+    assert apple_music["enabled"] == True, f"Expected apple-music enabled, got {apple_music['enabled']}"
+    apple_music_config = json.loads(apple_music["config"])
+    assert apple_music_config["cache_ttl_days"] == 14, \
+        f"Expected cache_ttl_days=14, got {apple_music_config['cache_ttl_days']}"
+    assert apple_music_config["countries"] == "us,ca", \
+        f"Expected countries='us,ca', got {apple_music_config['countries']}"
+    assert apple_music_config["enable_album_images"] == False, \
+        f"Expected enable_album_images=False, got {apple_music_config['enable_album_images']}"
+
+    print("All Navidrome plugin config assertions passed!")
+
+    print("Checking the audiomuseai secret is not stored plaintext in the Nix store...")
+    plain_config = machine.succeed(
+        "cat /nix/store/*-navidrome-plugin-config-audiomuseai.json"
+    )
+    assert "apiToken" not in json.loads(plain_config), \
+        f"Expected apiToken stripped out of the Nix store config, got {plain_config}"
+    machine.fail(
+        "grep -q test-audiomuseai-secret-token /nix/store/*-navidrome-plugin-config-audiomuseai.json"
+    )
+
+    print("Checking the audiomuseai secret is correctly resolved via the Navidrome API...")
+    audiomuseai_json = machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' {base_url}/api/plugin/audiomuseai"
+    )
+    audiomuseai_plugin = json.loads(audiomuseai_json)
+    assert audiomuseai_plugin["enabled"] == True, f"Expected audiomuseai enabled, got {audiomuseai_plugin['enabled']}"
+    audiomuseai_config = json.loads(audiomuseai_plugin["config"])
+    assert audiomuseai_config["apiToken"] == "test-audiomuseai-secret-token", \
+        f"Expected apiToken resolved from the secret file, got {audiomuseai_config['apiToken']}"
+    assert audiomuseai_config["apiUrl"] == "http://audiomuseai.example.com:8000", \
+        f"Expected apiUrl='http://audiomuseai.example.com:8000', got {audiomuseai_config['apiUrl']}"
+
+    print("All Navidrome plugin secret assertions passed!")
   '';
 }
