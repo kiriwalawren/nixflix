@@ -66,6 +66,39 @@ pkgsUnfree.testers.runNixOSTest {
             extraFileExtensions = "srt,ass,ssa";
             enableMediaInfo = false;
           };
+          metadata = {
+            XbmcMetadata = {
+              enable = true;
+              fields = {
+                movieMetadata = true;
+                useMovieNfo = true;
+                movieMetadataLanguage = 1;
+                movieMetadataURL = true;
+                addCollectionName = true;
+                movieImages = true;
+              };
+            };
+            MediaBrowserMetadata = {
+              enable = true;
+              fields = {
+                movieMetadata = true;
+              };
+            };
+            RoksboxMetadata = {
+              enable = true;
+              fields = {
+                movieMetadata = true;
+                movieImages = true;
+              };
+            };
+            WdtvMetadata = {
+              enable = false;
+              fields = {
+                movieMetadata = true;
+                movieImages = true;
+              };
+            };
+          };
         };
       };
 
@@ -209,6 +242,44 @@ pkgsUnfree.testers.runNixOSTest {
     assert mm['extraFileExtensions'] == 'srt,ass,ssa', "extraFileExtensions not set"
     assert mm['enableMediaInfo'] == False, "enableMediaInfo not set"
     print("Media management configured successfully!")
+
+    # Wait for metadata service and verify metadata consumers
+    machine.wait_for_unit("radarr-metadata.service", timeout=60)
+
+    metadata = machine.succeed(
+        "curl -s -H 'X-Api-Key: abcd1234abcd1234abcd1234abcd1234' "
+        "http://127.0.0.1:7878/api/v3/metadata"
+    )
+    print(f"Metadata: {metadata}")
+    consumers = {m['implementation']: m for m in json.loads(metadata)}
+    expected_metadata = {
+        'XbmcMetadata': (True, {
+            'movieMetadata': True,
+            'useMovieNfo': True,
+            'movieMetadataLanguage': 1,
+            'movieMetadataURL': True,
+            'addCollectionName': True,
+            'movieImages': True,
+        }),
+        'MediaBrowserMetadata': (True, {
+            'movieMetadata': True,
+        }),
+        'RoksboxMetadata': (True, {
+            'movieMetadata': True,
+            'movieImages': True,
+        }),
+        'WdtvMetadata': (False, {
+            'movieMetadata': True,
+            'movieImages': True,
+        }),
+    }
+    for implementation, (enabled, fields) in expected_metadata.items():
+        consumer = consumers[implementation]
+        assert consumer['enable'] == enabled, f"{implementation} enable not set"
+        actual_fields = {f['name']: f['value'] for f in consumer['fields']}
+        for name, value in fields.items():
+            assert actual_fields[name] == value, f"{implementation}.{name} not set"
+    print("Metadata configured successfully!")
 
     machine.succeed("pgrep -u testuser Radarr")
 
