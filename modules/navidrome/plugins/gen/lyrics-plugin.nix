@@ -325,20 +325,23 @@ in
         }
       ]
       ++ (
-        let
-          v = cfg.${"providersList"};
-        in
-        if v == null then
-          [ ]
-        else
-          lib.concatLists (
-            lib.imap0 (_i: item: [
-              {
-                assertion = item.${"provider"} != "applemusic" || item.${"mediaUserToken"} != null;
-                message = "when `provider` is \"applemusic\", `mediaUserToken` must be set";
-              }
-            ]) v
-          )
-      )
+          let
+            v = cfg.${"providersList"};
+          in
+          if v == null then
+            [ ]
+          else
+            lib.concatLists (
+              lib.imap0 (
+                _i: item:
+                [
+                    {
+                      assertion = item.${"provider"} != "applemusic" || item.${"mediaUserToken"} != null;
+                      message = "when `provider` is \"applemusic\", `mediaUserToken` must be set";
+                    }
+                  ]
+              ) v
+            )
+        )
     );
 }

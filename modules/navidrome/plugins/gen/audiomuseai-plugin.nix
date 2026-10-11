@@ -38,6 +38,20 @@ in
 
           Remove duplicate tracks from results. Default: true'';
       };
+      "instantMixSource" = lib.mkOption {
+        type = lib.types.enum [
+          "similarSong"
+          "lyricsBySong"
+          "hyperbolic"
+        ];
+        default = "similarSong";
+        description = ''
+          Instant Mix Functionality
+
+          Which AudioMuse-AI similarity engine powers Instant Mix. 'Lyrics by Song' needs the SemGrove index and 'Hyperbolic Similarity' needs the hyperbolic projection built in AudioMuse-AI. Default: Similar Song.
+
+          One of: `similarSong` (Similar Song), `lyricsBySong` (Lyrics by Song), `hyperbolic` (Hyperbolic Similarity)'';
+      };
       "radiusSimilarity" = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -45,6 +59,14 @@ in
           Use Radius Similarity
 
           Use radius-based similarity algorithm. Default: true'';
+      };
+      "server" = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = ''
+          Server Name
+
+          Server name as configured in AudioMuse-AI multi-server setup (e.g. 'Navidrome'). Leave blank if multi-server is not used; the parameter will not be sent.'';
       };
     };
   };
