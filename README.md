@@ -2,23 +2,23 @@
   <img src="https://raw.githubusercontent.com/kiriwalawren/nixflix/refs/heads/main/docs/assets/logo.svg" width="250px"/>
   <div>Nixflix</div>
   <div>
-    <a href="https://github.com/kiriwalawren/nixflix/issues">
+    <a href="https://github.com/kiriwalawren/nixflix/issues" style="text-decoration: none">
         <img src="https://img.shields.io/github/issues/kiriwalawren/nixflix?color=f5a97f&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/nixflix/stargazers">
+    <a href="https://github.com/kiriwalawren/nixflix/stargazers" style="text-decoration: none">
         <img src="https://img.shields.io/github/stars/kiriwalawren/nixflix?color=c6a0f6&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/nixflix">
+    <a href="https://github.com/kiriwalawren/nixflix" style="text-decoration: none">
         <img src="https://img.shields.io/github/repo-size/kiriwalawren/nixflix?color=ea999c&labelColor=303446&style=for-the-badge">
     </a>
-    <a href="https://github.com/kiriwalawren/nixflix/blob/main/LICENSE">
+    <a href="https://github.com/kiriwalawren/nixflix/blob/main/LICENSE" style="text-decoration: none">
         <img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MPL-2.0&logoColor=ca9ee6&colorA=313244&colorB=a6da95"/>
     </a>
-    <a href="https://nixos.org">
+    <a href="https://nixos.org" style="text-decoration: none">
         <img src="https://img.shields.io/badge/NixOS-unstable-blue.svg?style=for-the-badge&labelColor=303446&logo=NixOS&logoColor=white&color=91D7E3">
     </a>
   </div>
-  <a href="https://builtwithnix.org">
+  <a href="https://builtwithnix.org" style="text-decoration: none">
       <img src="https://builtwithnix.org/badge.svg"/>
   </a>
 </h1>
