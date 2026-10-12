@@ -92,9 +92,9 @@ in
   mkAssertions =
     cfg:
     (
-          let
-            v = cfg.${"users"};
-          in
-          if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
-        );
+      let
+        v = cfg.${"users"};
+      in
+      if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
+    );
 }

@@ -98,17 +98,17 @@ in
               };
               "ratings" = lib.mkOption {
                 type = lib.types.nullOr (
-                    lib.types.listOf (
-                      lib.types.enum [
-                        "0"
-                        "1"
-                        "2"
-                        "3"
-                        "4"
-                        "5"
-                      ]
-                    )
-                  );
+                  lib.types.listOf (
+                    lib.types.enum [
+                      "0"
+                      "1"
+                      "2"
+                      "3"
+                      "4"
+                      "5"
+                    ]
+                  )
+                );
                 default = null;
                 description = ''
                   Ratings
@@ -117,29 +117,29 @@ in
               };
               "sources" = lib.mkOption {
                 type = lib.types.nullOr (
-                    lib.types.listOf (
-                      lib.types.submodule {
-                        options = {
-                          "playlistName" = lib.mkOption {
-                            type = lib.types.str;
-                            default = "";
-                            description = ''
-                              Playlist name to be imported
+                  lib.types.listOf (
+                    lib.types.submodule {
+                      options = {
+                        "playlistName" = lib.mkOption {
+                          type = lib.types.str;
+                          default = "";
+                          description = ''
+                            Playlist name to be imported
 
-                              The name of the playlist as it will be created/updated for the user. This playlist will be overridden'';
-                          };
-                          "sourcePatch" = lib.mkOption {
-                            type = lib.types.str;
-                            default = "";
-                            description = ''
-                              Source
-
-                              The source as declared by ListenBrainz. This includes: weekly-exploration, weekly-jams, daily-jams'';
-                          };
+                            The name of the playlist as it will be created/updated for the user. This playlist will be overridden'';
                         };
-                      }
-                    )
-                  );
+                        "sourcePatch" = lib.mkOption {
+                          type = lib.types.str;
+                          default = "";
+                          description = ''
+                            Source
+
+                            The source as declared by ListenBrainz. This includes: weekly-exploration, weekly-jams, daily-jams'';
+                        };
+                      };
+                    }
+                  )
+                );
                 default = null;
                 description = "Playlists to import";
               };
@@ -166,75 +166,74 @@ in
   mkAssertions =
     cfg:
     (
-          let
-            v = cfg.${"users"};
-          in
-          if v == null then
-            [ ]
-          else
-            lib.concatLists (
-              lib.imap0 (
-                _i: item:
+      let
+        v = cfg.${"users"};
+      in
+      if v == null then
+        [ ]
+      else
+        lib.concatLists (
+          lib.imap0 (
+            _i: item:
+            (
+              [
+                {
+                  assertion = item.${"generatePlaylist"} != false || item.${"lbzUsername"} != null;
+                  message = "when `generatePlaylist` is false, `lbzUsername` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != false || item.${"ratings"} != null;
+                  message = "when `generatePlaylist` is false, `ratings` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != false || item.${"sources"} != null;
+                  message = "when `generatePlaylist` is false, `sources` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != false || item.${"username"} != null;
+                  message = "when `generatePlaylist` is false, `username` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"generatedPlaylist"} != null;
+                  message = "when `generatePlaylist` is true, `generatedPlaylist` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"generatedPlaylistArtistLimit"} != null;
+                  message = "when `generatePlaylist` is true, `generatedPlaylistArtistLimit` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"generatedPlaylistTrackAge"} != null;
+                  message = "when `generatePlaylist` is true, `generatedPlaylistTrackAge` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"lbzUsername"} != null;
+                  message = "when `generatePlaylist` is true, `lbzUsername` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"ratings"} != null;
+                  message = "when `generatePlaylist` is true, `ratings` must be set";
+                }
+                {
+                  assertion = item.${"generatePlaylist"} != true || item.${"username"} != null;
+                  message = "when `generatePlaylist` is true, `username` must be set";
+                }
+              ]
+              ++ (
                 (
-                  [
-                    {
-                      assertion = item.${"generatePlaylist"} != false || item.${"lbzUsername"} != null;
-                      message = "when `generatePlaylist` is false, `lbzUsername` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != false || item.${"ratings"} != null;
-                      message = "when `generatePlaylist` is false, `ratings` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != false || item.${"sources"} != null;
-                      message = "when `generatePlaylist` is false, `sources` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != false || item.${"username"} != null;
-                      message = "when `generatePlaylist` is false, `username` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != true || item.${"generatedPlaylist"} != null;
-                      message = "when `generatePlaylist` is true, `generatedPlaylist` must be set";
-                    }
-                    {
-                      assertion =
-                        item.${"generatePlaylist"} != true || item.${"generatedPlaylistArtistLimit"} != null;
-                      message = "when `generatePlaylist` is true, `generatedPlaylistArtistLimit` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != true || item.${"generatedPlaylistTrackAge"} != null;
-                      message = "when `generatePlaylist` is true, `generatedPlaylistTrackAge` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != true || item.${"lbzUsername"} != null;
-                      message = "when `generatePlaylist` is true, `lbzUsername` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != true || item.${"ratings"} != null;
-                      message = "when `generatePlaylist` is true, `ratings` must be set";
-                    }
-                    {
-                      assertion = item.${"generatePlaylist"} != true || item.${"username"} != null;
-                      message = "when `generatePlaylist` is true, `username` must be set";
-                    }
-                  ]
-                  ++ (
-                    (
-                      let
-                        v = item.${"playlists"};
-                      in
-                      if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
-                    )
-                    ++ (
-                      let
-                        v = item.${"sources"};
-                      in
-                      if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
-                    )
-                  )
+                  let
+                    v = item.${"playlists"};
+                  in
+                  if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
                 )
-              ) v
+                ++ (
+                  let
+                    v = item.${"sources"};
+                  in
+                  if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
+                )
+              )
             )
-        );
+          ) v
+        )
+    );
 }
