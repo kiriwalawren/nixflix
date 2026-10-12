@@ -18,7 +18,7 @@ fetch_manifest() {
 
   until [ $attempts_left = 0 ]; do
     manifest="$(curl -sfA "jellyfin/$JELLYFIN_VERSION (https://github.com/kiriwalawren/nixflix)" "$UPR_URL")"
-    if [ "$(echo "$manifest" | jq length)" = "1" ]; then
+    if [ "$(echo "$manifest" | jq length)" -le 1 ]; then
       attempts_left=$((attempts_left - 1))
       sleep 10
     else
@@ -29,7 +29,7 @@ fetch_manifest() {
 }
 
 UPR_MANIFEST=$(fetch_manifest)
-if [ "$(echo "$UPR_MANIFEST" | jq length)" = "1" ]; then
+if [ "$(echo "$UPR_MANIFEST" | jq length)" -le 1 ]; then
   echo "ERROR: UPR manifest wasn't inintialized in time"
   exit 1
 fi
