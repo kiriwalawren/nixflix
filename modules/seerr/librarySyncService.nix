@@ -30,70 +30,53 @@ in
         RemainAfterExit = true;
       };
 
-      script =
-        let
-          typeFilter =
-            if cfg.jellyfin.libraryFilter.types == [ ] then
-              "true"
-            else
-              let
-                typeList = map (t: ''"${t}"'') cfg.jellyfin.libraryFilter.types;
-              in
-              "[.type] | inside([${concatStringsSep "," typeList}])";
+      script = ''
+        set -euo pipefail
 
-          nameFilter =
-            if cfg.jellyfin.libraryFilter.names == [ ] then
-              "true"
-            else
-              let
-                nameList = map (n: ''"${n}"'') cfg.jellyfin.libraryFilter.names;
-              in
-              "[.name] | inside([${concatStringsSep "," nameList}])";
+        BASE_URL="${baseUrl}"
 
-          libraryFilterExpr = "select(${typeFilter} and ${nameFilter})";
-        in
-        ''
-          set -euo pipefail
+        # Authenticate
+        source ${authUtil.authScript}
 
-          BASE_URL="${baseUrl}"
+        # Fetch library list
+        echo "Fetching library list from Jellyfin..."
+        LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
+          ${authUtil.curlAuthArgs} \
+          "$BASE_URL/api/v1/settings/jellyfin/library?sync=true")
 
-          # Authenticate
-          source ${authUtil.authScript}
+        echo "Available libraries:"
+        echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[] | "\(.id) - \(.name) (\(.type))"'
 
-          # Fetch library list
-          echo "Fetching library list from Jellyfin..."
-          LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
-            ${authUtil.curlAuthArgs} \
-            "$BASE_URL/api/v1/settings/jellyfin/library?sync=true")
-
-          echo "Available libraries:"
-          echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[] | "\(.id) - \(.name) (\(.type))"'
-
-          # Apply filters and get IDs to enable
-          ${
-            if cfg.jellyfin.enableAllLibraries then
-              ''
-                # Enable all libraries
-                LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[].id' | paste -sd,)
-              ''
-            else
-              ''
-                # Apply filters to select libraries
-                LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-                  '.[] | ${libraryFilterExpr} | .id' | paste -sd,)
-              ''
-          }
-
-          if [ -n "$LIBRARY_IDS" ]; then
-            echo "Enabling libraries: $LIBRARY_IDS"
-            ${pkgs.curl}/bin/curl -sf \
-              ${authUtil.curlAuthArgs} \
-              "$BASE_URL/api/v1/settings/jellyfin/library?enable=$LIBRARY_IDS" >/dev/null
-            echo "Libraries enabled successfully"
+        # Apply filters and get IDs to enable
+        ${
+          if cfg.jellyfin.enableAllLibraries then
+            ''
+              # Enable all libraries
+              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '[.[].id] | join(",")')
+            ''
           else
-            echo "Warning: No libraries matched the filter criteria"
-          fi
-        '';
+            ''
+              # Apply filters to select libraries
+              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
+                --argjson types ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.types)} \
+                --argjson names ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.names)} \
+                '[ .[]
+                   | select(($types | length) == 0 or (.type | IN($types[])))
+                   | select(($names | length) == 0 or (.name | IN($names[])))
+                   | .id ] | join(",")')
+            ''
+        }
+
+        if [ -n "$LIBRARY_IDS" ]; then
+          echo "Enabling libraries: $LIBRARY_IDS"
+          ${pkgs.curl}/bin/curl -sf \
+            ${authUtil.curlAuthArgs} \
+            "$BASE_URL/api/v1/settings/jellyfin/library?enable=$LIBRARY_IDS" >/dev/null
+          echo "Libraries enabled successfully"
+        else
+          echo "Warning: No libraries matched the filter criteria"
+        fi
+      '';
     };
   };
 }
