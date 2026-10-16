@@ -106,35 +106,18 @@ in
           if cfg.jellyfin.enableAllLibraries then
             ''
               # Enable all libraries
-              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[].id' | paste -sd,)
+              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '[.[].id] | join(",")')
             ''
           else
-            let
-              # Build jq filter for library selection
-              typeFilter =
-                if cfg.jellyfin.libraryFilter.types == [ ] then
-                  "true"
-                else
-                  let
-                    typeList = map (t: ''"${t}"'') cfg.jellyfin.libraryFilter.types;
-                  in
-                  "[.type] | inside([${concatStringsSep "," typeList}])";
-
-              nameFilter =
-                if cfg.jellyfin.libraryFilter.names == [ ] then
-                  "true"
-                else
-                  let
-                    nameList = map (n: ''"${n}"'') cfg.jellyfin.libraryFilter.names;
-                  in
-                  "[.name] | inside([${concatStringsSep "," nameList}])";
-
-              libraryFilterExpr = "select(${typeFilter} and ${nameFilter})";
-            in
             ''
               # Apply filters to select libraries
               LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-                '.[] | ${libraryFilterExpr} | .id' | paste -sd,)
+                --argjson types ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.types)} \
+                --argjson names ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.names)} \
+                '[ .[]
+                   | select(($types | length) == 0 or (.type | IN($types[])))
+                   | select(($names | length) == 0 or (.name | IN($names[])))
+                   | .id ] | join(",")')
             ''
         }
 
