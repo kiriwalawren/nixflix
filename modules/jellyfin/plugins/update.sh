@@ -92,8 +92,10 @@ update_plugins() {
     # Have to do it this way to avoid "Argument list too long" error due to adding versions_json
     plugins_json="$(echo "$plugins_json{$name: $(echo "$plugin{\"versions\": $versions_json}" | jq -sc "add | {guid, overview, description, owner, category, imageUrl, versions} | with_entries(select(.value != null))")}" | jq -sc "add")"
   done
-  # Sort the plugins for consistency
-  echo "$plugins_json" | jq -S >"$REPO_ROOT/modules/jellyfin/plugins/plugins.json"
+  # Sort the plugins, and each plugin's versions (newest first), for consistency
+  echo "$plugins_json" |
+    jq -S 'map_values(.versions |= (sort_by(.version | split(".") | map(tonumber)) | reverse))' \
+      >"$REPO_ROOT/modules/jellyfin/plugins/plugins.json"
 }
 
 update_plugins

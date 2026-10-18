@@ -1343,10 +1343,10 @@
     "versions": [
       {
         "changelog": "Added support for 12.2",
-        "checksum": "4EF35E24778CADB58D91B25A82848E0C",
-        "hash": "sha256-gWlaSFa4V7QU/5Vk9ZiprnFZqfS8haAizWJDs5XNbZ4=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.2.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "DAC56E534AD74FAA2A92F428DBCA4231",
+        "hash": "sha256-oN5Olf9vBuZjNrh/Pu3AcH7FY+Sz4F6qLh/IypHkRRg=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.2.0/Release-12.2.0.zip",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-10-05T21:36:57",
         "version": "0.3.2.0"
       },
@@ -1361,21 +1361,12 @@
       },
       {
         "changelog": "Added support for 12.2",
-        "checksum": "DAC56E534AD74FAA2A92F428DBCA4231",
-        "hash": "sha256-oN5Olf9vBuZjNrh/Pu3AcH7FY+Sz4F6qLh/IypHkRRg=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.2.0/Release-12.2.0.zip",
-        "targetAbi": "12.2.0.0",
+        "checksum": "4EF35E24778CADB58D91B25A82848E0C",
+        "hash": "sha256-gWlaSFa4V7QU/5Vk9ZiprnFZqfS8haAizWJDs5XNbZ4=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.2.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-10-05T21:36:57",
         "version": "0.3.2.0"
-      },
-      {
-        "changelog": "Patch to make work on 12.1.0 as released on 12.0.1 (which doesn't exist) by accident. If you're not on 12.1.0 this is exactly the same version as 0.3.0.0",
-        "checksum": "F06B008F02FAC997B19A5BAA175BDCBE",
-        "hash": "sha256-JgQASXWF7x6nVz82itnsMU4jBZf3E+GQJMDU9KXmx88=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.1.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-21T10:32:00",
-        "version": "0.3.1.0"
       },
       {
         "changelog": "Patch to make work on 12.1.0 as released on 12.0.1 (which doesn't exist) by accident. If you're not on 12.1.0 this is exactly the same version as 0.3.0.0",
@@ -1387,13 +1378,13 @@
         "version": "0.3.1.0"
       },
       {
-        "changelog": "## ✨ New Features\r\n\r\n* Added support for Jellyfin 12.\r\n* Added support for custom tabs in Jellyfin 12's Modern layout, including both the desktop header and mobile navigation drawer (PR #62, @999Fritsch).\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed custom tab HTML content being corrupted when it contained multi-line JavaScript, template literals, comments, or other newline-sensitive content (PR #59, @pcfascist).\r\n* Custom tab content is now rendered at runtime, allowing embedded `<script>` elements to execute correctly.\r\n* Improved resilience when clients have a cached Jellyfin web chunk by creating missing custom tab content containers at runtime.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Added a Jellyfin 12 build target using .NET 10.\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* 999Fritsch\r\n* pcfascist\r\n* austinnorgaard",
-        "checksum": "DBD5751E0DD155001822D8C577D50A8E",
-        "hash": "sha256-VAMAtHsmG8OlA8/CtTPKM7H4C/CICnYAqZM01Rr3f9I=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.0.0/Release-12.0.0.zip",
+        "changelog": "Patch to make work on 12.1.0 as released on 12.0.1 (which doesn't exist) by accident. If you're not on 12.1.0 this is exactly the same version as 0.3.0.0",
+        "checksum": "F06B008F02FAC997B19A5BAA175BDCBE",
+        "hash": "sha256-JgQASXWF7x6nVz82itnsMU4jBZf3E+GQJMDU9KXmx88=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.1.0/Release-12.0.0.zip",
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-21T10:32:00",
-        "version": "0.3.0.0"
+        "version": "0.3.1.0"
       },
       {
         "changelog": "## ✨ New Features\r\n\r\n* Added support for Jellyfin 12.\r\n* Added support for custom tabs in Jellyfin 12's Modern layout, including both the desktop header and mobile navigation drawer (PR #62, @999Fritsch).\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed custom tab HTML content being corrupted when it contained multi-line JavaScript, template literals, comments, or other newline-sensitive content (PR #59, @pcfascist).\r\n* Custom tab content is now rendered at runtime, allowing embedded `<script>` elements to execute correctly.\r\n* Improved resilience when clients have a cached Jellyfin web chunk by creating missing custom tab content containers at runtime.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Added a Jellyfin 12 build target using .NET 10.\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* 999Fritsch\r\n* pcfascist\r\n* austinnorgaard",
@@ -1401,6 +1392,15 @@
         "hash": "sha256-MzDP+twhl0pCeH3QftCG3I2DxnnaXYp6z9aPUVRdvFE=",
         "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.0.0/Release-12.0.1.zip",
         "targetAbi": "12.0.1.0",
+        "timestamp": "2026-09-21T10:32:00",
+        "version": "0.3.0.0"
+      },
+      {
+        "changelog": "## ✨ New Features\r\n\r\n* Added support for Jellyfin 12.\r\n* Added support for custom tabs in Jellyfin 12's Modern layout, including both the desktop header and mobile navigation drawer (PR #62, @999Fritsch).\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed custom tab HTML content being corrupted when it contained multi-line JavaScript, template literals, comments, or other newline-sensitive content (PR #59, @pcfascist).\r\n* Custom tab content is now rendered at runtime, allowing embedded `<script>` elements to execute correctly.\r\n* Improved resilience when clients have a cached Jellyfin web chunk by creating missing custom tab content containers at runtime.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Added a Jellyfin 12 build target using .NET 10.\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* 999Fritsch\r\n* pcfascist\r\n* austinnorgaard",
+        "checksum": "DBD5751E0DD155001822D8C577D50A8E",
+        "hash": "sha256-VAMAtHsmG8OlA8/CtTPKM7H4C/CICnYAqZM01Rr3f9I=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-custom-tabs/releases/download/0.3.0.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-21T10:32:00",
         "version": "0.3.0.0"
       }
@@ -1619,29 +1619,11 @@
     "owner": "IAmParadox27",
     "versions": [
       {
-        "changelog": "Add support for 12.1",
-        "checksum": "9785DDF88CE9CC593BACDBD7FA8E7B79",
-        "hash": "sha256-Onwe7DtvSrAGv5xvjBG27pScb3Rx/boiQNRFP6EWr6Y=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.1.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-08T09:02:53",
-        "version": "3.0.1.0"
-      },
-      {
-        "changelog": "Add support for 12.1",
-        "checksum": "1451642C8DC6F036CB00AA703A9F0834",
-        "hash": "sha256-sYZMJERlI3vAKdYErT0foZoE+zbTJ2iB+5JPJ3ZogUo=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.1.0/Release-12.1.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-08T09:02:53",
-        "version": "3.0.1.0"
-      },
-      {
         "changelog": "Added support for 12.2",
-        "checksum": "B3D019DA1BF5E1B6CF0C4BC6BBD47335",
-        "hash": "sha256-thRBS5naWhGjmaRADF7v6xL96LjYc9z9xqx29+/NGVQ=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.2.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "76EAE3B09A42DBA7992820FA8F6A4584",
+        "hash": "sha256-YufVExHm9nC7yaSXAO7Z5f4mTbxRJ1y3rhWC4IwG0KE=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.2.0/Release-12.2.0.zip",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-09-08T09:02:53",
         "version": "3.0.2.0"
       },
@@ -1656,12 +1638,30 @@
       },
       {
         "changelog": "Added support for 12.2",
-        "checksum": "76EAE3B09A42DBA7992820FA8F6A4584",
-        "hash": "sha256-YufVExHm9nC7yaSXAO7Z5f4mTbxRJ1y3rhWC4IwG0KE=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.2.0/Release-12.2.0.zip",
-        "targetAbi": "12.2.0.0",
+        "checksum": "B3D019DA1BF5E1B6CF0C4BC6BBD47335",
+        "hash": "sha256-thRBS5naWhGjmaRADF7v6xL96LjYc9z9xqx29+/NGVQ=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.2.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-08T09:02:53",
         "version": "3.0.2.0"
+      },
+      {
+        "changelog": "Add support for 12.1",
+        "checksum": "1451642C8DC6F036CB00AA703A9F0834",
+        "hash": "sha256-sYZMJERlI3vAKdYErT0foZoE+zbTJ2iB+5JPJ3ZogUo=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.1.0/Release-12.1.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-08T09:02:53",
+        "version": "3.0.1.0"
+      },
+      {
+        "changelog": "Add support for 12.1",
+        "checksum": "9785DDF88CE9CC593BACDBD7FA8E7B79",
+        "hash": "sha256-Onwe7DtvSrAGv5xvjBG27pScb3Rx/boiQNRFP6EWr6Y=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases/download/3.0.1.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-08T09:02:53",
+        "version": "3.0.1.0"
       },
       {
         "changelog": "# 🚀 A New Foundation for File Transformation\r\n\r\nFile Transformation **3.0.0.0** is a major overhaul of how the plugin integrates with Jellyfin. The transformation system has been rebuilt around standard ASP.NET Core middleware, removing much of the version-specific runtime patching that File Transformation previously relied on.\r\n\r\nAlongside **Jellyfin 12 support**, this release drops support for **Jellyfin 10.10.7** and lays a much more maintainable foundation for future Jellyfin releases.\r\n\r\n> ## 🙌 Huge thanks to @4eh5xitv6787h645ebv\r\n>\r\n> A massive part of this release is thanks to **@4eh5xitv6787h645ebv**, who took on the major overhaul of File Transformation's core architecture in PR #58.\r\n>\r\n> The move away from the old Harmony/MonoMod-based interception system to standard ASP.NET Core middleware is a significant piece of work. It not only makes File Transformation substantially easier to maintain, but also resolves an entire class of compatibility problems that caused the plugin to malfunction or be disabled on certain Jellyfin versions and platforms (#20, #35, #62, #64, #70, #71).\r\n>\r\n> This is far more than a small patch or isolated feature - it fundamentally improves the foundation the plugin is built on. A huge thank you for the time and effort that went into it.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12** and the newer Jellyfin server architecture (#34).\r\n* Replaced the previous Harmony/MonoMod-based web interception system with standard ASP.NET Core `IStartupFilter` middleware (PR #58, @4eh5xitv6787h645ebv).\r\n* Added support for unregistering transformations through `PluginInterface.RemoveTransformation(Guid)`, allowing dependent plugins to cleanly remove transformations when required.\r\n* Added support for synthesising virtual files for registered transformation paths, restoring support for plugins such as Plugin Pages where the underlying file doesn't physically exist.\r\n* Added ETag generation and `304 Not Modified` support for transformed content.\r\n* Added Brotli and gzip recompression of transformed responses for remote clients.\r\n* Added automatic MIME type detection for virtual transformed files.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Removed platform-specific DLL extraction and version-specific Jellyfin shims.\r\n* Removed dependencies on Harmony, MonoMod and Prometheus from the core transformation pipeline.\r\n* Improved compatibility across Jellyfin versions and platforms by moving the transformation system onto standard ASP.NET Core APIs (#20, #35, #62, #64).\r\n* Added per-transformation error isolation so a failure in one plugin's transformation won't prevent other transformations from running.\r\n* Made transformation registration, removal and execution thread-safe.\r\n* Added regex caching and timeout protection for transformation matching.\r\n* Improved handling of `Accept-Encoding`, including proper quality-value (`q`) parsing.\r\n* Improved LAN detection for IPv6-mapped IPv4 addresses.\r\n* Improved proxy caching behaviour by correctly setting `Vary: Accept-Encoding`.\r\n* Reworked HTTP handling to use a shared `HttpClient` with appropriate timeouts.\r\n* Hardened named-pipe transformations with timeouts, size limits, EOF handling and improved resource cleanup.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed a class of failures where Harmony/MonoMod runtime patching could cause File Transformation to malfunction or be automatically disabled on startup (#20, #35, #62, #64, #71).\r\n* Fixed #70 where transformations could attempt to use a disposed `IServiceProvider` after Jellyfin restarted, resulting in `500` responses across the web UI.\r\n* Fixed transformed content potentially retaining stale trailing bytes when a transformation produced a shorter result than the original response.\r\n* Fixed failures in one transformation potentially breaking the entire transformation pipeline.\r\n* Fixed potential `HttpClient` resource leaks.\r\n* Fixed named-pipe transformations being able to hang indefinitely or loop on zero-byte reads.\r\n* Fixed incorrect handling of disabled compression encodings such as `gzip;q=0`.\r\n* Fixed failed virtual-file transformations returning an empty successful response instead of reverting to the original `404`.\r\n* Improved middleware failure handling so the original response is served if transformation or recompression fails.\r\n\r\n## 💻 Developer Compatibility\r\n\r\nThe existing `PluginInterface.RegisterTransformation` API and registration payload remain compatible with previous releases, so plugins using a standard transformation callback **should not need to change how they register transformations**.\r\n\r\nThere are, however, some changes to transformation execution that plugin developers should be aware of:\r\n\r\n* Added `PluginInterface.RemoveTransformation(Guid)`, allowing plugins to explicitly unregister a previously registered transformation.\r\n* Assembly callbacks still receive the same payload and are expected to return the transformed content as a `string`.\r\n* Invalid or failed assembly callbacks now **fail safely rather than falling through to another configured callback mechanism**. Plugins should ensure their callback assembly, class and method names are valid.\r\n* HTTP transformation callbacks must now return a **successful HTTP status code**. Non-success responses are treated as a failed transformation rather than using the response body as transformed content.\r\n* HTTP callbacks now have a **15 second timeout**.\r\n* Named-pipe callbacks now have connection/error handling and a **50 MB maximum response size**.\r\n* Failed transformations now leave the original response untouched rather than potentially replacing it with invalid or partial output.\r\n\r\nThese changes are intended to make transformations significantly safer and more predictable, but plugins relying on the previous fallback or error behaviour should review their integrations when updating.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Jellyfin 10.10.7 is no longer supported.**\r\n* Added support for **Jellyfin 12** and its newer server architecture (#34).\r\n* Users remaining on Jellyfin 10.10.7 will need to stay on an earlier File Transformation release until they upgrade Jellyfin.\r\n* Removed legacy Harmony/MonoMod runtime patching and version-specific Jellyfin shims.\r\n* File Transformation now relies on standard ASP.NET Core middleware rather than patching Jellyfin internals, providing a much more stable base for future Jellyfin versions.\r\n\r\n## Contributors\r\n\r\n* 4eh5xitv6787h645ebv\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.\r\n\r\n<a href='https://ko-fi.com/iamparadox27' target='_blank'><img height='32' style='border:0px;height:32px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>",
@@ -2020,29 +2020,11 @@
     "owner": "IAmParadox27",
     "versions": [
       {
-        "changelog": "Fixed issue caused by 3.0.1.0 on JF 12.1. \r\n\r\nThat release has been removed - this is identical to 3.0.1.0 except with this fix",
-        "checksum": "CF4BE86E08365AC8D96CBA339F2523E1",
-        "hash": "sha256-f9qrEsh+rp9EnKjE+RBbQ8B/3/v4/7ReIISJCxL8Kkc=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.2.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-15T11:27:53",
-        "version": "3.0.2.0"
-      },
-      {
-        "changelog": "Fixed issue caused by 3.0.1.0 on JF 12.1. \r\n\r\nThat release has been removed - this is identical to 3.0.1.0 except with this fix",
-        "checksum": "C71A9BBF5456A377F14D9653CA41DB99",
-        "hash": "sha256-juoZ+0KcyylmXGwrjmHylF9eDX9xhviLjRIrPEjUMT0=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.2.0/Release-12.1.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-15T11:27:53",
-        "version": "3.0.2.0"
-      },
-      {
         "changelog": "✨ New Features\r\n\r\n* Added Studio / Network, Decade, Hidden Gems and Finish These Collections sections, and enabled the previously developed Starring and Directed By sections (PR #292, @n00bcodr).\r\n* Added per-section previews to the admin configuration page, allowing section results to be previewed before saving (PR #288, @n00bcodr).\r\n* Added a new Add/Remove section workflow to make managing enabled sections easier (PR #288, @n00bcodr).\r\n\r\n🛠️ Improvements\r\n\r\n* Reworked section ordering in the admin configuration page with drag-and-drop support, including support for moving groups of sections that share the same order (PR #288, @n00bcodr).\r\n* Added section information popovers using the new admin descriptions (PR #288, @n00bcodr).\r\n* Improved section naming fallbacks and fixed missing Genre section localisation in the admin interface (PR #288, @n00bcodr).\r\n* Escaped section metadata when rendering the home screen and settings interface so titles and names containing markup are displayed safely as text (PR #304, @4eh5xitv6787h645ebv).\r\n\r\n🪲 Bug Fixes\r\n\r\n* Fixed #297 where users on Jellyfin 12 could receive items from libraries they did not have access to in Latest Movies, Latest Shows, Recently Added and Genre sections (PR #301, @4eh5xitv6787h645ebv).\r\n* Fixed #298 where authenticated users could access another user’s Home Screen Sections data by supplying that user’s ID. User-scoped endpoints are now bound to the authenticated user (PR #302, @4eh5xitv6787h645ebv).\r\n* Fixed #298 by restricting section registration to administrators and limiting registered section result endpoints to the originating server (PR #303, @4eh5xitv6787h645ebv).\r\n\r\n🌐 Translations\r\n\r\n* Completed missing Spanish and Catalan translations (PR #293, @GospelBG).\r\n* Added Greek translations (PR #299, @KaliDarkzy).\r\n\r\n⚠️ Compatibility\r\n\r\n* Added support for Jellyfin 12.2.\r\n* Jellyfin 10.11.11 remains supported.\r\n\r\nContributors\r\n\r\n* n00bcodr\r\n* GospelBG\r\n* KaliDarkzy\r\n* 4eh5xitv6787h645ebv",
-        "checksum": "E3A8BF4B89F84704D8BF5DB49EEAB8DA",
-        "hash": "sha256-4pqYL1P03IGZB6gzgeQ6sT7mtTnecLjFrg43PHHtRow=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.3.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "95FE9BE2D988C794288E5B7EF2BC916D",
+        "hash": "sha256-8VoZzl1YKL6uvprvGW8JeuL2AIqbXZMWqTZoy6FE+Fw=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.3.0/Release-12.2.0.zip",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-10-05T21:33:44",
         "version": "3.0.3.0"
       },
@@ -2057,12 +2039,30 @@
       },
       {
         "changelog": "✨ New Features\r\n\r\n* Added Studio / Network, Decade, Hidden Gems and Finish These Collections sections, and enabled the previously developed Starring and Directed By sections (PR #292, @n00bcodr).\r\n* Added per-section previews to the admin configuration page, allowing section results to be previewed before saving (PR #288, @n00bcodr).\r\n* Added a new Add/Remove section workflow to make managing enabled sections easier (PR #288, @n00bcodr).\r\n\r\n🛠️ Improvements\r\n\r\n* Reworked section ordering in the admin configuration page with drag-and-drop support, including support for moving groups of sections that share the same order (PR #288, @n00bcodr).\r\n* Added section information popovers using the new admin descriptions (PR #288, @n00bcodr).\r\n* Improved section naming fallbacks and fixed missing Genre section localisation in the admin interface (PR #288, @n00bcodr).\r\n* Escaped section metadata when rendering the home screen and settings interface so titles and names containing markup are displayed safely as text (PR #304, @4eh5xitv6787h645ebv).\r\n\r\n🪲 Bug Fixes\r\n\r\n* Fixed #297 where users on Jellyfin 12 could receive items from libraries they did not have access to in Latest Movies, Latest Shows, Recently Added and Genre sections (PR #301, @4eh5xitv6787h645ebv).\r\n* Fixed #298 where authenticated users could access another user’s Home Screen Sections data by supplying that user’s ID. User-scoped endpoints are now bound to the authenticated user (PR #302, @4eh5xitv6787h645ebv).\r\n* Fixed #298 by restricting section registration to administrators and limiting registered section result endpoints to the originating server (PR #303, @4eh5xitv6787h645ebv).\r\n\r\n🌐 Translations\r\n\r\n* Completed missing Spanish and Catalan translations (PR #293, @GospelBG).\r\n* Added Greek translations (PR #299, @KaliDarkzy).\r\n\r\n⚠️ Compatibility\r\n\r\n* Added support for Jellyfin 12.2.\r\n* Jellyfin 10.11.11 remains supported.\r\n\r\nContributors\r\n\r\n* n00bcodr\r\n* GospelBG\r\n* KaliDarkzy\r\n* 4eh5xitv6787h645ebv",
-        "checksum": "95FE9BE2D988C794288E5B7EF2BC916D",
-        "hash": "sha256-8VoZzl1YKL6uvprvGW8JeuL2AIqbXZMWqTZoy6FE+Fw=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.3.0/Release-12.2.0.zip",
-        "targetAbi": "12.2.0.0",
+        "checksum": "E3A8BF4B89F84704D8BF5DB49EEAB8DA",
+        "hash": "sha256-4pqYL1P03IGZB6gzgeQ6sT7mtTnecLjFrg43PHHtRow=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.3.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-10-05T21:33:44",
         "version": "3.0.3.0"
+      },
+      {
+        "changelog": "Fixed issue caused by 3.0.1.0 on JF 12.1. \r\n\r\nThat release has been removed - this is identical to 3.0.1.0 except with this fix",
+        "checksum": "C71A9BBF5456A377F14D9653CA41DB99",
+        "hash": "sha256-juoZ+0KcyylmXGwrjmHylF9eDX9xhviLjRIrPEjUMT0=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.2.0/Release-12.1.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-15T11:27:53",
+        "version": "3.0.2.0"
+      },
+      {
+        "changelog": "Fixed issue caused by 3.0.1.0 on JF 12.1. \r\n\r\nThat release has been removed - this is identical to 3.0.1.0 except with this fix",
+        "checksum": "CF4BE86E08365AC8D96CBA339F2523E1",
+        "hash": "sha256-f9qrEsh+rp9EnKjE+RBbQ8B/3/v4/7ReIISJCxL8Kkc=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-home-sections/releases/download/3.0.2.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-15T11:27:53",
+        "version": "3.0.2.0"
       },
       {
         "changelog": "# 🔥 The Biggest Home Screen Sections Update Yet\r\n\r\nThis is the biggest Home Screen Sections update to date, bringing a substantial set of new features, fixes, localisation improvements, and internal changes alongside support for Jellyfin 12.\r\n\r\nWith this release, Home Screen Sections is moving to **3.0.0.0**, marking a major step forward for the plugin and laying the groundwork for future Jellyfin versions.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**, including updated dependencies and compatibility changes required by the new Jellyfin version.\r\n* Added a new **Collections** section to display collections from the user's library.\r\n* Added a new **Recently Added In Library** section, allowing recently added media to be displayed for individual libraries, including custom libraries such as Anime (#231).\r\n* Added routing to supported sections, allowing section headers such as Genre to link through to their relevant Jellyfin pages.\r\n* Added per-section settings, allowing individual sections to have their own configurable behaviour.\r\n* Improved **Because You Watched** recommendations with a scoring system to better prioritise similar titles.\r\n* Added an option for **Recently Added Shows** to display either shows or individual episodes (#38).\r\n* Added an option to filter Upcoming sections based on the user's Jellyfin library access (#214, PR #249, @n00bcodr).\r\n* Added warnings when required plugin dependencies cannot be found (#234).\r\n* Added separate admin display names for sections, allowing their names to be translated without affecting the title displayed on the home screen.\r\n* Integrated with the new **Plugin Pages PluginInterface**, allowing Home Screen Sections to manage its Plugin Pages integration programmatically.\r\n\r\n## 🛠️ Improvements\r\n\r\n* The **Modular Home** menu entry is now registered dynamically through Plugin Pages rather than relying on static Plugin Pages configuration.\r\n* The Modular Home page can now be added and removed as part of Home Screen Sections' own lifecycle, reducing the chance of stale or missing Plugin Pages entries.\r\n* Improved the reliability of the **Modular Home** link and its integration with Jellyfin's user-facing plugin settings flow. Previous releases have seen cases where the link was missing or resulted in a `Page not found` page.\r\n* Home Screen Sections now respects libraries a user has chosen to hide from their home screen, filtering them from relevant sections (PR #237, @gemcdaniel).\r\n* Improved compatibility with newer Jellyfin versions by updating library handling and dependency integration.\r\n* Improved library filtering to account for changes to `VirtualFolderInfo` in Jellyfin 12.\r\n* Improved recommendation behaviour and section configuration through the new per-section settings system.\r\n* Improved support for mixed-content and custom libraries across more section types.\r\n* Improved Home Screen Sections' handling of temporary user caches, including validation, expiry and automatic cleanup.\r\n* Added additional localisation keys throughout the configuration interface to make more of the plugin translatable.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed #269 where cached lazy-load pages could be accessed using a hash created for another user. Added validation, automatic cache cleanup and expiry handling for temporary user caches.\r\n* Fixed #268 where the image cache directory wasn't recreated if it was removed while Jellyfin was running.\r\n* Fixed #258 by requiring authorization for the section registration endpoint.\r\n* Fixed #247 where `/HomeScreen/Sections` could crash when Modular Home was enabled without any globally configured sections.\r\n* Fixed #242 where the scroll listener could leak and gradually cause the browser to slow down during long sessions.\r\n* Fixed #240 where duplicated file transformations could cause sections to appear multiple times and make configured upper limits, such as Because You Watched's Upper Limit, appear to be ignored.\r\n* Fixed #241 where mixed-content libraries weren't supported by the majority of sections.\r\n* Fixed #149 where Watch Again, Because You Watched and Genre could fail to return TV series or episodes because queries filtered on parameters which weren't always populated.\r\n* Fixed #226 where the Genre section didn't respect the Hide Watched setting (PR #227, @jrhigueras).\r\n* Fixed **My Requests** returning unrelated library items when a user had no requested items (PR #246, @jamesmhoward1357).\r\n* Fixed library filtering on Jellyfin 12 where `VirtualFolderInfo.ItemId` is no longer populated.\r\n* Fixed SkiaSharp dependency compatibility with the newer Jellyfin/.NET stack.\r\n* Fixed the Genre section appearing as `{0} Movies` in the admin interface.\r\n\r\n## 🌐 Translations\r\n\r\n* Added **Norwegian Bokmål** translations (PR #239, @dyviknilsen).\r\n* Expanded and updated **Polish** translations (PR #235, @TheMatrixan).\r\n\r\nA large number of new settings, sections and localisation keys have been added in this release. As a result, **some supported languages may not yet have translations for every new string** and may temporarily fall back to English in parts of the plugin.\r\n\r\nTranslation contributions are very welcome!\r\n\r\n## 💻 Developer Compatibility\r\n\r\nThe public Home Screen Sections section-registration interface remains compatible with previous releases.\r\n\r\n* `PluginInterface.RegisterSection(JObject)` is unchanged.\r\n* Existing plugins registering custom Home Screen Sections do not need to adopt a new registration payload for this release.\r\n* Home Screen Sections itself now consumes the new **Plugin Pages PluginInterface** to register its user-facing Modular Home page dynamically.\r\n* Plugins integrating with both Home Screen Sections and Plugin Pages should prefer the new programmatic Plugin Pages API rather than directly modifying Plugin Pages configuration.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Jellyfin 10.10.7 is no longer supported.**\r\n* Added support for **Jellyfin 12**.\r\n* Users remaining on Jellyfin 10.10.7 will need to stay on an earlier Home Screen Sections release until they upgrade Jellyfin.\r\n* Updated dependencies and internal APIs to align with newer Jellyfin versions.\r\n* Home Screen Sections requires compatible releases of **File Transformation** and **Plugin Pages**.\r\n* The public Home Screen Sections `PluginInterface.RegisterSection` contract remains compatible with previous releases.\r\n\r\n## Contributors\r\n\r\n* n00bcodr\r\n* jrhigueras\r\n* jamesmhoward1357\r\n* gemcdaniel\r\n* dyviknilsen\r\n* TheMatrixan\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.\r\n\r\n<a href='https://ko-fi.com/iamparadox27' target='_blank'><img height='32' style='border:0px;height:32px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>",
@@ -2582,15 +2582,6 @@
     "owner": ".:BORNIOS:.",
     "versions": [
       {
-        "changelog": "3.0.0 - El plugin pasa a aprender el gusto de cada usuario\r\n\r\nRefactor casi completo desde la 2.0.4: la lista de tendencias de TMDB deja de ser el centro y el perfil de cada usuario pasa a serlo. Requiere .NET 10.\r\n\r\nNovedades\r\n- Motor de recomendaciones por usuario: afinidades (generos, decadas, personas, valoraciones, duracion) aprendidas del consumo real, y puntuacion de cada titulo de la biblioteca contra ese perfil.\r\n- Arranque en frio: mientras un usuario no alcanza el minimo de titulos vistos (configurable), su fila se arma con lo que ve el resto del servidor.\r\n- Reserva y rotacion: la lista guardada es mas larga que la fila visible y va cambiando de punto de partida cada cierto tiempo.\r\n- Reparto series/peliculas en la lista de Trendings, con relleno para que la fila nunca quede corta.\r\n- Items de canal materializados para todos los usuarios (ya no dependen de que alguien abra el canal) y cache por usuario en los dos canales, sin fugas entre usuarios.\r\n- El perfil se refresca con los eventos de reproduccion, sin esperar a la corrida programada.\r\n- Panel nuevo de cuatro pestanas (Trendings, Recomendaciones, Almacenamiento y Actividad), con icono propio en la barra lateral, textos en espanol e ingles, estado real del almacenamiento e historial de cada corrida.\r\n- Almacen opcional en PostgreSQL: con el PostgreSQL Database Provider los datos viven en el esquema jellytrend con historial, y las recomendaciones pasan a SQL nativo optimizado (4-10x). Los JSON de la carpeta de datos quedan como copia de cortesia.\r\n- README en espanol (por defecto) y en ingles, con capturas de las cuatro pestanas, el carrusel y los dos canales.\r\n\r\nCompatibilidad\r\n- Jellyfin 12.1.x - .NET 10.\r\n- Para Jellyfin 10.11.x usa la version 2.0.4.",
-        "checksum": "b46356b845d4f09b29a6fbf7e2252d5d",
-        "hash": "sha256-3PZ6gTfDeDtnQT+m+ZyS/t4u2JnJZOlYuBiixxjyCk0=",
-        "sourceUrl": "https://github.com/BORNIOS/JellyTrend/releases/download/v3.0.0/Jellyfin.Plugin.JellyTrend-3.0.0.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-19T01:33:29Z",
-        "version": "3.0.0.0"
-      },
-      {
         "changelog": "Novedades en 3.0.1\n\nReproducción\n- Android TV: los ítems de los canales vuelven a reproducirse. El plugin deja que Jellyfin asigne el id correcto a las fuentes; antes Android TV devolvía un id que no coincidía y la petición acababa en NoCompatibleStream.\n- El canal de Recomendados refresca su caché al reproducir un título, sin esperar a la siguiente rotación.\n\nSin duplicados\n- Las sombras de los canales se marcan como virtuales y se desvinculan de personas, géneros, estudios, tags y provider ids.\n- Ya no aparecen en la búsqueda, páginas de actores/géneros/estudios, sugerencias, Últimas añadidas ni Continuar viendo. El detalle del canal conserva título, sinopsis, nota, duración e imágenes.\n- La limpieza es automática en cada sincronización, al arrancar y cada 15 minutos.\n\nCarrusel\n- Inyección en memoria: ya no se modifica jellyfin-web/index.html. Funciona con Jellyfin como servicio de Windows (Servicio de red) y sin permisos de escritura sobre Program Files.\n- Carga dirigida por eventos, solo en Inicio, sin peticiones anónimas y con URLs de imagen escaladas por Jellyfin.\n- Si el carrusel está desactivado, el endpoint no devuelve datos aunque el navegador tenga el script cacheado.\n\nAlmacenamiento y recomendaciones\n- PostgreSQL es el almacén autoritativo cuando el proveedor está activo; la copia JSON es opcional y viene desactivada.\n- Migraciones automáticas al esquema privado (versión 5).\n- Afinidades con normalización global, personas recurrentes, puntuaciones persistidas y exclusión estricta de títulos vistos o en curso.\n\nCompatibilidad\n- Jellyfin 12.1.x con .NET 10 (targetAbi 12.1.0.0). Para Jellyfin 10.11.x usa la versión 2.0.4.\n- Tras actualizar, ejecuta una vez las tareas de sincronización o reinicia para normalizar las sombras existentes.\n\nValidación: build Release sin advertencias; 95/95 pruebas correctas.",
         "checksum": "0a8aff224cd84b8ff27c3cc739d24b18",
         "hash": "sha256-eOA7visG8VzWCyTpIa3FdoL8BTZFSDMf728p1/Vz3Zg=",
@@ -2598,6 +2589,15 @@
         "targetAbi": "12.1.0.0",
         "timestamp": "2026-10-18T03:07:06Z",
         "version": "3.0.1.0"
+      },
+      {
+        "changelog": "3.0.0 - El plugin pasa a aprender el gusto de cada usuario\r\n\r\nRefactor casi completo desde la 2.0.4: la lista de tendencias de TMDB deja de ser el centro y el perfil de cada usuario pasa a serlo. Requiere .NET 10.\r\n\r\nNovedades\r\n- Motor de recomendaciones por usuario: afinidades (generos, decadas, personas, valoraciones, duracion) aprendidas del consumo real, y puntuacion de cada titulo de la biblioteca contra ese perfil.\r\n- Arranque en frio: mientras un usuario no alcanza el minimo de titulos vistos (configurable), su fila se arma con lo que ve el resto del servidor.\r\n- Reserva y rotacion: la lista guardada es mas larga que la fila visible y va cambiando de punto de partida cada cierto tiempo.\r\n- Reparto series/peliculas en la lista de Trendings, con relleno para que la fila nunca quede corta.\r\n- Items de canal materializados para todos los usuarios (ya no dependen de que alguien abra el canal) y cache por usuario en los dos canales, sin fugas entre usuarios.\r\n- El perfil se refresca con los eventos de reproduccion, sin esperar a la corrida programada.\r\n- Panel nuevo de cuatro pestanas (Trendings, Recomendaciones, Almacenamiento y Actividad), con icono propio en la barra lateral, textos en espanol e ingles, estado real del almacenamiento e historial de cada corrida.\r\n- Almacen opcional en PostgreSQL: con el PostgreSQL Database Provider los datos viven en el esquema jellytrend con historial, y las recomendaciones pasan a SQL nativo optimizado (4-10x). Los JSON de la carpeta de datos quedan como copia de cortesia.\r\n- README en espanol (por defecto) y en ingles, con capturas de las cuatro pestanas, el carrusel y los dos canales.\r\n\r\nCompatibilidad\r\n- Jellyfin 12.1.x - .NET 10.\r\n- Para Jellyfin 10.11.x usa la version 2.0.4.",
+        "checksum": "b46356b845d4f09b29a6fbf7e2252d5d",
+        "hash": "sha256-3PZ6gTfDeDtnQT+m+ZyS/t4u2JnJZOlYuBiixxjyCk0=",
+        "sourceUrl": "https://github.com/BORNIOS/JellyTrend/releases/download/v3.0.0/Jellyfin.Plugin.JellyTrend-3.0.0.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-19T01:33:29Z",
+        "version": "3.0.0.0"
       }
     ]
   },
@@ -3773,29 +3773,11 @@
     "owner": "IAmParadox27 & M0RPH3US",
     "versions": [
       {
-        "changelog": "# 🎬 Media Bar Arrives on Jellyfin 12\r\n\r\nMedia Bar **3.0.0.0** brings support for **Jellyfin 12**, including compatibility with both the classic desktop experience and Jellyfin's newer modern web layout.\r\n\r\n> ## 🙌 Huge thanks to MakD and the upstream contributors\r\n>\r\n> Media Bar itself is the work of **MakD and the contributors to the upstream Media Bar project**. The plugin I maintain is primarily a Jellyfin wrapper around that work, exposing configuration and integration points so it can be installed and managed cleanly as a Jellyfin plugin.\r\n>\r\n> A huge amount of effort has gone into keeping Media Bar working across Jellyfin's changing web interface, especially for Jellyfin 12. The features, UI work and frontend improvements in this release are built on that upstream work, and the credit for that belongs to **MakD and everyone contributing there**.\r\n>\r\n> My part is largely packaging, integrating and exposing that work through Jellyfin's plugin system.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**.\r\n* Added support for Jellyfin 12's **modern React/MUI home screen layout**, alongside the existing classic desktop layout.\r\n* Updated the bundled Media Bar frontend to the latest Jellyfin 12-compatible upstream version.\r\n* Added Jellyfin 12-specific styling so Media Bar integrates correctly with the new web-client shell while retaining the existing appearance on the classic layout.\r\n* Media Bar continues to ship its frontend assets directly with the plugin, ensuring the version displayed in Jellyfin matches the plugin version you've installed.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Synced Media Bar with the latest Jellyfin 12-compatible upstream work.\r\n* Improved Media Bar placement within the Jellyfin 12 home screen across both supported layouts.\r\n* Improved layout behaviour on taller displays, ensuring Jellyfin's home-screen rows remain below the Media Bar content rather than overlapping its controls.\r\n* Improved localisation handling when loading Jellyfin's translation chunks.\r\n* Retained support for the **Get updates early** option for users who explicitly want to track unreleased upstream Media Bar changes.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed Media Bar being inserted in the wrong position when using Jellyfin 12's modern layout (#181).\r\n* Fixed translated Media Bar strings falling back to English or producing JSON decoding errors for some languages (#185).\r\n* Fixed home-screen rows overlapping Media Bar buttons on taller viewports.\r\n* Fixed Jellyfin 12 layout differences that could cause Media Bar to render incorrectly compared with Jellyfin 10.11.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Media Bar 3.0.0.0 supports Jellyfin 10.11.11 and Jellyfin 12.**\r\n* Users on older Jellyfin 10.x versions should remain on a compatible **2.x** Media Bar release.\r\n* Jellyfin 12 support includes both the **classic Desktop layout** and the newer **modern React/MUI layout**.\r\n* A compatible **File Transformation 3.x** release is required.\r\n* If you're using the **Get updates early** option, unreleased upstream Media Bar changes may behave differently from the frontend bundled and tested with this plugin release.\r\n\r\n## Contributors\r\n\r\n* austinnorgaard\r\n* judarange\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.",
-        "checksum": "484E93AB1BBFED7022DB2FCED04C6357",
-        "hash": "sha256-ls/59pBz9XjNE4PFTr1o83D8r12ackXkekYG2uJhIEI=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.0.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-15T20:41:11",
-        "version": "3.0.0.0"
-      },
-      {
-        "changelog": "# 🎬 Media Bar Arrives on Jellyfin 12\r\n\r\nMedia Bar **3.0.0.0** brings support for **Jellyfin 12**, including compatibility with both the classic desktop experience and Jellyfin's newer modern web layout.\r\n\r\n> ## 🙌 Huge thanks to MakD and the upstream contributors\r\n>\r\n> Media Bar itself is the work of **MakD and the contributors to the upstream Media Bar project**. The plugin I maintain is primarily a Jellyfin wrapper around that work, exposing configuration and integration points so it can be installed and managed cleanly as a Jellyfin plugin.\r\n>\r\n> A huge amount of effort has gone into keeping Media Bar working across Jellyfin's changing web interface, especially for Jellyfin 12. The features, UI work and frontend improvements in this release are built on that upstream work, and the credit for that belongs to **MakD and everyone contributing there**.\r\n>\r\n> My part is largely packaging, integrating and exposing that work through Jellyfin's plugin system.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**.\r\n* Added support for Jellyfin 12's **modern React/MUI home screen layout**, alongside the existing classic desktop layout.\r\n* Updated the bundled Media Bar frontend to the latest Jellyfin 12-compatible upstream version.\r\n* Added Jellyfin 12-specific styling so Media Bar integrates correctly with the new web-client shell while retaining the existing appearance on the classic layout.\r\n* Media Bar continues to ship its frontend assets directly with the plugin, ensuring the version displayed in Jellyfin matches the plugin version you've installed.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Synced Media Bar with the latest Jellyfin 12-compatible upstream work.\r\n* Improved Media Bar placement within the Jellyfin 12 home screen across both supported layouts.\r\n* Improved layout behaviour on taller displays, ensuring Jellyfin's home-screen rows remain below the Media Bar content rather than overlapping its controls.\r\n* Improved localisation handling when loading Jellyfin's translation chunks.\r\n* Retained support for the **Get updates early** option for users who explicitly want to track unreleased upstream Media Bar changes.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed Media Bar being inserted in the wrong position when using Jellyfin 12's modern layout (#181).\r\n* Fixed translated Media Bar strings falling back to English or producing JSON decoding errors for some languages (#185).\r\n* Fixed home-screen rows overlapping Media Bar buttons on taller viewports.\r\n* Fixed Jellyfin 12 layout differences that could cause Media Bar to render incorrectly compared with Jellyfin 10.11.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Media Bar 3.0.0.0 supports Jellyfin 10.11.11 and Jellyfin 12.**\r\n* Users on older Jellyfin 10.x versions should remain on a compatible **2.x** Media Bar release.\r\n* Jellyfin 12 support includes both the **classic Desktop layout** and the newer **modern React/MUI layout**.\r\n* A compatible **File Transformation 3.x** release is required.\r\n* If you're using the **Get updates early** option, unreleased upstream Media Bar changes may behave differently from the frontend bundled and tested with this plugin release.\r\n\r\n## Contributors\r\n\r\n* austinnorgaard\r\n* judarange\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.",
-        "checksum": "FD60F661B8D1448EB2311240D8044154",
-        "hash": "sha256-KBTT5F31EvjsVt2uM6ovYhiFV1FA36DqIjZM/lKfG88=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.0.0/Release-12.1.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-15T20:41:11",
-        "version": "3.0.0.0"
-      },
-      {
         "changelog": "Added support for 12.2",
-        "checksum": "8F4B04CC907DD616CE6F70295D436A4D",
-        "hash": "sha256-aUSu/CUBWVQuYn3uPwi+MUHOgy5bIAZXS7AELco+kSI=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.1.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "D7933BB3BC0AF65E1516015A5CE9F6C5",
+        "hash": "sha256-Zpz4YrRqB4yY17P5U39AZlNwYr6ryCUmrAmKvu/9R3I=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.1.0/Release-12.2.0.zip",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-09-15T20:41:11",
         "version": "3.0.1.0"
       },
@@ -3810,12 +3792,30 @@
       },
       {
         "changelog": "Added support for 12.2",
-        "checksum": "D7933BB3BC0AF65E1516015A5CE9F6C5",
-        "hash": "sha256-Zpz4YrRqB4yY17P5U39AZlNwYr6ryCUmrAmKvu/9R3I=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.1.0/Release-12.2.0.zip",
-        "targetAbi": "12.2.0.0",
+        "checksum": "8F4B04CC907DD616CE6F70295D436A4D",
+        "hash": "sha256-aUSu/CUBWVQuYn3uPwi+MUHOgy5bIAZXS7AELco+kSI=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.1.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-15T20:41:11",
         "version": "3.0.1.0"
+      },
+      {
+        "changelog": "# 🎬 Media Bar Arrives on Jellyfin 12\r\n\r\nMedia Bar **3.0.0.0** brings support for **Jellyfin 12**, including compatibility with both the classic desktop experience and Jellyfin's newer modern web layout.\r\n\r\n> ## 🙌 Huge thanks to MakD and the upstream contributors\r\n>\r\n> Media Bar itself is the work of **MakD and the contributors to the upstream Media Bar project**. The plugin I maintain is primarily a Jellyfin wrapper around that work, exposing configuration and integration points so it can be installed and managed cleanly as a Jellyfin plugin.\r\n>\r\n> A huge amount of effort has gone into keeping Media Bar working across Jellyfin's changing web interface, especially for Jellyfin 12. The features, UI work and frontend improvements in this release are built on that upstream work, and the credit for that belongs to **MakD and everyone contributing there**.\r\n>\r\n> My part is largely packaging, integrating and exposing that work through Jellyfin's plugin system.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**.\r\n* Added support for Jellyfin 12's **modern React/MUI home screen layout**, alongside the existing classic desktop layout.\r\n* Updated the bundled Media Bar frontend to the latest Jellyfin 12-compatible upstream version.\r\n* Added Jellyfin 12-specific styling so Media Bar integrates correctly with the new web-client shell while retaining the existing appearance on the classic layout.\r\n* Media Bar continues to ship its frontend assets directly with the plugin, ensuring the version displayed in Jellyfin matches the plugin version you've installed.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Synced Media Bar with the latest Jellyfin 12-compatible upstream work.\r\n* Improved Media Bar placement within the Jellyfin 12 home screen across both supported layouts.\r\n* Improved layout behaviour on taller displays, ensuring Jellyfin's home-screen rows remain below the Media Bar content rather than overlapping its controls.\r\n* Improved localisation handling when loading Jellyfin's translation chunks.\r\n* Retained support for the **Get updates early** option for users who explicitly want to track unreleased upstream Media Bar changes.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed Media Bar being inserted in the wrong position when using Jellyfin 12's modern layout (#181).\r\n* Fixed translated Media Bar strings falling back to English or producing JSON decoding errors for some languages (#185).\r\n* Fixed home-screen rows overlapping Media Bar buttons on taller viewports.\r\n* Fixed Jellyfin 12 layout differences that could cause Media Bar to render incorrectly compared with Jellyfin 10.11.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Media Bar 3.0.0.0 supports Jellyfin 10.11.11 and Jellyfin 12.**\r\n* Users on older Jellyfin 10.x versions should remain on a compatible **2.x** Media Bar release.\r\n* Jellyfin 12 support includes both the **classic Desktop layout** and the newer **modern React/MUI layout**.\r\n* A compatible **File Transformation 3.x** release is required.\r\n* If you're using the **Get updates early** option, unreleased upstream Media Bar changes may behave differently from the frontend bundled and tested with this plugin release.\r\n\r\n## Contributors\r\n\r\n* austinnorgaard\r\n* judarange\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.",
+        "checksum": "FD60F661B8D1448EB2311240D8044154",
+        "hash": "sha256-KBTT5F31EvjsVt2uM6ovYhiFV1FA36DqIjZM/lKfG88=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.0.0/Release-12.1.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-15T20:41:11",
+        "version": "3.0.0.0"
+      },
+      {
+        "changelog": "# 🎬 Media Bar Arrives on Jellyfin 12\r\n\r\nMedia Bar **3.0.0.0** brings support for **Jellyfin 12**, including compatibility with both the classic desktop experience and Jellyfin's newer modern web layout.\r\n\r\n> ## 🙌 Huge thanks to MakD and the upstream contributors\r\n>\r\n> Media Bar itself is the work of **MakD and the contributors to the upstream Media Bar project**. The plugin I maintain is primarily a Jellyfin wrapper around that work, exposing configuration and integration points so it can be installed and managed cleanly as a Jellyfin plugin.\r\n>\r\n> A huge amount of effort has gone into keeping Media Bar working across Jellyfin's changing web interface, especially for Jellyfin 12. The features, UI work and frontend improvements in this release are built on that upstream work, and the credit for that belongs to **MakD and everyone contributing there**.\r\n>\r\n> My part is largely packaging, integrating and exposing that work through Jellyfin's plugin system.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**.\r\n* Added support for Jellyfin 12's **modern React/MUI home screen layout**, alongside the existing classic desktop layout.\r\n* Updated the bundled Media Bar frontend to the latest Jellyfin 12-compatible upstream version.\r\n* Added Jellyfin 12-specific styling so Media Bar integrates correctly with the new web-client shell while retaining the existing appearance on the classic layout.\r\n* Media Bar continues to ship its frontend assets directly with the plugin, ensuring the version displayed in Jellyfin matches the plugin version you've installed.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Synced Media Bar with the latest Jellyfin 12-compatible upstream work.\r\n* Improved Media Bar placement within the Jellyfin 12 home screen across both supported layouts.\r\n* Improved layout behaviour on taller displays, ensuring Jellyfin's home-screen rows remain below the Media Bar content rather than overlapping its controls.\r\n* Improved localisation handling when loading Jellyfin's translation chunks.\r\n* Retained support for the **Get updates early** option for users who explicitly want to track unreleased upstream Media Bar changes.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed Media Bar being inserted in the wrong position when using Jellyfin 12's modern layout (#181).\r\n* Fixed translated Media Bar strings falling back to English or producing JSON decoding errors for some languages (#185).\r\n* Fixed home-screen rows overlapping Media Bar buttons on taller viewports.\r\n* Fixed Jellyfin 12 layout differences that could cause Media Bar to render incorrectly compared with Jellyfin 10.11.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Media Bar 3.0.0.0 supports Jellyfin 10.11.11 and Jellyfin 12.**\r\n* Users on older Jellyfin 10.x versions should remain on a compatible **2.x** Media Bar release.\r\n* Jellyfin 12 support includes both the **classic Desktop layout** and the newer **modern React/MUI layout**.\r\n* A compatible **File Transformation 3.x** release is required.\r\n* If you're using the **Get updates early** option, unreleased upstream Media Bar changes may behave differently from the frontend bundled and tested with this plugin release.\r\n\r\n## Contributors\r\n\r\n* austinnorgaard\r\n* judarange\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.",
+        "checksum": "484E93AB1BBFED7022DB2FCED04C6357",
+        "hash": "sha256-ls/59pBz9XjNE4PFTr1o83D8r12ackXkekYG2uJhIEI=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-media-bar/releases/download/3.0.0.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-15T20:41:11",
+        "version": "3.0.0.0"
       }
     ]
   },
@@ -4893,29 +4893,11 @@
     "owner": "IAmParadox27",
     "versions": [
       {
-        "changelog": "## 🪲 Bug Fixes\r\n\r\n* Fixed injected menu items not closing the Jellyfin user-menu popover after navigation (PR #20, @n00bcodr).\r\n* Fixed Plugin Pages injection sometimes failing on clients where jQuery had not finished loading, including affected Android clients (PR #20, @n00bcodr).\r\n* Added cache-busting to the injected script so clients reliably receive updated versions.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* n00bcodr",
-        "checksum": "17025353F3B2EAE3149A89C1C4E1061A",
-        "hash": "sha256-zTRoaXjlOKhs97bRc9cS/ZlLK+VRicW5gXhHp1dLoDk=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.1.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-15T10:18:14",
-        "version": "3.0.1.0"
-      },
-      {
-        "changelog": "## 🪲 Bug Fixes\r\n\r\n* Fixed injected menu items not closing the Jellyfin user-menu popover after navigation (PR #20, @n00bcodr).\r\n* Fixed Plugin Pages injection sometimes failing on clients where jQuery had not finished loading, including affected Android clients (PR #20, @n00bcodr).\r\n* Added cache-busting to the injected script so clients reliably receive updated versions.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* n00bcodr",
-        "checksum": "F74C03CED8C78112893E0D31EF4B649E",
-        "hash": "sha256-YLivNVavLVm+XqY03DX2CdRibMsCoL2kzVSJccPj8X4=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.1.0/Release-12.1.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-15T10:18:14",
-        "version": "3.0.1.0"
-      },
-      {
         "changelog": "Added support for 12.2",
-        "checksum": "0A98C77804E675D1FB2820D02EB90C9E",
-        "hash": "sha256-dxzzf6FLwD59Mf+C+RjR/A/CJJoal4o42b/RBJx9u4Q=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.2.0/Release-12.0.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "4F839EFBD6897817BCAF1DD19369BF3B",
+        "hash": "sha256-xhxXhZdVuvNhOvhCyUlTIx8e/URtL9FZCGFq1VojKK0=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.2.0/Release-12.2.0.zip",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-09-16T09:19:40",
         "version": "3.0.2.0"
       },
@@ -4930,12 +4912,30 @@
       },
       {
         "changelog": "Added support for 12.2",
-        "checksum": "4F839EFBD6897817BCAF1DD19369BF3B",
-        "hash": "sha256-xhxXhZdVuvNhOvhCyUlTIx8e/URtL9FZCGFq1VojKK0=",
-        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.2.0/Release-12.2.0.zip",
-        "targetAbi": "12.2.0.0",
+        "checksum": "0A98C77804E675D1FB2820D02EB90C9E",
+        "hash": "sha256-dxzzf6FLwD59Mf+C+RjR/A/CJJoal4o42b/RBJx9u4Q=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.2.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-16T09:19:40",
         "version": "3.0.2.0"
+      },
+      {
+        "changelog": "## 🪲 Bug Fixes\r\n\r\n* Fixed injected menu items not closing the Jellyfin user-menu popover after navigation (PR #20, @n00bcodr).\r\n* Fixed Plugin Pages injection sometimes failing on clients where jQuery had not finished loading, including affected Android clients (PR #20, @n00bcodr).\r\n* Added cache-busting to the injected script so clients reliably receive updated versions.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* n00bcodr",
+        "checksum": "F74C03CED8C78112893E0D31EF4B649E",
+        "hash": "sha256-YLivNVavLVm+XqY03DX2CdRibMsCoL2kzVSJccPj8X4=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.1.0/Release-12.1.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-15T10:18:14",
+        "version": "3.0.1.0"
+      },
+      {
+        "changelog": "## 🪲 Bug Fixes\r\n\r\n* Fixed injected menu items not closing the Jellyfin user-menu popover after navigation (PR #20, @n00bcodr).\r\n* Fixed Plugin Pages injection sometimes failing on clients where jQuery had not finished loading, including affected Android clients (PR #20, @n00bcodr).\r\n* Added cache-busting to the injected script so clients reliably receive updated versions.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* Dropped support for Jellyfin 10.11 releases prior to 10.11.11. Jellyfin 10.11.11 remains supported.\r\n\r\n### Contributors\r\n\r\n* n00bcodr",
+        "checksum": "17025353F3B2EAE3149A89C1C4E1061A",
+        "hash": "sha256-zTRoaXjlOKhs97bRc9cS/ZlLK+VRicW5gXhHp1dLoDk=",
+        "sourceUrl": "https://github.com/IAmParadox27/jellyfin-plugin-pages/releases/download/3.0.1.0/Release-12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-15T10:18:14",
+        "version": "3.0.1.0"
       },
       {
         "changelog": "# 🧭 Plugin Pages, Ready for Jellyfin 12\r\n\r\nPlugin Pages **3.0.0.0** brings the plugin forward for **Jellyfin 12**, updating the way custom pages are injected into the Jellyfin web client and fixing the user-facing plugin settings flow for Jellyfin's latest architecture.\r\n\r\nThis release also drops support for **Jellyfin 10.10.7**, while introducing a new plugin-facing API that makes it much easier for other plugins to add and manage their own pages.\r\n\r\n## ✨ New Features\r\n\r\n* Added support for **Jellyfin 12**.\r\n* Added a new public **Plugin Interface** allowing other plugins to register pages programmatically through `PluginInterface.RegisterPage(JObject)`.\r\n* Added `PluginInterface.RemovePage(string id)`, allowing plugins to unregister pages they previously registered.\r\n* Updated Plugin Pages' web-client injection to work with the changes introduced in Jellyfin 12.\r\n* Updated user-facing plugin settings pages to work with Jellyfin 12.\r\n* Updated the underlying Jellyfin dependencies and integration points required by the new server/web-client architecture.\r\n\r\n## 🛠️ Improvements\r\n\r\n* Reworked page injection to account for changes to the Jellyfin 12 web client.\r\n* Improved compatibility for plugins that use Plugin Pages to expose user-facing pages inside Jellyfin.\r\n* Updated the user plugin settings integration so pages opened through Jellyfin's user menu continue to behave correctly on Jellyfin 12.\r\n* Dependent plugins can now manage their pages at runtime rather than directly modifying Plugin Pages' configuration.\r\n* Cleaned up legacy compatibility code that is no longer required now that older Jellyfin versions are being dropped.\r\n\r\n## 🪲 Bug Fixes\r\n\r\n* Fixed custom plugin pages failing to inject correctly into the **Jellyfin 12** web client.\r\n* Fixed user-facing plugin settings pages not working correctly on Jellyfin 12.\r\n* Fixed cases where pages registered through Plugin Pages could result in a **Page not found** experience after Jellyfin web-client changes.\r\n* Fixed compatibility issues caused by changes to Jellyfin's client-side routing and page-loading behaviour.\r\n\r\n## 💻 Developer Compatibility\r\n\r\nPlugin Pages now provides a public plugin-facing API for registering and removing pages.\r\n\r\n* `PluginInterface.RegisterPage(JObject)` can be used to register a page directly with Plugin Pages.\r\n* The supplied `JObject` is deserialised into Plugin Pages' `PluginPage` model and registered immediately with the page manager.\r\n* `PluginInterface.RemovePage(string id)` can be used to unregister an existing page by its ID.\r\n* Plugins no longer need to directly modify `Jellyfin.Plugin.PluginPages/config.json` in order to dynamically add their own pages.\r\n* Plugins can now register pages during startup and remove them again during shutdown or when their configuration changes.\r\n\r\nThis should be considered the **preferred integration path for dependent plugins going forward**, replacing direct manipulation of Plugin Pages' configuration where possible.\r\n\r\nThe new API is additive, so existing configuration-based integrations are not inherently broken by the update. Plugin developers are, however, encouraged to migrate to the new interface for cleaner lifecycle management and better compatibility with future Plugin Pages releases.\r\n\r\n## ⚠️ Compatibility\r\n\r\n* **Jellyfin 10.10.7 is no longer supported.**\r\n* Added support for **Jellyfin 12**.\r\n* Users remaining on Jellyfin 10.10.7 will need to stay on an earlier Plugin Pages release until they upgrade Jellyfin.\r\n* Plugin Pages continues to require a compatible version of **File Transformation**.\r\n* Plugins that depend on Plugin Pages should also be updated to versions compatible with Jellyfin 12.\r\n* The new `PluginInterface` is additive; plugins using the previous configuration-based approach can continue to work, but the programmatic API is now the recommended integration method.\r\n\r\n## ❤️ Support\r\n\r\nIf you enjoy using my Jellyfin plugins and want to support the time that goes into building, maintaining, and improving them, you can do so on [Ko-fi](https://ko-fi.com/IAmParadox27).\r\n\r\nThank you for using the plugins and being part of the community.\r\n\r\n<a href='https://ko-fi.com/iamparadox27' target='_blank'><img height='32' style='border:0px;height:32px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>",
@@ -4958,19 +4958,19 @@
     "versions": [
       {
         "changelog": "## ✨ New Features\r\n\r\n- **Notify chosen users**: tick non-admin users on the new **Settings** tab to show them the badge too.\r\n- **Counts only**: they see how many plugins changed, and can't dismiss or restart.\r\n\r\n## 🎨 Improvements\r\n\r\n- **Tabbed plugin page**: the page is split into **Updates** and **Settings** tabs.\r\n\r\n",
-        "checksum": "827e26f92b8e2f5e50daaa0f0d0150a4",
-        "hash": "sha256-r+SDqJ9CnN13J9ZRTvEi1qpEeRRX8iQ6waA7EI2IHFs=",
-        "sourceUrl": "https://github.com/mihaif7/jellyfin-plugin-update-notifier/releases/download/v1.3.0.0/updatenotifier_1.3.0.0_12.1.zip",
-        "targetAbi": "12.1.0.0",
+        "checksum": "d4e465fdb81fa762a265bba8d0b2b8ce",
+        "hash": "sha256-6cPAfL3akRFNGKAhj6D7ZoGJVNYM9pPm3CamfT2ZLrk=",
+        "sourceUrl": "https://github.com/mihaif7/jellyfin-plugin-update-notifier/releases/download/v1.3.0.0/updatenotifier_1.3.0.0_12.0.zip",
+        "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-23T19:56:58.0000000Z",
         "version": "1.3.0.0"
       },
       {
         "changelog": "## ✨ New Features\r\n\r\n- **Notify chosen users**: tick non-admin users on the new **Settings** tab to show them the badge too.\r\n- **Counts only**: they see how many plugins changed, and can't dismiss or restart.\r\n\r\n## 🎨 Improvements\r\n\r\n- **Tabbed plugin page**: the page is split into **Updates** and **Settings** tabs.\r\n\r\n",
-        "checksum": "d4e465fdb81fa762a265bba8d0b2b8ce",
-        "hash": "sha256-6cPAfL3akRFNGKAhj6D7ZoGJVNYM9pPm3CamfT2ZLrk=",
-        "sourceUrl": "https://github.com/mihaif7/jellyfin-plugin-update-notifier/releases/download/v1.3.0.0/updatenotifier_1.3.0.0_12.0.zip",
-        "targetAbi": "12.0.0.0",
+        "checksum": "827e26f92b8e2f5e50daaa0f0d0150a4",
+        "hash": "sha256-r+SDqJ9CnN13J9ZRTvEi1qpEeRRX8iQ6waA7EI2IHFs=",
+        "sourceUrl": "https://github.com/mihaif7/jellyfin-plugin-update-notifier/releases/download/v1.3.0.0/updatenotifier_1.3.0.0_12.1.zip",
+        "targetAbi": "12.1.0.0",
         "timestamp": "2026-09-23T19:56:58.0000000Z",
         "version": "1.3.0.0"
       },
@@ -5372,31 +5372,13 @@
     "owner": ".:BORNIOS:.",
     "versions": [
       {
-        "changelog": "3.0.0 - Jellyfin 12.1\n\nAdaptacion completa al contrato de proveedores de Jellyfin 12.1. Requiere .NET 10.\n\nNovedades\n- Consola SQL de solo lectura en el panel: 10 plantillas de diagnostico, historial en la sesion y rechazo de sentencias que modifiquen datos.\n- Opciones avanzadas funcionales: tamano de pool, sentencias preparadas y tiempo de espera se validan, se guardan, se reflejan en el estado actual y se aplican al proveedor.\n- Adaptacion al contrato y al runtime de 12.1: resolucion del ensamblado SQLite del servidor, compatibilidad por base de datos y motor de migracion reescrito.\n\nCorrecciones\n- PurgeDatabase implementado: en 2.x lanzaba NotImplementedException y rompia la restauracion del respaldo completo del sistema.\n- Exportacion a SQLite mas robusta: claves primarias verbatim, diagnostico de constraint, limpieza de filas huerfanas y library.db minimo valido para el arranque.\n\nVerificacion\n- Suite xUnit con 74 pruebas, incluidas integraciones reales con PostgreSQL 17.\n- Auditor de esquema contra el modelo EF del servidor.\n\nDocumentacion\n- Manual de migracion de Jellyfin 10.11.x a 12.x, novedades frente a 2.0.1 y nota tecnica de la adaptacion, en espanol e ingles.\n\nCompatibilidad\n- Jellyfin 12.1.x - PostgreSQL 16+ - .NET 10.\n- Para Jellyfin 10.11.x usa la version 2.0.1.",
-        "checksum": "f76557050bc28da09797f6a1202e4f7d",
-        "hash": "sha256-x6fhY15fBcHhx9Ph5Rx+EeLxp8+thGRKy9gl+C2laEo=",
-        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.0/Jellyfin.Database.Providers.Postgres-3.0.0.0.zip",
+        "changelog": "## Español\n\n### 3.0.4 — Fechas, búsqueda, guardado y migración\n\n- Corrige el cierre de Jellyfin Android TV al abrir bibliotecas: el caché de consultas descartaba `DateTimeKind.Utc` al bufferizar y el cliente recibía fechas sin zona horaria, que sustituía por su valor mínimo y hacían fallar la conversión. Las columnas de fecha se bufferizan como UTC y el lector restaura el `Kind` como segunda barrera.\n- Nueva migración que normaliza fechas no finitas o mínimas ya guardadas en `BaseItems`, y normalización de los centinelas `DateTime` y `DateTimeOffset` antes de escribir.\n- La búsqueda deja de distinguir mayúsculas y minúsculas e incluye título visible, título original y título para ordenar, con índice trigram sobre `SortName`.\n- Corrige el error 500 al abrir la ficha de un artista o persona: las filas duplicadas se resuelven con una actualización sin cambios sobre la clave primaria en lugar de `ON CONFLICT DO NOTHING`, que informaba 0 filas y EF Core trataba como conflicto de concurrencia.\n- Corrige la migración SQLite → PostgreSQL: se conserva el historial de rutinas de código ya aplicadas, identificadas por el nombre de la migración. Sin él, Jellyfin volvía a ejecutar rutinas que esperan `library.db` y el arranque fallaba con `no such table: TypedBaseItems` (#9).\n- El proveedor fija `QuerySplittingBehavior` en `SingleQuery`, igual que el proveedor SQLite, y deja de llenar el log con `MultipleCollectionIncludeWarning`.\n\nRequiere Jellyfin 12.1.x, PostgreSQL 16 o posterior y .NET 10.\n\n---\n\n## English\n\n### 3.0.4 — Dates, search, saving, and migration\n\n- Fixes Jellyfin Android TV crashing when a library is opened: the query cache dropped `DateTimeKind.Utc` while buffering, so the client received dates without a time zone, replaced them with its minimum value, and failed converting it. Date columns are buffered as UTC and the reader restores the `Kind` as a second safeguard.\n- New migration that normalizes non-finite or minimum dates already stored in `BaseItems`, plus normalization of `DateTime` and `DateTimeOffset` sentinels before writing.\n- Search is no longer case-sensitive and now covers display, original, and sort titles, with a trigram index on `SortName`.\n- Fixes the 500 returned when opening an artist or person page: duplicate rows are resolved with a no-op update on the primary key instead of `ON CONFLICT DO NOTHING`, which reported zero affected rows and EF Core treated as a concurrency conflict.\n- Fixes the SQLite → PostgreSQL migration: the history of code migrations already applied is preserved, matched by migration name. Without it, Jellyfin re-ran routines that expect `library.db` and startup failed with `no such table: TypedBaseItems` (#9).\n- The provider pins `QuerySplittingBehavior` to `SingleQuery`, matching Jellyfin's SQLite provider, and stops flooding the log with `MultipleCollectionIncludeWarning`.\n\nRequires Jellyfin 12.1.x, PostgreSQL 16 or newer, and .NET 10.\r\n",
+        "checksum": "98ac8be5e61b8f9516c743fc2133691a",
+        "hash": "sha256-NDkVfVKRK7Ue/Fzba4FDmU5Bf+S/8kiGoe0PRED+Ag4=",
+        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.4/Jellyfin.Database.Providers.Postgres-3.0.4.0.zip",
         "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-16T18:31:54Z",
-        "version": "3.0.0.0"
-      },
-      {
-        "changelog": "3.0.1 - Correccion de la integracion con JellyTrend\r\n\r\n- Fix: el esquema jellytrend no creaba la tabla donde el motor de JellyTrend guarda el perfil de gustos aprendido (user_affinity), asi que ese perfil no quedaba almacenado. El esquema se crea ahora completo (version 4).\r\n- El esquema se comprueba al arrancar: en una instalacion 3.0.0 la tabla que faltaba se crea sola. No hay que recrear el esquema ni reinstalar nada.\r\n- Docs: la seccion de integracion con JellyTrend documenta las dos piezas del contrato: almacen de datos en el esquema jellytrend (fuera de public, para no colarse en las exportaciones a SQLite) y acelerador de consultas con SQL nativo en las recomendaciones (4-10x en bibliotecas grandes).\r\n\r\nRequiere Jellyfin 12.1.x. Para Jellyfin 10.11.x usa la version 2.0.1.",
-        "checksum": "284c1a553f70b956137f1d3a99b0b8f1",
-        "hash": "sha256-8frpMdfhSlr1qRRm4oGw0gYGDS8LYQA0d/Q3sT/pRIU=",
-        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.1/Jellyfin.Database.Providers.Postgres-3.0.1.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-19T01:32:14Z",
-        "version": "3.0.1.0"
-      },
-      {
-        "changelog": "## Español\n\n### 3.0.2 — Estabilidad, integridad y exportación segura\n\n- Corrige la normalización de `DateTime`, `DateTimeOffset` y arreglos antes de escribir en PostgreSQL, evitando errores de Npgsql por `Kind` incompatible.\n- Las escrituras concurrentes de `UserData` y las actualizaciones completas de elementos usan upserts atómicos para reducir conflictos durante actualizaciones bajo demanda.\n- La activación de PostgreSQL valida la conexión antes de modificar `database.xml`.\n- Se elimina la restauración automática de backups y la restauración manual no reemplaza objetos existentes por defecto.\n- Las consultas concurrentes idénticas de inicio se consolidan mientras se llena la caché.\n- La exportación PostgreSQL → SQLite crea y valida un `library.db` SQLite real; evita el archivo inválido que impedía iniciar Jellyfin.\n- La exportación ya no copia ni marca a ciegas el historial de migraciones.\n\nVerificado con Build Release, pruebas unitarias e integración real contra PostgreSQL. Requiere Jellyfin 12.1.x, PostgreSQL 16+ y .NET 10.\n\n---\n\n## English\n\n### 3.0.2 — Stability, integrity and safe export\n\n- Fixes normalization of `DateTime`, `DateTimeOffset`, and arrays before PostgreSQL writes, avoiding Npgsql errors caused by incompatible `Kind` values.\n- Concurrent `UserData` writes and full item updates use atomic upserts to reduce conflicts during on-demand updates.\n- PostgreSQL activation validates the connection before changing `database.xml`.\n- Automatic backup restore was removed, and manual restore no longer replaces existing objects by default.\n- Identical concurrent home-screen queries are coalesced while the cache is populated.\n- PostgreSQL → SQLite export creates and validates a real SQLite `library.db`, preventing the invalid file that stopped Jellyfin from starting.\n- Export no longer blindly marks or copies migration history.\n\nVerified with a Release build, unit tests, and real PostgreSQL integration tests. Requires Jellyfin 12.1.x, PostgreSQL 16+, and .NET 10.",
-        "checksum": "978401ceebfeed183170a3947226a43c",
-        "hash": "sha256-j2GUq6sloHWItz6oALcPQtgTMdXuMxOs9uDyBAEu9r4=",
-        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.2/Jellyfin.Database.Providers.Postgres-3.0.2.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-09-26T11:30:42Z",
-        "version": "3.0.2.0"
+        "timestamp": "2026-10-17T23:11:03Z",
+        "version": "3.0.4.0"
       },
       {
         "changelog": "## Español\n\n### 3.0.3 — Integraciones privadas, mantenimiento y estabilidad\n\n- Nuevo host seguro para esquemas privados de plugins: registro, migraciones aisladas y acceso sin exponer credenciales ni el esquema `public` de Jellyfin.\n- Nueva pestaña **Integraciones** para revisar esquemas registrados, consultar una muestra limitada de datos, ver métricas por tabla y administrar `ANALYZE`, `VACUUM (ANALYZE)` y `REINDEX` por esquema.\n- Las tareas programadas mantienen `public` y solo los esquemas privados autorizados por el administrador.\n- Health incorpora métricas de presión de buffers, bloques leídos, uso temporal y WAL para diagnosticar consultas lentas.\n- Estado actual detecta el motor activo sin esperar la validación SQLite; esta continúa en segundo plano y se vuelve a comprobar antes de revertir.\n- Se refuerza el aislamiento de identificadores en operaciones de exploración y mantenimiento de esquemas privados.\n- Documentación actualizada en español e inglés, incluida la integración para desarrolladores, exportación SQLite segura y orientación para Docker.\n\nRequiere Jellyfin 12.1.x, PostgreSQL 16 o posterior y .NET 10.\n\n---\n\n## English\n\n### 3.0.3 — Private integrations, maintenance, and stability\n\n- New secure host for private plugin schemas: registration, isolated migrations, and storage without exposing credentials or Jellyfin's `public` schema.\n- New **Integrations** tab to review registered schemas, inspect a bounded data sample, view per-table metrics, and manage `ANALYZE`, `VACUUM (ANALYZE)`, and `REINDEX` per schema.\n- Scheduled tasks maintain `public` and only private schemas explicitly enabled by an administrator.\n- Health adds buffer-pressure, blocks-read, temporary-I/O, and WAL metrics for slow-query diagnosis.\n- Current status detects the active engine without waiting for SQLite validation; validation continues in the background and is checked again before rollback.\n- Strengthens identifier isolation in private-schema exploration and maintenance operations.\n- Updated Spanish and English documentation, including developer integration, safe SQLite export, and Docker guidance.\n\nRequires Jellyfin 12.1.x, PostgreSQL 16 or newer, and .NET 10.",
@@ -5408,13 +5390,31 @@
         "version": "3.0.3.0"
       },
       {
-        "changelog": "## Español\n\n### 3.0.4 — Fechas, búsqueda, guardado y migración\n\n- Corrige el cierre de Jellyfin Android TV al abrir bibliotecas: el caché de consultas descartaba `DateTimeKind.Utc` al bufferizar y el cliente recibía fechas sin zona horaria, que sustituía por su valor mínimo y hacían fallar la conversión. Las columnas de fecha se bufferizan como UTC y el lector restaura el `Kind` como segunda barrera.\n- Nueva migración que normaliza fechas no finitas o mínimas ya guardadas en `BaseItems`, y normalización de los centinelas `DateTime` y `DateTimeOffset` antes de escribir.\n- La búsqueda deja de distinguir mayúsculas y minúsculas e incluye título visible, título original y título para ordenar, con índice trigram sobre `SortName`.\n- Corrige el error 500 al abrir la ficha de un artista o persona: las filas duplicadas se resuelven con una actualización sin cambios sobre la clave primaria en lugar de `ON CONFLICT DO NOTHING`, que informaba 0 filas y EF Core trataba como conflicto de concurrencia.\n- Corrige la migración SQLite → PostgreSQL: se conserva el historial de rutinas de código ya aplicadas, identificadas por el nombre de la migración. Sin él, Jellyfin volvía a ejecutar rutinas que esperan `library.db` y el arranque fallaba con `no such table: TypedBaseItems` (#9).\n- El proveedor fija `QuerySplittingBehavior` en `SingleQuery`, igual que el proveedor SQLite, y deja de llenar el log con `MultipleCollectionIncludeWarning`.\n\nRequiere Jellyfin 12.1.x, PostgreSQL 16 o posterior y .NET 10.\n\n---\n\n## English\n\n### 3.0.4 — Dates, search, saving, and migration\n\n- Fixes Jellyfin Android TV crashing when a library is opened: the query cache dropped `DateTimeKind.Utc` while buffering, so the client received dates without a time zone, replaced them with its minimum value, and failed converting it. Date columns are buffered as UTC and the reader restores the `Kind` as a second safeguard.\n- New migration that normalizes non-finite or minimum dates already stored in `BaseItems`, plus normalization of `DateTime` and `DateTimeOffset` sentinels before writing.\n- Search is no longer case-sensitive and now covers display, original, and sort titles, with a trigram index on `SortName`.\n- Fixes the 500 returned when opening an artist or person page: duplicate rows are resolved with a no-op update on the primary key instead of `ON CONFLICT DO NOTHING`, which reported zero affected rows and EF Core treated as a concurrency conflict.\n- Fixes the SQLite → PostgreSQL migration: the history of code migrations already applied is preserved, matched by migration name. Without it, Jellyfin re-ran routines that expect `library.db` and startup failed with `no such table: TypedBaseItems` (#9).\n- The provider pins `QuerySplittingBehavior` to `SingleQuery`, matching Jellyfin's SQLite provider, and stops flooding the log with `MultipleCollectionIncludeWarning`.\n\nRequires Jellyfin 12.1.x, PostgreSQL 16 or newer, and .NET 10.\r\n",
-        "checksum": "98ac8be5e61b8f9516c743fc2133691a",
-        "hash": "sha256-NDkVfVKRK7Ue/Fzba4FDmU5Bf+S/8kiGoe0PRED+Ag4=",
-        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.4/Jellyfin.Database.Providers.Postgres-3.0.4.0.zip",
+        "changelog": "## Español\n\n### 3.0.2 — Estabilidad, integridad y exportación segura\n\n- Corrige la normalización de `DateTime`, `DateTimeOffset` y arreglos antes de escribir en PostgreSQL, evitando errores de Npgsql por `Kind` incompatible.\n- Las escrituras concurrentes de `UserData` y las actualizaciones completas de elementos usan upserts atómicos para reducir conflictos durante actualizaciones bajo demanda.\n- La activación de PostgreSQL valida la conexión antes de modificar `database.xml`.\n- Se elimina la restauración automática de backups y la restauración manual no reemplaza objetos existentes por defecto.\n- Las consultas concurrentes idénticas de inicio se consolidan mientras se llena la caché.\n- La exportación PostgreSQL → SQLite crea y valida un `library.db` SQLite real; evita el archivo inválido que impedía iniciar Jellyfin.\n- La exportación ya no copia ni marca a ciegas el historial de migraciones.\n\nVerificado con Build Release, pruebas unitarias e integración real contra PostgreSQL. Requiere Jellyfin 12.1.x, PostgreSQL 16+ y .NET 10.\n\n---\n\n## English\n\n### 3.0.2 — Stability, integrity and safe export\n\n- Fixes normalization of `DateTime`, `DateTimeOffset`, and arrays before PostgreSQL writes, avoiding Npgsql errors caused by incompatible `Kind` values.\n- Concurrent `UserData` writes and full item updates use atomic upserts to reduce conflicts during on-demand updates.\n- PostgreSQL activation validates the connection before changing `database.xml`.\n- Automatic backup restore was removed, and manual restore no longer replaces existing objects by default.\n- Identical concurrent home-screen queries are coalesced while the cache is populated.\n- PostgreSQL → SQLite export creates and validates a real SQLite `library.db`, preventing the invalid file that stopped Jellyfin from starting.\n- Export no longer blindly marks or copies migration history.\n\nVerified with a Release build, unit tests, and real PostgreSQL integration tests. Requires Jellyfin 12.1.x, PostgreSQL 16+, and .NET 10.",
+        "checksum": "978401ceebfeed183170a3947226a43c",
+        "hash": "sha256-j2GUq6sloHWItz6oALcPQtgTMdXuMxOs9uDyBAEu9r4=",
+        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.2/Jellyfin.Database.Providers.Postgres-3.0.2.0.zip",
         "targetAbi": "12.1.0.0",
-        "timestamp": "2026-10-17T23:11:03Z",
-        "version": "3.0.4.0"
+        "timestamp": "2026-09-26T11:30:42Z",
+        "version": "3.0.2.0"
+      },
+      {
+        "changelog": "3.0.1 - Correccion de la integracion con JellyTrend\r\n\r\n- Fix: el esquema jellytrend no creaba la tabla donde el motor de JellyTrend guarda el perfil de gustos aprendido (user_affinity), asi que ese perfil no quedaba almacenado. El esquema se crea ahora completo (version 4).\r\n- El esquema se comprueba al arrancar: en una instalacion 3.0.0 la tabla que faltaba se crea sola. No hay que recrear el esquema ni reinstalar nada.\r\n- Docs: la seccion de integracion con JellyTrend documenta las dos piezas del contrato: almacen de datos en el esquema jellytrend (fuera de public, para no colarse en las exportaciones a SQLite) y acelerador de consultas con SQL nativo en las recomendaciones (4-10x en bibliotecas grandes).\r\n\r\nRequiere Jellyfin 12.1.x. Para Jellyfin 10.11.x usa la version 2.0.1.",
+        "checksum": "284c1a553f70b956137f1d3a99b0b8f1",
+        "hash": "sha256-8frpMdfhSlr1qRRm4oGw0gYGDS8LYQA0d/Q3sT/pRIU=",
+        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.1/Jellyfin.Database.Providers.Postgres-3.0.1.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-19T01:32:14Z",
+        "version": "3.0.1.0"
+      },
+      {
+        "changelog": "3.0.0 - Jellyfin 12.1\n\nAdaptacion completa al contrato de proveedores de Jellyfin 12.1. Requiere .NET 10.\n\nNovedades\n- Consola SQL de solo lectura en el panel: 10 plantillas de diagnostico, historial en la sesion y rechazo de sentencias que modifiquen datos.\n- Opciones avanzadas funcionales: tamano de pool, sentencias preparadas y tiempo de espera se validan, se guardan, se reflejan en el estado actual y se aplican al proveedor.\n- Adaptacion al contrato y al runtime de 12.1: resolucion del ensamblado SQLite del servidor, compatibilidad por base de datos y motor de migracion reescrito.\n\nCorrecciones\n- PurgeDatabase implementado: en 2.x lanzaba NotImplementedException y rompia la restauracion del respaldo completo del sistema.\n- Exportacion a SQLite mas robusta: claves primarias verbatim, diagnostico de constraint, limpieza de filas huerfanas y library.db minimo valido para el arranque.\n\nVerificacion\n- Suite xUnit con 74 pruebas, incluidas integraciones reales con PostgreSQL 17.\n- Auditor de esquema contra el modelo EF del servidor.\n\nDocumentacion\n- Manual de migracion de Jellyfin 10.11.x a 12.x, novedades frente a 2.0.1 y nota tecnica de la adaptacion, en espanol e ingles.\n\nCompatibilidad\n- Jellyfin 12.1.x - PostgreSQL 16+ - .NET 10.\n- Para Jellyfin 10.11.x usa la version 2.0.1.",
+        "checksum": "f76557050bc28da09797f6a1202e4f7d",
+        "hash": "sha256-x6fhY15fBcHhx9Ph5Rx+EeLxp8+thGRKy9gl+C2laEo=",
+        "sourceUrl": "https://github.com/BORNIOS/Jellyfin-Database-Providers-Postgres/releases/download/v3.0.0/Jellyfin.Database.Providers.Postgres-3.0.0.0.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-16T18:31:54Z",
+        "version": "3.0.0.0"
       }
     ]
   },
@@ -6531,15 +6531,6 @@
     "owner": "jyourstone",
     "versions": [
       {
-        "changelog": "Same plugin as v12.0.1.0 - no functional changes. It exists so that servers\nupgraded from Jellyfin 10.11 to Jellyfin 12 automatically pick up the correct\nbuild.\n\nBug Fixes:\n- Upgrading Jellyfin from 10.11 to 12 left the plugin showing \"Not supported\".\n  Each release published its 10.11 and its 12 build under the same version\n  number, so a server that had installed the 10.11 build kept it after the\n  upgrade - Jellyfin saw no newer version to offer, and the 10.11 build cannot\n  run on Jellyfin 12. This release is published for Jellyfin 12 only, so those\n  servers now see an update and repair themselves. Jellyfin 10.11 servers are\n  unaffected and stay on v12.0.1.0.\n\nFull changelog: https://jellyfin-smartlists-plugin.dinsten.se/changelog/stable/",
-        "checksum": "2DD527C9A6D078496B80F3ABD29CBBEB",
-        "hash": "sha256-jvbcGnN5crc/72YQWD2Wu4nOQH7hksmd2uZyPgdAIX0=",
-        "sourceUrl": "https://github.com/jyourstone/jellyfin-smartlists-plugin/releases/download/v12.0.2.0/Jellyfin.Plugin.SmartLists_v12.0.2.0_12.0.0.zip",
-        "targetAbi": "12.0.0",
-        "timestamp": "2026-09-08",
-        "version": "12.0.2.0"
-      },
-      {
         "changelog": "Features:\n- New rule field: Aspect Ratio (under Video). Filter by a video's display\n  aspect ratio such as 16:9 or 2.35:1. Comparisons are proportional, so\n  \"less than 1:1\" matches every portrait video and \"greater than 1:1\" every\n  landscape one - no need to list each ratio.\n- Live TV Channel media type for smart collections. Group channels from any\n  Live TV tuner into a collection with rules such as Name, Tags or Is\n  Favorite. Collections only - Jellyfin playlists cannot hold channels\n  (#290).\n- \"Hide when empty\" is now \"Min Items\": a list stays hidden until it holds\n  at least that many items, instead of only while it is completely empty.\n  Found under Limits next to Max Items, with a matching default in\n  Settings. Existing lists keep their current behaviour with no changes\n  needed.\n\nBug Fixes:\n- MDBList official list URLs (mdblist.com/lists/official/movies/... and\n  .../shows/...) returned no items. They now load, and the JustWatch\n  Streaming Charts list keeps the country, period, provider and genre\n  filters from the pasted URL (#525).\n\nFull changelog: https://jellyfin-smartlists-plugin.dinsten.se/changelog/stable/",
         "checksum": "3669525EFAA324BB71899BF2FD3E0F62",
         "hash": "sha256-McXu7F93GMQ2g2TyTtymj3EUriYjDyCGisJ7tN3Ouws=",
@@ -6547,6 +6538,15 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-21",
         "version": "12.0.3.0"
+      },
+      {
+        "changelog": "Same plugin as v12.0.1.0 - no functional changes. It exists so that servers\nupgraded from Jellyfin 10.11 to Jellyfin 12 automatically pick up the correct\nbuild.\n\nBug Fixes:\n- Upgrading Jellyfin from 10.11 to 12 left the plugin showing \"Not supported\".\n  Each release published its 10.11 and its 12 build under the same version\n  number, so a server that had installed the 10.11 build kept it after the\n  upgrade - Jellyfin saw no newer version to offer, and the 10.11 build cannot\n  run on Jellyfin 12. This release is published for Jellyfin 12 only, so those\n  servers now see an update and repair themselves. Jellyfin 10.11 servers are\n  unaffected and stay on v12.0.1.0.\n\nFull changelog: https://jellyfin-smartlists-plugin.dinsten.se/changelog/stable/",
+        "checksum": "2DD527C9A6D078496B80F3ABD29CBBEB",
+        "hash": "sha256-jvbcGnN5crc/72YQWD2Wu4nOQH7hksmd2uZyPgdAIX0=",
+        "sourceUrl": "https://github.com/jyourstone/jellyfin-smartlists-plugin/releases/download/v12.0.2.0/Jellyfin.Plugin.SmartLists_v12.0.2.0_12.0.0.zip",
+        "targetAbi": "12.0.0",
+        "timestamp": "2026-09-08",
+        "version": "12.0.2.0"
       }
     ]
   },
