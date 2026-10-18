@@ -8,3 +8,4 @@ docs/reference/*/
 mkdocs.yml
 
 .nixos-test-history
+modules/jellyfin/plugins/.source-cache/

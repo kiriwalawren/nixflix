@@ -31,6 +31,14 @@ jobs:
       - name: Update flake.lock
         run: nix flake update
 
+      - name: Cache Jellyfin plugin source manifests
+        uses: actions/cache@v4
+        with:
+          path: modules/jellyfin/plugins/.source-cache
+          key: jellyfin-plugin-source-cache-${{ github.run_id }}
+          restore-keys: |
+            jellyfin-plugin-source-cache-
+
       - name: Update non-flake pins
         run: nix develop --command bash -c "./update.sh"
 

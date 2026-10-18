@@ -343,14 +343,14 @@ in
       default = { };
       defaultText = literalExpression ''
         {
-          "Jellyfin Universal Plugin Repo" = {
+          "Jellyfin Official" = {
             url = "https://repo.jellyfin.org/files/plugin/manifest.json";
             hash = "1ykrpwya7px7dz4h92994kpqlf5jd429z7r4dckbw13236x5mpbx";
             enabled = true;
           };
         }
       '';
-      description = "Configure which plugin repositories you use. Jellyfin Universal Plugin Repo is always present in the set. Adding new plugin repositories will not remove it.";
+      description = "Configure which plugin repositories you use.";
     };
 
     enableExternalContentInSuggestions = mkOption {

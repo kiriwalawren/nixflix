@@ -5,6 +5,38 @@
 }:
 let
   jellyfinPlugins = import ../../lib/jellyfin-plugins.nix { inherit (pkgs) lib; };
+
+  manifestHash =
+    file:
+    builtins.convertHash {
+      hash = builtins.hashFile "sha256" file;
+      hashAlgo = "sha256";
+      toHashFormat = "sri";
+    };
+
+  lapseManifest = pkgs.writeText "lapse-manifest.json" (
+    builtins.toJSON [
+      {
+        guid = "486090e1-ca92-46e1-8549-9f6bb914a1d0";
+        name = "LAPSE";
+        overview = "Sync subtitles that have drifted out of time. Open Settings after installing to set it up.";
+        description = "Lines up subtitles against a film or episode's audio, or against another subtitle file, using the LAPSE alignment engine.";
+        owner = "rs-jensen";
+        category = "General";
+        imageUrl = "https://raw.githubusercontent.com/rs-jensen/lapse-jellyfin-plugin/v2.1.1/Jellyfin.Plugin.Lapse/Configuration/LAPSE.png";
+        versions = [
+          {
+            version = "2.1.1.0";
+            changelog = "See the release notes on GitHub.";
+            targetAbi = "10.11.0.0";
+            sourceUrl = "https://github.com/rs-jensen/lapse-jellyfin-plugin/releases/download/v2.1.1/lapse-jellyfin-plugin-v2.1.1.zip";
+            checksum = "cf0633dab1acaf6e053862f3c2c47706";
+            timestamp = "2026-10-17T10:18:11Z";
+          }
+        ];
+      }
+    ]
+  );
 in
 pkgs.testers.runNixOSTest {
   name = "jellyfin-users";
@@ -210,9 +242,9 @@ pkgs.testers.runNixOSTest {
             "hevc"
           ];
           pluginRepositories = lib.mkForce {
-            "Jellyfin Universal Plugin Repo" = {
-              url = "https://raw.githubusercontent.com/kiriwalawren/nixflix/0acaaae364b83ef5aa68435d592561436624aa23/modules/jellyfin/system/jellyfin-universal-plugin-manifest.json";
-              hash = "sha256-pYD/mkZaJfSmXhCf+aE8hwV0iWZU34LD50hGDeKn58A=";
+            "LAPSE Repo" = {
+              url = builtins.unsafeDiscardStringContext "file://${lapseManifest}";
+              hash = manifestHash lapseManifest;
               enabled = true;
             };
           };
@@ -369,14 +401,22 @@ pkgs.testers.runNixOSTest {
         };
 
         plugins = {
+          # Uses the default package baked in from plugins.json, proving the real
+          # generated manifest actually includes it.
           "Intro Skipper" = {
-            # This plugin has a pre-configured package, so it needs to be enabled explicitly
+            enable = true;
+            config.PreferredAudioLanguage._secret = pkgs.writeText "intro-skipper-language" "introskipperlang1111111111111111111";
+          };
+
+          # Proves the fromRepo/pluginRepositories resolution path still works, using a
+          # less critical plugin than Intro Skipper.
+          "LAPSE" = {
             enable = true;
             package = jellyfinPlugins.fromRepo {
-              version = "12.0.4.0";
-              hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
+              version = "2.1.1.0";
+              hash = "sha256-wRNMmJ1urCJlIXvfu9IeDNIbNrEkhcSUXJQnSvj3fi0=";
+              relaxVersionCheck = true;
             };
-            config.PreferredAudioLanguage._secret = pkgs.writeText "intro-skipper-language" "introskipperlang1111111111111111111";
           };
         };
       };
@@ -713,10 +753,10 @@ pkgs.testers.runNixOSTest {
         assert len(system_config['PluginRepositories']) == 1, \
             f"Should have 1 plugin repository, got {len(system_config.get('PluginRepositories', []))}"
         plugin_repo = system_config['PluginRepositories'][0]
-        assert plugin_repo['Name'] == 'Jellyfin Universal Plugin Repo', \
-            f"Plugin repo Name should be 'Jellyfin Universal Plugin Repo', got {plugin_repo.get('Name')}"
-        assert 'kiriwalawren/nixflix' in plugin_repo['Url'], \
-            f"Plugin repo Url should point to kiriwalawren/nixflix repo, got {plugin_repo.get('Url')}"
+        assert plugin_repo['Name'] == 'LAPSE Repo', \
+            f"Plugin repo Name should be 'LAPSE Repo', got {plugin_repo.get('Name')}"
+        assert 'lapse-manifest' in plugin_repo['Url'], \
+            f"Plugin repo Url should point to the test fixture manifest, got {plugin_repo.get('Url')}"
         assert plugin_repo['Enabled'] == True, \
             f"Plugin repo Enabled should be True, got {plugin_repo.get('Enabled')}"
         assert system_config['EnableLegacyAuthorization'] == False, \
@@ -873,10 +913,12 @@ pkgs.testers.runNixOSTest {
 
         introskipper_plugins = [p for p in plugins if p['Name'] == 'Intro Skipper']
         assert len(introskipper_plugins) == 1, \
-            f"Expected 1 Intro Skipper plugin, found {len(introskipper_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+            f"Expected 1 Intro Skipper plugin, found {len(introskipper_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}. " \
+            "Intro Skipper is baked in from plugins.json -- if it's missing, check that it's still present there."
         introskipper = introskipper_plugins[0]
         plugin_id = introskipper['Id']
-        print(f"Intro Skipper plugin installed with id: {plugin_id}")
+        introskipper_version = introskipper['Version']
+        print(f"Intro Skipper plugin installed with id: {plugin_id}, version: {introskipper_version}")
 
         print("Querying Intro Skipper plugin configuration...")
         plugin_config_json = machine.succeed(
@@ -888,8 +930,17 @@ pkgs.testers.runNixOSTest {
             f"PreferredAudioLanguage should be 'introskipperlang1111111111111111111', got {plugin_config.get('PreferredAudioLanguage')}"
 
         print("Verifying packaged plugin sync...")
-        machine.succeed("test -d '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0'")
-        machine.succeed("test -f '/var/lib/jellyfin/plugins/Intro Skipper_12.0.4.0/IntroSkipper.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/Intro Skipper'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/Intro Skipper/IntroSkipper.dll'")
+
+        lapse_plugins = [p for p in plugins if p['Name'] == 'LAPSE']
+        assert len(lapse_plugins) == 1, \
+            f"Expected 1 LAPSE plugin, found {len(lapse_plugins)}. Installed plugins: {[p['Name'] for p in plugins]}"
+        print(f"LAPSE plugin installed with id: {lapse_plugins[0]['Id']}")
+
+        print("Verifying repo-resolved plugin sync...")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/LAPSE_2.1.1.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/LAPSE_2.1.1.0/Jellyfin.Plugin.Lapse.dll'")
 
         print("All plugin management assertions passed!")
   '';
