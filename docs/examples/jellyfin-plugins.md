@@ -80,8 +80,8 @@ in {
 }
 ```
 
-Most plugins made available from the [Jellyfin Universal Plugin Repo](https://github.com/0belous/Jellyfin-Universal-Plugin-Repo).
-If the plugin you want is not available from there, you will need to configure it's manifest url like so.
+Most plugins are already available as `nixflix.jellyfin.plugins.<name>` options out of the box.
+If the plugin you want isn't one of them, you will need to configure its manifest url like so.
 ```nix
 {
   nixflix.jellyfin.system.pluginRepositories = {
@@ -117,7 +117,7 @@ Here are the steps that I follow:
 Get the hash with:
 
 ```bash
-nix store prefetch-file --json --unpack "https://example.com/plugin.zip" | jq -r .hash
+nix flake prefetch --json "https://example.com/plugin.zip" | jq -r .hash
 ```
 
 Pin the manifest with:

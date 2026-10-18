@@ -3,36 +3,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
-# === Part 1: Fetch UPR manifest ===
+# === Part 1: Fetch plugin source manifests ===
 
-echo "Fetching Jellyfin Universal Plugin Repo Manifest..."
+echo "Fetching Jellyfin plugin source manifests..."
 NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' "$REPO_ROOT/flake.lock")
 JELLYFIN_VERSION=$(nix eval --raw "github:NixOS/nixpkgs/${NIXPKGS_REV}#jellyfin.version")
-UPR_URL="https://obelous.dev/upr"
 
-fetch_manifest() {
-  # Yes, it genuinely can take that long -_-
-  # (much longer actually, when I tried for 12.4 when 12.1 was the latest version (over 4 hours, and still not done))
-  local attempts_left=100
-  local manifest="[{}]"
-
-  until [ $attempts_left = 0 ]; do
-    manifest="$(curl -sfA "jellyfin/$JELLYFIN_VERSION (https://github.com/kiriwalawren/nixflix)" "$UPR_URL")"
-    if [ "$(echo "$manifest" | jq length)" -le 1 ]; then
-      attempts_left=$((attempts_left - 1))
-      sleep 10
-    else
-      attempts_left=0
-    fi
-  done
-  echo "$manifest"
-}
-
-UPR_MANIFEST=$(fetch_manifest)
-if [ "$(echo "$UPR_MANIFEST" | jq length)" -le 1 ]; then
-  echo "ERROR: UPR manifest wasn't inintialized in time"
-  exit 1
-fi
+SOURCE_MANIFEST=$("$REPO_ROOT/modules/jellyfin/plugins/fetch-manifest.sh" "$JELLYFIN_VERSION")
 
 # === Part 2: Update plugin versions JSON ===
 
@@ -48,15 +25,11 @@ update_plugins() {
   # We want to split on newline when iterating over JSON for plugins and versions
   IFS=$'\n'
 
-  for plugin in $(echo "$UPR_MANIFEST" | jq -c '.[]'); do
-    # Exclude plugins starting with "!" (i.e. the universal plugins repo plugin)
-    if [[ $(echo "$plugin" | jq -r '.name') =~ ^! ]]; then
-      continue
-    fi
+  for plugin in $(echo "$SOURCE_MANIFEST" | jq -c '.[]'); do
     local guid
     guid="$(echo "$plugin" | jq -r '.guid')"
     # Also, a plugin called "Xtream Library" has changed guids for some reason,
-    # and UPR still provides the old one, so let's skip it when we find it:
+    # and the old one is still published, so let's skip it when we find it:
     if [ "$guid" = "a1b2c3d4-e5f6-7890-abcd-ef1234567890" ]; then
       continue
     fi
@@ -71,11 +44,7 @@ update_plugins() {
     if [ "$guid" = "b8e7f6a5-4d3c-2b1a-0f9e-8d7c6b5a4f3e" ]; then
       continue
     fi
-    # UPR adds " [✓*]" to some plugin names for some reason, so we have to remove them
-    name="$(echo "$plugin" | jq '.name' | sed 's/ \[✓*\]"$/"/')"
-    # Remove the UPR metadata added to the description, it isn't really helpful and just generates
-    # noisy diffs
-    description="$(echo "$plugin" | jq '.description' | sed 's~  \\n  \\nUniversal Repo:  \\nGenerated: [0-9]\{2\}:[0-9]\{2\} UTC  \\nSource: https://.*  \\n.*"$~"~')"
+    name="$(echo "$plugin" | jq '.name')"
 
     versions_json="[]"
     # Try to load existing plugin object, so that if multiple versions of the
@@ -121,10 +90,12 @@ update_plugins() {
       fi
     done
     # Have to do it this way to avoid "Argument list too long" error due to adding versions_json
-    plugins_json="$(echo "$plugins_json{$name: $(echo "$plugin{\"description\": $description}{\"versions\": $versions_json}" | jq -sc "add | {guid, overview, description, owner, category, imageUrl, versions} | with_entries(select(.value != null))")}" | jq -sc "add")"
+    plugins_json="$(echo "$plugins_json{$name: $(echo "$plugin{\"versions\": $versions_json}" | jq -sc "add | {guid, overview, description, owner, category, imageUrl, versions} | with_entries(select(.value != null))")}" | jq -sc "add")"
   done
-  # Sort the plugins for consistency
-  echo "$plugins_json" | jq -S >"$REPO_ROOT/modules/jellyfin/plugins/plugins.json"
+  # Sort the plugins, and each plugin's versions (newest first), for consistency
+  echo "$plugins_json" |
+    jq -S 'map_values(.versions |= (sort_by(.version | split(".") | map(tonumber)) | reverse))' \
+      >"$REPO_ROOT/modules/jellyfin/plugins/plugins.json"
 }
 
 update_plugins
@@ -172,7 +143,7 @@ lookup_in_manifest() {
   local manifest_json="$2"
   echo "$manifest_json" | jq -r \
     --arg name "$plugin_name" \
-    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[]]
+    '[.[] | select(.name == $name) | .versions[]]
      | if length == 0 then empty
        else sort_by(.version | split(".") | map(tonumber)) | last
        | (.version + "\t" + .sourceUrl)
@@ -185,12 +156,12 @@ lookup_source_url_for_version() {
   local manifest_json="$3"
   echo "$manifest_json" | jq -r \
     --arg name "$plugin_name" --arg version "$version" \
-    '[.[] | select((.name | sub(" \\[✓+\\]$"; "")) == $name) | .versions[] | select(.version == $version) | .sourceUrl]
+    '[.[] | select(.name == $name) | .versions[] | select(.version == $version) | .sourceUrl]
      | first // empty' 2>/dev/null
 }
 
 while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
-  latest_info=$(lookup_in_manifest "$plugin_name" "$UPR_MANIFEST")
+  latest_info=$(lookup_in_manifest "$plugin_name" "$SOURCE_MANIFEST")
 
   if [[ -z "$latest_info" ]]; then
     echo "  $plugin_name: not found in manifest, skipping"
@@ -205,14 +176,14 @@ while IFS=$'\t' read -r nix_file plugin_name current_version current_hash; do
     continue
   fi
 
-  new_hash=$(nix store prefetch-file --json --unpack "$source_url" 2>/dev/null | jq -r '.hash')
+  new_hash=$(nix flake prefetch --json "$source_url" 2>/dev/null | jq -r '.hash')
 
   echo "  $plugin_name: $current_version → $latest_version"
   sed -i "s|version = \"${current_version}\"|version = \"${latest_version}\"|g" "$nix_file"
   sed -i "s|${current_hash}|${new_hash}|g" "$nix_file"
 
   # Fixture manifests may embed the old sourceUrl literally; keep it in sync.
-  old_source_url=$(lookup_source_url_for_version "$plugin_name" "$current_version" "$UPR_MANIFEST")
+  old_source_url=$(lookup_source_url_for_version "$plugin_name" "$current_version" "$SOURCE_MANIFEST")
   if [[ -n "$old_source_url" && "$old_source_url" != "$source_url" ]]; then
     sed -i "s|${old_source_url}|${source_url}|g" "$nix_file"
   fi

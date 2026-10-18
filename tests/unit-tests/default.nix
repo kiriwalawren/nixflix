@@ -354,9 +354,9 @@ in
             name = "Intro Skipper";
             versions = [
               {
-                version = "12.0.4.0";
+                version = "12.0.5.0";
                 inherit targetAbi;
-                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.4.0/intro-skipper-v12.0.4.0.zip";
+                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.5.0/intro-skipper-v12.0.5.0.zip";
               }
             ];
           }
@@ -379,8 +379,8 @@ in
               plugins."Intro Skipper" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "12.0.4.0";
-                  hash = "sha256-sPEZXGB3s+YI1E9+qJ3EWdKFu2gdqK7LfNjV4QjMlnA=";
+                  version = "12.0.5.0";
+                  hash = "sha256-qotwE6GgGC1dXKRDrnxz1DdsL+O0OV/9OREExi8P3UM=";
                 };
               };
               users.admin = {
@@ -401,7 +401,7 @@ in
         lib.hasInfix "Syncing packaged plugin: Intro Skipper" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Intro Skipper_12.0.4.0" pluginService.script
+        lib.hasInfix "Intro Skipper_12.0.5.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out

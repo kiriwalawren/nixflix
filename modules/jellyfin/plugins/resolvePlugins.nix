@@ -11,14 +11,6 @@ let
 
   selectVersions = import ./selectVersions.nix;
 
-  stripVerificationBadge =
-    name:
-    lib.foldl' (acc: badge: if lib.hasSuffix badge acc then lib.removeSuffix badge acc else acc) name [
-      " [✓✓✓]"
-      " [✓✓]"
-      " [✓]"
-    ];
-
   dedupeMatches =
     matches:
     let
@@ -101,7 +93,7 @@ let
           repo:
           lib.concatMap (
             plugin:
-            if stripVerificationBadge plugin.name == pluginName then
+            if plugin.name == pluginName then
               map
                 (release: {
                   inherit (repo) name url;
