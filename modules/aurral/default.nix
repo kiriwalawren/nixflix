@@ -2,12 +2,13 @@
 with lib;
 let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
+  secrets = import ../../lib/secrets { inherit lib; };
   cfg = config.nixflix.aurral;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
   imports = [
-    # ./setupService.nix
+    ./setupService.nix
     ./users
   ];
 
@@ -55,8 +56,8 @@ in
 
         downloadsDir = mkOption {
           type = types.path;
-          default = "${config.nixflix.downloadsDir}";
-          defaultText = literalExpression ''"''${nixflix.downloadsDir}"'';
+          default = "${config.nixflix.downloadsDir}/aurral";
+          defaultText = literalExpression ''"''${nixflix.downloadsDir}/aurral"'';
           description = "Directory where completed downloads are stored.";
         };
 
@@ -94,6 +95,43 @@ in
           };
         };
 
+        settings = {
+          lidarr = {
+            url = mkOption {
+              type = types.str;
+              default = "http://${config.nixflix.lidarr.connectionAddress}:${toString config.nixflix.lidarr.config.hostConfig.port}${config.nixflix.lidarr.config.hostConfig.urlBase}";
+              defaultText = literalExpression ''
+                "http://''${config.nixflix.lidarr.connectionAddress}:''${toString config.nixflix.lidarr.config.hostConfig.port}''${config.nixflix.lidarr.config.hostConfig.urlBase}"
+              '';
+              description = "URL Aurral uses to connect to Lidarr during onboarding.";
+            };
+
+            apiKey = secrets.mkSecretOption {
+              default = config.nixflix.lidarr.config.apiKey;
+              defaultText = literalExpression "config.nixflix.lidarr.config.apiKey";
+              description = "Lidarr API key used by Aurral during onboarding.";
+            };
+
+            defaultMonitorOption = mkOption {
+              type = types.str;
+              default = "none";
+              description = "Default monitor option Aurral assigns to albums/artists added to Lidarr.";
+            };
+
+            searchOnAdd = mkOption {
+              type = types.bool;
+              default = false;
+              description = "Whether Aurral should trigger a search when adding items to Lidarr.";
+            };
+          };
+
+          security.localNetworkBypass.enabled = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Whether to bypass authentication for requests from the local network.";
+          };
+        };
+
         connectionAddress = mkOption {
           type = types.str;
           readOnly = true;
@@ -126,13 +164,28 @@ in
       websocketUpgrade = true;
     })
     {
+      assertions = [
+        {
+          assertion = lib.any (user: user.role == "admin") (lib.attrValues cfg.settings.users);
+          message = "At least one Aurral user must have role = \"admin\".";
+        }
+        {
+          assertion = config.nixflix.lidarr.enable;
+          message = "Aurral requires Lidarr. Set `nixflix.lidarr.enable = true`.";
+        }
+        {
+          assertion = cfg.settings.lidarr.apiKey != null;
+          message = "Aurral onboarding requires a Lidarr API key. Set `nixflix.lidarr.config.apiKey` (or override `nixflix.aurral.settings.lidarr.apiKey` directly).";
+        }
+      ];
+
       services.aurral =
         (builtins.removeAttrs cfg [
           "connectionAddress"
           "downloadsDir"
           "reverseProxy"
+          "settings"
           "subdomain"
-          "users"
           "vpn"
         ])
         // {
