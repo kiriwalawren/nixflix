@@ -8,6 +8,7 @@ let
 in
 {
   imports = [
+    ./oidc.nix
     ./setupService.nix
     ./users
   ];
@@ -142,6 +143,14 @@ in
               "127.0.0.1";
           description = "Address at which this service is reachable (derived).";
         };
+
+        publicUrl = mkOption {
+          type = types.str;
+          readOnly = true;
+          default = "${config.nixflix.reverseProxy.httpScheme}://${hostname}";
+          defaultText = literalExpression ''"''${config.nixflix.reverseProxy.httpScheme}://''${hostname}"'';
+          description = "Public URL used by Aurral for OAuth callbacks (derived).";
+        };
       };
     };
     default = { };
@@ -183,6 +192,8 @@ in
         (builtins.removeAttrs cfg [
           "connectionAddress"
           "downloadsDir"
+          "oidc"
+          "publicUrl"
           "reverseProxy"
           "settings"
           "subdomain"
@@ -191,7 +202,8 @@ in
         // {
           environment = {
             DOWNLOAD_FOLDER = cfg.downloadsDir;
-          };
+          }
+          // optionalAttrs config.nixflix.reverseProxy.enable { AURRAL_PUBLIC_URL = cfg.publicUrl; };
         };
 
       users = {
@@ -214,5 +226,37 @@ in
         };
       };
     }
+    (mkIf cfg.oidc.enable {
+      systemd.tmpfiles.settings."10-aurral"."/run/aurral".d = {
+        mode = "0755";
+        inherit (cfg) user group;
+      };
+
+      systemd.services.aurral-env = {
+        description = "Create Aurral OIDC environment file";
+        after = [ "nixflix-setup-dirs.service" ];
+        requires = [ "nixflix-setup-dirs.service" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+
+        script = ''
+          set -euo pipefail
+          cat > /run/aurral/env <<EOF
+          OIDC_CLIENT_ID=${secrets.toShellValue cfg.oidc.clientId}
+          OIDC_CLIENT_SECRET=${secrets.toShellValue cfg.oidc.clientSecret}
+          EOF
+          chown ${cfg.user}:${cfg.group} /run/aurral/env
+          chmod 0400 /run/aurral/env
+        '';
+      };
+
+      systemd.services.aurral = {
+        after = [ "aurral-env.service" ];
+        requires = [ "aurral-env.service" ];
+      };
+    })
   ]);
 }
