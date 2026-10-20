@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fix Connect triggers not working in Notif ([#381](https://github.com/kiriwalawren/nixflix/pull/381))
 - `nixflix.seerr.jellyfin.libraryFilter` now correctly selects the configured libraries ([#376](https://github.com/kiriwalawren/nixflix/pull/376))
 - Jellyfin plugins no longer intermittently go missing from `nixflix.jellyfin.plugins.<name>` by removing the dependency on the rate-limited Jellyfin Universal Plugin Repo ([#379](https://github.com/kiriwalawren/nixflix/pull/379))
 
