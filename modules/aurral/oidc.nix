@@ -76,7 +76,7 @@ in
     groupsClaim = lib.mkOption {
       type = lib.types.str;
       default = "groups";
-      description = "Optional ID-token claim that holds group membership.";
+      description = "Optional claim that holds group membership. Make sure this claim is in `nixflix.aurral.oidc.scopes`";
     };
 
     adminGroups = lib.mkOption {
