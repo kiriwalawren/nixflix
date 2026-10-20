@@ -75,6 +75,8 @@ pkgsUnfree.testers.runNixOSTest {
         };
       };
 
+      notif.jellyfin.includeHealthWarnings = true;
+
       navidrome = {
         enable = true;
         users.admin = {
@@ -146,6 +148,8 @@ pkgsUnfree.testers.runNixOSTest {
         f"Expected onDownload true (default-enabled trigger), found {sonarr_notifs[0]['onDownload']}"
     assert sonarr_notifs[0]["onHealthIssue"] is False, \
         f"Expected onHealthIssue false (excluded from UI defaults), found {sonarr_notifs[0]['onHealthIssue']}"
+    assert sonarr_notifs[0]["includeHealthWarnings"] is True, \
+        f"Expected includeHealthWarnings true (top-level freeform override), found {sonarr_notifs[0]['includeHealthWarnings']}"
 
     radarr_notifs = get_notifications(7878, RADARR_KEY)
     print(f"Radarr notifications: {radarr_notifs}")

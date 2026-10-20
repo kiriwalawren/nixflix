@@ -178,7 +178,7 @@ let
                       else .
                       end
                     )
-                    | .name = $overrides.name
+                    | . + $overrides
                     | reduce $triggerKeys[] as $t (.; .[$t] = ($enabledTriggers | index($t) != null))
                     | .fields[] |= (
                         . as $field |

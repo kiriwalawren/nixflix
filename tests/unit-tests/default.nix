@@ -665,6 +665,12 @@ in
                 url_base = "/sabnzbd";
               };
             };
+
+            downloadarr.sabnzbd = {
+              removeCompletedDownloads = false;
+              removeFailedDownloads = true;
+              priority = 1;
+            };
           };
         }
       ];
@@ -694,12 +700,20 @@ in
       ${check "radarr-downloadclients script does not use 0.0.0.0" (
         !lib.hasInfix "0.0.0.0" downloadClientsService.script
       )}
-      ${check "apply_field_overrides no longer does a blanket top-level merge" (
-        !lib.hasInfix ". + \$overrides" downloadClientsService.script
+      ${check "apply_field_overrides merges top-level overrides (enable, freeform properties)" (
+        lib.hasInfix ". + \$overrides" downloadClientsService.script
       )}
-      ${check "apply_field_overrides explicitly sets name from overrides" (
-        lib.hasInfix ".name = \$overrides.name" downloadClientsService.script
+      ${check "sabnzbd download client enable is passed through as a top-level override" (
+        lib.hasInfix ''"enable":true'' downloadClientsService.script
       )}
+      ${check
+        "sabnzbd freeform properties (removeCompletedDownloads/removeFailedDownloads/priority) are passed through"
+        (
+          lib.hasInfix ''"removeCompletedDownloads":false'' downloadClientsService.script
+          && lib.hasInfix ''"removeFailedDownloads":true'' downloadClientsService.script
+          && lib.hasInfix ''"priority":1'' downloadClientsService.script
+        )
+      }
       echo 'PASS: download-clients-no-reverse-proxy' > $out
     '';
 
@@ -809,6 +823,8 @@ in
               "onDownload"
               "onHealthIssue"
             ];
+
+            notif.jellyfin.includeHealthWarnings = true;
           };
         }
       ];
@@ -822,11 +838,14 @@ in
       ${check "radarr-notifications still uses the jellyfin default trigger set" (
         lib.hasInfix ''["onGrab","onDownload","onUpgrade","onRename","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onApplicationUpdate"]'' radarrNotifications.script
       )}
-      ${check "apply_field_overrides no longer does a blanket top-level merge" (
-        !lib.hasInfix ". + \$overrides" sonarrNotifications.script
+      ${check "sonarr-notifications applies the freeform includeHealthWarnings override" (
+        lib.hasInfix ''"includeHealthWarnings":true'' sonarrNotifications.script
       )}
-      ${check "apply_field_overrides explicitly sets name from overrides" (
-        lib.hasInfix ".name = \$overrides.name" sonarrNotifications.script
+      ${check "apply_field_overrides merges top-level overrides (name, enable, freeform properties)" (
+        lib.hasInfix ". + \$overrides" sonarrNotifications.script
+      )}
+      ${check "notification overrides do not include the nested triggers attrset" (
+        !lib.hasInfix "\"triggers\":" sonarrNotifications.script
       )}
       echo 'PASS: notif-triggers' > $out
     '';
