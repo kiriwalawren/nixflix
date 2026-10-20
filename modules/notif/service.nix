@@ -27,6 +27,14 @@ let
     "lidarr"
   ];
 
+  triggerServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
+
+  notifTriggers = import ./triggers.nix;
+
+  allTriggerKeys = unique (
+    concatMap (t: t.valid) (collect (x: x ? valid && x ? default) notifTriggers)
+  );
+
   notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
 
   notificationDependencies =
@@ -136,9 +144,12 @@ let
                 "username"
                 "password"
                 "accessToken"
+                "triggers"
               ];
               fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
               fieldOverridesJson = builtins.toJSON fieldOverrides;
+
+              enabledTriggers = notificationConfig.triggers.${triggerServiceKey serviceName} or [ ];
 
               jqSecrets = secrets.mkJqSecretArgs {
                 apiKey = if apiKey == null then "" else apiKey;
@@ -156,7 +167,9 @@ let
 
                 echo "$notification_json" | ${pkgs.jq}/bin/jq \
                   ${jqSecrets.flagsString} \
-                  --argjson overrides "$overrides" '
+                  --argjson overrides "$overrides" \
+                  --argjson triggerKeys ${escapeShellArg (builtins.toJSON allTriggerKeys)} \
+                  --argjson enabledTriggers ${escapeShellArg (builtins.toJSON enabledTriggers)} '
                     .fields[] |= (
                       if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
                       elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
@@ -165,7 +178,8 @@ let
                       else .
                       end
                     )
-                    | . + $overrides
+                    | .name = $overrides.name
+                    | reduce $triggerKeys[] as $t (.; .[$t] = ($enabledTriggers | index($t) != null))
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then
@@ -263,6 +277,8 @@ let
   ) arrServices;
 in
 {
+  imports = [ ./options.nix ];
+
   config = mkIf (config.nixflix.enable && cfg.enable) {
     assertions = [
       {

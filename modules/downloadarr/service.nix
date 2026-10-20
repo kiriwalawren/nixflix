@@ -176,7 +176,7 @@ let
                       else .
                       end
                     )
-                    | . + $overrides
+                    | .name = $overrides.name
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then
