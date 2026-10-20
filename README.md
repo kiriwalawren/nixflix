@@ -39,6 +39,7 @@ Nixflix is:
 ## Features
 
 - **Media Server Stack**: Pre-configured modules for Sonarr, Radarr, Lidarr, and Prowlarr
+- **Media Discovery and Requests**: Requests for TV/Movies using Seerr and for Music using Aurral
 - **Declarative API Configuration**: Configure services declaratively via NixOS options, automatically applied through their REST APIs
 - **PostgreSQL Integration**: Optional PostgreSQL backend for all Arr services
 - **WireGuard VPN Integration**: Built-in support for Wireguard VPN with kill switch and custom DNS
@@ -47,10 +48,6 @@ Nixflix is:
 - **Reverse Proxy Support**: Configurable nginx or Caddy integration for all services, with per-service opt-out
 - **Unified Theming**: All supported services can be themed to look the same, powered by [theme.park](https://docs.theme-park.dev/)
 - [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines
-
-### Upcoming Features
-
-- [ ] Better music tooling
 
 ## Documentation
 
@@ -86,6 +83,12 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - Music Server
 - Supports OpenSubsonic API
+
+### Aurral
+
+- Music discovery and requests
+- Automatic configuration with Starr services
+- Automatic integration with `slskd`
 
 ### SABnzbd
 
