@@ -694,6 +694,12 @@ in
       ${check "radarr-downloadclients script does not use 0.0.0.0" (
         !lib.hasInfix "0.0.0.0" downloadClientsService.script
       )}
+      ${check "apply_field_overrides no longer does a blanket top-level merge" (
+        !lib.hasInfix ". + \$overrides" downloadClientsService.script
+      )}
+      ${check "apply_field_overrides explicitly sets name from overrides" (
+        lib.hasInfix ".name = \$overrides.name" downloadClientsService.script
+      )}
       echo 'PASS: download-clients-no-reverse-proxy' > $out
     '';
 
@@ -769,6 +775,60 @@ in
         lib.hasInfix "Subsonic" lidarrNotifications.script
       )}
       echo 'PASS: notif-service-scoping' > $out
+    '';
+
+  notif-triggers =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+            };
+
+            sonarr = {
+              enable = true;
+              config = {
+                hostConfig.port = 8989;
+                apiKey._secret = "/run/secrets/sonarr-api";
+              };
+            };
+
+            radarr = {
+              enable = true;
+              config = {
+                hostConfig.port = 7878;
+                apiKey._secret = "/run/secrets/radarr-api";
+              };
+            };
+
+            notif.jellyfin.triggers.sonarr = [
+              "onDownload"
+              "onHealthIssue"
+            ];
+          };
+        }
+      ];
+      sonarrNotifications = config.config.systemd.services."sonarr-notifications";
+      radarrNotifications = config.config.systemd.services."radarr-notifications";
+    in
+    pkgs.runCommand "unit-test-notif-triggers" { } ''
+      ${check "sonarr-notifications applies the overridden trigger set" (
+        lib.hasInfix ''["onDownload","onHealthIssue"]'' sonarrNotifications.script
+      )}
+      ${check "radarr-notifications still uses the jellyfin default trigger set" (
+        lib.hasInfix ''["onGrab","onDownload","onUpgrade","onRename","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onApplicationUpdate"]'' radarrNotifications.script
+      )}
+      ${check "apply_field_overrides no longer does a blanket top-level merge" (
+        !lib.hasInfix ". + \$overrides" sonarrNotifications.script
+      )}
+      ${check "apply_field_overrides explicitly sets name from overrides" (
+        lib.hasInfix ".name = \$overrides.name" sonarrNotifications.script
+      )}
+      echo 'PASS: notif-triggers' > $out
     '';
 
   jellyfin-subtitles =
