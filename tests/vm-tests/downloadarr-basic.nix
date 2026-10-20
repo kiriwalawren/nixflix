@@ -59,6 +59,12 @@ pkgsUnfree.testers.runNixOSTest {
           };
         };
       };
+
+      downloadarr.qbittorrent = {
+        priority = 25;
+        removeCompletedDownloads = true;
+        removeFailedDownloads = false;
+      };
     };
   };
 
@@ -106,6 +112,14 @@ pkgsUnfree.testers.runNixOSTest {
     assert sonarr_qbit["implementationName"] == "qBittorrent", "Expected qBittorrent implementation"
     sonarr_category = next(f for f in sonarr_qbit["fields"] if f["name"] == "tvCategory")
     assert sonarr_category["value"] == "sonarr", f"Expected tvCategory 'sonarr', found {sonarr_category['value']}"
+    assert sonarr_qbit["enable"] is True, \
+        f"Expected download client to be enabled (top-level override), found {sonarr_qbit['enable']}"
+    assert sonarr_qbit["priority"] == 25, \
+        f"Expected priority 25 (top-level freeform override), found {sonarr_qbit['priority']}"
+    assert sonarr_qbit["removeCompletedDownloads"] is True, \
+        f"Expected removeCompletedDownloads true (top-level freeform override), found {sonarr_qbit['removeCompletedDownloads']}"
+    assert sonarr_qbit["removeFailedDownloads"] is False, \
+        f"Expected removeFailedDownloads false (top-level freeform override), found {sonarr_qbit['removeFailedDownloads']}"
 
     radarr_clients = get_clients(7878, RADARR_KEY)
     print(f"Radarr download clients: {radarr_clients}")
