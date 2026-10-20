@@ -142,6 +142,10 @@ pkgsUnfree.testers.runNixOSTest {
     assert sonarr_host["value"] == "127.0.0.1", f"Expected host '127.0.0.1', found {sonarr_host['value']}"
     sonarr_port = next(f for f in sonarr_notifs[0]["fields"] if f["name"] == "port")
     assert sonarr_port["value"] == 8096, f"Expected port 8096, found {sonarr_port['value']}"
+    assert sonarr_notifs[0]["onDownload"] is True, \
+        f"Expected onDownload true (default-enabled trigger), found {sonarr_notifs[0]['onDownload']}"
+    assert sonarr_notifs[0]["onHealthIssue"] is False, \
+        f"Expected onHealthIssue false (excluded from UI defaults), found {sonarr_notifs[0]['onHealthIssue']}"
 
     radarr_notifs = get_notifications(7878, RADARR_KEY)
     print(f"Radarr notifications: {radarr_notifs}")
@@ -166,6 +170,10 @@ pkgsUnfree.testers.runNixOSTest {
     subsonic_username = next(f for f in lidarr_subsonic["fields"] if f["name"] == "username")
     assert subsonic_username["value"] == "admin", \
         f"Expected Subsonic username 'admin', found {subsonic_username['value']}"
+    assert lidarr_media_browser["onArtistDelete"] is True, \
+        f"Expected onArtistDelete true (default-enabled trigger), found {lidarr_media_browser['onArtistDelete']}"
+    assert lidarr_media_browser["onAlbumDelete"] is False, \
+        f"Expected onAlbumDelete false (excluded from UI defaults), found {lidarr_media_browser['onAlbumDelete']}"
 
     print("Notif configured Emby/Jellyfin on Sonarr/Radarr/Lidarr and Subsonic on Lidarr only!")
   '';
