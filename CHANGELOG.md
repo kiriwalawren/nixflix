@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))
+- Fix Jellyfin library sync/enable failing on Seerr 3.5.0+ by switching to the new `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id` endpoints, replacing the removed `?sync=true`/`?enable=ids` query params ([#385](https://github.com/kiriwalawren/nixflix/issues/385))
 - Restore top-level overrides (e.g. `enable`, `priority`, `tags`, `removeCompletedDownloads`/`removeFailedDownloads` for download clients, `includeHealthWarnings` for Notif) that were silently dropped by the Connect triggers fix in [#381](https://github.com/kiriwalawren/nixflix/pull/381) ([#383](https://github.com/kiriwalawren/nixflix/issues/383))
 - Fix Connect triggers not working in Notif ([#381](https://github.com/kiriwalawren/nixflix/pull/381))
 - `nixflix.seerr.jellyfin.libraryFilter` now correctly selects the configured libraries ([#376](https://github.com/kiriwalawren/nixflix/pull/376))

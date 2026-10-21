@@ -11,6 +11,7 @@ let
   cfg = nixflix.seerr;
 
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  librarySync = import ./librarySync.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs { password = cfg.jellyfin.adminPassword; };
 in
@@ -82,10 +83,31 @@ in
           "$BASE_URL/api/v1/auth/jellyfin")
 
         SETUP_HTTP_CODE=$(echo "$SETUP_RESPONSE" | tail -n1)
+        SETUP_BODY=$(echo "$SETUP_RESPONSE" | head -n-1)
+
+        if [ "$SETUP_HTTP_CODE" != "200" ] && [ "$SETUP_HTTP_CODE" != "201" ]; then
+          SETUP_ERROR=$(echo "$SETUP_BODY" | ${pkgs.jq}/bin/jq -r '.error // empty')
+
+          if [ "$SETUP_ERROR" = "Jellyfin hostname already configured" ]; then
+            # Seerr persists the hostname before later steps run; retry without it to re-login.
+            echo "Jellyfin hostname already configured from a previous run; retrying login..."
+            RETRY_PAYLOAD=$(echo "$SETUP_PAYLOAD" | ${pkgs.jq}/bin/jq 'del(.hostname)')
+
+            SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+              -c "${authUtil.cookieFile}" \
+              -H "Content-Type: application/json" \
+              -d "$RETRY_PAYLOAD" \
+              -w "\n%{http_code}" \
+              "$BASE_URL/api/v1/auth/jellyfin")
+
+            SETUP_HTTP_CODE=$(echo "$SETUP_RESPONSE" | tail -n1)
+            SETUP_BODY=$(echo "$SETUP_RESPONSE" | head -n-1)
+          fi
+        fi
 
         if [ "$SETUP_HTTP_CODE" != "200" ] && [ "$SETUP_HTTP_CODE" != "201" ]; then
           echo "Failed to connect to Jellyfin (HTTP $SETUP_HTTP_CODE)" >&2
-          echo "$SETUP_RESPONSE" | head -n-1 >&2
+          echo "$SETUP_BODY" >&2
           exit 1
         fi
 
@@ -93,43 +115,7 @@ in
         echo "Successfully connected to Jellyfin"
 
         # Step 2: Fetch and enable libraries BEFORE sync
-        echo "Fetching library list from Jellyfin..."
-        LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
-          -b "${authUtil.cookieFile}" \
-          "$BASE_URL/api/v1/settings/jellyfin/library?sync=true")
-
-        echo "Available libraries:"
-        echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[] | "\(.id) - \(.name) (\(.type))"'
-
-        # Apply library filters and get IDs to enable
-        ${
-          if cfg.jellyfin.enableAllLibraries then
-            ''
-              # Enable all libraries
-              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '[.[].id] | join(",")')
-            ''
-          else
-            ''
-              # Apply filters to select libraries
-              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-                --argjson types ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.types)} \
-                --argjson names ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.names)} \
-                '[ .[]
-                   | select(($types | length) == 0 or (.type | IN($types[])))
-                   | select(($names | length) == 0 or (.name | IN($names[])))
-                   | .id ] | join(",")')
-            ''
-        }
-
-        if [ -n "$LIBRARY_IDS" ]; then
-          echo "Enabling libraries: $LIBRARY_IDS"
-          ${pkgs.curl}/bin/curl -sf \
-            -b "${authUtil.cookieFile}" \
-            "$BASE_URL/api/v1/settings/jellyfin/library?enable=$LIBRARY_IDS" >/dev/null
-          echo "Libraries enabled"
-        else
-          echo "Warning: No libraries matched the filter criteria"
-        fi
+        source ${librarySync ''-b "${authUtil.cookieFile}"''}
 
         # Step 3: Complete initialization steps
         echo "Initializing settings..."

@@ -81,6 +81,14 @@ pkgs.testers.runNixOSTest {
     };
 
     systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
+
+    # Started manually in testScript to reproduce https://github.com/kiriwalawren/nixflix/issues/265.
+    systemd.services.seerr-setup.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-user-settings.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-jellyfin.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-libraries.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-radarr.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-sonarr.wantedBy = lib.mkForce [ ];
   };
 
   testScript = ''
@@ -96,21 +104,46 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("seerr.service", timeout=300)
     machine.wait_for_open_port(port, timeout=300)
 
-    # Wait for configuration services to complete
-    machine.wait_for_unit("seerr-setup.service", timeout=300)
-    machine.wait_for_unit("seerr-user-settings.service", timeout=300)
-    machine.wait_for_unit("seerr-libraries.service", timeout=300)
-    machine.wait_for_unit("seerr-jellyfin.service", timeout=300)
-    machine.wait_for_unit("seerr-radarr.service", timeout=300)
-    machine.wait_for_unit("seerr-sonarr.service", timeout=300)
-
     cookie_file = "/run/seerr/auth-cookie"
     base_url = f'http://127.0.0.1:{port}/api/v1'
 
+    import json
+
+    # Regression test for #265: simulate a previous run that persisted the
+    # Jellyfin hostname in Seerr before failing on a later step.
+    preseed_payload = json.dumps({
+        "username": "admin",
+        "password": "321password",
+        "hostname": "127.0.0.1",
+        "port": 8096,
+        "useSsl": False,
+        "urlBase": "",
+        "email": "admin",
+        "serverType": 2,
+    })
+    machine.succeed(
+        f"curl -sf -X POST -H 'Content-Type: application/json' -d '{preseed_payload}' "
+        f"{base_url}/auth/jellyfin"
+    )
+
+    # seerr-setup must recover from "Jellyfin hostname already configured"
+    # instead of failing permanently, as it used to.
+    machine.succeed("systemctl start seerr-setup.service")
+    machine.wait_for_unit("seerr-setup.service", timeout=300)
+
+    machine.succeed("systemctl start seerr-user-settings.service")
+    machine.wait_for_unit("seerr-user-settings.service", timeout=300)
+    machine.succeed("systemctl start seerr-jellyfin.service")
+    machine.wait_for_unit("seerr-jellyfin.service", timeout=300)
+    machine.succeed("systemctl start seerr-libraries.service")
+    machine.wait_for_unit("seerr-libraries.service", timeout=300)
+    machine.succeed("systemctl start seerr-radarr.service")
+    machine.wait_for_unit("seerr-radarr.service", timeout=300)
+    machine.succeed("systemctl start seerr-sonarr.service")
+    machine.wait_for_unit("seerr-sonarr.service", timeout=300)
+
     # Test API connectivity
     machine.succeed(f'curl -f -b {cookie_file} -H "Content-Type: application/json" {base_url}/settings/main')
-
-    import json
 
     # Validate Radarr configuration
     radarr_json = machine.succeed(f'curl -f -b {cookie_file} -H "Content-Type: application/json" {base_url}/settings/radarr')
