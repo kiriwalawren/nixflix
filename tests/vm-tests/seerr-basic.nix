@@ -82,7 +82,7 @@ pkgs.testers.runNixOSTest {
 
     systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
 
-    # Started manually in testScript to reproduce #265.
+    # Started manually in testScript to reproduce https://github.com/kiriwalawren/nixflix/issues/265.
     systemd.services.seerr-setup.wantedBy = lib.mkForce [ ];
     systemd.services.seerr-user-settings.wantedBy = lib.mkForce [ ];
     systemd.services.seerr-jellyfin.wantedBy = lib.mkForce [ ];

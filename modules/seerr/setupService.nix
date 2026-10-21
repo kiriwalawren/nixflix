@@ -11,6 +11,7 @@ let
   cfg = nixflix.seerr;
 
   authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  librarySync = import ./librarySync.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs { password = cfg.jellyfin.adminPassword; };
 in
@@ -114,43 +115,7 @@ in
         echo "Successfully connected to Jellyfin"
 
         # Step 2: Fetch and enable libraries BEFORE sync
-        echo "Fetching library list from Jellyfin..."
-        LIBRARIES_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
-          -b "${authUtil.cookieFile}" \
-          "$BASE_URL/api/v1/settings/jellyfin/library?sync=true")
-
-        echo "Available libraries:"
-        echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[] | "\(.id) - \(.name) (\(.type))"'
-
-        # Apply library filters and get IDs to enable
-        ${
-          if cfg.jellyfin.enableAllLibraries then
-            ''
-              # Enable all libraries
-              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '[.[].id] | join(",")')
-            ''
-          else
-            ''
-              # Apply filters to select libraries
-              LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-                --argjson types ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.types)} \
-                --argjson names ${escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.names)} \
-                '[ .[]
-                   | select(($types | length) == 0 or (.type | IN($types[])))
-                   | select(($names | length) == 0 or (.name | IN($names[])))
-                   | .id ] | join(",")')
-            ''
-        }
-
-        if [ -n "$LIBRARY_IDS" ]; then
-          echo "Enabling libraries: $LIBRARY_IDS"
-          ${pkgs.curl}/bin/curl -sf \
-            -b "${authUtil.cookieFile}" \
-            "$BASE_URL/api/v1/settings/jellyfin/library?enable=$LIBRARY_IDS" >/dev/null
-          echo "Libraries enabled"
-        else
-          echo "Warning: No libraries matched the filter criteria"
-        fi
+        source ${librarySync ''-b "${authUtil.cookieFile}"''}
 
         # Step 3: Complete initialization steps
         echo "Initializing settings..."
