@@ -82,10 +82,31 @@ in
           "$BASE_URL/api/v1/auth/jellyfin")
 
         SETUP_HTTP_CODE=$(echo "$SETUP_RESPONSE" | tail -n1)
+        SETUP_BODY=$(echo "$SETUP_RESPONSE" | head -n-1)
+
+        if [ "$SETUP_HTTP_CODE" != "200" ] && [ "$SETUP_HTTP_CODE" != "201" ]; then
+          SETUP_ERROR=$(echo "$SETUP_BODY" | ${pkgs.jq}/bin/jq -r '.error // empty')
+
+          if [ "$SETUP_ERROR" = "Jellyfin hostname already configured" ]; then
+            # Seerr persists the hostname before later steps run; retry without it to re-login.
+            echo "Jellyfin hostname already configured from a previous run; retrying login..."
+            RETRY_PAYLOAD=$(echo "$SETUP_PAYLOAD" | ${pkgs.jq}/bin/jq 'del(.hostname)')
+
+            SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+              -c "${authUtil.cookieFile}" \
+              -H "Content-Type: application/json" \
+              -d "$RETRY_PAYLOAD" \
+              -w "\n%{http_code}" \
+              "$BASE_URL/api/v1/auth/jellyfin")
+
+            SETUP_HTTP_CODE=$(echo "$SETUP_RESPONSE" | tail -n1)
+            SETUP_BODY=$(echo "$SETUP_RESPONSE" | head -n-1)
+          fi
+        fi
 
         if [ "$SETUP_HTTP_CODE" != "200" ] && [ "$SETUP_HTTP_CODE" != "201" ]; then
           echo "Failed to connect to Jellyfin (HTTP $SETUP_HTTP_CODE)" >&2
-          echo "$SETUP_RESPONSE" | head -n-1 >&2
+          echo "$SETUP_BODY" >&2
           exit 1
         fi
 
