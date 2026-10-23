@@ -11,6 +11,7 @@
     libraryOwner.group = "media";
 
     uids = {
+      aurral = 92;
       autobrr = 188;
       bazarr = 232;
       cross-seed = 183;
