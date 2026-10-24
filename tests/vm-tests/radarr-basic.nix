@@ -283,6 +283,13 @@ pkgsUnfree.testers.runNixOSTest {
 
     machine.succeed("pgrep -u testuser Radarr")
 
+    # config.xml holds the API key. The service runs with UMask 0002 (for
+    # media hardlinks), so the data dir itself must keep other users out.
+    print(machine.succeed("stat -c '%a %U:%G %n' /var/lib/radarr /var/lib/radarr/config.xml"))
+    machine.fail("runuser -u nobody -- cat /var/lib/radarr/config.xml")
+    dir_mode = machine.succeed("stat -c %a /var/lib/radarr").strip()
+    assert dir_mode == "700", f"Expected /var/lib/radarr mode 700, found {dir_mode}"
+
     # Radarr must be able to hardlink qBittorrent downloads into its media dir
     machine.succeed("systemctl show -p UMask --value qbittorrent | grep -qx 0002")
     machine.succeed("runuser -u qbittorrent -- sh -c 'umask 0002; touch /data/downloads/torrent/radarr/test.mkv'")
