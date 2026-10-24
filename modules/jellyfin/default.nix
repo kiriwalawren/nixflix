@@ -20,6 +20,7 @@ in
     ./branding
     ./encoding
     ./libaries
+    ./liveTv
     ./metadata
     ./network
     ./options.nix

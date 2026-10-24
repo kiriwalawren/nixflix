@@ -112,6 +112,7 @@ nav:
       - getting-started/index.md
   - Examples:
       - Basic Setup: examples/basic-setup.md
+      - Jellyfin Live TV: examples/jellyfin-live-tv.md
       - Jellyfin Plugins: examples/jellyfin-plugins.md
       - Jellyfin Subtitles: examples/jellyfin-subtitles.md
       - Maintainerr Rules: examples/maintainerr-rules.md
