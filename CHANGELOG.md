@@ -8,11 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `nixflix.usenetClients.sabnzbd.settings.rss` to declare SABnzbd RSS feeds and their filters. Feed URLs can be `_secret` files. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
 - `nixflix.<sonarr|sonarr-anime|radarr|lidarr>.config.metadata` to configure metadata consumers (Settings → Metadata), e.g. Plex series match files and episode mappings ([#373](https://github.com/kiriwalawren/nixflix/pull/373))
 
 ### Fixed
 
+- SABnzbd: a `_secret` inside a list value was written triple-quoted, which ConfigObj cannot parse in a list: two secrets were silently read as one garbled string, and a single one with a trailing comma failed to parse. List items now use a list-safe quote. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))
 - Fix Jellyfin library sync/enable failing on Seerr 3.5.0+ by switching to the new `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id` endpoints, replacing the removed `?sync=true`/`?enable=ids` query params ([#385](https://github.com/kiriwalawren/nixflix/issues/385))
 - Restore top-level overrides (e.g. `enable`, `priority`, `tags`, `removeCompletedDownloads`/`removeFailedDownloads` for download clients, `includeHealthWarnings` for Notif) that were silently dropped by the Connect triggers fix in [#381](https://github.com/kiriwalawren/nixflix/pull/381) ([#383](https://github.com/kiriwalawren/nixflix/issues/383))

@@ -17,6 +17,9 @@ let
     ];
 in
 rec {
+  # `type`, or `{ _secret = path; }` (for option types built from it).
+  inherit secretOr;
+
   isSecretRef = value: (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
   toShellValue =
