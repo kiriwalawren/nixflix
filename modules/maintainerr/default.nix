@@ -134,8 +134,9 @@ in
       };
 
       systemd.tmpfiles.settings."10-maintainerr" = {
+        # 0700: its database holds the Jellyfin and *arr API keys.
         ${cfg.dataDir}.d = {
-          mode = "0755";
+          mode = "0700";
           inherit (cfg) user group;
         };
       };

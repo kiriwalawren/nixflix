@@ -1203,6 +1203,51 @@ in
     in
     assertTest "settings-auth-overrides-hostconfig" (radarrCfg.settings.auth.method == "External");
 
+  # Data dirs hold API keys (config.xml, settings.json, databases), so no
+  # other local user may enter them.
+  state-dirs-private =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            prowlarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/prowlarr-api";
+            };
+            seerr = {
+              enable = true;
+              apiKey._secret = "/run/secrets/seerr-api";
+              jellyfin = {
+                adminUsername = "admin";
+                adminPassword = "password";
+              };
+            };
+            maintainerr.enable = true;
+          };
+        }
+      ];
+      cfg = config.config;
+      inherit (cfg.systemd.tmpfiles) settings;
+      mode = svc: dir: settings."10-${svc}".${dir}.d.mode;
+    in
+    pkgs.runCommand "unit-test-state-dirs-private" { } ''
+      ${check "radarr dataDir 0700" (mode "radarr" cfg.nixflix.radarr.dataDir == "0700")}
+      ${check "sonarr dataDir 0700" (mode "sonarr" cfg.nixflix.sonarr.dataDir == "0700")}
+      ${check "prowlarr dataDir 0700" (mode "prowlarr" cfg.nixflix.prowlarr.dataDir == "0700")}
+      ${check "seerr dataDir 0700" (mode "seerr" cfg.nixflix.seerr.dataDir == "0700")}
+      ${check "maintainerr dataDir 0700" (mode "maintainerr" cfg.nixflix.maintainerr.dataDir == "0700")}
+      echo 'PASS: state-dirs-private' > $out
+    '';
+
   nested-secret-in-list-jq-filter =
     let
       rawConfig = {
