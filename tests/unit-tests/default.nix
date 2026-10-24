@@ -1277,6 +1277,49 @@ in
       echo 'PASS: nested-secret-in-list-jq-filter' > $out
     '';
 
+  # mkOneOrMoreSecretsOption is the public way to accept `x` or `[ x ... ]`
+  # (sabnzbd's rss uri): a single value must be normalised to a list, and the
+  # item type must still be enforced per item.
+  one-or-more-secrets-option =
+    let
+      evalValue =
+        value:
+        (lib.evalModules {
+          modules = [
+            {
+              options.item = secrets.mkOneOrMoreSecretsOption {
+                type = lib.types.nonEmptyStr;
+                description = "test option";
+              };
+              config.item = value;
+            }
+          ];
+        }).config.item;
+      fails = value: !(builtins.tryEval (builtins.deepSeq (evalValue value) true)).success;
+    in
+    pkgs.runCommand "unit-test-one-or-more-secrets-option" { } ''
+      ${check "a single value becomes a one-element list" (evalValue "a" == [ "a" ])}
+      ${check "a list is kept as-is" (
+        evalValue [
+          "a"
+          "b"
+        ] == [
+          "a"
+          "b"
+        ]
+      )}
+      ${check "a single secret becomes a one-element list" (
+        builtins.map (v: v._secret or v) (evalValue {
+          _secret = "/run/secrets/x";
+        }) == [ "/run/secrets/x" ]
+      )}
+      ${check "an empty string is rejected" (fails "")}
+      ${check "an empty list is rejected" (fails [ ])}
+      ${check "an empty string item is rejected" (fails [ "" ])}
+      ${check "a non-string is rejected" (fails 42)}
+      echo 'PASS: one-or-more-secrets-option' > $out
+    '';
+
   # nixflix.seerr drives the 3.5.0+ library endpoints, so a package below that
   # must be caught at eval time rather than as `status=22` from seerr-setup.
   seerr-package-below-minimum-assertion =

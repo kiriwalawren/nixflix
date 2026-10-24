@@ -20,6 +20,24 @@ def merge_secrets(template_path: str, output_path: str):
         print(f"Error reading template {template_path}: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Inside a ConfigObj list, triple quotes do not parse ('"""a""", """b"""'
+    # reads as ONE string, '"""a""",' is a parse error), so list items get a
+    # single-line quote instead. A value that needs both quote kinds, or has
+    # a newline, cannot be written as a list item.
+    def replace_list_item(match):
+        secret_path = match.group(1)
+        value = read_secret_file(secret_path)
+        if "\n" in value or ('"' in value and "'" in value):
+            print(
+                f"Error: secret {secret_path} is used in a list and contains a newline "
+                "or both quote characters; ConfigObj cannot represent it there",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        return '"' + value + '"' if '"' not in value else "'" + value + "'"
+
+    template = re.sub(r"__SECRET_LIST_ITEM__(.+?)__", replace_list_item, template)
+
     pattern = r"__SECRET_FILE__(.+?)__"
 
     def replace_secret(match):

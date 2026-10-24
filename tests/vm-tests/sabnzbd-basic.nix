@@ -53,6 +53,32 @@ pkgsUnfree.testers.runNixOSTest {
               retention = 3000;
             }
           ];
+          rss = [
+            {
+              # A secret URL with a comma and a `#`, which ConfigObj and
+              # SABnzbd's OptionList would otherwise split or cut.
+              name = "Indexer";
+              uri._secret = pkgs.writeText "rss-indexer" "https://indexer.example/rss?t=5000,5040&apikey=k1#top";
+              cat = "tv";
+              filters = [
+                {
+                  type = "reject";
+                  match = "re:CAM, TS";
+                }
+                { }
+              ];
+            }
+            {
+              # Several URLs as one feed, a secret among them.
+              name = "Two";
+              uri = [
+                "https://a.example/rss"
+                { _secret = pkgs.writeText "rss-two" "https://b.example/rss?q='x'"; }
+              ];
+              enable = false;
+              priority = 1;
+            }
+          ];
           categories = [
             {
               name = "tv";
@@ -165,5 +191,31 @@ pkgsUnfree.testers.runNixOSTest {
     print(f"Movies category:\n{movies_category}")
     assert "movies" in movies_category, "Movies category not configured"
     assert '"dir":"movies"' in movies_category or '"dir": "movies"' in movies_category, "Movies category dir not set"
+
+    # RSS feeds, read back through SABnzbd's own parser
+    import json
+    assert "https://indexer.example" not in template_content, "RSS secret leaked into the template"
+    rss = json.loads(machine.succeed(
+        "curl -s 'http://127.0.0.1:8080/sabnzbd/api?mode=get_config&section=rss&output=json&apikey=testapikey123456789abcdef'"
+    ))["config"]["rss"]
+    print(f"RSS feeds:\n{json.dumps(rss, indent=2)}")
+    feeds = {f["name"]: f for f in rss}
+    assert set(feeds) == {"Indexer", "Two"}, f"Expected feeds Indexer and Two, found {list(feeds)}"
+
+    indexer = feeds["Indexer"]
+    assert indexer["uri"] == ["https://indexer.example/rss?t=5000,5040&apikey=k1#top"], \
+        f"Indexer uri split or cut: {indexer['uri']}"
+    assert indexer["cat"] == "tv", f"Indexer cat not set: {indexer['cat']}"
+    assert indexer["enable"] == 1, "Indexer should be enabled"
+    assert indexer["filter0"] == ["", "", "", "R", "re:CAM, TS", "-100", "1"], \
+        f"Indexer filter0 wrong: {indexer['filter0']}"
+    assert indexer["filter1"] == ["", "", "", "A", "*", "-100", "1"], \
+        f"Indexer filter1 wrong: {indexer['filter1']}"
+
+    two = feeds["Two"]
+    assert two["uri"] == ["https://a.example/rss", "https://b.example/rss?q='x'"], \
+        f"Two uri list wrong: {two['uri']}"
+    assert two["enable"] == 0, "Two should be disabled"
+    assert two["priority"] == 1, f"Two priority not set: {two['priority']}"
   '';
 }
