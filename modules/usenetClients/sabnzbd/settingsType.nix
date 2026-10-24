@@ -136,6 +136,123 @@ let
     };
   };
 
+  rssFilterType = types.submodule {
+    options = {
+      category = mkOption {
+        type = types.str;
+        default = "";
+        description = "Category to assign to matching items. Empty means the feed's category.";
+      };
+      pp = mkOption {
+        type = types.str;
+        default = "";
+        example = "3";
+        description = "Post-processing for matching items (\"0\"-\"3\"). Empty means the feed's.";
+      };
+      script = mkOption {
+        type = types.str;
+        default = "";
+        description = "Post-processing script for matching items. Empty means the feed's.";
+      };
+      type = mkOption {
+        type = enumFromAttrs {
+          "accept" = "A";
+          "require" = "M";
+          "reject" = "R";
+          "requireCategory" = "C";
+          "atMost" = "<";
+          "atLeast" = ">";
+          "from" = "F";
+          "fromShow" = "S";
+          "age" = "G";
+        };
+        default = "A";
+        description = ''
+          Filter type: `accept` (title matches), `require` (reject unless the
+          title matches), `reject` (title matches), `requireCategory`, `atMost` /
+          `atLeast` (size), `from` / `fromShow` (SxxEyy), `age`.
+        '';
+      };
+      match = mkOption {
+        type = types.str;
+        default = "*";
+        example = "re:1080p";
+        description = "What the filter matches: a title pattern, `re:` regex, size or SxxEyy, by `type`.";
+      };
+      priority = mkOption {
+        type = types.int;
+        default = -100;
+        description = "Priority for matching items. -100 means the feed's.";
+      };
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether this filter is active.";
+      };
+    };
+  };
+
+  rssFeedType = types.submodule {
+    freeformType = types.anything;
+    options = {
+      name = mkOption {
+        type = types.str;
+        example = "MyIndexer";
+        description = "Name of the feed.";
+      };
+      uri =
+        let
+          item = secrets.secretOr types.nonEmptyStr;
+        in
+        mkOption {
+          type = types.coercedTo item lib.singleton (types.nonEmptyListOf item);
+          example = lib.literalExpression ''{ _secret = "/run/secrets/indexer-rss-url"; }'';
+          description = ''
+            Feed URL, or a list of URLs polled as one feed. Feed URLs usually carry
+            an indexer API key, so use `{ _secret = /path/to/file; }`. A URL may
+            contain commas, `#` and one kind of quote, but not a newline.
+          '';
+        };
+      cat = mkOption {
+        type = types.str;
+        default = "";
+        description = "Category for items from this feed. Empty means SABnzbd's default.";
+      };
+      pp = mkOption {
+        type = enumFromAttrs {
+          "Default" = "";
+          "Download" = 0;
+          "Repair" = 1;
+          "Repair+Unpack" = 2;
+          "Repair+Unpack+Delete" = 3;
+        };
+        default = "";
+        description = "Post-processing level for items from this feed.";
+      };
+      script = mkOption {
+        type = types.str;
+        default = "";
+        description = "Post-processing script. Empty means the category's.";
+      };
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether SABnzbd polls this feed.";
+      };
+      priority = mkOption {
+        type = types.int;
+        default = -100;
+        description = "Priority for items from this feed (-100 = default, -2 paused ... 2 force).";
+      };
+      filters = mkOption {
+        type = types.listOf rssFilterType;
+        default = [ { } ];
+        defaultText = lib.literalExpression "[ { } ]";
+        description = "Filters, applied in order. The default accepts every item, as SABnzbd does.";
+      };
+    };
+  };
+
   miscType = types.submodule {
     freeformType = types.anything;
     options = {
@@ -679,6 +796,12 @@ types.submodule {
       type = types.listOf serverType;
       default = [ ];
       description = "List of usenet servers";
+    };
+
+    rss = mkOption {
+      type = types.listOf rssFeedType;
+      default = [ ];
+      description = "RSS feeds (the [rss] section). Feeds added in the web UI are replaced on restart.";
     };
 
     categories = mkOption {
