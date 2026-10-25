@@ -90,6 +90,7 @@ pkgs.testers.runNixOSTest {
               enableAllChannels = false;
               enableAllDevices = false;
               enableAllFolders = false;
+              enabledFolders = [ "Test Movies" ];
               enableAudioPlaybackTranscoding = false;
               enableCollectionManagement = true;
               enableContentDeletion = true;
@@ -592,6 +593,39 @@ pkgs.testers.runNixOSTest {
     img_opt_backdrop = [io for io in type_opt['ImageOptions'] if io['Type'] == 'Backdrop'][0]
     assert img_opt_backdrop['Limit'] == 3, f"Backdrop image limit should be 3, got {img_opt_backdrop['Limit']}"
     assert img_opt_backdrop['MinWidth'] == 1920, f"Backdrop image minWidth should be 1920, got {img_opt_backdrop['MinWidth']}"
+
+    with subtest("Per-user library access"):
+        # Resolved against /Library/MediaFolders rather than VirtualFolders[].ItemId,
+        # which Jellyfin 12 no longer populates.
+        media_folders = json.loads(
+            machine.succeed(f'curl -f -H {auth_header} {base_url}/Library/MediaFolders')
+        )
+
+        def norm(guid):
+            return guid.replace("-", "").lower()
+
+        folder_ids = {item['Name']: norm(item['Id']) for item in media_folders['Items']}
+        assert {'Test Movies', 'Test Music'} <= set(folder_ids), \
+            f"Expected both libraries in /Library/MediaFolders, got {sorted(folder_ids)}"
+
+        assert [norm(f) for f in policy['EnabledFolders']] == [folder_ids['Test Movies']], \
+            f"EnabledFolders should resolve to 'Test Movies', got {policy['EnabledFolders']}"
+
+        views = json.loads(
+            machine.succeed(f'curl -f -H {auth_header} "{base_url}/UserViews?userId={user["Id"]}"')
+        )
+        view_names = {view['Name'] for view in views['Items']}
+        assert 'Test Movies' in view_names, f"kiri should see 'Test Movies', got {view_names}"
+        assert 'Test Music' not in view_names, f"kiri should not see 'Test Music', got {view_names}"
+
+        # kiri has mutable = false, so a restart re-resolves and re-pushes the policy
+        machine.succeed("systemctl restart jellyfin-users-config.service")
+        machine.wait_for_unit("jellyfin-users-config.service", timeout=180)
+
+        refetched = json.loads(machine.succeed(f'curl -f -H {auth_header} {base_url}/Users'))
+        kiri_policy = [u for u in refetched if u['Name'] == 'kiri'][0]['Policy']
+        assert [norm(f) for f in kiri_policy['EnabledFolders']] == [folder_ids['Test Movies']], \
+            f"EnabledFolders changed after restart: {kiri_policy['EnabledFolders']}"
 
     with subtest("Verify system configuration"):
         print("Querying system configuration...")
