@@ -46,7 +46,7 @@ in
         [
           {
             assertion = versionAtLeast cfg.package.version "3.5.0";
-            message = "nixflix.seerr requires Seerr 3.5.0 or newer, but the Seerr package in use is ${cfg.package.version}. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins, so this normally means your nixpkgs predates Seerr 3.5.0 — you do not need to have set the option. Seerr 3.5.0 moved Jellyfin library sync to `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id`; older versions 404 on both and fail seerr-setup.service. Update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build.";
+            message = "nixflix.seerr requires Seerr 3.5.0 or newer, but the Seerr package in use is ${cfg.package.version}. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins. Update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build.";
           }
           {
             assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
