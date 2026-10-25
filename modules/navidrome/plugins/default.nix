@@ -40,19 +40,24 @@ in
       # First-class plugin packages; unconditional since gating on cfg.enable here would self-reference.
       nixflix.navidrome.plugins = pluginsDefault;
     }
-    (lib.mkIf (config.nixflix.enable && cfg.enable) {
-      services.navidrome.plugins = lib.mapAttrsToList (_: p: p.package) (
-        lib.filterAttrs (_: p: p.enable && p.package != null) cfg.plugins
-      );
+    (lib.mkIf (config.nixflix.enable && cfg.enable) (
+      let
+        enabledPlugins = lib.filterAttrs (_: p: p.enable && p.package != null) cfg.plugins;
+      in
+      {
+        services.navidrome.plugins = lib.mapAttrsToList (_: p: p.package) enabledPlugins;
 
-      assertions = [
-        {
-          assertion = lib.all (p: p.package != null) (
-            lib.attrValues (lib.filterAttrs (_: p: p.enable) cfg.plugins)
-          );
-          message = "nixflix.navidrome.plugins: every enabled plugin must have a `package` (check for a typo in the plugin name, or set `package` explicitly for a plugin not yet added to the first-class table in modules/navidrome/plugins/default.nix).";
-        }
-      ];
-    })
+        services.navidrome.settings.Plugins.Enabled = enabledPlugins != { };
+
+        assertions = [
+          {
+            assertion = lib.all (p: p.package != null) (
+              lib.attrValues (lib.filterAttrs (_: p: p.enable) cfg.plugins)
+            );
+            message = "nixflix.navidrome.plugins: every enabled plugin must have a `package` (check for a typo in the plugin name, or set `package` explicitly for a plugin not yet added to the first-class table in modules/navidrome/plugins/default.nix).";
+          }
+        ];
+      }
+    ))
   ];
 }
