@@ -90,6 +90,7 @@ https://raw.githubusercontent.com/MarcFauser/jellyfin-plugin-poster-overlays/mai
 https://raw.githubusercontent.com/Marnalas/jellyfin-subsync/HEAD/manifest.json | https://github.com/Marnalas/jellyfin-subsync
 https://raw.githubusercontent.com/MoazSalem/litefin-plugin/release/manifest.json | https://github.com/MoazSalem/litefin-plugin
 https://raw.githubusercontent.com/Moonfin-Client/Plugin/refs/heads/master/manifest.json | https://github.com/Moonfin-Client/Plugin
+https://raw.githubusercontent.com/Moonfin-Client/Plugin/refs/heads/master/manifest.json | https://github.com/Moonfin-Client/Plugin
 https://raw.githubusercontent.com/MorganKryze/jellyflare/main/manifest.json | https://github.com/MorganKryze/jellyflare
 https://raw.githubusercontent.com/Namo2/InPlayerEpisodePreview/master/manifest.json | https://github.com/Namo2/InPlayerEpisodePreview
 https://raw.githubusercontent.com/NekoShinobi/jellyfin-plugin-screenshot/main/manifest.json | https://github.com/NekoShinobi/jellyfin-plugin-screenshot

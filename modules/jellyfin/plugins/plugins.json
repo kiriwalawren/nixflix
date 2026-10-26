@@ -129,6 +129,25 @@
       }
     ]
   },
+  "ASS Subsetter": {
+    "category": "Subtitles",
+    "description": "全自动、零配置的外挂 ASS 字幕字体子集化流媒体优化插件",
+    "guid": "7d13aa46-8b4a-ce85-9648-2cf4f52b8222",
+    "imageUrl": "https://gladtbam.github.io/jellyfin-plugin-ass-subsetter/poster.png",
+    "overview": "字体子集化并嵌入 ASS 字幕文件",
+    "owner": "Gladtbam",
+    "versions": [
+      {
+        "changelog": "升级至 .NET 10 与 Jellyfin 12 API\n\n完善字幕鉴权与媒体可见性检查、按实际字体依赖失效缓存，以及有界 SUP 后台转换。\n\n修复 ASS 覆盖与动画标签、MKS 同族字体附件覆盖；合并字体维护任务并减少字体分析及缓存目录扫描开销。",
+        "checksum": "2f6f5cd8809b378c2eaf21c15392ab61",
+        "hash": "sha256-uoQhdCiI4ojNf8pNqW7QCNOQs52D8u4xNiSL0vdrBzU=",
+        "sourceUrl": "https://github.com/Gladtbam/jellyfin-plugin-ass-subsetter/releases/download/v4.0.0.0/Jellyfin.Plugin.AssSubsetter_4.0.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T12:50:51Z",
+        "version": "4.0.0.0"
+      }
+    ]
+  },
   "Achievement Badges": {
     "category": "General",
     "description": "Unlockable viewing achievement badges for Jellyfin users.",
@@ -2329,6 +2348,15 @@
     "versions": [
       {
         "changelog": "Initial release of IMDb Heatmap & Chart plugin.\n",
+        "checksum": "8c5ec03842eba8fb6e29c7dda6339289",
+        "hash": "sha256-ZW0i+b6o54mgF7ZRS2+ueKMmF3Rv5LjZK/DuCQ6tz60=",
+        "sourceUrl": "https://github.com/tholeb/jellyfin-imbd-heatmap-and-chart/releases/download/1.0.3.0/imdb-heatmap-chart_1.0.3.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T21:55:11Z",
+        "version": "1.0.3.0"
+      },
+      {
+        "changelog": "Initial release of IMDb Heatmap & Chart plugin.\n",
         "checksum": "391aefdfb548e15d85d69e5753bd2c95",
         "hash": "sha256-eBwwFkqmlANbbLyM2uc01CKo5MEvcVMdAr4+wTmwtAc=",
         "sourceUrl": "https://github.com/tholeb/jellyfin-imbd-heatmap-and-chart/releases/download/1.0.1.0/imdb-heatmap-chart_1.0.1.0.zip",
@@ -2553,7 +2581,7 @@
         "checksum": "05c5d373a175204b4e5fbadff56ece33",
         "hash": "sha256-g8Oiyt4NK8pyCXt2M1B7EpEL71kUGGkxtXSzKndUuOQ=",
         "sourceUrl": "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.6.0/intro-skipper-v12.0.6.0.zip",
-        "targetAbi": "12.0.0.0",
+        "targetAbi": "12.2.0.0",
         "timestamp": "2026-10-23T19:18:12Z",
         "version": "12.0.6.0"
       },
@@ -2606,12 +2634,21 @@
   },
   "Inventory": {
     "category": "General",
-    "description": "Inventory adds one table to the dashboard that lists every item in your libraries with the attributes that matter for storage and quality: size, size per hour of runtime, bitrate, codecs, resolution, HDR and Dolby Vision format, audio layout and languages. Pick the columns you want per media type.",
+    "description": "The Inventory plugin adds one table to the dashboard that lists every item in your libraries with the attributes that matter for storage and quality: size, size per hour of runtime, bitrate, codecs, resolution, HDR and Dolby Vision format, audio layout and languages. Pick the columns you want per media type.",
     "guid": "ed020473-559f-42c1-850f-53349b29d838",
     "imageUrl": "https://raw.githubusercontent.com/ivenos/jellyfin_inventory/main/.github/assets/thumb.png",
     "overview": "A sortable, filterable table of everything in your libraries.",
     "owner": "ivenos",
     "versions": [
+      {
+        "changelog": "## ✨ Added\n\n- A Genres column (#12).\n- Artists, Authors and Narrators columns, with the artists shown for albums and tracks by default.\n- An audiobook kept in several files is one row that opens to its files.\n- Search also finds artists, authors and narrators.\n\n## 🔄 Changed\n\n- Filtering genres, people or languages with = or ≠ checks each value on its own.\n\n## 🐛 Fixed\n\n- An mp4, m4v, mov or webm file showed a list of formats as its container.\n- Names and other text sorted 10 ahead of 2.\n- An audio .strm file took its size per hour from the size of the text file.\n- A frame rate typed as 23.976 found nothing in languages with a decimal comma.\n- A filter read a value such as 0,125 as 125.\n- Right-to-left languages showed sizes, runtimes and paths in the wrong order.\n- Clicking a column header while a tab loaded sorted it by a hidden column.\n- After a first load that failed, buttons could be clicked but did nothing.\n- Search and filters missed names with accents the way macOS stores them.\n- The page title sat lower than on Jellyfin's own dashboard pages.\n- In a narrow window the buttons wrapped one by one instead of together.\n\n**Full changelog:** [v1.1.0...v1.2.0](https://github.com/ivenos/jellyfin_inventory/compare/v1.1.0...v1.2.0)\n",
+        "checksum": "2aaf3c0fe047024f85a1763a5ccc5516",
+        "hash": "sha256-z65kAlupHH6/wkyNlCJT9W19dhhlUnQdP2Kf8uaL1tI=",
+        "sourceUrl": "https://github.com/ivenos/jellyfin_inventory/releases/download/v1.2.0/inventory_1.2.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T15:56:38Z",
+        "version": "1.2.0.0"
+      },
       {
         "changelog": "### Added\r\n\r\n- A Quality column that names the class a frame falls in, from 144p to 8K, with an i in place of the p for interlaced video. It sorts by class rather than by how the name reads, and a filter picks a class from a list and holds rows at, above or below it. (#7)\r\n- `Schema` answers the classes a quality can be held against, in their order.\r\n- A failed export and a failed column save are reported in words of their own.\r\n\r\n### Changed\r\n\r\n- A CSV names the unit of a size, a runtime and a bitrate in its header. An ODS shows a runtime as a time, counted in hours past a day, and a size and a bitrate with their unit, all of them still numbers a spreadsheet can total. (#6)\r\n- A number typed into a filter with the digit grouping the table prints is read as one number, so 48,000 is no longer 48.\r\n- The README describes `search` and what an export holds, and names bytes per hour and truth values among the filter values.\r\n- An advisory against a package Jellyfin brings along is a build warning rather than an error.\r\n\r\n### Fixed\r\n\r\n- The sidebar entry followed a language further down the browser's list when English came first, and could take one the browser had ruled out.\r\n- A book ran for the second Jellyfin measures its reading progress in, and was given a size per hour from it.\r\n- A series whose episodes run at 24000/1001 and at 2997/125 read as mixed in its frame rate, though every episode shows 23.976.\r\n- A DVD or Blu-ray folder weighed only the first file of its title. It now weighs every file in the folder and shows no size per hour.\r\n- A .strm took its bitrate and its size per hour from the bytes of the text file.\r\n- The table kept its scroll position when a page turn, a sort, a search or a filter replaced its rows.\r\n- A visit whose schema failed to load left an empty page behind, and a later one left the filter button disabled.\r\n- Two quick changes to the rows per page or to the level a tab is expanded to could be stored in the wrong order.\r\n- The spacing of the tab counts, the column picker and the row toggles did not follow a right-to-left layout.\r\n- Three checks could not fail or skipped part of what they name: the rounded runtime of a series, the version in the README badge, and the names of the tabs.\r\n- A failed library refresh ended the test run, a request the server never answered held it for good, and Ctrl-C waited for the helper container to finish.\r\n- The fixture recipe of the screenshot script went on after a failed encode, and the version list did not retry a connection that dropped after the request was sent.\r\n\r\n### Dependencies\r\n\r\n- jsdom 30.1.1 in the tests. (#4)\r\n- Renovate keeps `test/` in its scan through an empty `ignorePaths` rather than `ignorePresets`.\r\n",
         "checksum": "3aaa75709795568694f61c6fc2a37fe4",
@@ -3733,6 +3770,15 @@
     "owner": "MoazSalem",
     "versions": [
       {
+        "changelog": "Release 1.12.0.5",
+        "checksum": "f8425f12ff6034c025b40913476ef55b",
+        "hash": "sha256-cNIuNoFkemAINfiFRE3Gvgwph/2D70DMvNBo8WIHJ2I=",
+        "sourceUrl": "https://github.com/MoazSalem/litefin-plugin/releases/download/1.12.0.5/Litefin.Plugin_1.12.0.5.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T18:20:34Z",
+        "version": "1.12.0.5"
+      },
+      {
         "changelog": "Release 1.12.0.4",
         "checksum": "2e70d7d5ddc0b512d7baa45a21679b42",
         "hash": "sha256-CqolnrG1ANG4mil1gjA2uPzQ3vEzVicCc+WbxPmH81U=",
@@ -3787,6 +3833,15 @@
     "overview": "Build looping virtual TV channels that appear natively in Jellyfin's Live TV.",
     "owner": "JPKribs",
     "versions": [
+      {
+        "changelog": "\n## Features\n- Multipart episodes now stay together however many parts they have, so a story told in parts 1 through 4 airs back to back instead of only the first two\n\n## Fixed\n- Viewers who stay tuned now follow the refreshed schedule after a guide refresh instead of drifting away from what the guide shows\n- Items no longer get cut off as they finish, so measured durations are recorded and items line up cleanly at their seams\n- A restarted stream no longer replays the last half minute of content\n- The standby slate now uses the channel codecs, so HEVC and AC3 channels no longer break when they fall back to standby\n- Channels with time-of-day rating blocks now land on the guide clock after the tune-in card instead of running about ten seconds behind\n- Burned-in subtitle items from sources with a nonzero start time no longer jump forward at the seam\n- A series recording rule no longer re-records the same unnumbered program at every airing\n- Cancelling one episode of a series recording now skips that episode instead of recording it at its next airing\n- Record series now picks the local day of the week instead of the UTC day\n- Recordings that fail while storage is briefly unavailable now keep retrying instead of giving up after about three minutes\n- Interrupted recording copies no longer leave temporary files in the library\n- The stream cleanup task can no longer delete a stream that is just starting\n- A channel can no longer end up with two encoders running at once\n- Changing the stream directory no longer leaves later saves clearing the wrong schedule cache\n- Saving settings during a guide refresh no longer gets overwritten by the old schedule\n- The Popular channel now honors its audio language filter\n- The channel editor no longer keeps a rejected save in memory, and warns instead of overwriting changes made in another tab\n- The stress test now measures real frames produced and fails streams that exit with an error\n- Settings saved through the API with empty values no longer crash the guide or streams\n- Very large rating transition windows are now capped at one day instead of turning rating protection off",
+        "checksum": "34f4cd95d11d8db79e86a8f657dc914b",
+        "hash": "sha256-fg2cLcOswghW2kVDLeoyZm/zqo1pw3sG8I2YBexwFvE=",
+        "sourceUrl": "https://github.com/JPKribs/jellyfin-plugin-livechannels/releases/download/v12.2.2.2/jellyfin-plugin-livechannels-12.2.2.2.zip",
+        "targetAbi": "12.2.0.0",
+        "timestamp": "2026-10-25T05:15:26Z",
+        "version": "12.2.2.2"
+      },
       {
         "changelog": "\n## Fixed\n- The guide no longer shows two overlapping schedules for a channel after a refresh where any channel failed\n- A guide refresh no longer changes the program on air mid-show; the current program keeps its slot and the new schedule follows it\n- Shuffled series always air a full batch of episodes instead of sometimes airing a lone leftover episode\n- On channels with time-of-day rating blocks, a series batch is placed whole or skipped at a rating border instead of being cut after one episode",
         "checksum": "2583801b32dae8f4d33316b666294c6c",
@@ -5002,6 +5057,15 @@
     "overview": "Send newsletters for recently added/deleted/updated/upcoming media",
     "owner": "Sanidhya30",
     "versions": [
+      {
+        "changelog": "- Feature: Added Exclude all and Restore all buttons to each section of the queue, to clear or bring back a whole section in one click.\n- Feature: Renamed the Preview tab to Queue, so it is not confused with the per-client Preview button.\n- Bug Fix: A queued item that is re-identified in Jellyfin now gets the poster of its new match instead of keeping the old one.\n- Maintenance: Updated MailKit from 4.18.1 to 4.18.2 and SixLabors.ImageSharp from 4.1.2 to 4.1.3.\n- FULL CHANGELOG: https://raw.githubusercontent.com/Sanidhya30/Jellyfin-Newsletter/master/CHANGELOG.md\n",
+        "checksum": "d7b05339b2d6ebaa0997ebb7bb0cb7d4",
+        "hash": "sha256-vArOSGmr5lSyZaOyomH0qeMCCpUUx4gXiP9oUli/wnI=",
+        "sourceUrl": "https://github.com/Sanidhya30/Jellyfin-Newsletter/releases/download/v2.2.0.0/newsletters_2.2.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T17:01:38Z",
+        "version": "2.2.0.0"
+      },
       {
         "changelog": "- Feature: Added a Preview button to every client configuration that renders the next newsletter beside the config, without sending anything. Unsaved changes are previewed too.\n- Maintenance: Updated MailKit from 4.18.0 to 4.18.1.\n- FULL CHANGELOG: https://raw.githubusercontent.com/Sanidhya30/Jellyfin-Newsletter/master/CHANGELOG.md\n",
         "checksum": "7731910eed24f9506e4064ee004a41f2",
@@ -6299,6 +6363,33 @@
     "overview": "This plugin lets you add two extra tabs to your top bar, allowing you to discover new Movies and TV Shows, and easily request them in any quality profile you want.",
     "owner": "varunaditya-plus",
     "versions": [
+      {
+        "changelog": "Added an unsaved changes indicator to the settings banner",
+        "checksum": "77879805EC36C0A69A7DEADAD550270D",
+        "hash": "sha256-0GYH9RGWiQfIlMXrB2OT9olcwilJXIrO3jckfOftA0g=",
+        "sourceUrl": "https://github.com/varunaditya-plus/SeerrFin/releases/download/1.8.5.0/Jellyfin.Plugin.SeerrFin_12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T22:39:29.0000000Z",
+        "version": "1.8.5.0"
+      },
+      {
+        "changelog": "Added carousel ordering and visibility controls for all discovery pages",
+        "checksum": "293601D4A3E510C635BA1F51BC73819C",
+        "hash": "sha256-xqJIgzWJN0oXtntyoqe91tQDa0zvubYtGDM6+jdmZPA=",
+        "sourceUrl": "https://github.com/varunaditya-plus/SeerrFin/releases/download/1.8.4.0/Jellyfin.Plugin.SeerrFin_12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T21:48:12.0000000Z",
+        "version": "1.8.4.0"
+      },
+      {
+        "changelog": "Fixed invalid CSRF token errors when making Seerr requests",
+        "checksum": "3B6BDAAE1084D224EED4B00CE071AE15",
+        "hash": "sha256-tbQbWuz5qG/t9/ExROx5dpKLs2EyApfPH8SKPhykrqM=",
+        "sourceUrl": "https://github.com/varunaditya-plus/SeerrFin/releases/download/1.8.3.4/Jellyfin.Plugin.SeerrFin_12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T21:19:36.0000000Z",
+        "version": "1.8.3.4"
+      },
       {
         "changelog": "Updated button styling in modal, and added aria labels to modal buttons",
         "checksum": "220EBE8CED36318D0F114D9950B92E3D",
@@ -7685,6 +7776,15 @@
     "overview": "Group policy templates, display and playback preferences, account lifecycle, password hygiene, and easier user onboarding for Jellyfin.",
     "owner": "JPKribs",
     "versions": [
+      {
+        "changelog": "\n## Fixed\n- Session cleanup logs now name the user whose device was logged out, instead of showing their user ID.",
+        "checksum": "522b3c3896172711f69d77ee7c489a77",
+        "hash": "sha256-t6DF8Puy4K2Vqxc8qInhxcx5qFMpvjLxURCLhSUTzSk=",
+        "sourceUrl": "https://github.com/JPKribs/jellyfin-plugin-usermanagement/releases/download/v12.2.2.2/jellyfin-plugin-usermanagement-12.2.2.2.zip",
+        "targetAbi": "12.2.0.0",
+        "timestamp": "2026-10-25T17:06:12Z",
+        "version": "12.2.2.2"
+      },
       {
         "changelog": "\n## Fixed\n- Users created by an administrator now get all of the default group's restrictions, not just its membership and password rules.\n\n## Developer\n- Built for Jellyfin 12.2 (target ABI 12.2.0.0). Servers on Jellyfin 12.0 or 12.1 keep the previous release.\n- Updated test dependencies (Microsoft.NET.Test.Sdk 18.11, NSubstitute 6.2, xunit 2.9.3, xunit.runner.visualstudio 4.0.1).",
         "checksum": "4bf6e208e39378c590168bd016582b86",
