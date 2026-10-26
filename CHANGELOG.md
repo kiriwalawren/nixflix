@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Radarr, Sonarr, Sonarr Anime, Lidarr, Prowlarr, Seerr and Maintainerr data directories are now `0700` instead of `0755`. Their API keys (`config.xml`, Seerr's `settings.json`, Maintainerr's database) were readable by every local user: the \*arr units run with `UMask=0002`, so `config.xml` was `0664`. Existing installs are fixed on the next activation. ([#392](https://github.com/kiriwalawren/nixflix/pull/392))
 - Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))
 - Fix Jellyfin library sync/enable on Seerr 3.5.0+ by switching to the new `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id` endpoints, replacing the removed `?sync=true`/`?enable=ids` query params ([#385](https://github.com/kiriwalawren/nixflix/issues/385))
 - Restore top-level overrides (e.g. `enable`, `priority`, `tags`, `removeCompletedDownloads`/`removeFailedDownloads` for download clients, `includeHealthWarnings` for Notif) that were silently dropped by the Connect triggers fix in [#381](https://github.com/kiriwalawren/nixflix/pull/381) ([#383](https://github.com/kiriwalawren/nixflix/issues/383))

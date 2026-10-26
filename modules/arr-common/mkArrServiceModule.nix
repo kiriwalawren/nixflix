@@ -308,10 +308,13 @@ in
 
       networking.firewall = mkIf cfg.openFirewall { allowedTCPPorts = [ cfg.config.hostConfig.port ]; };
 
+      # 0700: config.xml holds the API key, and the service's UMask 0002
+      # (for media hardlinks) makes it 0664, readable by any local user
+      # through a 0755 directory. Only the service itself uses its dataDir.
       systemd.tmpfiles.settings."10-${serviceName}" = {
         "${cfg.dataDir}".d = {
           inherit (cfg) user group;
-          mode = "0755";
+          mode = "0700";
         };
       };
 
