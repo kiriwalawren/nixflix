@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Add Moonbase Jellyfin plugin support ([#397](https://github.com/kiriwalawren/nixflix/pull/397))
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
 - `nixflix.seerr` now asserts that the Seerr package in use is 3.5.0 or newer, failing evaluation with an actionable message instead of a bare `seerr-setup.service` `status=22` during activation. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins, so this applies whether or not you set the option — update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build. Seerr library calls also report their HTTP status on failure rather than exiting on a bare `curl -f` code
 - `nixflix.<sonarr|sonarr-anime|radarr|lidarr>.config.metadata` to configure metadata consumers (Settings → Metadata), e.g. Plex series match files and episode mappings ([#373](https://github.com/kiriwalawren/nixflix/pull/373))
