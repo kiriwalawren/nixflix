@@ -1,7 +1,4 @@
-{
-  lib,
-  jellyfinVersion,
-}:
+{ lib, jellyfinVersion }:
 let
   # Target abi is always 4 components long, and Jellyfin Version needs to be the same length,
   # or versionAtLeast will return `false` despite the only difference in versions being the
