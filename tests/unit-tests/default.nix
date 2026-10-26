@@ -354,9 +354,9 @@ in
             name = "Intro Skipper";
             versions = [
               {
-                version = "12.0.5.0";
+                version = "12.0.6.0";
                 inherit targetAbi;
-                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.5.0/intro-skipper-v12.0.5.0.zip";
+                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.6.0/intro-skipper-v12.0.6.0.zip";
               }
             ];
           }
@@ -379,8 +379,8 @@ in
               plugins."Intro Skipper" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "12.0.5.0";
-                  hash = "sha256-qotwE6GgGC1dXKRDrnxz1DdsL+O0OV/9OREExi8P3UM=";
+                  version = "12.0.6.0";
+                  hash = "sha256-g8Oiyt4NK8pyCXt2M1B7EpEL71kUGGkxtXSzKndUuOQ=";
                 };
               };
               users.admin = {
@@ -401,7 +401,7 @@ in
         lib.hasInfix "Syncing packaged plugin: Intro Skipper" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Intro Skipper_12.0.5.0" pluginService.script
+        lib.hasInfix "Intro Skipper_12.0.6.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
@@ -1232,4 +1232,49 @@ in
       fi
       echo 'PASS: nested-secret-in-list-jq-filter' > $out
     '';
+
+  # nixflix.seerr drives the 3.5.0+ library endpoints, so a package below that
+  # must be caught at eval time rather than as `status=22` from seerr-setup.
+  seerr-package-below-minimum-assertion =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            seerr = {
+              enable = true;
+              apiKey._secret = pkgs.writeText "seerr-apikey" "seerr-test-key";
+              package = pkgs.seerr.overrideAttrs (old: {
+                inherit (old) src;
+                version = "3.4.1";
+              });
+            };
+          };
+        }
+      ];
+      failed = builtins.filter (a: !a.assertion) config.config.assertions;
+    in
+    assertTest "seerr-package-below-minimum-assertion" (
+      builtins.any (a: lib.hasInfix "requires Seerr 3.5.0 or newer" a.message) failed
+    );
+
+  # The nixpkgs nixflix pins must itself satisfy nixflix's minimum.
+  seerr-pinned-package-meets-minimum =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            seerr = {
+              enable = true;
+              apiKey._secret = pkgs.writeText "seerr-apikey" "seerr-test-key";
+            };
+          };
+        }
+      ];
+      failed = builtins.filter (a: !a.assertion) config.config.assertions;
+    in
+    assertTest "seerr-pinned-package-meets-minimum" (
+      !(builtins.any (a: lib.hasInfix "requires Seerr 3.5.0 or newer" a.message) failed)
+    );
 }

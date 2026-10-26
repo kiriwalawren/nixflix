@@ -10,12 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
+- `nixflix.seerr` now asserts that the Seerr package in use is 3.5.0 or newer, failing evaluation with an actionable message instead of a bare `seerr-setup.service` `status=22` during activation. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins, so this applies whether or not you set the option — update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build. Seerr library calls also report their HTTP status on failure rather than exiting on a bare `curl -f` code
 - `nixflix.<sonarr|sonarr-anime|radarr|lidarr>.config.metadata` to configure metadata consumers (Settings → Metadata), e.g. Plex series match files and episode mappings ([#373](https://github.com/kiriwalawren/nixflix/pull/373))
 
 ### Fixed
 
 - Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))
-- Fix Jellyfin library sync/enable failing on Seerr 3.5.0+ by switching to the new `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id` endpoints, replacing the removed `?sync=true`/`?enable=ids` query params ([#385](https://github.com/kiriwalawren/nixflix/issues/385))
+- Fix Jellyfin library sync/enable on Seerr 3.5.0+ by switching to the new `POST /settings/jellyfin/library/sync` and per-library `PUT /settings/jellyfin/library/:id` endpoints, replacing the removed `?sync=true`/`?enable=ids` query params ([#385](https://github.com/kiriwalawren/nixflix/issues/385))
 - Restore top-level overrides (e.g. `enable`, `priority`, `tags`, `removeCompletedDownloads`/`removeFailedDownloads` for download clients, `includeHealthWarnings` for Notif) that were silently dropped by the Connect triggers fix in [#381](https://github.com/kiriwalawren/nixflix/pull/381) ([#383](https://github.com/kiriwalawren/nixflix/issues/383))
 - Fix Connect triggers not working in Notif ([#381](https://github.com/kiriwalawren/nixflix/pull/381))
 - `nixflix.seerr.jellyfin.libraryFilter` now correctly selects the configured libraries ([#376](https://github.com/kiriwalawren/nixflix/pull/376))

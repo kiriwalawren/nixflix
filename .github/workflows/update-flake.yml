@@ -32,7 +32,7 @@ jobs:
         run: nix flake update
 
       - name: Cache Jellyfin plugin source manifests
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: modules/jellyfin/plugins/.source-cache
           key: jellyfin-plugin-source-cache-${{ github.run_id }}

@@ -62,7 +62,7 @@ for plugin_name in $(echo "$PLUGINS_JSON" | jq -r 'keys[]'); do
     continue
   fi
 
-  NDP_FILE=$(find "$OUT_PATH/share" -maxdepth 1 -name '*.ndp' | head -n1)
+  NDP_FILE=$(find "$OUT_PATH/share" -name '*.ndp' | head -n1)
   if [ -z "$NDP_FILE" ]; then
     echo "  No .ndp found under $OUT_PATH/share, skipping" >&2
     FAILED+=("$plugin_name")
