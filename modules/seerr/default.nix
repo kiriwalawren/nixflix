@@ -110,8 +110,9 @@ in
           mode = "0755";
           inherit (cfg) user group;
         };
+        # 0700: config/settings.json holds the Jellyfin and *arr API keys.
         ${cfg.dataDir}.d = {
-          mode = "0755";
+          mode = "0700";
           inherit (cfg) user group;
         };
       };

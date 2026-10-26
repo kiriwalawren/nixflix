@@ -416,7 +416,7 @@ in
             name = "LAPSE";
             versions = [
               {
-                version = "2.0.1.0";
+                version = "2.1.2.0";
                 targetAbi = "10.11.0.0";
                 sourceUrl = "https://github.com/Schwponaco-org/lapse-jellyfin-plugin/releases/download/v2.0.1/lapse-jellyfin-plugin-v2.0.1.zip";
               }
@@ -441,9 +441,8 @@ in
               plugins."LAPSE" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "2.0.1.0";
-                  hash = "sha256-A9C6P/m17axgmsWC4E3CFP1M/zcSmo+8mgh1cAD4Rls=";
-                  relaxVersionCheck = true;
+                  version = "2.1.2.0";
+                  hash = "sha256-vNFHIj/AGSOft7zP4GkE/TSln4UkHSk1ZRClmmeBEYo=";
                 };
               };
               users.admin = {
@@ -458,7 +457,7 @@ in
     in
     pkgs.runCommand "unit-test-jellyfin-plugin-repo-relaxed-version-check" { } ''
       ${check "Plugin with incompatible target ABI installed with relaxed version check" (
-        lib.hasInfix "LAPSE_2.0.1.0" pluginService.script
+        lib.hasInfix "LAPSE_2.1.2.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-relax-version-check' > $out
@@ -1202,6 +1201,51 @@ in
       radarrCfg = config.config.nixflix.radarr;
     in
     assertTest "settings-auth-overrides-hostconfig" (radarrCfg.settings.auth.method == "External");
+
+  # Data dirs hold API keys (config.xml, settings.json, databases), so no
+  # other local user may enter them.
+  state-dirs-private =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            prowlarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/prowlarr-api";
+            };
+            seerr = {
+              enable = true;
+              apiKey._secret = "/run/secrets/seerr-api";
+              jellyfin = {
+                adminUsername = "admin";
+                adminPassword = "password";
+              };
+            };
+            maintainerr.enable = true;
+          };
+        }
+      ];
+      cfg = config.config;
+      inherit (cfg.systemd.tmpfiles) settings;
+      mode = svc: dir: settings."10-${svc}".${dir}.d.mode;
+    in
+    pkgs.runCommand "unit-test-state-dirs-private" { } ''
+      ${check "radarr dataDir 0700" (mode "radarr" cfg.nixflix.radarr.dataDir == "0700")}
+      ${check "sonarr dataDir 0700" (mode "sonarr" cfg.nixflix.sonarr.dataDir == "0700")}
+      ${check "prowlarr dataDir 0700" (mode "prowlarr" cfg.nixflix.prowlarr.dataDir == "0700")}
+      ${check "seerr dataDir 0700" (mode "seerr" cfg.nixflix.seerr.dataDir == "0700")}
+      ${check "maintainerr dataDir 0700" (mode "maintainerr" cfg.nixflix.maintainerr.dataDir == "0700")}
+      echo 'PASS: state-dirs-private' > $out
+    '';
 
   nested-secret-in-list-jq-filter =
     let

@@ -99,16 +99,12 @@ RESULT="$(jq -s --arg jfv "$JELLYFIN_VERSION" '
       end;
 
   ($jfv | pad4) as $jf
-  | [12, 0, 0, 0] as $v12
   | (map(select(type == "array")) | add // []) as $plugins
   | $plugins
   | map(
       .versions = (
         [ .versions[]?
-          | select(
-              (.targetAbi | pad4) as $abi
-              | ($jf >= $abi) and (($jf < $v12) or ($abi >= $v12))
-            )
+          | select((.targetAbi | pad4) <= $jf)
         ]
       )
     )
