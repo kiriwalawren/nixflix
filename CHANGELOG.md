@@ -6,11 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Jellyfin plugins whose `targetAbi` is older than 12 are no longer excluded on Jellyfin 12+. `targetAbi` is now treated purely as the minimum supported Jellyfin version, matching Jellyfin's own check, which grows the plugins available under `nixflix.jellyfin.plugins` from 179 to 330
+- The bundled Jellyfin plugin list now keeps the newest 10 versions of each plugin, and for each version only the build with the highest `targetAbi` that the pinned Jellyfin supports
+- The Jellyfin plugin update script now hashes plugin versions in parallel (one job per CPU, override with `PLUGIN_PREFETCH_CONCURRENCY`), reports progress as it goes, and avoids repeated manifest parsing
+
 ### Added
 
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
 - `nixflix.seerr` now asserts that the Seerr package in use is 3.5.0 or newer, failing evaluation with an actionable message instead of a bare `seerr-setup.service` `status=22` during activation. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins, so this applies whether or not you set the option — update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build. Seerr library calls also report their HTTP status on failure rather than exiting on a bare `curl -f` code
 - `nixflix.<sonarr|sonarr-anime|radarr|lidarr>.config.metadata` to configure metadata consumers (Settings → Metadata), e.g. Plex series match files and episode mappings ([#373](https://github.com/kiriwalawren/nixflix/pull/373))
+
+### Deprecated
+
+- `relaxVersionCheck` in `nixflix.lib.jellyfinPlugins.fromRepo` no longer has any effect and prints an evaluation warning when set. Remove it from your configuration
 
 ### Fixed
 
