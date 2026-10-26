@@ -415,7 +415,6 @@ pkgs.testers.runNixOSTest {
             package = jellyfinPlugins.fromRepo {
               version = "2.1.1.0";
               hash = "sha256-wRNMmJ1urCJlIXvfu9IeDNIbNrEkhcSUXJQnSvj3fi0=";
-              relaxVersionCheck = true;
             };
           };
         };

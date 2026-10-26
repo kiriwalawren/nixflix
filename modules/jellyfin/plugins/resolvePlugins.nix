@@ -120,7 +120,6 @@ let
 
       selectedCompatibleMatches = selectVersions {
         inherit lib jellyfinVersion;
-        inherit (sourceSpec) relaxVersionCheck;
       } selectedMatches;
 
       matchingRepositoriesSummary = lib.concatStringsSep ", " (

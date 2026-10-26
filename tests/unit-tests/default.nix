@@ -443,7 +443,6 @@ in
                 package = jellyfinPlugins.fromRepo {
                   version = "2.0.1.0";
                   hash = "sha256-A9C6P/m17axgmsWC4E3CFP1M/zcSmo+8mgh1cAD4Rls=";
-                  relaxVersionCheck = true;
                 };
               };
               users.admin = {
