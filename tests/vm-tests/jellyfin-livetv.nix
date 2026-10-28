@@ -164,9 +164,10 @@ pkgs.testers.runNixOSTest {
         a_id, g_id = a["Id"], g["Id"]
 
     with subtest("the secret tuner URL stays out of the store and the state file"):
-        specs = machine.succeed("ls /nix/store/*-jellyfin-livetv.json").split()
-        assert specs, "no jellyfin-livetv.json in the store"
-        machine.fail(f"grep -l '{F}/b.m3u' {' '.join(specs)}")
+        # The unit's script is what holds the declarations: plain URLs as --arg,
+        # secret files only by path (mkJqSecretArgs --rawfile).
+        script = machine.succeed("grep '^ExecStart=' /etc/systemd/system/jellyfin-livetv.service").split()[-1]
+        machine.fail(f"grep -l '{F}/b.m3u' {script}")
         assert f"{F}/b.m3u" not in machine.succeed(f"cat {STATE}"), "secret URL written to the state file"
 
     with subtest("channels and programmes appear"):
