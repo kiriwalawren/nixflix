@@ -45,6 +45,10 @@ in
         in
         [
           {
+            assertion = versionAtLeast cfg.package.version "3.5.0";
+            message = "nixflix.seerr requires Seerr 3.5.0 or newer, but the Seerr package in use is ${cfg.package.version}. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins. Update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build.";
+          }
+          {
             assertion = cfg.jellyfin.adminUsername != null && cfg.jellyfin.adminPassword != null;
             message = "Seerr requires Jellyfin admin credentials. Either enable `nixflix.jellyfin` with an admin user, or set `nixflix.seerr.jellyfin.adminUsername` and `nixflix.seerr.jellyfin.adminPassword`.";
           }
@@ -106,8 +110,9 @@ in
           mode = "0755";
           inherit (cfg) user group;
         };
+        # 0700: config/settings.json holds the Jellyfin and *arr API keys.
         ${cfg.dataDir}.d = {
-          mode = "0755";
+          mode = "0700";
           inherit (cfg) user group;
         };
       };

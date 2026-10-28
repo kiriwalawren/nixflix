@@ -118,10 +118,7 @@ let
         ) matchingRepositories
       );
 
-      selectedCompatibleMatches = selectVersions {
-        inherit lib jellyfinVersion;
-        inherit (sourceSpec) relaxVersionCheck;
-      } selectedMatches;
+      selectedCompatibleMatches = selectVersions { inherit lib jellyfinVersion; } selectedMatches;
 
       matchingRepositoriesSummary = lib.concatStringsSep ", " (
         lib.unique (map (match: match.name) selectedCompatibleMatches)

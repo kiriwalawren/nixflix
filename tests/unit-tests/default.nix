@@ -354,9 +354,9 @@ in
             name = "Intro Skipper";
             versions = [
               {
-                version = "12.0.5.0";
+                version = "12.0.6.0";
                 inherit targetAbi;
-                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.5.0/intro-skipper-v12.0.5.0.zip";
+                sourceUrl = "https://github.com/intro-skipper/intro-skipper/releases/download/12.0/v12.0.6.0/intro-skipper-v12.0.6.0.zip";
               }
             ];
           }
@@ -379,8 +379,8 @@ in
               plugins."Intro Skipper" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "12.0.5.0";
-                  hash = "sha256-qotwE6GgGC1dXKRDrnxz1DdsL+O0OV/9OREExi8P3UM=";
+                  version = "12.0.6.0";
+                  hash = "sha256-g8Oiyt4NK8pyCXt2M1B7EpEL71kUGGkxtXSzKndUuOQ=";
                 };
               };
               users.admin = {
@@ -401,7 +401,7 @@ in
         lib.hasInfix "Syncing packaged plugin: Intro Skipper" pluginService.script
       )}
       ${check "resolved plugin directory name appears in service script" (
-        lib.hasInfix "Intro Skipper_12.0.5.0" pluginService.script
+        lib.hasInfix "Intro Skipper_12.0.6.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-service-generation' > $out
@@ -416,7 +416,7 @@ in
             name = "LAPSE";
             versions = [
               {
-                version = "2.0.1.0";
+                version = "2.1.2.0";
                 targetAbi = "10.11.0.0";
                 sourceUrl = "https://github.com/Schwponaco-org/lapse-jellyfin-plugin/releases/download/v2.0.1/lapse-jellyfin-plugin-v2.0.1.zip";
               }
@@ -441,9 +441,8 @@ in
               plugins."LAPSE" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "2.0.1.0";
-                  hash = "sha256-A9C6P/m17axgmsWC4E3CFP1M/zcSmo+8mgh1cAD4Rls=";
-                  relaxVersionCheck = true;
+                  version = "2.1.2.0";
+                  hash = "sha256-vNFHIj/AGSOft7zP4GkE/TSln4UkHSk1ZRClmmeBEYo=";
                 };
               };
               users.admin = {
@@ -458,7 +457,7 @@ in
     in
     pkgs.runCommand "unit-test-jellyfin-plugin-repo-relaxed-version-check" { } ''
       ${check "Plugin with incompatible target ABI installed with relaxed version check" (
-        lib.hasInfix "LAPSE_2.0.1.0" pluginService.script
+        lib.hasInfix "LAPSE_2.1.2.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-relax-version-check' > $out
@@ -1203,6 +1202,51 @@ in
     in
     assertTest "settings-auth-overrides-hostconfig" (radarrCfg.settings.auth.method == "External");
 
+  # Data dirs hold API keys (config.xml, settings.json, databases), so no
+  # other local user may enter them.
+  state-dirs-private =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            prowlarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/prowlarr-api";
+            };
+            seerr = {
+              enable = true;
+              apiKey._secret = "/run/secrets/seerr-api";
+              jellyfin = {
+                adminUsername = "admin";
+                adminPassword = "password";
+              };
+            };
+            maintainerr.enable = true;
+          };
+        }
+      ];
+      cfg = config.config;
+      inherit (cfg.systemd.tmpfiles) settings;
+      mode = svc: dir: settings."10-${svc}".${dir}.d.mode;
+    in
+    pkgs.runCommand "unit-test-state-dirs-private" { } ''
+      ${check "radarr dataDir 0700" (mode "radarr" cfg.nixflix.radarr.dataDir == "0700")}
+      ${check "sonarr dataDir 0700" (mode "sonarr" cfg.nixflix.sonarr.dataDir == "0700")}
+      ${check "prowlarr dataDir 0700" (mode "prowlarr" cfg.nixflix.prowlarr.dataDir == "0700")}
+      ${check "seerr dataDir 0700" (mode "seerr" cfg.nixflix.seerr.dataDir == "0700")}
+      ${check "maintainerr dataDir 0700" (mode "maintainerr" cfg.nixflix.maintainerr.dataDir == "0700")}
+      echo 'PASS: state-dirs-private' > $out
+    '';
+
   nested-secret-in-list-jq-filter =
     let
       rawConfig = {
@@ -1232,4 +1276,92 @@ in
       fi
       echo 'PASS: nested-secret-in-list-jq-filter' > $out
     '';
+
+  # mkOneOrMoreSecretsOption is the public way to accept `x` or `[ x ... ]`
+  # (sabnzbd's rss uri): a single value must be normalised to a list, and the
+  # item type must still be enforced per item.
+  one-or-more-secrets-option =
+    let
+      evalValue =
+        value:
+        (lib.evalModules {
+          modules = [
+            {
+              options.item = secrets.mkOneOrMoreSecretsOption {
+                type = lib.types.nonEmptyStr;
+                description = "test option";
+              };
+              config.item = value;
+            }
+          ];
+        }).config.item;
+      fails = value: !(builtins.tryEval (builtins.deepSeq (evalValue value) true)).success;
+    in
+    pkgs.runCommand "unit-test-one-or-more-secrets-option" { } ''
+      ${check "a single value becomes a one-element list" (evalValue "a" == [ "a" ])}
+      ${check "a list is kept as-is" (
+        evalValue [
+          "a"
+          "b"
+        ] == [
+          "a"
+          "b"
+        ]
+      )}
+      ${check "a single secret becomes a one-element list" (
+        builtins.map (v: v._secret or v) (evalValue {
+          _secret = "/run/secrets/x";
+        }) == [ "/run/secrets/x" ]
+      )}
+      ${check "an empty string is rejected" (fails "")}
+      ${check "an empty list is rejected" (fails [ ])}
+      ${check "an empty string item is rejected" (fails [ "" ])}
+      ${check "a non-string is rejected" (fails 42)}
+      echo 'PASS: one-or-more-secrets-option' > $out
+    '';
+
+  # nixflix.seerr drives the 3.5.0+ library endpoints, so a package below that
+  # must be caught at eval time rather than as `status=22` from seerr-setup.
+  seerr-package-below-minimum-assertion =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            seerr = {
+              enable = true;
+              apiKey._secret = pkgs.writeText "seerr-apikey" "seerr-test-key";
+              package = pkgs.seerr.overrideAttrs (old: {
+                inherit (old) src;
+                version = "3.4.1";
+              });
+            };
+          };
+        }
+      ];
+      failed = builtins.filter (a: !a.assertion) config.config.assertions;
+    in
+    assertTest "seerr-package-below-minimum-assertion" (
+      builtins.any (a: lib.hasInfix "requires Seerr 3.5.0 or newer" a.message) failed
+    );
+
+  # The nixpkgs nixflix pins must itself satisfy nixflix's minimum.
+  seerr-pinned-package-meets-minimum =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            seerr = {
+              enable = true;
+              apiKey._secret = pkgs.writeText "seerr-apikey" "seerr-test-key";
+            };
+          };
+        }
+      ];
+      failed = builtins.filter (a: !a.assertion) config.config.assertions;
+    in
+    assertTest "seerr-pinned-package-meets-minimum" (
+      !(builtins.any (a: lib.hasInfix "requires Seerr 3.5.0 or newer" a.message) failed)
+    );
 }

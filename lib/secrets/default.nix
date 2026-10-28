@@ -53,6 +53,55 @@ rec {
       '';
     };
 
+  # One or more items of `type`, each of which may instead be a
+  # `{ _secret = path; }` reference. `coercedTo` normalises a single item to a
+  # one-element list, so consumers always see a list.
+  #
+  # `type` is the item type, overridable exactly like `mkSecretOption`'s. It
+  # constrains every item, not the list. With `type = types.nonEmptyStr`:
+  #
+  #   value = "a";                           # -> [ "a" ]
+  #   value = [ "a" "b" ];                   # -> [ "a" "b" ]
+  #   value = { _secret = "/run/..."; };     # -> [ { _secret = ...; } ]
+  #   value = [ { _secret = "/run/..."; } ]; # already a list
+  #
+  # These are errors:
+  #
+  #   value = "";     # an empty string, when type rejects it
+  #   value = [ ];    # an empty list is not one or more
+  #   value = [ "" ];  # an empty item, when type rejects it
+  #   value = 42;     # neither an item nor a list of items
+  mkOneOrMoreSecretsOption =
+    {
+      nullable ? false,
+      type ? types.str,
+      default ? null,
+      defaultText ? null,
+      example ? null,
+      description,
+    }:
+    mkOption {
+      inherit default defaultText;
+      type =
+        let
+          oneOrMore = types.coercedTo (secretOr type) singleton (types.nonEmptyListOf (secretOr type));
+        in
+        if nullable then types.nullOr oneOrMore else oneOrMore;
+      example =
+        if example != null then
+          example
+        else
+          literalExpression ''[ { _secret = "/run/secrets/secret-file"; } ]'';
+      description = ''
+        ${description}
+
+        !!! warning
+            Can be one value or a non-empty list of values, each of which can be a plain value (visible in the Nix store) or `{ _secret = /path/to/file; }` for file-based secrets.
+
+            Plain-text secrets will be visible in the Nix store. Use `{ _secret = path; }` for sensitive data.
+      '';
+    };
+
   mkJqSecretArgs =
     secretFields:
     let

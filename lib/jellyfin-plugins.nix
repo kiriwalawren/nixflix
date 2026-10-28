@@ -29,16 +29,6 @@ let
         '';
         example = "Jellyfin Official";
       };
-
-      relaxVersionCheck = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = ''
-          Whether the performed version check should be relaxed for plugins known to work on the configured Jellyfin version, only checking that the target ABI is less than the Jellyfin version.
-
-          Not recommended to enable, use only if you're 100% sure the plugin supports the configured Jellyfin version!
-        '';
-      };
     };
   };
 
@@ -139,14 +129,9 @@ in
       version,
       hash,
       repository ? null,
-      relaxVersionCheck ? false,
+      relaxVersionCheck ? null,
     }:
-    {
-      inherit
-        version
-        hash
-        repository
-        relaxVersionCheck
-        ;
-    };
+    lib.warnIf (relaxVersionCheck != null)
+      "nixflix.lib.jellyfinPlugins.fromRepo: `relaxVersionCheck` is deprecated and has no effect; plugins are now accepted whenever their targetAbi is <= the Jellyfin version. Remove it."
+      { inherit version hash repository; };
 }
