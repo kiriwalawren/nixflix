@@ -94,45 +94,101 @@ let
   };
 in
 {
-  options.nixflix.jellyfin.liveTv = {
-    tuners = mkOption {
-      type = types.attrsOf tunerModule;
-      default = { };
-      example = literalExpression ''
-        {
-          iptv = {
-            url = "/var/lib/iptv/channels.m3u";
-            settings.tunerCount = 2;
-          };
-        }
-      '';
-      description = ''
-        M3U tuners (IPTV playlists) for Live TV.
+  options.nixflix.jellyfin.liveTv = mkOption {
+    type = types.submodule {
+      options = {
+        tuners = mkOption {
+          type = types.attrsOf tunerModule;
+          default = { };
+          example = literalExpression ''
+            {
+              iptv = {
+                url = "/var/lib/iptv/channels.m3u";
+                settings.tunerCount = 2;
+              };
+            }
+          '';
+          description = ''
+            M3U tuners (IPTV playlists) for Live TV.
 
-        Declared tuners are created or updated in place; one is only written
-        when it differs from what Jellyfin holds. A tuner that was declared
-        before and is no longer is removed. Tuners added by hand in the
-        dashboard are never touched.
-      '';
+            Declared tuners are created or updated in place; one is only written
+            when it differs from what Jellyfin holds. A tuner that was declared
+            before and is no longer is removed. Tuners added by hand in the
+            dashboard are never touched.
+          '';
+        };
+
+        listingProviders = mkOption {
+          type = types.attrsOf listingProviderModule;
+          default = { };
+          example = literalExpression ''
+            {
+              guide = {
+                path = "/var/lib/iptv/guide.xml";
+                tuners = [ "iptv" ];
+              };
+            }
+          '';
+          description = ''
+            XMLTV guide sources for Live TV, matched to channels by `tvg-id`.
+
+            Managed the same way as `tuners`: created or updated in place, removed
+            when no longer declared, and providers added by hand are left alone.
+          '';
+        };
+      };
     };
+    default = { };
+    example = literalExpression ''
+      {
+        enable = true;
 
-    listingProviders = mkOption {
-      type = types.attrsOf listingProviderModule;
-      default = { };
-      example = literalExpression ''
-        {
-          guide = {
-            path = "/var/lib/iptv/guide.xml";
-            tuners = [ "iptv" ];
+        liveTv = {
+          tuners = {
+            # A local playlist file.
+            local = {
+              url = "/var/lib/iptv/channels.m3u";
+              friendlyName = "Local channels";
+              settings = {
+                tunerCount = 0; # 0 = no limit on simultaneous streams
+                allowStreamSharing = true;
+                enableStreamLooping = true;
+                ignoreDts = true;
+              };
+            };
+
+            # A provider playlist, its URL kept out of the Nix store.
+            provider.url._secret = "/path/to/url/secret";
           };
-        }
-      '';
-      description = ''
-        XMLTV guide sources for Live TV, matched to channels by `tvg-id`.
 
-        Managed the same way as `tuners`: created or updated in place, removed
-        when no longer declared, and providers added by hand are left alone.
-      '';
-    };
+          listingProviders.guide = {
+            path = "/var/lib/iptv/guide.xml"; # or an http(s) URL
+            tuners = [ "local" ]; # omit to use it for every tuner
+          };
+        };
+      }
+    '';
+
+    description = ''
+      !!! warning
+
+          Hardware tuners (HDHomeRun, DVB) and Schedules Direct are not covered; set
+          those up in the dashboard, and this service leaves them alone.
+
+      The `jellyfin-livetv` service reconciles Jellyfin's Live TV settings at boot
+      and whenever the declaration changes:
+
+      - A declared tuner is matched by its `url`, and a guide by its `path`. Each
+        is created if missing and updated in place if it differs. Nothing is
+        written when Jellyfin already matches, and the guide is refreshed only
+        after a change.
+      - Changing a tuner's `url` replaces the tuner, and its channels get new ids.
+      - A tuner or guide that you stop declaring is removed. Tuners and guides
+        added by hand in the dashboard are never touched.
+      - Fields not set in `settings` keep whatever value Jellyfin holds.
+
+      A complete free example can be found in
+      [Jellyfin Live TV Example](../../../examples/jellyfin-live-tv/).
+    '';
   };
 }
