@@ -24,7 +24,8 @@ Each option is documented with:
 
 ### Media Management
 
-- [Seerr](seerr/index.md) - Requests management
+- [Seerr](seerr/index.md) - Requests management & discovery for TV/Movies
+- [Aurral](aurral/index.md) - Requests management & discovery for Music
 - [Sonarr](sonarr/index.md) - TV show management
 - [Sonarr Anime](sonarr-anime/index.md) - Anime management
 - [Radarr](radarr/index.md) - Movie management
