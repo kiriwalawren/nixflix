@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+- `nixflix.jellyfin.users.<name>.policy.enabledFolders` to restrict a user to specific Jellyfin libraries by name instead of giving every user access to all of them. `policy.enableAllFolders` now defaults to `false` when `enabledFolders` is set. Note that a user with `enableAllFolders = false` and `mutable = false` now has their library selection overwritten from Nix on every rebuild
+- `nixflix.jellyfin.liveTv` to declare Live TV M3U tuners (IPTV playlists) and XMLTV guides ([#391](https://github.com/kiriwalawren/nixflix/issues/391))
 - `nixflix.usenetClients.sabnzbd.settings.rss` to declare SABnzbd RSS feeds and their filters. Feed URLs can be `_secret` files. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
 - `nixflix.seerr` now asserts that the Seerr package in use is 3.5.0 or newer, failing evaluation with an actionable message instead of a bare `seerr-setup.service` `status=22` during activation. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins, so this applies whether or not you set the option — update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build. Seerr library calls also report their HTTP status on failure rather than exiting on a bare `curl -f` code
@@ -26,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fix Maintainerr starting before Jellyfin is ready
+- Allow Maintainerr to chown own files
 - Radarr, Sonarr, Sonarr Anime, Lidarr, Prowlarr, Seerr and Maintainerr data directories are now `0700` instead of `0755`. Their API keys (`config.xml`, Seerr's `settings.json`, Maintainerr's database) were readable by every local user: the \*arr units run with `UMask=0002`, so `config.xml` was `0664`. Existing installs are fixed on the next activation. ([#392](https://github.com/kiriwalawren/nixflix/pull/392))
 - SABnzbd: a `_secret` inside a list value was written triple-quoted, which ConfigObj cannot parse in a list: two secrets were silently read as one garbled string, and a single one with a trailing comma failed to parse. List items now use a list-safe quote. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))

@@ -85,7 +85,10 @@ in
       after = [
         "maintainerr.service"
       ]
-      ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
+      ++ optionals config.nixflix.jellyfin.enable [
+        "jellyfin.service"
+        "jellyfin-api-key.service"
+      ]
       ++ optional config.nixflix.radarr.enable "radarr-config.service"
       ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
       ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
@@ -93,7 +96,10 @@ in
       requires = [
         "maintainerr.service"
       ]
-      ++ optional config.nixflix.jellyfin.enable "jellyfin-api-key.service"
+      ++ optionals config.nixflix.jellyfin.enable [
+        "jellyfin.service"
+        "jellyfin-api-key.service"
+      ]
       ++ optional config.nixflix.radarr.enable "radarr-config.service"
       ++ optional config.nixflix.sonarr.enable "sonarr-config.service"
       ++ optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"

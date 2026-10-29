@@ -17,7 +17,8 @@ let
     name = userName;
     inherit (userCfg) enableAutoLogin;
     configuration = util.recursiveTransform userCfg.configuration;
-    policy = util.recursiveTransform userCfg.policy;
+    # Resolved to ids at runtime and sent to /Users/{id}/Policy; a name here would 400 as Guid[].
+    policy = util.recursiveTransform (removeAttrs userCfg.policy [ "enabledFolders" ]);
   };
 
   userConfigFiles = mapAttrs (
@@ -37,6 +38,9 @@ let
     inherit pkgs;
     jellyfinCfg = cfg;
   };
+
+  libraries = filterAttrs (_: v: v != null) cfg.libraries;
+  anyRestricted = any (userCfg: userCfg.policy.enabledFolders != [ ]) (attrValues cfg.users);
 in
 {
   imports = [ ./options.nix ];
@@ -44,7 +48,10 @@ in
   config = mkIf (config.nixflix.enable && cfg.enable) {
     systemd.services.jellyfin-users-config = {
       description = "Configure Jellyfin Users via API";
-      after = [ "jellyfin-plugins.service" ];
+      after = [
+        "jellyfin-plugins.service"
+      ]
+      ++ optional (anyRestricted && libraries != { }) "jellyfin-libraries.service";
       requires = [ "jellyfin-plugins.service" ];
       wantedBy = [ "multi-user.target" ];
 
@@ -62,6 +69,28 @@ in
         echo "Configuring Jellyfin users..."
 
         source ${authUtil.authScript}
+
+        ${optionalString anyRestricted ''
+          echo "Fetching media folders from $BASE_URL/Library/MediaFolders..."
+          MEDIA_FOLDERS_RESPONSE=$(${
+            mkSecureCurl authUtil.token {
+              url = "$BASE_URL/Library/MediaFolders";
+              apiKeyHeader = "Authorization";
+              extraArgs = "-w \"\n%{http_code}\"";
+            }
+          })
+
+          MEDIA_FOLDERS_HTTP_CODE=$(echo "$MEDIA_FOLDERS_RESPONSE" | tail -n1)
+          MEDIA_FOLDERS_JSON=$(echo "$MEDIA_FOLDERS_RESPONSE" | sed '$d')
+
+          if [ "$MEDIA_FOLDERS_HTTP_CODE" -lt 200 ] || [ "$MEDIA_FOLDERS_HTTP_CODE" -ge 300 ]; then
+            echo "Failed to fetch media folders from Jellyfin API (HTTP $MEDIA_FOLDERS_HTTP_CODE)" >&2
+            exit 1
+          fi
+
+          echo "Available libraries:"
+          echo "$MEDIA_FOLDERS_JSON" | ${pkgs.jq}/bin/jq -r '.Items[] | "\(.Id) - \(.Name)"'
+        ''}
 
         echo "Fetching users from $BASE_URL/Users..."
         USERS_RESPONSE=$(${
@@ -89,6 +118,13 @@ in
               jqSecrets = secrets.mkJqSecretArgs {
                 inherit (userCfg) password;
               };
+              restricted = userCfg.policy.enabledFolders != [ ];
+              enabledFoldersArg = optionalString restricted ''--argjson enabledFolders "$ENABLED_FOLDER_IDS"'';
+              policyFilter =
+                if restricted then
+                  ".Policy * $desired | .EnabledFolders = $enabledFolders"
+                else
+                  ".Policy * $desired";
             in
             ''
               echo "=========================================="
@@ -205,8 +241,21 @@ in
                 # Get our desired policy settings
                 DESIRED_POLICY=$(${pkgs.coreutils}/bin/cat ${userConfigFiles.${userName}} | ${pkgs.jq}/bin/jq '.Policy')
 
+                ${optionalString restricted ''
+                  ENABLED_FOLDER_IDS=$(echo "$MEDIA_FOLDERS_JSON" | ${pkgs.jq}/bin/jq -c --argjson names ${escapeShellArg (builtins.toJSON userCfg.policy.enabledFolders)} '
+                    ([.Items[] | { key: .Name, value: (.Id | ascii_downcase | gsub("-"; "")) }] | from_entries) as $byName
+                    | [ $names[] as $n
+                        | if $byName | has($n) then
+                            $byName[$n]
+                          else
+                            error("unknown Jellyfin library \"\($n)\"; known: \($byName | keys | join(", "))")
+                          end ]')
+
+                  echo "Resolved enabledFolders: $ENABLED_FOLDER_IDS"
+                ''}
+
                 # Merge: start with current policy, overlay our desired changes
-                POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" '.Policy * $desired')
+                POLICY_JSON=$(echo "$CURRENT_POLICY" | ${pkgs.jq}/bin/jq --argjson desired "$DESIRED_POLICY" ${enabledFoldersArg} '${policyFilter}')
 
                 POLICY_RESPONSE=$(${
                   mkSecureCurl authUtil.token {

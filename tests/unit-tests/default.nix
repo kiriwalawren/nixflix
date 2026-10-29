@@ -538,6 +538,167 @@ in
     in
     assertTest "jellyfin-plugin-repo-ambiguity-assertion" (!result.success);
 
+  jellyfin-enabled-folders-defaults =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+
+              libraries."Test Movies" = {
+                collectionType = "movies";
+                paths = [ "/media/movies" ];
+              };
+
+              users = {
+                admin = {
+                  password = "testpassword";
+                  policy.isAdministrator = true;
+                };
+
+                restricted = {
+                  password = "testpassword";
+                  mutable = false;
+                  policy.enabledFolders = [ "Test Movies" ];
+                };
+
+                open = {
+                  password = "testpassword";
+                };
+
+                override = {
+                  password = "testpassword";
+                  mutable = false;
+                  policy = {
+                    enableAllFolders = true;
+                    enabledFolders = [ "Test Movies" ];
+                  };
+                };
+              };
+            };
+          };
+        }
+      ];
+      inherit (config.config.nixflix.jellyfin) users;
+      usersService = config.config.systemd.services.jellyfin-users-config;
+    in
+    pkgs.runCommand "unit-test-jellyfin-enabled-folders-defaults" { } ''
+      ${check "enabledFolders turns off enableAllFolders" (!users.restricted.policy.enableAllFolders)}
+      ${check "users without enabledFolders keep full access" users.open.policy.enableAllFolders}
+      ${check "explicit enableAllFolders wins over the derived default" users.override.policy.enableAllFolders}
+      ${check "configured library names reach the users service" (
+        lib.hasInfix "Test Movies" usersService.script
+      )}
+      ${check "resolved ids are written into the policy payload" (
+        lib.hasInfix ".EnabledFolders = $enabledFolders" usersService.script
+      )}
+      ${check "an ineffective restriction is warned about" (
+        lib.any (warning: lib.hasInfix "has no effect" warning) config.config.warnings
+      )}
+
+      echo 'PASS: jellyfin-enabled-folders-defaults' > $out
+    '';
+
+  jellyfin-users-folder-ordering =
+    let
+      mkUsersService =
+        extraPolicy:
+        (evalConfig [
+          {
+            nixflix = {
+              enable = true;
+
+              jellyfin = {
+                enable = true;
+                apiKey = "test-jellyfin-key";
+
+                libraries."Test Movies" = {
+                  collectionType = "movies";
+                  paths = [ "/media/movies" ];
+                };
+
+                users.admin = {
+                  password = "testpassword";
+                  policy = {
+                    isAdministrator = true;
+                  }
+                  // extraPolicy;
+                };
+              };
+            };
+          }
+        ]).config.systemd.services.jellyfin-users-config;
+
+      restrictedService = mkUsersService { enabledFolders = [ "Test Movies" ]; };
+      openService = mkUsersService { };
+    in
+    pkgs.runCommand "unit-test-jellyfin-users-folder-ordering" { } ''
+      ${check "restricting folders orders users after library creation" (
+        builtins.elem "jellyfin-libraries.service" restrictedService.after
+      )}
+      ${check "library creation is not a hard dependency" (
+        !builtins.elem "jellyfin-libraries.service" restrictedService.requires
+      )}
+      ${check "unrestricted users keep the original ordering" (
+        !builtins.elem "jellyfin-libraries.service" openService.after
+      )}
+
+      echo 'PASS: jellyfin-users-folder-ordering' > $out
+    '';
+
+  jellyfin-enabled-folders-unknown-library-assertion =
+    let
+      # Asserted on config.assertions directly: system.build.toplevel does not
+      # evaluate in this harness, so a tryEval on it would pass for any config.
+      # Filtered by message because the bare harness always trips the
+      # fileSystems and grub assertions.
+      failingAssertions =
+        enabledFolders:
+        lib.filter (entry: !entry.assertion && lib.hasInfix "enabledFolders" entry.message)
+          (evalConfig [
+            {
+              nixflix = {
+                enable = true;
+
+                jellyfin = {
+                  enable = true;
+                  apiKey = "test-jellyfin-key";
+
+                  libraries."Test Movies" = {
+                    collectionType = "movies";
+                    paths = [ "/media/movies" ];
+                  };
+
+                  users.admin = {
+                    password = "testpassword";
+                    policy = {
+                      isAdministrator = true;
+                      inherit enabledFolders;
+                    };
+                  };
+                };
+              };
+            }
+          ]).config.assertions;
+
+      unknown = failingAssertions [ "Nonexistent" ];
+      declared = failingAssertions [ "Test Movies" ];
+    in
+    pkgs.runCommand "unit-test-jellyfin-enabled-folders-unknown-library-assertion" { } ''
+      ${check "an undeclared library name trips exactly one assertion" (lib.length unknown == 1)}
+      ${check "the assertion names the bad entry and the configured libraries" (
+        lib.hasInfix "users.admin.policy.enabledFolders = \"Nonexistent\"" (lib.head unknown).message
+        && lib.hasInfix "Configured libraries: Test Movies" (lib.head unknown).message
+      )}
+      ${check "a declared library name trips no assertions" (declared == [ ])}
+
+      echo 'PASS: jellyfin-enabled-folders-unknown-library-assertion' > $out
+    '';
+
   jellyfin-integration =
     let
       config = evalConfig [
