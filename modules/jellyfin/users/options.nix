@@ -7,21 +7,25 @@ let
       groupedFolders = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "Folders to group together into a single view. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       orderedViews = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "The order in which views are displayed. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       latestItemsExcludes = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "Folders to exclude from the 'Latest' section. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       myMediaExcludes = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "Folders to exclude from 'My Media'. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       audioLanguagePreference = mkOption {
@@ -116,7 +120,7 @@ let
   };
   # See: https://github.com/jellyfin/jellyfin/blob/master/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/PermissionKind.cs
   # Defaults: https://github.com/jellyfin/jellyfin/blob/master/Jellyfin.Data/UserEntityExtensions.cs#L170
-  policyOpts = _: {
+  policyOpts = { config, ... }: {
     options = {
       isAdministrator = mkOption {
         type = types.bool;
@@ -145,8 +149,34 @@ let
       };
       enableAllFolders = mkOption {
         type = types.bool;
-        default = true;
-        description = "Whether the user has access to all folders";
+        default = config.enabledFolders == [ ];
+        defaultText = literalExpression "enabledFolders == [ ]";
+        description = ''
+          Whether the user has access to all libraries.
+
+          Defaults to `true` unless `enabledFolders` is set, in which case only
+          the listed libraries are accessible.
+        '';
+      };
+      enabledFolders = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [
+          "Movies"
+          "Shows"
+        ];
+        description = ''
+          Names of `nixflix.jellyfin.libraries` this user may access. Resolved to
+          Jellyfin's internal library ids at activation time. Setting this
+          defaults `enableAllFolders` to `false`.
+
+          **Important**: this has no effect on an existing user while
+          `nixflix.jellyfin.users.<name>.mutable = true` (the default). It is
+          applied only when the user is first created, so changing the list
+          later leaves that user's library access untouched. Set
+          `mutable = false` on the user for the list to be enforced on every
+          rebuild.
+        '';
       };
       enableAudioPlaybackTranscoding = mkOption {
         type = types.bool;
@@ -284,6 +314,7 @@ let
       blockedMediaFolders = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "Libraries this user is blocked from. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       blockedChannels = mkOption {
@@ -294,6 +325,7 @@ let
       enableContentDeletionFromFolders = mkOption {
         type = types.listOf types.str;
         default = [ ];
+        description = "Libraries this user may delete content from. Jellyfin item ids (GUIDs); library names are not resolved for this option.";
       };
 
       accessSchedules = mkOption {

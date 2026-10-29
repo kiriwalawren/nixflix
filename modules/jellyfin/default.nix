@@ -14,6 +14,19 @@ let
     inherit pkgs;
     jellyfinCfg = cfg;
   };
+
+  declaredLibraries = attrNames (filterAttrs (_: v: v != null) cfg.libraries);
+
+  unknownEnabledFolders = concatLists (
+    mapAttrsToList (
+      userName: userCfg:
+      map (name: "nixflix.jellyfin.users.${userName}.policy.enabledFolders = \"${name}\"") (
+        subtractLists declaredLibraries userCfg.policy.enabledFolders
+      )
+    ) cfg.users
+  );
+
+  usersWithEnabledFolders = filterAttrs (_: userCfg: userCfg.policy.enabledFolders != [ ]) cfg.users;
 in
 {
   imports = [
@@ -42,7 +55,26 @@ in
         assertion = cfg.system.cacheSize >= 3;
         message = "nixflix.jellyfin.system.cacheSize must be at least 3 due to Jellyfin's internal caching implementation (got ${toString cfg.system.cacheSize}).";
       }
+      {
+        assertion = unknownEnabledFolders == [ ];
+        message =
+          "policy.enabledFolders must reference a configured nixflix.jellyfin.libraries name. Unknown: "
+          + concatStringsSep ", " unknownEnabledFolders
+          + ". Configured libraries: "
+          + (if declaredLibraries == [ ] then "(none)" else concatStringsSep ", " declaredLibraries)
+          + ".";
+      }
     ];
+
+    warnings =
+      mapAttrsToList (
+        userName: _:
+        "nixflix.jellyfin.users.${userName}.policy.enabledFolders is set but enableAllFolders = true, so the restriction has no effect."
+      ) (filterAttrs (_: userCfg: userCfg.policy.enableAllFolders) usersWithEnabledFolders)
+      ++ mapAttrsToList (
+        userName: _:
+        "nixflix.jellyfin.users.${userName}.policy.enabledFolders is only applied when the user is first created because mutable = true. Set mutable = false to enforce library access on every rebuild."
+      ) (filterAttrs (_: userCfg: userCfg.mutable) usersWithEnabledFolders);
 
     users.users.${cfg.user} = {
       inherit (cfg) group;

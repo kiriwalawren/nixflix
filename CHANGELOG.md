@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `nixflix.jellyfin.users.<name>.policy.enabledFolders` to restrict a user to specific Jellyfin libraries by name instead of giving every user access to all of them. `policy.enableAllFolders` now defaults to `false` when `enabledFolders` is set. Note that a user with `enableAllFolders = false` and `mutable = false` now has their library selection overwritten from Nix on every rebuild
 - `nixflix.jellyfin.liveTv` to declare Live TV M3U tuners (IPTV playlists) and XMLTV guides ([#391](https://github.com/kiriwalawren/nixflix/issues/391))
 - `nixflix.usenetClients.sabnzbd.settings.rss` to declare SABnzbd RSS feeds and their filters. Feed URLs can be `_secret` files. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Added Navidrome plugin support ([#372](https://github.com/kiriwalawren/nixflix/pull/372))
