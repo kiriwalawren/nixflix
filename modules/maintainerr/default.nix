@@ -199,6 +199,9 @@ in
             "~@swap"
             "~@privileged"
             "~@resources"
+            # Upstream's start.sh rewrites the staged UI with `sed -i`, which
+            # fchowns its temp file; ~@privileged would kill it with SIGSYS
+            "@chown"
           ];
         };
       };
