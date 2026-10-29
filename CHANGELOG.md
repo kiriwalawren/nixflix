@@ -28,8 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- Fix Maintainerr starting before Jellyfin is ready
-- Allow Maintainerr to chown own files
 - Radarr, Sonarr, Sonarr Anime, Lidarr, Prowlarr, Seerr and Maintainerr data directories are now `0700` instead of `0755`. Their API keys (`config.xml`, Seerr's `settings.json`, Maintainerr's database) were readable by every local user: the \*arr units run with `UMask=0002`, so `config.xml` was `0664`. Existing installs are fixed on the next activation. ([#392](https://github.com/kiriwalawren/nixflix/pull/392))
 - SABnzbd: a `_secret` inside a list value was written triple-quoted, which ConfigObj cannot parse in a list: two secrets were silently read as one garbled string, and a single one with a trailing comma failed to parse. List items now use a list-safe quote. ([#389](https://github.com/kiriwalawren/nixflix/pull/389))
 - Fix Seerr failure for "Jelyfin hostname already configured" error ([#265](https://github.com/kiriwalawren/nixflix/issues/265))
