@@ -164,10 +164,13 @@ in
             default =
               if config.nixflix.vpn.enable && cfg.vpn.enable then
                 config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
-              else if config.nixflix.reverseProxy.enable then
-                "127.0.0.1"
               else
-                "*";
+                "127.0.0.1";
+            defaultText = literalExpression ''
+              if config.nixflix.vpn.enable && config.nixflix.torrentClients.qbittorrent.vpn.enable
+              then config.vpnNamespaces.$${config.nixflix.torrentClients.qbittorrent.vpn.namespace}.namespaceAddress
+              else "127.0.0.1"
+            '';
             description = "Bind address for the WebUI";
           };
         };

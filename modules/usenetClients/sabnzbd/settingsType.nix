@@ -257,16 +257,12 @@ let
         default =
           if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable then
             config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
-          else if config.nixflix.reverseProxy.enable then
-            "127.0.0.1"
           else
-            "0.0.0.0";
+            "127.0.0.1";
         defaultText = lib.literalExpression ''
           if config.nixflix.vpn.enable && config.nixflix.usenetClients.sabnzbd.vpn.enable
           then config.vpnNamespaces.$${config.nixflix.usenetClients.sabnzbd.vpn.namespace}.namespaceAddress
-
-          else if config.nixflix.reverseProxy.enable then "127.0.0.1"
-          else "0.0.0.0"
+          else "127.0.0.1"
         '';
         example = "0.0.0.0";
         description = "Address for the Web UI to listen on for incoming connections.";
