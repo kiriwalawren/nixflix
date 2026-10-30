@@ -839,8 +839,8 @@ in
       downloadClientsService = config.config.systemd.services."radarr-downloadclients";
     in
     pkgs.runCommand "unit-test-download-clients-no-reverse-proxy" { } ''
-      ${check "radarr bindAddress is 0.0.0.0 when nginx is disabled" (
-        radarrCfg.config.hostConfig.bindAddress == "0.0.0.0"
+      ${check "radarr bindAddress is 127.0.0.1 when nginx is disabled" (
+        radarrCfg.config.hostConfig.bindAddress == "127.0.0.1"
       )}
       ${check "radarr connectionAddress is 127.0.0.1 (not 0.0.0.0)" (
         radarrCfg.connectionAddress == "127.0.0.1"

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Web UIs now bind to `127.0.0.1` (loopback) by default, so services are no longer reachable from your network unless you expose them explicitly: set the service's bind option to `0.0.0.0` or your LAN IP (e.g. `nixflix.radarr.config.hostConfig.bindAddress`, `nixflix.jellyfin.network.localNetworkAddresses`, `nixflix.navidrome.settings.Address`, `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address`, `nixflix.usenetClients.sabnzbd.settings.misc.host`, `nixflix.slskd.settings.web.ip_address`), or put the built-in reverse proxy in front (`nixflix.nginx.enable` / `nixflix.caddy.enable`). Services confined to the VPN namespace keep binding to the namespace address. ([#364](https://github.com/kiriwalawren/nixflix/issues/364))
 - Jellyfin plugins whose `targetAbi` is older than 12 are no longer excluded on Jellyfin 12+. `targetAbi` is now treated purely as the minimum supported Jellyfin version, matching Jellyfin's own check, which grows the plugins available under `nixflix.jellyfin.plugins` from 179 to 330
 - The bundled Jellyfin plugin list now keeps the newest 10 versions of each plugin, and for each version only the build with the highest `targetAbi` that the pinned Jellyfin supports
 - The Jellyfin plugin update script now hashes plugin versions in parallel (one job per CPU, override with `PLUGIN_PREFETCH_CONCURRENCY`), reports progress as it goes, and avoids repeated manifest parsing
