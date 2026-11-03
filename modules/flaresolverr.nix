@@ -29,6 +29,10 @@ in
       inherit (config.nixflix.flaresolverr) port;
     };
 
+    # FlareSolverr binds to all interfaces unless HOST is set; it is only
+    # consumed by Prowlarr on the same host, so it doesn't need an option override.
+    systemd.services.flaresolverr.environment.HOST = "127.0.0.1";
+
     systemd.services.flaresolverr.serviceConfig.ExecStartPost =
       pkgs.writeShellScript "wait-for-flaresolverr" ''
         for i in $(seq 1 30); do

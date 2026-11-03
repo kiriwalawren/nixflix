@@ -207,7 +207,11 @@ in
           wantedBy = [ "multi-user.target" ];
 
           environment = {
-            HOST = mkIf config.nixflix.reverseProxy.enable "127.0.0.1";
+            HOST =
+              if config.nixflix.vpn.enable && cfg.vpn.enable then
+                config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
+              else
+                "127.0.0.1";
             PORT = toString cfg.port;
             CONFIG_DIRECTORY = cfg.dataDir;
           }

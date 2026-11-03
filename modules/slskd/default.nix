@@ -85,6 +85,21 @@ in
                   default = 5030;
                   description = "Port on which the slskd web UI/API listens.";
                 };
+
+                ip_address = mkOption {
+                  type = types.str;
+                  default =
+                    if config.nixflix.vpn.enable && cfg.vpn.enable then
+                      config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
+                    else
+                      "127.0.0.1";
+                  defaultText = literalExpression ''
+                    if config.nixflix.vpn.enable && config.nixflix.slskd.vpn.enable
+                    then config.vpnNamespaces.$${config.nixflix.slskd.vpn.namespace}.namespaceAddress
+                    else "127.0.0.1"
+                  '';
+                  description = "IP address the web UI/API listens on.";
+                };
               };
 
               soulseek = {

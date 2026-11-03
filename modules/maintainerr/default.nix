@@ -155,7 +155,11 @@ in
         environment = {
           DATA_DIR = cfg.dataDir;
           UI_PORT = toString cfg.port;
-          UI_HOSTNAME = if config.nixflix.reverseProxy.enable then "127.0.0.1" else "0.0.0.0";
+          UI_HOSTNAME =
+            if config.nixflix.vpn.enable && cfg.vpn.enable then
+              config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
+            else
+              "127.0.0.1";
           NODE_ENV = "production";
         };
 

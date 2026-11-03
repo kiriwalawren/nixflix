@@ -25,10 +25,13 @@ in
           default =
             if config.nixflix.vpn.enable && cfg.vpn.enable then
               config.vpnNamespaces.${cfg.vpn.namespace}.namespaceAddress
-            else if config.nixflix.reverseProxy.enable then
-              "127.0.0.1"
             else
-              "0.0.0.0";
+              "127.0.0.1";
+          defaultText = literalExpression ''
+            if config.nixflix.vpn.enable && config.nixflix.${serviceName}.vpn.enable
+            then config.vpnNamespaces.$${config.nixflix.${serviceName}.vpn.namespace}.namespaceAddress
+            else "127.0.0.1"
+          '';
           description = "Address to bind to";
         };
 
