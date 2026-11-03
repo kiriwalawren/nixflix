@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [4.0.0] - 2026-11-03
+
+### Breaking
+
+- Web UIs now bind to `127.0.0.1` (loopback) by default, so services are no longer reachable from your network unless you expose them explicitly: set the service's bind option to `0.0.0.0` or your LAN IP (e.g. `nixflix.[radarr|sonarr|lidarr|sonarr-anime|prowlarr].config.hostConfig.bindAddress`, `nixflix.jellyfin.network.localNetworkAddresses`, `nixflix.navidrome.settings.Address`, `nixflix.torrentClients.qbittorrent.serverConfig.Preferences.WebUI.Address`, `nixflix.usenetClients.sabnzbd.settings.misc.host`, `nixflix.slskd.settings.web.ip_address`), or put the built-in reverse proxy in front (`nixflix.nginx.enable` / `nixflix.caddy.enable`). Services confined to the VPN namespace keep binding to the namespace address. ([#364](https://github.com/kiriwalawren/nixflix/issues/364))
 
 ### Changed
 
