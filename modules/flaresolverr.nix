@@ -30,7 +30,7 @@ in
     };
 
     # FlareSolverr binds to all interfaces unless HOST is set; it is only
-    # consumed by Prowlarr on the same host (http://127.0.0.1:8191).
+    # consumed by Prowlarr on the same host, so it doesn't need an option override.
     systemd.services.flaresolverr.environment.HOST = "127.0.0.1";
 
     systemd.services.flaresolverr.serviceConfig.ExecStartPost =
