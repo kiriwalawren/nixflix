@@ -321,6 +321,14 @@ in
         ++ config.nixflix.serviceDependencies;
 
         restartTriggers = [ (builtins.toJSON cfg.settings) ];
+
+        # .NET >= 10.0.13 stores named mutexes in $XDG_RUNTIME_DIR, falling back to
+        # the user's passwd home (/var/empty), which slskd can't write to.
+        environment.XDG_RUNTIME_DIR = "${runFolder}/dotnet";
+        serviceConfig = {
+          RuntimeDirectory = "slskd/dotnet";
+          RuntimeDirectoryMode = "0700";
+        };
       };
     }
     (mkIf (config.nixflix.vpn.enable && cfg.vpn.enable) {
