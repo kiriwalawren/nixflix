@@ -24,6 +24,18 @@ in
       '';
     };
 
+    postgres.password = secrets.mkSecretOption {
+      nullable = true;
+      default = null;
+      description = ''
+        Password Seerr uses to connect to the external PostgreSQL server set in
+        `nixflix.postgres.host`. Required when that option is set, ignored for
+        the local server. Seerr connects as the role `nixflix.seerr.user` to a
+        database of the same name, which must already exist (see
+        `nixflix.postgres.host`).
+      '';
+    };
+
     externalUrlScheme = mkOption {
       type = types.nullOr types.str;
       default = null;
