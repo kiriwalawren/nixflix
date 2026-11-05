@@ -54,10 +54,19 @@ in
       type = types.str;
       readOnly = true;
       default =
-        if config.nixflix.jellyfin.network.localNetworkAddresses == [ ] then
+        let
+          addresses = config.nixflix.jellyfin.network.localNetworkAddresses;
+        in
+        if
+          addresses == [ ]
+          || builtins.elem (builtins.head addresses) [
+            "0.0.0.0"
+            "::"
+          ]
+        then
           "127.0.0.1"
         else
-          builtins.head config.nixflix.jellyfin.network.localNetworkAddresses;
+          builtins.head addresses;
       description = "Address for connecting to this service.";
     };
 
