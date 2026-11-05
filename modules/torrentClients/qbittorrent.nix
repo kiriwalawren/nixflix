@@ -114,6 +114,22 @@ in
 
               When `false`, qBittorrent bypasses the VPN.
               When `true`, qBittorrent is confined to the WireGuard network namespace (requires nixflix.vpn.enable = true).
+
+              !!! warning "Port forwarding is your responsibility"
+
+                  Once qBittorrent is confined to the VPN, any port forwarding you have configured
+                  on your router (WAN) no longer reaches it, because incoming connections now arrive
+                  through the VPN tunnel instead. Without an open port, qBittorrent can still download,
+                  but it cannot accept incoming peer connections, which reduces the number of peers
+                  you can connect to.
+
+                  To restore incoming connections, you must use a VPN provider that supports port
+                  forwarding and configure it yourself. Nixflix does not manage this for you.
+
+                  Some providers, such as ProtonVPN, assign a random forwarded port that must be
+                  periodically renewed with NAT-PMP and then set as qBittorrent's listening port.
+                  For an example of how to automate this with ProtonVPN, see
+                  the [VPN Port Forwarding example](../../../examples/vpn-port-forwarding.md).
             '';
           };
 
