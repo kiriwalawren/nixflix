@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [4.0.1] - 2026-11-5
+
+### Fixed
+
+- `[sonarr|radarr|lidarr]-notifications.service` no longer fails with HTTP 400 when `nixflix.jellyfin.network.localNetworkAddresses = [ "0.0.0.0" ]` (or `"::"`). The Jellyfin notifications, and Seerr's and Maintainerr's Jellyfin connections, now use `127.0.0.1` in that case instead of the wildcard address ([#402](https://github.com/kiriwalawren/nixflix/issues/402))
+
 ## [4.0.0] - 2026-11-03
 
 ### Breaking

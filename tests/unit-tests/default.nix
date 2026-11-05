@@ -951,6 +951,41 @@ in
       echo 'PASS: notif-service-scoping' > $out
     '';
 
+  jellyfin-wildcard-bind-connection-address =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+              network.localNetworkAddresses = [ "0.0.0.0" ];
+            };
+            radarr = {
+              enable = true;
+              config = {
+                hostConfig.port = 7878;
+                apiKey._secret = "/run/secrets/radarr-api";
+              };
+            };
+          };
+        }
+      ];
+      jellyfinCfg = config.config.nixflix.jellyfin;
+      radarrNotifications = config.config.systemd.services."radarr-notifications";
+    in
+    pkgs.runCommand "unit-test-jellyfin-wildcard-bind-connection-address" { } ''
+      ${check "jellyfin connectionAddress is 127.0.0.1 when bound to 0.0.0.0" (
+        jellyfinCfg.connectionAddress == "127.0.0.1"
+      )}
+      ${check "radarr Jellyfin notification host is not 0.0.0.0" (
+        config.config.nixflix.notif.jellyfin.host == "127.0.0.1"
+        && !lib.hasInfix "0.0.0.0" radarrNotifications.script
+      )}
+      echo 'PASS: jellyfin-wildcard-bind-connection-address' > $out
+    '';
+
   notif-triggers =
     let
       config = evalConfig [
