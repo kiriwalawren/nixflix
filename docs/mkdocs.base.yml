@@ -116,6 +116,7 @@ nav:
       - Jellyfin Subtitles: examples/jellyfin-subtitles.md
       - Jellyfin Live TV: examples/jellyfin-live-tv.md
       - Maintainerr Rules: examples/maintainerr-rules.md
+      - VPN Port Forwarding: examples/vpn-port-forwarding.md
 # REFERENCE_NAV_PLACEHOLDER
 extra:
   social:

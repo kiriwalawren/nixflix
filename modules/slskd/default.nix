@@ -180,6 +180,22 @@ in
 
               When `true`, slskd is confined to the WireGuard network namespace
               (requires `nixflix.vpn.enable = true`).
+
+              !!! warning "Port forwarding is your responsibility"
+
+                  Once slskd is confined to the VPN, any port forwarding you have configured
+                  on your router (WAN) no longer reaches it, because incoming connections now arrive
+                  through the VPN tunnel instead. Without an open listen port, peers that also cannot
+                  accept incoming connections will be unable to connect to you to search, browse,
+                  or download your shares.
+
+                  To restore incoming connections, you must use a VPN provider that supports port
+                  forwarding and configure it yourself. Nixflix does not manage this for you.
+
+                  Some providers, such as ProtonVPN, assign a random forwarded port that must be
+                  periodically renewed with NAT-PMP and then set as slskd's listen port.
+                  For an example of how to automate this with ProtonVPN, see
+                  the [VPN Port Forwarding example](../../examples/vpn-port-forwarding.md).
             '';
           };
 
