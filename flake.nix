@@ -64,7 +64,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
-          inherit (pkgs) maintainerr;
+          inherit (pkgs) maintainerr caddy-replace-response;
         }
       );
 
@@ -115,6 +115,7 @@
               treefmt.config.build.wrapper
               pkgs.yarn-berry_4.yarn-berry-fetcher
               pkgs.jq
+              pkgs.go
             ]
             ++ (lib.attrValues treefmt.config.build.programs);
 
