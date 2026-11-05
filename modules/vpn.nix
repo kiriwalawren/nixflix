@@ -14,6 +14,19 @@ in
       When enabled, most Nixflix services can also be added to the VPN vpnConfinement
       with `nixflix.<service>.vpn.enable = true;`.
 
+      !!! warning "Port forwarding is your responsibility"
+
+          Enabling the VPN also confines qBittorrent and slskd to it by default
+          (`nixflix.torrentClients.qbittorrent.vpn.enable` and `nixflix.slskd.vpn.enable`).
+          Any port forwarding you have configured on your router (WAN) no longer reaches
+          services inside the VPN, because incoming connections now arrive through the
+          VPN tunnel instead.
+
+          To restore incoming connections, you must use a VPN provider that supports port
+          forwarding and configure it yourself. Nixflix does not manage this for you.
+          For an example of how to automate this with ProtonVPN, see the
+          [VPN Port Forwarding example](../../examples/vpn-port-forwarding.md).
+
       Any systemd service can be added to the VPN confinement manually with the following code:
 
       ```nix
