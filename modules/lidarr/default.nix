@@ -8,6 +8,7 @@ in
     (import ../arr-common/mkArrServiceModule.nix { serviceName = "lidarr"; })
     ./qualityProfiles.nix
     ./metadataProfiles.nix
+    ./metadataProvider.nix
   ];
 
   config.nixflix.lidarr = {

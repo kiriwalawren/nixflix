@@ -105,6 +105,11 @@ pkgsUnfree.testers.runNixOSTest {
               };
             };
           };
+          metadataProvider = {
+            writeAudioTags = "newFiles";
+            scrubAudioTags = false;
+            embedCoverArt = false;
+          };
         };
       };
 
@@ -363,6 +368,20 @@ pkgsUnfree.testers.runNixOSTest {
         for name, value in fields.items():
             assert actual_fields[name] == value, f"{implementation}.{name} not set"
     print("Metadata configured successfully!")
+
+    machine.wait_for_unit("lidarr-metadataprovider.service", timeout=60)
+
+    metadata_provider = machine.succeed(
+        "curl -s -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' "
+        "http://127.0.0.1:8686/api/v1/config/metadataprovider"
+    )
+    mp = json.loads(metadata_provider)
+    print(f"Metadata provider: {metadata_provider}")
+    assert mp['metadataSource'] == "", "metadataSource not set"
+    assert mp['writeAudioTags'] == 'newFiles', "writeAudioTags not set"
+    assert mp['scrubAudioTags'] == False, "scrubAudioTags not set"
+    assert mp['embedCoverArt'] == False, "embedCoverArt not set"
+    print("Metadata provider configured successfully!")
 
     machine.succeed("pgrep -u testuser Lidarr")
   '';
