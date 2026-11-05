@@ -22,6 +22,11 @@ let
   apiKeyEnvVar = toUpper serviceBase + "__AUTH__APIKEY";
   apiKeyIsSecretRef = cfg.config.apiKey != null && secrets.isSecretRef cfg.config.apiKey;
   credentialPath = "/run/credentials/${serviceName}.service/apiKey";
+  dbPasswordEnvVar = toUpper serviceBase + "__POSTGRES__PASSWORD";
+  usesExternalDb = config.nixflix.postgres.enable && config.nixflix.postgres.host != null;
+  dbPassword = if usesExternalDb then cfg.postgres.password else null;
+  dbPasswordIsSecretRef = dbPassword != null && secrets.isSecretRef dbPassword;
+  needsStartWrapper = apiKeyIsSecretRef || dbPasswordIsSecretRef;
   waitConfig =
     cfg.config
     // optionalAttrs apiKeyIsSecretRef {
@@ -189,8 +194,8 @@ in
           log.dbEnabled = true;
           postgres = {
             user = config.nixflix.${serviceName}.user;
-            host = "/run/postgresql";
-            port = config.services.postgresql.settings.port;
+            host = if config.nixflix.postgres.host == null then "/run/postgresql" else config.nixflix.postgres.host;
+            port = if config.nixflix.postgres.host == null then config.services.postgresql.settings.port else config.nixflix.postgres.port;
             mainDb = config.nixflix.${serviceName}.user;
             logDb = "''${config.nixflix.${serviceName}.user}-logs";
           };
@@ -324,6 +329,9 @@ in
           mkServarrSettingsEnvVars (toUpper serviceBase) cfg.settings
           // optionalAttrs (cfg.config.apiKey != null && !apiKeyIsSecretRef) {
             ${apiKeyEnvVar} = toString cfg.config.apiKey;
+          }
+          // optionalAttrs (dbPassword != null && !dbPasswordIsSecretRef) {
+            ${dbPasswordEnvVar} = toString dbPassword;
           };
 
         after = [
@@ -339,9 +347,10 @@ in
           User = cfg.user;
           Group = cfg.group;
           ExecStart =
-            if apiKeyIsSecretRef then
+            if needsStartWrapper then
               pkgs.writeShellScript "${serviceName}-start" ''
-                export ${apiKeyEnvVar}="$(cat ${credentialPath})"
+                ${optionalString apiKeyIsSecretRef ''export ${apiKeyEnvVar}="$(cat ${credentialPath})"''}
+                ${optionalString dbPasswordIsSecretRef ''export ${dbPasswordEnvVar}="$(cat "$CREDENTIALS_DIRECTORY/dbPassword")"''}
                 exec ${getExe cfg.package} -nobrowser -data='${cfg.dataDir}'
               ''
             else
@@ -350,8 +359,10 @@ in
           Restart = "on-failure";
           UMask = "0002";
         }
-        // optionalAttrs apiKeyIsSecretRef {
-          LoadCredential = [ "apiKey:${toString cfg.config.apiKey._secret}" ];
+        // optionalAttrs needsStartWrapper {
+          LoadCredential =
+            optional apiKeyIsSecretRef "apiKey:${toString cfg.config.apiKey._secret}"
+            ++ optional dbPasswordIsSecretRef "dbPassword:${toString dbPassword._secret}";
         };
       };
     }
