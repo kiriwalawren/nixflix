@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `nixflix.postgres.host` and `nixflix.postgres.port` to use an existing (e.g. remote) PostgreSQL server instead of a local one. Each service's password is set with `nixflix.[sonarr|sonarr-anime|radarr|lidarr|prowlarr|seerr].postgres.password`, and the roles and databases must be created on the server beforehand. See the `nixflix.postgres.host` option docs ([#290](https://github.com/kiriwalawren/nixflix/issues/290))
+- `nixflix.vpn.allowedEgress` to let VPN-confined services reach addresses outside the tunnel, such as an external PostgreSQL server
 - Lidarr metadata provider service that configures audio tag writing (`writeAudioTags`, `scrubAudioTags`, `embedCoverArt`) and the metadata source via `nixflix.lidarr.config.metadataProvider` ([#335](https://github.com/kiriwalawren/nixflix/issues/335))
 
 ### Fixed
