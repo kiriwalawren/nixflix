@@ -1,8 +1,8 @@
 {
-  system,
   pkgs,
   lib,
-  nixosModules,
+  evalConfigWith,
+  nixpkgs-2026-09-03,
   ...
 }:
 {
@@ -11,36 +11,26 @@
     let
       caddyFor =
         nixpkgsPath:
-        (import "${nixpkgsPath}/nixos/lib/eval-config.nix" {
-          inherit system;
-          modules = [
-            nixosModules
-            {
-              nixpkgs.hostPlatform = system;
-              nixflix = {
+        (evalConfigWith nixpkgsPath [
+          {
+            nixflix = {
+              enable = true;
+              theme.enable = true;
+              caddy.enable = true;
+              prowlarr = {
                 enable = true;
-                theme.enable = true;
-                caddy.enable = true;
-                prowlarr = {
-                  enable = true;
-                  config = {
-                    hostConfig.password._secret = "/run/secrets/prowlarr-pass";
-                    apiKey._secret = "/run/secrets/prowlarr-api";
-                  };
+                config = {
+                  hostConfig.password._secret = "/run/secrets/prowlarr-pass";
+                  apiKey._secret = "/run/secrets/prowlarr-api";
                 };
               };
-            }
-          ];
-        }).config.services.caddy;
+            };
+          }
+        ]).config.services.caddy;
 
       variants = {
         locked = caddyFor pkgs.path;
-        nixpkgs-2026-09-03 = caddyFor (
-          builtins.fetchTarball {
-            url = "https://github.com/NixOS/nixpkgs/archive/0968519e14f7aa7d3e9b389682bd74d2b51c8ce8.tar.gz";
-            sha256 = "17dxbpfyv9anqzqzjjlqwi327kviz1f20fp8zl80j4prqmij24cn";
-          }
-        );
+        nixpkgs-2026-09-03 = caddyFor nixpkgs-2026-09-03;
       };
     in
     pkgs.runCommand "unit-test-caddy-theme-package-builds-across-nixpkgs" { } ''
