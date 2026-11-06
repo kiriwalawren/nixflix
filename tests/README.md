@@ -8,11 +8,14 @@ This directory contains tests for the Nixflix NixOS modules that configure \*arr
 tests/
 ├── README.md           # This file
 ├── default.nix         # Main test entry point
+├── lib/                # Shared test helpers
+│   └── unit-test-helpers.nix
 ├── vm-tests/           # NixOS VM integration tests
 │   ├── default.nix
 │   └── *.nix          # Individual VM test files
 └── unit-tests/         # Configuration generation tests
-    └── default.nix
+    ├── default.nix     # Auto-discovers and merges every *.nix file here
+    └── *.nix          # Tests grouped by domain (arr-services, jellyfin, ...)
 ```
 
 ## Test Types
@@ -87,7 +90,7 @@ This opens a Python REPL where you can interact with the VM:
 
 Tests run automatically on GitHub Actions for every push and pull request.
 
-When you add new tests to `tests/vm-tests/default.nix` or `tests/unit-tests/default.nix`, they are automatically included in CI - no workflow updates needed!
+When you add new test files to `tests/vm-tests/` or `tests/unit-tests/`, they are automatically included in CI - no workflow updates needed!
 
 ## Writing New Tests
 
@@ -107,7 +110,7 @@ pkgs.testers.runNixOSTest {
   nodes.machine = {config, pkgs, ...}: {
     imports = [nixosModules];
 
-    services.nixflix = {
+    nixflix = {
       enable = true;
       user = "testuser";
       # ... your configuration
@@ -131,11 +134,20 @@ The test will automatically appear in `nix flake check` and GitHub Actions!
 
 ### Adding a New Unit Test
 
-Add a new test to `tests/unit-tests/default.nix`:
+Add a test to the matching domain file in `tests/unit-tests/`, or create a new
+`*.nix` file there (it is picked up automatically). Each file is a function that
+takes only the arguments it uses (`system`, `pkgs`, `lib`, `nixosModules`, and the
+helpers from `tests/lib/unit-test-helpers.nix`: `evalConfig`, `assertTest`,
+`check`) and returns an attrset of tests. Test names must be unique across all
+files.
 
 ```nix
 {
-  # ... existing tests
+  evalConfig,
+  assertTest,
+  ...
+}:
+{
   my-unit-test = let
     config = evalConfig [
       {
