@@ -5,6 +5,21 @@
 }:
 let
   inherit (pkgs) lib;
+
+  evalConfigWith =
+    nixpkgsPath: modules:
+    import "${nixpkgsPath}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        nixosModules
+        ({ config, ... }: {
+          # Minimal NixOS config stubs needed for evaluation
+          nixpkgs.hostPlatform = system;
+          system.stateVersion = config.system.nixos.release;
+        })
+      ]
+      ++ modules;
+    };
 in
 {
   # Test helper to assert conditions
@@ -20,18 +35,8 @@ in
     echo 'PASS: ${name}'
   '';
 
+  inherit evalConfigWith;
+
   # Helper to evaluate a NixOS configuration without building
-  evalConfig =
-    modules:
-    import "${pkgs.path}/nixos/lib/eval-config.nix" {
-      inherit system;
-      modules = [
-        nixosModules
-        {
-          # Minimal NixOS config stubs needed for evaluation
-          nixpkgs.hostPlatform = system;
-        }
-      ]
-      ++ modules;
-    };
+  evalConfig = evalConfigWith pkgs.path;
 }
