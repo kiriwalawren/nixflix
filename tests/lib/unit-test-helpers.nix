@@ -39,4 +39,10 @@ in
 
   # Helper to evaluate a NixOS configuration without building
   evalConfig = evalConfigWith pkgs.path;
+
+  # Older than the flake.lock nixpkgs: Caddy 2.11.4 and no services.aurral
+  nixpkgs-2026-09-03 = builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/0968519e14f7aa7d3e9b389682bd74d2b51c8ce8.tar.gz";
+    sha256 = "17dxbpfyv9anqzqzjjlqwi327kviz1f20fp8zl80j4prqmij24cn";
+  };
 }

@@ -3,6 +3,8 @@
   lib,
   check,
   evalConfig,
+  evalConfigWith,
+  nixpkgs-2026-09-03,
   ...
 }:
 let
@@ -28,15 +30,43 @@ let
   };
 
   # Filtered by message because the bare harness always trips the fileSystems and grub assertions
-  aurralFailures =
-    overrides:
+  failuresWith =
+    eval: overrides:
     lib.filter (a: !a.assertion && lib.hasInfix "aurral" (lib.toLower a.message))
-      (evalConfig [ { nixflix = lib.recursiveUpdate baseNixflix overrides; } ]).config.assertions;
+      (eval [ { nixflix = lib.recursiveUpdate baseNixflix overrides; } ]).config.assertions;
+
+  aurralFailures = failuresWith evalConfig;
 
   failuresMatching =
     overrides: needle: lib.filter (a: lib.hasInfix needle a.message) (aurralFailures overrides);
 
   oidcFailures = aurralFailures { aurral.oidc.enable = true; };
+
+  completeOidc = {
+    enable = true;
+    issuer = "https://auth.example.com";
+    clientId._secret = "/run/secrets/oidc-id";
+    clientSecret._secret = "/run/secrets/oidc-secret";
+  };
+
+  # This nixpkgs crashes rendering its fileSystems assertion message, so satisfy it instead
+  oldFailures = failuresWith (
+    modules:
+    evalConfigWith nixpkgs-2026-09-03 (
+      [
+        {
+          fileSystems."/" = {
+            device = "/dev/null";
+            fsType = "ext4";
+          };
+          boot.loader.grub.enable = false;
+        }
+      ]
+      ++ modules
+    )
+  );
+
+  missingServiceAurral = lib.filter (a: lib.hasInfix "provides `services.aurral`" a.message);
 in
 {
   aurral-assertions = pkgs.runCommand "unit-test-aurral-assertions" { } ''
@@ -61,16 +91,30 @@ in
     )}
 
     ${check "complete oidc settings trip no aurral assertions" (
-      aurralFailures {
-        aurral.oidc = {
-          enable = true;
-          issuer = "https://auth.example.com";
-          clientId._secret = "/run/secrets/oidc-id";
-          clientSecret._secret = "/run/secrets/oidc-secret";
-        };
-      } == [ ]
+      aurralFailures { aurral.oidc = completeOidc; } == [ ]
     )}
 
     echo 'PASS: aurral-assertions' > $out
   '';
+
+  # nixflix must keep evaluating on a nixpkgs that predates services.aurral
+  aurral-nixpkgs-without-services-aurral =
+    pkgs.runCommand "unit-test-aurral-nixpkgs-without-services-aurral" { }
+      ''
+        ${check "nixflix evaluates with aurral disabled" (oldFailures { aurral.enable = false; } == [ ])}
+
+        ${check "enabling aurral trips the services.aurral assertion" (
+          lib.length (missingServiceAurral (oldFailures { })) == 1
+        )}
+
+        ${check "enabling oidc does not define services.aurral either" (
+          lib.length (
+            missingServiceAurral (oldFailures {
+              aurral.oidc = completeOidc;
+            })
+          ) == 1
+        )}
+
+        echo 'PASS: aurral-nixpkgs-without-services-aurral' > $out
+      '';
 }

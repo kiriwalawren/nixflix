@@ -2,6 +2,7 @@
   pkgs,
   lib,
   evalConfigWith,
+  nixpkgs-2026-09-03,
   ...
 }:
 {
@@ -29,12 +30,7 @@
 
       variants = {
         locked = caddyFor pkgs.path;
-        nixpkgs-2026-09-13 = caddyFor (
-          builtins.fetchTarball {
-            url = "https://github.com/NixOS/nixpkgs/archive/ef34387ddd751e1ab8857adf4676492d32eb24ec.tar.gz";
-            sha256 = "0wfp59yxnxram68zv0g1jpy0bldls5fph1kxpm216fcrqbnhl8bs";
-          }
-        );
+        nixpkgs-2026-09-03 = caddyFor nixpkgs-2026-09-03;
       };
     in
     pkgs.runCommand "unit-test-caddy-theme-package-builds-across-nixpkgs" { } ''

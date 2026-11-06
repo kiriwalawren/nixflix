@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  options,
+  ...
+}:
 with lib;
 let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
@@ -172,22 +177,7 @@ in
       upstreamHost = cfg.connectionAddress;
       websocketUpgrade = true;
     })
-    {
-      assertions = [
-        {
-          assertion = lib.any (user: user.role == "admin") (lib.attrValues cfg.settings.users);
-          message = "At least one Aurral user must have role = \"admin\".";
-        }
-        {
-          assertion = config.nixflix.lidarr.enable;
-          message = "Aurral requires Lidarr. Set `nixflix.lidarr.enable = true`.";
-        }
-        {
-          assertion = cfg.settings.lidarr.apiKey != null;
-          message = "Aurral onboarding requires a Lidarr API key. Set `nixflix.lidarr.config.apiKey` (or override `nixflix.aurral.settings.lidarr.apiKey` directly).";
-        }
-      ];
-
+    (optionalAttrs (options ? services.aurral) {
       services.aurral =
         (builtins.removeAttrs cfg [
           "connectionAddress"
@@ -205,6 +195,22 @@ in
           }
           // optionalAttrs config.nixflix.reverseProxy.enable { AURRAL_PUBLIC_URL = cfg.publicUrl; };
         };
+    })
+    {
+      assertions = [
+        {
+          assertion = lib.any (user: user.role == "admin") (lib.attrValues cfg.settings.users);
+          message = "At least one Aurral user must have role = \"admin\".";
+        }
+        {
+          assertion = config.nixflix.lidarr.enable;
+          message = "Aurral requires Lidarr. Set `nixflix.lidarr.enable = true`.";
+        }
+        {
+          assertion = options ? services.aurral;
+          message = "nixflix.aurral requires a nixpkgs that provides `services.aurral` (added to nixpkgs on 2026-09-09).";
+        }
+      ];
 
       users = {
         users.${cfg.user} =

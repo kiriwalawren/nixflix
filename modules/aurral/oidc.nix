@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  options,
+  ...
+}:
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
@@ -102,70 +107,72 @@ in
     };
   };
 
-  config = lib.mkIf (cfg.enable && cfg.oidc.enable) {
-    assertions = [
-      {
-        assertion = !cfg.oidc.enable || cfg.oidc.issuer != null;
-        message = "Aurral OIDC requires `nixflix.aurral.oidc.issuer` to be set.";
-      }
-      {
-        assertion = !cfg.oidc.enable || cfg.oidc.clientId != null;
-        message = "Aurral OIDC requires `nixflix.aurral.oidc.clientId` to be set.";
-      }
-      {
-        assertion = !cfg.oidc.enable || cfg.oidc.clientSecret != null;
-        message = "Aurral OIDC requires `nixflix.aurral.oidc.clientSecret` to be set.";
-      }
-    ];
+  config = lib.mkIf (cfg.enable && cfg.oidc.enable) (
+    {
+      assertions = [
+        {
+          assertion = !cfg.oidc.enable || cfg.oidc.issuer != null;
+          message = "Aurral OIDC requires `nixflix.aurral.oidc.issuer` to be set.";
+        }
+        {
+          assertion = !cfg.oidc.enable || cfg.oidc.clientId != null;
+          message = "Aurral OIDC requires `nixflix.aurral.oidc.clientId` to be set.";
+        }
+        {
+          assertion = !cfg.oidc.enable || cfg.oidc.clientSecret != null;
+          message = "Aurral OIDC requires `nixflix.aurral.oidc.clientSecret` to be set.";
+        }
+      ];
 
-    systemd.tmpfiles.settings."10-aurral"."/run/aurral".d = {
-      mode = "0755";
-      inherit (cfg) user group;
-    };
-
-    systemd.services.aurral-env = {
-      description = "Create Aurral OIDC environment file";
-      after = [ "nixflix-setup-dirs.service" ];
-      requires = [ "nixflix-setup-dirs.service" ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+      systemd.tmpfiles.settings."10-aurral"."/run/aurral".d = {
+        mode = "0755";
+        inherit (cfg) user group;
       };
 
-      script = ''
-        set -euo pipefail
-        cat > /run/aurral/env <<EOF
-        OIDC_CLIENT_ID=${secrets.toShellValue cfg.oidc.clientId}
-        OIDC_CLIENT_SECRET=${secrets.toShellValue cfg.oidc.clientSecret}
-        EOF
-        chown ${cfg.user}:${cfg.group} /run/aurral/env
-        chmod 0400 /run/aurral/env
-      '';
-    };
+      systemd.services.aurral-env = {
+        description = "Create Aurral OIDC environment file";
+        after = [ "nixflix-setup-dirs.service" ];
+        requires = [ "nixflix-setup-dirs.service" ];
 
-    systemd.services.aurral = {
-      after = [ "aurral-env.service" ];
-      requires = [ "aurral-env.service" ];
-    };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
 
-    services.aurral = {
-      environmentFile = "/run/aurral/env";
+        script = ''
+          set -euo pipefail
+          cat > /run/aurral/env <<EOF
+          OIDC_CLIENT_ID=${secrets.toShellValue cfg.oidc.clientId}
+          OIDC_CLIENT_SECRET=${secrets.toShellValue cfg.oidc.clientSecret}
+          EOF
+          chown ${cfg.user}:${cfg.group} /run/aurral/env
+          chmod 0400 /run/aurral/env
+        '';
+      };
 
-      environment = {
-        OIDC_ENABLED = "true";
-        OIDC_ISSUER = cfg.oidc.issuer;
-        OIDC_REDIRECT_URI = cfg.oidc.redirectUri;
-        OIDC_SCOPES = concatStringsSep " " cfg.oidc.scopes;
-        OIDC_USERNAME_CLAIM = cfg.oidc.usernameClaim;
-        OIDC_DEFAULT_ROLE = cfg.oidc.defaultRole;
-        OIDC_ADMIN_USERS = concatStringsSep "," cfg.oidc.adminUsers;
-        OIDC_GROUPS_CLAIM = cfg.oidc.groupsClaim;
-        OIDC_ADMIN_GROUPS = concatStringsSep "," cfg.oidc.adminGroups;
-      }
-      // optionalAttrs (cfg.oidc.logoutUrl != null) { OIDC_LOGOUT_URL = cfg.oidc.logoutUrl; }
-      // optionalAttrs (cfg.oidc.domain != null) { OIDC_DOMAIN = cfg.oidc.domain; };
-    };
+      systemd.services.aurral = {
+        after = [ "aurral-env.service" ];
+        requires = [ "aurral-env.service" ];
+      };
+    }
+    // optionalAttrs (options ? services.aurral) {
+      services.aurral = {
+        environmentFile = "/run/aurral/env";
 
-  };
+        environment = {
+          OIDC_ENABLED = "true";
+          OIDC_ISSUER = cfg.oidc.issuer;
+          OIDC_REDIRECT_URI = cfg.oidc.redirectUri;
+          OIDC_SCOPES = concatStringsSep " " cfg.oidc.scopes;
+          OIDC_USERNAME_CLAIM = cfg.oidc.usernameClaim;
+          OIDC_DEFAULT_ROLE = cfg.oidc.defaultRole;
+          OIDC_ADMIN_USERS = concatStringsSep "," cfg.oidc.adminUsers;
+          OIDC_GROUPS_CLAIM = cfg.oidc.groupsClaim;
+          OIDC_ADMIN_GROUPS = concatStringsSep "," cfg.oidc.adminGroups;
+        }
+        // optionalAttrs (cfg.oidc.logoutUrl != null) { OIDC_LOGOUT_URL = cfg.oidc.logoutUrl; }
+        // optionalAttrs (cfg.oidc.domain != null) { OIDC_DOMAIN = cfg.oidc.domain; };
+      };
+    }
+  );
 }
