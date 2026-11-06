@@ -14,5 +14,12 @@
       lib
       ;
   };
-  unit-tests = import ./unit-tests { inherit system pkgs nixosModules; };
+  unit-tests = import ./unit-tests {
+    inherit
+      system
+      pkgs
+      nixosModules
+      lib
+      ;
+  };
 }
