@@ -11,7 +11,7 @@ let
 in
 {
   imports = [
-    ./caddy
+    ./caddy.nix
     ./downloadarr
     ./flaresolverr.nix
     ./globals.nix
@@ -19,6 +19,7 @@ in
     ./lidarr
     ./maintainerr
     ./navidrome
+    ./nginx.nix
     ./notif
     ./options.nix
     ./postgres.nix
@@ -78,20 +79,6 @@ in
       script = ''
         ${pkgs.systemd}/bin/systemd-tmpfiles --create
       '';
-    };
-
-    services.nginx = mkIf cfg.nginx.enable {
-      enable = true;
-      recommendedTlsSettings = true;
-      recommendedOptimisation = true;
-      recommendedGzipSettings = true;
-
-      virtualHosts."_" = {
-        default = true;
-        extraConfig = ''
-          return 444;
-        '';
-      };
     };
   };
 }
