@@ -100,7 +100,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 ### Soulseek (slskd)
 
-- Automatic integration with Aurral (comming soon)
+- Automatic integration with Aurral
 
 ### WireGuard VPN
 
