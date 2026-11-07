@@ -1,16 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, lib, ... }:
 with lib;
 let
   cfg = config.nixflix;
-  secrets = import ../lib/secrets { inherit lib; };
-  toFile =
-    name: value:
-    if value == null then null else secrets.toSecretFile pkgs "nixflix-nginx-${name}" value;
 in
 {
   options.nixflix.nginx = {
@@ -55,35 +46,21 @@ in
       '';
     };
 
-    sslCertificate = secrets.mkSecretOption {
-      nullable = true;
-      example = literalExpression ''{ _secret = "/run/agenix/intranet-cert"; }'';
+    sslCertificate = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      example = "/run/agenix/intranet-cert";
       description = ''
-        An existing (e.g. self-signed) SSL certificate used by all nixflix virtual hosts.
+        Path to an existing (e.g. self-signed) SSL certificate used by all nixflix virtual hosts.
         Mutually exclusive with `nixflix.nginx.enableACME`. Requires `nixflix.nginx.sslCertificateKey`.
       '';
     };
 
-    sslCertificateKey = secrets.mkSecretOption {
-      nullable = true;
-      example = literalExpression ''{ _secret = "/run/agenix/intranet-cert-key"; }'';
-      description = "The key for `nixflix.nginx.sslCertificate`.";
-    };
-
-    sslCertificatePath = mkOption {
-      type = types.nullOr types.str;
-      internal = true;
-      readOnly = true;
-      default = toFile "cert" cfg.nginx.sslCertificate;
-      description = "File path of `nixflix.nginx.sslCertificate` (derived).";
-    };
-
-    sslCertificateKeyPath = mkOption {
-      type = types.nullOr types.str;
-      internal = true;
-      readOnly = true;
-      default = toFile "key" cfg.nginx.sslCertificateKey;
-      description = "File path of `nixflix.nginx.sslCertificateKey` (derived).";
+    sslCertificateKey = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      example = "/run/agenix/intranet-cert-key";
+      description = "Path to the key for `nixflix.nginx.sslCertificate`.";
     };
   };
 

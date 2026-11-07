@@ -7,10 +7,6 @@
 with lib;
 let
   cfg = config.nixflix;
-  secrets = import ../lib/secrets { inherit lib; };
-  toFile =
-    name: value:
-    if value == null then null else secrets.toSecretFile pkgs "nixflix-caddy-${name}" value;
 in
 {
   options.nixflix.caddy = {
@@ -58,38 +54,24 @@ in
         description = "Use Caddy's internal (self-signed) CA instead of a public ACME provider. Useful for local/internal domains.";
       };
 
-      certFile = secrets.mkSecretOption {
-        nullable = true;
-        example = literalExpression ''{ _secret = "/run/agenix/intranet-cert"; }'';
+      certFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        example = "/run/agenix/intranet-cert";
         description = ''
-          An existing (e.g. self-signed) certificate used by all nixflix virtual hosts.
+          Path to an existing (e.g. self-signed) certificate used by all nixflix virtual hosts.
           Requires `nixflix.caddy.tls.enable` and `nixflix.caddy.tls.keyFile`. Mutually exclusive with
-          `nixflix.caddy.tls.internal`. A `_secret` file must be readable by the Caddy user.
+          `nixflix.caddy.tls.internal`. The file must be readable by the Caddy user.
         '';
       };
 
-      keyFile = secrets.mkSecretOption {
-        nullable = true;
-        example = literalExpression ''{ _secret = "/run/agenix/intranet-cert-key"; }'';
+      keyFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        example = "/run/agenix/intranet-cert-key";
         description = ''
-          The key for `nixflix.caddy.tls.certFile`. A `_secret` file must be readable by the Caddy user.
+          Path to the key for `nixflix.caddy.tls.certFile`. The file must be readable by the Caddy user.
         '';
-      };
-
-      certFilePath = mkOption {
-        type = types.nullOr types.str;
-        internal = true;
-        readOnly = true;
-        default = toFile "cert" cfg.caddy.tls.certFile;
-        description = "File path of `nixflix.caddy.tls.certFile` (derived).";
-      };
-
-      keyFilePath = mkOption {
-        type = types.nullOr types.str;
-        internal = true;
-        readOnly = true;
-        default = toFile "key" cfg.caddy.tls.keyFile;
-        description = "File path of `nixflix.caddy.tls.keyFile` (derived).";
       };
     };
   };

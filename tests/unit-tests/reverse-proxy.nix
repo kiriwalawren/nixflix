@@ -30,8 +30,8 @@
             nginx = {
               enable = true;
               forceSSL = true;
-              sslCertificate._secret = "/run/secrets/cert";
-              sslCertificateKey._secret = "/run/secrets/key";
+              sslCertificate = "/run/secrets/cert";
+              sslCertificateKey = "/run/secrets/key";
             };
           };
         }
@@ -45,30 +45,13 @@
               enable = true;
               tls = {
                 enable = true;
-                certFile._secret = "/run/secrets/cert";
-                keyFile._secret = "/run/secrets/key";
+                certFile = "/run/secrets/cert";
+                keyFile = "/run/secrets/key";
               };
             };
           };
         }
       ];
-      plainConfig = evalConfig [
-        {
-          nixflix = {
-            enable = true;
-            inherit prowlarr;
-            caddy = {
-              enable = true;
-              tls = {
-                enable = true;
-                certFile = "PLAIN-CERT";
-                keyFile._secret = "/run/secrets/key";
-              };
-            };
-          };
-        }
-      ];
-      plainCertPath = plainConfig.config.nixflix.caddy.tls.certFilePath;
       nixflixVhosts = lib.filterAttrs (name: _: lib.hasSuffix ".nixflix" name);
       nginxVhosts = lib.attrValues (nixflixVhosts nginxConfig.config.services.nginx.virtualHosts);
       caddyVhosts = lib.attrValues (nixflixVhosts caddyConfig.config.services.caddy.virtualHosts);
@@ -87,11 +70,6 @@
       ${check "caddy vhosts do not use internal CA" (
         !(lib.any (v: lib.hasInfix "tls internal" v.extraConfig) caddyVhosts)
       )}
-      ${check "plain certificate is written to the Nix store" (
-        lib.hasPrefix builtins.storeDir plainCertPath
-      )}
-      grep -qx PLAIN-CERT ${plainCertPath} || { echo 'FAIL: plain certificate file has wrong content'; exit 1; }
-      echo 'PASS: plain certificate file has its content'
       echo 'PASS: reverse-proxy-custom-certificate' > $out
     '';
 
@@ -122,8 +100,8 @@
         caddyInternal = "nixflix.caddy.tls.certFile and nixflix.caddy.tls.internal are mutually exclusive.";
       };
 
-      cert._secret = "/run/secrets/cert";
-      key._secret = "/run/secrets/key";
+      cert = "/run/secrets/cert";
+      key = "/run/secrets/key";
     in
     pkgs.runCommand "unit-test-reverse-proxy-assertions" { } ''
       ${check "nginx and caddy together fails" (

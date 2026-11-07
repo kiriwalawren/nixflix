@@ -19,11 +19,6 @@ in
 rec {
   isSecretRef = value: (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__);
 
-  # For consumers that need a file path: plain values are written to the Nix store.
-  toSecretFile =
-    pkgs: name: value:
-    if isSecretRef value then toString value._secret else "${pkgs.writeText name value}";
-
   toShellValue =
     value:
     if (builtins.isAttrs value) && (value ? _secret) && !(value ? __unfix__) then

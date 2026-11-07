@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Lidarr metadata provider service that configures audio tag writing (`writeAudioTags`, `scrubAudioTags`, `embedCoverArt`) and the metadata source via `nixflix.lidarr.config.metadataProvider` ([#335](https://github.com/kiriwalawren/nixflix/issues/335))
-- `nixflix.nginx.sslCertificate`/`sslCertificateKey` and `nixflix.caddy.tls.certFile`/`keyFile` secret options for using an existing (e.g. self-signed) certificate on all nixflix virtual hosts ([#332](https://github.com/kiriwalawren/nixflix/issues/332))
+- `nixflix.nginx.sslCertificate`/`sslCertificateKey` and `nixflix.caddy.tls.certFile`/`keyFile` path options for using an existing (e.g. self-signed) certificate on all nixflix virtual hosts ([#332](https://github.com/kiriwalawren/nixflix/issues/332))
 
 ### Fixed
 
