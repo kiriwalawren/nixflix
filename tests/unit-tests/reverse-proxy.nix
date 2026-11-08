@@ -1,0 +1,272 @@
+{
+  system,
+  pkgs,
+  lib,
+  nixosModules,
+  evalConfig,
+  check,
+  ...
+}:
+{
+  # Shared cert options apply to every nixflix vhost (#332)
+  reverse-proxy-custom-certificate =
+    let
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            port = 9696;
+            username = "admin";
+            password._secret = "/run/secrets/prowlarr-pass";
+          };
+          apiKey._secret = "/run/secrets/prowlarr-api";
+        };
+      };
+      nginxConfig = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            inherit prowlarr;
+            nginx = {
+              enable = true;
+              forceSSL = true;
+              sslCertificate = "/run/secrets/cert";
+              sslCertificateKey = "/run/secrets/key";
+            };
+          };
+        }
+      ];
+      caddyConfig = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            inherit prowlarr;
+            caddy = {
+              enable = true;
+              tls = {
+                enable = true;
+                certFile = "/run/secrets/cert";
+                keyFile = "/run/secrets/key";
+              };
+            };
+          };
+        }
+      ];
+      nixflixVhosts = lib.filterAttrs (name: _: lib.hasSuffix ".nixflix" name);
+      nginxVhosts = lib.attrValues (nixflixVhosts nginxConfig.config.services.nginx.virtualHosts);
+      caddyVhosts = lib.attrValues (nixflixVhosts caddyConfig.config.services.caddy.virtualHosts);
+    in
+    pkgs.runCommand "unit-test-reverse-proxy-custom-certificate" { } ''
+      ${check "nginx has nixflix vhosts" (nginxVhosts != [ ])}
+      ${check "nginx vhosts use custom certificate" (
+        lib.all (
+          v: v.sslCertificate == "/run/secrets/cert" && v.sslCertificateKey == "/run/secrets/key"
+        ) nginxVhosts
+      )}
+      ${check "caddy has nixflix vhosts" (caddyVhosts != [ ])}
+      ${check "caddy vhosts use custom certificate" (
+        lib.all (v: lib.hasInfix "tls /run/secrets/cert /run/secrets/key" v.extraConfig) caddyVhosts
+      )}
+      ${check "caddy vhosts do not use internal CA" (
+        !(lib.any (v: lib.hasInfix "tls internal" v.extraConfig) caddyVhosts)
+      )}
+      echo 'PASS: reverse-proxy-custom-certificate' > $out
+    '';
+
+  reverse-proxy-assertions =
+    let
+      failedFor =
+        proxy:
+        map (a: a.message) (
+          builtins.filter (a: !a.assertion)
+            (evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                }
+                // proxy;
+              }
+            ]).config.assertions
+        );
+      fires = msg: proxy: builtins.elem msg (failedFor proxy);
+      noneFire = proxy: builtins.all (msg: !(fires msg proxy)) (lib.attrValues msgs);
+
+      msgs = {
+        exclusiveProxies = "nixflix.nginx.enable and nixflix.caddy.enable are mutually exclusive. Choose one reverse proxy.";
+        nginxPair = "nixflix.nginx.sslCertificate and nixflix.nginx.sslCertificateKey must be set together.";
+        nginxAcme = "nixflix.nginx.enableACME and nixflix.nginx.sslCertificate are mutually exclusive.";
+        caddyPair = "nixflix.caddy.tls.certFile and nixflix.caddy.tls.keyFile must be set together.";
+        caddyTlsEnable = "nixflix.caddy.tls.certFile requires nixflix.caddy.tls.enable.";
+        caddyInternal = "nixflix.caddy.tls.certFile and nixflix.caddy.tls.internal are mutually exclusive.";
+      };
+
+      cert = "/run/secrets/cert";
+      key = "/run/secrets/key";
+    in
+    pkgs.runCommand "unit-test-reverse-proxy-assertions" { } ''
+      ${check "nginx and caddy together fails" (
+        fires msgs.exclusiveProxies {
+          nginx.enable = true;
+          caddy.enable = true;
+        }
+      )}
+
+      ${check "nginx cert without key fails" (
+        fires msgs.nginxPair {
+          nginx = {
+            enable = true;
+            sslCertificate = cert;
+          };
+        }
+      )}
+      ${check "nginx key without cert fails" (
+        fires msgs.nginxPair {
+          nginx = {
+            enable = true;
+            sslCertificateKey = key;
+          };
+        }
+      )}
+      ${check "nginx cert with enableACME fails" (
+        fires msgs.nginxAcme {
+          nginx = {
+            enable = true;
+            enableACME = true;
+            sslCertificate = cert;
+            sslCertificateKey = key;
+          };
+        }
+      )}
+      ${check "nginx with cert and key passes" (noneFire {
+        nginx = {
+          enable = true;
+          forceSSL = true;
+          sslCertificate = cert;
+          sslCertificateKey = key;
+        };
+      })}
+      ${check "nginx options are ignored when nginx is disabled" (noneFire {
+        nginx = {
+          enableACME = true;
+          sslCertificate = cert;
+        };
+      })}
+
+      ${check "caddy cert without key fails" (
+        fires msgs.caddyPair {
+          caddy = {
+            enable = true;
+            tls = {
+              enable = true;
+              certFile = cert;
+            };
+          };
+        }
+      )}
+      ${check "caddy key without cert fails" (
+        fires msgs.caddyPair {
+          caddy = {
+            enable = true;
+            tls = {
+              enable = true;
+              keyFile = key;
+            };
+          };
+        }
+      )}
+      ${check "caddy certFile without tls.enable fails" (
+        fires msgs.caddyTlsEnable {
+          caddy = {
+            enable = true;
+            tls = {
+              certFile = cert;
+              keyFile = key;
+            };
+          };
+        }
+      )}
+      ${check "caddy certFile with tls.internal fails" (
+        fires msgs.caddyInternal {
+          caddy = {
+            enable = true;
+            tls = {
+              enable = true;
+              internal = true;
+              certFile = cert;
+              keyFile = key;
+            };
+          };
+        }
+      )}
+      ${check "caddy with tls, cert and key passes" (noneFire {
+        caddy = {
+          enable = true;
+          tls = {
+            enable = true;
+            certFile = cert;
+            keyFile = key;
+          };
+        };
+      })}
+      ${check "caddy options are ignored when caddy is disabled" (noneFire {
+        caddy.tls = {
+          internal = true;
+          certFile = cert;
+        };
+      })}
+      echo 'PASS: reverse-proxy-assertions' > $out
+    '';
+
+  # The themed Caddy must build against any nixpkgs, not only the one in flake.lock (#328)
+  caddy-theme-package-builds-across-nixpkgs =
+    let
+      caddyFor =
+        nixpkgsPath:
+        (import "${nixpkgsPath}/nixos/lib/eval-config.nix" {
+          inherit system;
+          modules = [
+            nixosModules
+            {
+              nixpkgs.hostPlatform = system;
+              nixflix = {
+                enable = true;
+                theme.enable = true;
+                caddy.enable = true;
+                prowlarr = {
+                  enable = true;
+                  config = {
+                    hostConfig.password._secret = "/run/secrets/prowlarr-pass";
+                    apiKey._secret = "/run/secrets/prowlarr-api";
+                  };
+                };
+              };
+            }
+          ];
+        }).config.services.caddy;
+
+      variants = {
+        locked = caddyFor pkgs.path;
+        nixpkgs-2026-09-03 = caddyFor (
+          builtins.fetchTarball {
+            url = "https://github.com/NixOS/nixpkgs/archive/0968519e14f7aa7d3e9b389682bd74d2b51c8ce8.tar.gz";
+            sha256 = "17dxbpfyv9anqzqzjjlqwi327kviz1f20fp8zl80j4prqmij24cn";
+          }
+        );
+      };
+    in
+    pkgs.runCommand "unit-test-caddy-theme-package-builds-across-nixpkgs" { } ''
+      export HOME=$TMPDIR
+      ${lib.concatStrings (
+        lib.mapAttrsToList (name: cfg: ''
+          echo "== ${name}: ${cfg.package}"
+          ${cfg.package}/bin/caddy list-modules | grep -qx http.handlers.replace_response \
+            || { echo "FAIL: ${name} caddy lacks http.handlers.replace_response"; exit 1; }
+          grep -q 'replace {' ${cfg.configFile} \
+            || { echo "FAIL: ${name} Caddyfile has no theme replace block"; exit 1; }
+          ${cfg.package}/bin/caddy adapt --adapter caddyfile --config ${cfg.configFile} > /dev/null \
+            || { echo "FAIL: ${name} Caddyfile does not adapt"; exit 1; }
+        '') variants
+      )}
+      echo 'PASS: caddy-theme-package-builds-across-nixpkgs' > $out
+    '';
+}
