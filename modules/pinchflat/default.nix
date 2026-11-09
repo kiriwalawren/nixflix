@@ -28,13 +28,23 @@ in
             `extraConfig.ENABLE_IPV6`); it has no bind address setting. The web UI
             is kept off the network by the NixOS firewall, so leave `openFirewall`
             set to `false` and use the reverse proxy unless you want direct LAN access.
-
-            The default package, `pinchflat-ngx`, is only in nixpkgs unstable (not
-            25.11 or 26.05), so users on a stable channel must set `package`.
           '';
         };
 
-        package = lib.mkPackageOption pkgs "pinchflat-ngx" { };
+        package = lib.mkOption {
+          type = lib.types.nullOr lib.types.package;
+          # `or null` so a nixpkgs without pinchflat-ngx reaches the assertion
+          # below instead of throwing a missing-attribute error
+          default = pkgs.pinchflat-ngx or null;
+          defaultText = lib.literalExpression "pkgs.pinchflat-ngx";
+          example = lib.literalExpression "pkgs.pinchflat-ngx";
+          description = ''
+            The pinchflat-ngx package to use.
+
+            `pinchflat-ngx` is only in nixpkgs unstable, so on a stable channel
+            set this to the package from nixpkgs unstable.
+          '';
+        };
 
         user = lib.mkOption {
           type = lib.types.str;
@@ -148,14 +158,21 @@ in
             assertion = cfg.selfhosted || cfg.secretsFile != null;
             message = "Either nixflix.pinchflat.selfhosted must be true, or nixflix.pinchflat.secretsFile must be set.";
           }
+          {
+            assertion = cfg.package != null;
+            message = "nixflix.pinchflat.package is null: pkgs.pinchflat-ngx does not exist in this nixpkgs (it is only in nixpkgs unstable). Set nixflix.pinchflat.package to pinchflat-ngx from nixpkgs unstable.";
+          }
         ];
 
-        services.pinchflat = builtins.removeAttrs cfg [
-          "connectionAddress"
-          "reverseProxy"
-          "subdomain"
-          "vpn"
-        ];
+        services.pinchflat = builtins.removeAttrs cfg (
+          [
+            "connectionAddress"
+            "reverseProxy"
+            "subdomain"
+            "vpn"
+          ]
+          ++ lib.optional (cfg.package == null) "package"
+        );
 
         systemd = {
           services.pinchflat = {
