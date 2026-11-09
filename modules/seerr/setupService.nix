@@ -10,6 +10,8 @@ let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
 
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+
   cookieFile = "/run/seerr/auth-cookie";
   librarySync = import ./librarySync.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
@@ -58,8 +60,19 @@ in
         IS_INITIALIZED=$(echo "$STATUS_RESPONSE" | ${pkgs.jq}/bin/jq -r '.initialized // false')
 
         if [ "$IS_INITIALIZED" = "true" ]; then
-          echo "Seerr is already initialized"
-          exit 0
+          ADMIN_HTTP_CODE=$(${
+            mkSecureCurl cfg.apiKey {
+              url = "$BASE_URL/api/v1/settings/main";
+              extraArgs = ''-o /dev/null -w "%{http_code}"'';
+            }
+          })
+
+          if [ "$ADMIN_HTTP_CODE" = "200" ]; then
+            echo "Seerr is already initialized"
+            exit 0
+          fi
+
+          echo "Seerr is initialized but its database has no admin user (HTTP $ADMIN_HTTP_CODE); re-running setup..."
         fi
 
         echo "Running initial setup..."
@@ -102,6 +115,7 @@ in
           if [ "$SETUP_ERROR" = "Jellyfin hostname already configured" ]; then
             # Seerr persists the hostname before later steps run; retry without it to re-login.
             echo "Jellyfin hostname already configured from a previous run; retrying login..."
+            RETRIED_LOGIN=1
             RETRY_PAYLOAD=$(echo "$SETUP_PAYLOAD" | ${pkgs.jq}/bin/jq 'del(.hostname)')
 
             SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
@@ -124,6 +138,21 @@ in
 
         chmod 600 "${cookieFile}"
         echo "Successfully connected to Jellyfin"
+
+        # A login that creates the admin user resets Seerr's Jellyfin hostname to the (omitted) one.
+        if [ "''${RETRIED_LOGIN:-0}" = "1" ]; then
+          JELLYFIN_SETTINGS=$(echo "$SETUP_PAYLOAD" | ${pkgs.jq}/bin/jq '{ip: .hostname, port, useSsl, urlBase}')
+          JELLYFIN_HTTP_CODE=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -b "${cookieFile}" \
+            -H "Content-Type: application/json" \
+            -d "$JELLYFIN_SETTINGS" \
+            "$BASE_URL/api/v1/settings/jellyfin")
+
+          if [ "$JELLYFIN_HTTP_CODE" != "200" ]; then
+            echo "Failed to restore Jellyfin connection settings (HTTP $JELLYFIN_HTTP_CODE)" >&2
+            exit 1
+          fi
+        fi
 
         # Step 2: Fetch and enable libraries BEFORE sync
         source ${librarySync { extraArgs = ''-b "${cookieFile}"''; }}
