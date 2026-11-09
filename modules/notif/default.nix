@@ -138,12 +138,14 @@ let
               username = notificationConfig.username or null;
               password = notificationConfig.password or null;
               accessToken = notificationConfig.accessToken or null;
+              webHookUrl = notificationConfig.webHookUrl or null;
               allOverrides = builtins.removeAttrs notificationConfig [
                 "implementationName"
                 "apiKey"
                 "username"
                 "password"
                 "accessToken"
+                "webHookUrl"
                 "triggers"
               ];
               fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
@@ -156,6 +158,7 @@ let
                 username = if username == null then "" else username;
                 password = if password == null then "" else password;
                 accessToken = if accessToken == null then "" else accessToken;
+                webHookUrl = if webHookUrl == null then "" else webHookUrl;
               };
             in
             ''
@@ -175,6 +178,7 @@ let
                       elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
                       elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
                       elif .name == "accessToken" and ${jqSecrets.refs.accessToken} != "" then .value = ${jqSecrets.refs.accessToken}
+                      elif .name == "webHookUrl" and ${jqSecrets.refs.webHookUrl} != "" then .value = ${jqSecrets.refs.webHookUrl}
                       else .
                       end
                     )
