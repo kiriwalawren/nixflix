@@ -34,6 +34,7 @@ This example shows a working media server configuration based on a real producti
     "usenet/newsgroupdirect/username" = {};
     "usenet/newsgroupdirect/password" = {};
     "navidrome/password" = {};
+    "pinchflat/env" = {}; # SECRET_KEY_BASE=<openssl rand -hex 64>
   };
 
   nixflix = {
@@ -180,6 +181,11 @@ This example shows a working media server configuration based on a real producti
       };
     };
 
+    pinchflat = {
+      enable = true;
+      secretsFile = config.sops.secrets."pinchflat/env".path;
+    };
+
     vpn = {
       enable = true;
       wgConfFile = config.sops.secrets."wireguard/conf".path;
@@ -198,6 +204,7 @@ This example shows a working media server configuration based on a real producti
 - **Radarr** - Movies
 - **Lidarr** - Music
 - **Navidrome** - Music Server
+- **Pinchflat** - YouTube media management
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
@@ -246,7 +253,8 @@ This example shows a working media server configuration based on a real producti
 │   ├── music/           # Music → Jellyfin "Music" library
 │   ├── anime/           # Anime series → Jellyfin "Shows" library
 │   ├── movies/          # Movies → Jellyfin "Movies" library
-│   └── tv/              # Standard TV shows → Jellyfin "Shows" library
+│   ├── tv/              # Standard TV shows → Jellyfin "Shows" library
+│   └── youtube/         # Pinchflat downloads
 ├── downloads/
 │   └── usenet/
 │       ├── complete/
@@ -263,6 +271,8 @@ This example shows a working media server configuration based on a real producti
     └── sonarr-anime/
 ```
 
+Pinchflat is the exception: its state lives in `/var/lib/pinchflat` (hardcoded by the nixpkgs module), not under `nixflix.stateDir`, so back it up separately.
+
 ## Service Access
 
 | Service | Via Reverse Proxy | Direct Access | Default Username |
@@ -277,6 +287,7 @@ This example shows a working media server configuration based on a real producti
 | Jellyfin | `http://jellyfin.nixflix` | `http://localhost:8096` | `admin` |
 | Seerr | `http://seerr.nixflix` | `http://localhost:5055` | `seerr` (local), `admin` (Jellyfin auth) |
 | Navidrome | `http://navidrome.nixflix` | `http://localhost:4533` | `admin` |
+| Pinchflat | `http://pinchflat.nixflix` | `http://localhost:8945` | none (set `BASIC_AUTH_*` in `secretsFile`) |
 
 ## Customization
 

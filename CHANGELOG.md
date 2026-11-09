@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Lidarr metadata provider service that configures audio tag writing (`writeAudioTags`, `scrubAudioTags`, `embedCoverArt`) and the metadata source via `nixflix.lidarr.config.metadataProvider` ([#335](https://github.com/kiriwalawren/nixflix/issues/335))
 - `nixflix.nginx.sslCertificate`/`sslCertificateKey` and `nixflix.caddy.tls.certFile`/`keyFile` path options for using an existing (e.g. self-signed) certificate on all nixflix virtual hosts ([#332](https://github.com/kiriwalawren/nixflix/issues/332))
+- `nixflix.pinchflat` module for [Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX), a self-hosted YouTube media manager, with reverse proxy and VPN support. Videos download to `<nixflix.mediaDir>/youtube` by default ([#NNN](https://github.com/kiriwalawren/nixflix/pull/NNN))
 
 ### Fixed
 

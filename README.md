@@ -87,6 +87,11 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Music Server
 - Supports OpenSubsonic API
 
+### Pinchflat
+
+- YouTube media manager ([Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX))
+- Downloads channels and playlists into your media directory
+
 ### SABnzbd
 
 - Automatic integration with Starr services
