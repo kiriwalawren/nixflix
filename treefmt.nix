@@ -9,6 +9,7 @@ _: {
   programs.nixfmt = {
     enable = true;
     strict = true;
+    priority = 1;
   };
   programs.deadnix.enable = true;
   programs.statix.enable = true;
