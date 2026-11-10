@@ -13,7 +13,7 @@ in
   nixflix.recyclarr.config.sonarr.sonarr = lib.mkIf config.nixflix.sonarr.enable {
     base_url = lib.mkDefault "http://${config.nixflix.sonarr.connectionAddress}:${toString config.nixflix.sonarr.config.hostConfig.port}${toString config.nixflix.sonarr.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.sonarr.config.apiKey;
-    delete_old_custom_formats = lib.mkDefault true;
+    delete_old_custom_formats = lib.mkDefault (cfg.syncMode.customFormats == "delete");
 
     quality_definition = {
       type = lib.mkDefault "series";

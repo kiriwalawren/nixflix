@@ -1,7 +1,13 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
   cfg = config.nixflix.recyclarr;
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
 
   removeNulls =
     v:
@@ -100,6 +106,26 @@ in
       '';
     };
 
+    syncMode.customFormats =
+      let
+        option = syncMode.mkModeOption {
+          inherit config;
+          what = "custom formats";
+          collectionOption = "nixflix.recyclarr.config.<sonarr|radarr>.<instance>.custom_formats";
+        };
+      in
+      option
+      // {
+        description = option.description + ''
+
+          This sets the default of each instance's `delete_old_custom_formats`
+          (true only for `"delete"`). Recyclarr only ever deletes custom formats it
+          synced itself, and nixflix cannot inspect that state before Recyclarr
+          runs, so `"refuse"` cannot be enforced: it behaves like `"keep"` and
+          produces an evaluation warning.
+        '';
+      };
+
     cleanupUnmanagedProfiles = {
       enable = mkOption {
         type = types.bool;
@@ -137,6 +163,12 @@ in
   };
 
   config = mkIf (config.nixflix.enable && cfg.enable) {
+    warnings = optional (cfg.syncMode.customFormats == "refuse") ''
+      nixflix.recyclarr.syncMode.customFormats = "refuse" cannot be enforced:
+      Recyclarr decides which custom formats it deletes, so nixflix treats it as
+      "keep" and defaults delete_old_custom_formats to false on every instance.
+    '';
+
     assertions =
       let
         cfg' = cfg.config;
