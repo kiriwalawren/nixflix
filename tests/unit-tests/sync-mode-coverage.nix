@@ -443,40 +443,95 @@ let
       ];
   tokenCounts = src: lib.filterAttrs (_: n: n > 0) (lib.genAttrs sourceTokens (t: count t src.text));
 
-  # Every systemd unit a module names literally must be rendered by
-  # `everything`, so the per-unit keep/refuse scans see it. An interpolated
-  # name ("${serviceName}-rootfolders") needs a rendered unit with that suffix;
-  # a file that builds units as an attrset must contribute at least one.
-  unitNameRefs =
-    src:
-    map builtins.head (
-      builtins.filter builtins.isList (
-        builtins.split "systemd\\.services\\.(\"[^\"]+\"|[A-Za-z0-9_-]+)" src.text
-      )
-    );
+  # Every unit nixflix can define must be rendered by `everything`, so the
+  # per-unit keep/refuse scans see it. Three sources, strongest first:
+  #
+  # 1. The module system: every key of every systemd.services definition in
+  #    modules/ (definitionsWithLocations) must be a rendered unit. That sees
+  #    a unit behind an inner mkIf (`systemd.services = { a = ...; b = mkIf
+  #    false ...; }` keeps the key `b`), but not a definition whose whole
+  #    `config = mkIf cond { ... }` is false: the module system discharges it
+  #    before it is recorded anywhere.
+  # 2. For those, the source: every `systemd.services.<name>` must be
+  #    rendered, and every `"${serviceName}-<suffix>"` for each *arr in
+  #    arrServices, except the pairs in arrUnitsAbsent.
+  # 3. A file with `systemd.services = { ... }` must contribute at least one
+  #    definition, so a whole attrset module that is off is still caught.
+  renderedNames = builtins.attrNames defaults.texts;
   # Units deliberately left out of `everything`, with the reason. Empty: every
   # unit nixflix defines is rendered.
   unrenderedUnits = { };
-  renderedNames = builtins.attrNames defaults.texts;
-  unitRefMissing =
-    ref:
-    let
-      name = lib.removePrefix "\"" (lib.removeSuffix "\"" ref);
-      dyn = builtins.match "\\$\\{[A-Za-z]+}(.*)" name;
-    in
-    if unrenderedUnits ? ${name} then
-      false
-    else if dyn != null then
-      !lib.any (lib.hasSuffix (builtins.head dyn)) renderedNames
-    else
-      !builtins.elem name renderedNames;
-  quotedUnitKeys =
+  arrServices = [
+    "radarr"
+    "sonarr"
+    "sonarr-anime"
+    "lidarr"
+    "prowlarr"
+  ];
+  noMediaDirs = "prowlarr has no media dirs (usesMediaDirs = false), so the module is not instantiated";
+  arrUnitsAbsent = {
+    prowlarr-rootfolders = noMediaDirs;
+    prowlarr-delayprofiles = noMediaDirs;
+    prowlarr-mediamanagement = noMediaDirs;
+    prowlarr-metadata = noMediaDirs;
+    prowlarr-notifications = "nixflix.notif only sends to the media *arrs";
+  };
+  isRendered = name: builtins.elem name renderedNames || unrenderedUnits ? ${name};
+
+  # nixflix's own modules, wherever its source lives (the flake's store copy
+  # in `nix flake check`, a checkout otherwise); NixOS's are under nixos/modules.
+  isNixflixModule = f: builtins.match ".*/modules/.*" f != null && !lib.hasInfix "/nixos/modules/" f;
+  nixflixDefinitions = builtins.filter (
+    d: isNixflixModule (toString d.file)
+  ) defaults.options.systemd.services.definitionsWithLocations;
+  definedButUnrendered = lib.concatMap (
+    d:
+    map (n: "${toString d.file}: unit ${n} is defined (module system) but not rendered") (
+      builtins.filter (n: !isRendered n) (builtins.attrNames d.value)
+    )
+  ) nixflixDefinitions;
+
+  refsMatching =
+    re: src: map builtins.head (builtins.filter builtins.isList (builtins.split re src.text));
+  literalUnitRefs =
     src:
-    map builtins.head (
-      builtins.filter builtins.isList (builtins.split "(\"[$A-Za-z0-9{}_-]+\") = \\{" src.text)
+    builtins.filter (n: !lib.hasInfix "$" n) (
+      map (lib.removePrefix "\"") (
+        map (lib.removeSuffix "\"") (refsMatching "systemd\\.services\\.(\"[^\"]+\"|[A-Za-z0-9_-]+)" src)
+      )
     );
+  # "${serviceName}-<suffix>" in a unit position: systemd.services."..." or an
+  # attrset key `"..." = {`. Script names such as "${serviceName}-start" are not units.
+  arrUnitSuffixes =
+    src:
+    lib.unique (
+      refsMatching "systemd\\.services\\.\"\\$\\{serviceName}(-[a-z-]+)\"" src
+      ++ refsMatching "\"\\$\\{serviceName}(-[a-z-]+)\" = \\{" src
+    );
+  sourceButUnrendered = lib.concatMap (
+    src:
+    map (n: "${src.rel}: unit ${n} is not rendered by tests/lib/sync-mode-everything.nix") (
+      builtins.filter (n: !isRendered n) (
+        literalUnitRefs src
+        ++ builtins.filter (n: !arrUnitsAbsent ? ${n}) (
+          lib.concatMap (suffix: map (svc: svc + suffix) arrServices) (arrUnitSuffixes src)
+        )
+      )
+    )
+  ) sourceFiles;
+
+  definingFiles = map (d: toString d.file) nixflixDefinitions;
   attrsetUnitFiles = builtins.filter (s: lib.hasInfix "systemd.services = " s.text) sourceFiles;
-  definingFiles = map (d: toString d.file) defaults.options.systemd.services.definitionsWithLocations;
+  attrsetFileUnused = builtins.filter (
+    src:
+    let
+      # module files are often imported through their directory
+      mod = lib.removeSuffix "/default.nix" src.rel;
+    in
+    !lib.any (f: lib.hasSuffix src.rel f || lib.hasSuffix mod f) definingFiles
+    # imported as a function by another module (arr-common/postgres.nix)
+    && arrUnitSuffixes src == [ ]
+  ) attrsetUnitFiles;
 in
 {
   sync-mode-coverage-default-is-delete = assertTest "sync-mode-coverage-default-is-delete" (
@@ -642,26 +697,14 @@ in
 
   sync-mode-coverage-every-unit-rendered = assertTest "sync-mode-coverage-every-unit-rendered" (
     report (
-      lib.concatMap (
-        src:
-        map (ref: "${src.rel}: unit ${ref} is not rendered by tests/lib/sync-mode-everything.nix") (
-          builtins.filter unitRefMissing (unitNameRefs src)
-        )
-      ) sourceFiles
-      ++
-        map (src: "${src.rel}: defines systemd.services but sync-mode-everything.nix renders none of them")
-          (
-            builtins.filter (
-              src:
-              let
-                # module files are often imported through their directory
-                mod = lib.removeSuffix "/default.nix" src.rel;
-              in
-              !lib.any (f: lib.hasSuffix src.rel f || lib.hasSuffix mod f) definingFiles
-              # imported as a function (arr-common/postgres.nix): match its unit keys
-              && lib.all unitRefMissing (quotedUnitKeys src)
-            ) attrsetUnitFiles
-          )
+      definedButUnrendered
+      ++ sourceButUnrendered
+      ++ map (
+        src: "${src.rel}: defines systemd.services but sync-mode-everything.nix renders none of them"
+      ) attrsetFileUnused
+      ++ map (n: "arrUnitsAbsent.${n} is rendered; drop the exception") (
+        builtins.filter (n: builtins.elem n renderedNames) (builtins.attrNames arrUnitsAbsent)
+      )
     )
   );
 }
