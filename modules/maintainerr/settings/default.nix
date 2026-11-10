@@ -8,6 +8,7 @@ with lib;
 let
   cfg = config.nixflix.maintainerr;
   secrets = import ../../../lib/secrets { inherit lib; };
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
 
   maintainerrUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jobsJson = builtins.toJSON cfg.settings.jobs;
@@ -47,26 +48,60 @@ let
       fi
     '';
 
-  mkArrTypeScript =
+  # Refuse mode reads the live servers into their own variable at the top of
+  # the unit, because the Jellyfin/Seerr settings are POSTed before the
+  # *arr servers are synced. ARR_CURRENT is still fetched where it always was.
+  arrLiveVar = type: "ARR_LIVE_${toUpper type}";
+
+  mkArrPrune =
     type: servers:
     let
       declaredNames = builtins.toJSON (map (s: s.serverName) servers);
+      mode = cfg.syncMode.${type};
     in
-    ''
-      echo "Syncing ${type} servers..."
-      ARR_CURRENT=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/${type}")
+    syncMode.mkPrune {
+      inherit mode;
+      unit = "maintainerr-settings";
+      what = "${type} servers";
+      option = "nixflix.maintainerr.syncMode.${type}";
+      live = if mode == "refuse" then arrLiveVar type else "ARR_CURRENT";
+      declared = map (s: s.serverName) servers;
+      key = ".serverName";
+      onDelete = ''
+        TO_DELETE=$(echo "$ARR_CURRENT" | ${pkgs.jq}/bin/jq -r \
+          --argjson declared '${declaredNames}' \
+          '.[] | select(.serverName as $n | ($declared | index($n)) == null) | .id')
+        for ID in $TO_DELETE; do
+          echo "  Deleting undeclared ${type} (id=$ID)..."
+          ${pkgs.curl}/bin/curl -s -X DELETE \
+            "${maintainerrUrl}/api/settings/${type}/$ID" > /dev/null
+        done
+      '';
+    };
 
-      TO_DELETE=$(echo "$ARR_CURRENT" | ${pkgs.jq}/bin/jq -r \
-        --argjson declared '${declaredNames}' \
-        '.[] | select(.serverName as $n | ($declared | index($n)) == null) | .id')
-      for ID in $TO_DELETE; do
-        echo "  Deleting undeclared ${type} (id=$ID)..."
-        ${pkgs.curl}/bin/curl -s -X DELETE \
-          "${maintainerrUrl}/api/settings/${type}/$ID" > /dev/null
-      done
+  arrTypes = [
+    "radarr"
+    "sonarr"
+  ];
 
-      ${concatMapStrings (mkArrServerScript type) servers}
-    '';
+  refuseTypes = filter (type: cfg.syncMode.${type} == "refuse") arrTypes;
+
+  refuseGuards = optionalString (refuseTypes != [ ]) (
+    concatMapStrings (type: ''
+      ${arrLiveVar type}=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/${type}")
+    '') refuseTypes
+    + concatMapStrings (type: (mkArrPrune type cfg.settings.${type}).guard) refuseTypes
+    + syncMode.refuseCheckpoint
+    + "\n\n"
+  );
+
+  mkArrTypeScript = type: servers: ''
+    echo "Syncing ${type} servers..."
+    ARR_CURRENT=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/${type}")
+
+    ${(mkArrPrune type servers).prune}
+    ${concatMapStrings (mkArrServerScript type) servers}
+  '';
 
 in
 {
@@ -121,6 +156,9 @@ in
               exit 1
             fi
 
+          ''
+          + refuseGuards
+          + ''
             MEDIA_SERVER_TYPE=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings" \
               | ${pkgs.jq}/bin/jq -r '.media_server_type')
             if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then

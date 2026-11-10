@@ -8,6 +8,7 @@ with lib;
 let
   cfg = config.nixflix.maintainerr;
   maintainerrUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
+  syncMode = import ../../../../lib/sync-mode.nix { inherit lib pkgs; };
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
 
@@ -65,6 +66,34 @@ let
 
   declaredNames = builtins.toJSON (map (t: t.name) cfg.overlays.templates);
 
+  # Presets ship with Maintainerr and cannot be deleted, so they are never
+  # undeclared.
+  templatesPrune = syncMode.mkPrune {
+    mode = cfg.syncMode.overlayTemplates;
+    unit = "maintainerr-overlay-templates";
+    what = "overlay templates";
+    option = "nixflix.maintainerr.syncMode.overlayTemplates";
+    live = "CURRENT";
+    declared = map (t: t.name) cfg.overlays.templates;
+    select = ".isPreset == false";
+    onDelete = ''
+      echo "Removing undeclared overlay templates..."
+      TO_DELETE=$(echo "$NON_PRESETS" | ${pkgs.jq}/bin/jq -r \
+        --argjson declared '${declaredNames}' \
+        '.[] | select(.name as $n | ($declared | index($n)) == null) | .id')
+      for ID in $TO_DELETE; do
+        echo "  Deleting undeclared template (id=$ID)..."
+        ${pkgs.curl}/bin/curl -s -X DELETE \
+          "${maintainerrUrl}/api/overlays/templates/$ID" > /dev/null
+      done
+    '';
+  };
+
+  refuseGuard = optionalString (cfg.syncMode.overlayTemplates == "refuse") ''
+    ${templatesPrune.guard}${syncMode.refuseCheckpoint}
+
+  '';
+
   countDefaults =
     mode: builtins.length (builtins.filter (t: t.mode == mode && t.isDefault) cfg.overlays.templates);
 in
@@ -99,7 +128,7 @@ in
           CURRENT=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/overlays/templates")
           NON_PRESETS=$(echo "$CURRENT" | ${pkgs.jq}/bin/jq '[.[] | select(.isPreset == false)]')
 
-          ${concatStringsSep "\n" (map mkTemplateScript cfg.overlays.templates)}
+          ${refuseGuard}${concatStringsSep "\n" (map mkTemplateScript cfg.overlays.templates)}
 
           ${
             if countDefaults "poster" == 0 then
@@ -131,16 +160,7 @@ in
               ""
           }
 
-          echo "Removing undeclared overlay templates..."
-          TO_DELETE=$(echo "$NON_PRESETS" | ${pkgs.jq}/bin/jq -r \
-            --argjson declared '${declaredNames}' \
-            '.[] | select(.name as $n | ($declared | index($n)) == null) | .id')
-          for ID in $TO_DELETE; do
-            echo "  Deleting undeclared template (id=$ID)..."
-            ${pkgs.curl}/bin/curl -s -X DELETE \
-              "${maintainerrUrl}/api/overlays/templates/$ID" > /dev/null
-          done
-
+          ${templatesPrune.prune}
           echo "Maintainerr overlay templates configured successfully."
         '';
       };

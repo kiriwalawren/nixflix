@@ -8,6 +8,7 @@ with lib;
 let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.maintainerr;
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
@@ -90,6 +91,32 @@ in
         default = config.nixflix.vpn.namespace;
         defaultText = literalExpression "config.nixflix.vpn.namespace";
         description = "Name of the VPN network namespace to confine Maintainerr to when `vpn.enable = true`.";
+      };
+    };
+
+    syncMode = {
+      radarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Radarr servers";
+        collectionOption = "nixflix.maintainerr.settings.radarr";
+      };
+
+      sonarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Sonarr servers";
+        collectionOption = "nixflix.maintainerr.settings.sonarr";
+      };
+
+      rules = syncMode.mkModeOption {
+        inherit config;
+        what = "rule groups";
+        collectionOption = "nixflix.maintainerr.rules";
+      };
+
+      overlayTemplates = syncMode.mkModeOption {
+        inherit config;
+        what = "overlay templates (presets are never touched)";
+        collectionOption = "nixflix.maintainerr.overlays.templates";
       };
     };
 
