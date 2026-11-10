@@ -93,16 +93,6 @@ mkOption {
   type = notifLib.mkNotificationType {
     implementationName = "ntfy.sh";
 
-    imports = [
-      (doRename {
-        from = [ "username" ];
-        to = [ "userName" ];
-        visible = false;
-        warn = false;
-        use = id;
-      })
-    ];
-
     services.default = [
       "sonarr"
       "sonarr-anime"
@@ -111,8 +101,10 @@ mkOption {
     ];
 
     perService = mapAttrs (_: t: { triggers = t; }) triggers;
-    legacyTriggers = true;
-    omitFields = [ "username" ];
+    removedOptions = {
+      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.ntfy.onGrab = false;` or `nixflix.notif.ntfy.sonarr.onImportComplete = false;`.";
+      username = "It has been renamed to `nixflix.notif.ntfy.userName`.";
+    };
     fieldRenames.ntfyTags = "tags";
 
     extraOptions = {

@@ -27,8 +27,6 @@ let
     "lidarr"
   ];
 
-  legacyServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
-
   resolveFor =
     serviceName: n:
     removeAttrs n arrServices // filterAttrs (_: v: v != null) (n.${serviceName} or { });
@@ -173,7 +171,6 @@ let
               inherit (notificationConfig) implementationName;
               supportedTriggers = notificationConfig._supportedTriggers or { };
               triggerNames = concatLists (attrValues supportedTriggers);
-              legacyTriggers = (notificationConfig.triggers or { }).${legacyServiceKey serviceName} or null;
               allOverrides = builtins.removeAttrs notificationConfig (
                 [
                   "implementationName"
@@ -182,6 +179,7 @@ let
                 ]
                 ++ triggerNames
                 ++ notificationConfig._omitFields or [ ]
+                ++ attrNames (notificationConfig._removedOptions or { })
               );
               fieldRenames = notificationConfig._fieldRenames or { };
               fieldOverrides = mapAttrs' (name: nameValuePair (fieldRenames.${name} or name)) (
@@ -191,11 +189,9 @@ let
               fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
               jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
-              enabledTriggers =
-                if legacyTriggers != null then
-                  legacyTriggers
-                else
-                  filter (t: notificationConfig.${t} or false) (supportedTriggers.${serviceName} or [ ]);
+              enabledTriggers = filter (t: notificationConfig.${t} or false) (
+                supportedTriggers.${serviceName} or [ ]
+              );
             in
             ''
               echo "Processing notification: ${notificationName}"
@@ -324,14 +320,35 @@ in
 {
   imports = [ ./options.nix ];
 
-  config = mkIf (config.nixflix.enable && cfg.enable) {
-    assertions = [
-      {
-        assertion = !cfg.ntfy.enable || cfg.ntfy.topics != [ ];
-        message = "nixflix.notif.ntfy.enable requires at least one nixflix.notif.ntfy.topics entry.";
-      }
-    ];
+  config = mkMerge [
+    {
+      assertions = concatLists (
+        mapAttrsToList
+          (
+            connector: n:
+            mapAttrsToList (opt: instructions: {
+              assertion = n.${opt} == null;
+              message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${instructions}";
+            }) n._removedOptions
+          )
+          (
+            removeAttrs cfg [
+              "enable"
+              "extraNotifications"
+            ]
+          )
+      );
+    }
 
-    systemd.services = mkMerge (map mkNotificationsService enabledArrServices);
-  };
+    (mkIf (config.nixflix.enable && cfg.enable) {
+      assertions = [
+        {
+          assertion = !cfg.ntfy.enable || cfg.ntfy.topics != [ ];
+          message = "nixflix.notif.ntfy.enable requires at least one nixflix.notif.ntfy.topics entry.";
+        }
+      ];
+
+      systemd.services = mkMerge (map mkNotificationsService enabledArrServices);
+    })
+  ];
 }

@@ -108,10 +108,21 @@
               };
             };
 
-            notif.jellyfin.triggers.sonarr = [
-              "onDownload"
-              "onHealthIssue"
-            ];
+            notif.jellyfin.sonarr =
+              lib.genAttrs [
+                "onGrab"
+                "onUpgrade"
+                "onImportComplete"
+                "onRename"
+                "onSeriesAdd"
+                "onSeriesDelete"
+                "onEpisodeFileDelete"
+                "onEpisodeFileDeleteForUpgrade"
+                "onApplicationUpdate"
+              ] (_: false)
+              // {
+                onHealthIssue = true;
+              };
 
             notif.jellyfin.includeHealthWarnings = true;
           };
@@ -416,12 +427,6 @@
       ${check "a service block that the schema lacks is rejected" (
         !evaluates { pushsafer.sonarr.onDownload = true; }
       )}
-      ${check "the legacy list form still evaluates on jellyfin" (evaluates {
-        jellyfin = {
-          apiKey = "test-jellyfin-key";
-          triggers.sonarr = [ "onDownload" ];
-        };
-      })}
       echo 'PASS: notif-connector-trigger-validation' > $out
     '';
 
@@ -443,7 +448,7 @@
               ntfy = {
                 enable = true;
                 topics = [ "media" ];
-                username = "legacy-user";
+                userName = "ntfy-user";
               };
             };
           };
@@ -458,13 +463,58 @@
       ${check "notifiarr sets the Radarr/Lidarr field name aPIKey" (
         lib.hasInfix ''"aPIKey":"plain-notifiarr-key"'' script
       )}
-      ${check "legacy ntfy username is sent as the schema field userName" (
-        lib.hasInfix ''"userName":"legacy-user"'' script
+      ${check "ntfy userName is sent as the schema field userName" (
+        lib.hasInfix ''"userName":"ntfy-user"'' script
       )}
       ${check "field-named overrides are not merged into the top level" (
         lib.hasInfix "select(.key as $k | $fieldNames | index($k) == null)" script
       )}
       echo 'PASS: notif-field-names' > $out
+    '';
+
+  notif-removed-options =
+    let
+      # Filtered by message because the bare harness always trips the
+      # fileSystems and grub assertions.
+      removedAssertions =
+        notif:
+        map (a: a.message) (
+          lib.filter (a: !a.assertion && lib.hasInfix "has been removed" a.message)
+            (evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  inherit notif;
+                };
+              }
+            ]).config.assertions
+        );
+      ntfyUsername = removedAssertions { ntfy.username = "old-user"; };
+      jellyfinTriggers = removedAssertions {
+        jellyfin = {
+          apiKey = "test-jellyfin-key";
+          triggers.sonarr = [ "onDownload" ];
+        };
+      };
+      disabledNotif = removedAssertions {
+        enable = false;
+        subsonic.triggers.lidarr = [ "onGrab" ];
+      };
+    in
+    pkgs.runCommand "unit-test-notif-removed-options" { } ''
+      ${check "no removed-option assertion fires by default" (removedAssertions { } == [ ])}
+      ${check "ntfy.username fails and points to ntfy.userName" (
+        lib.length ntfyUsername == 1
+        && lib.hasInfix "nixflix.notif.ntfy.username" (lib.head ntfyUsername)
+        && lib.hasInfix "nixflix.notif.ntfy.userName" (lib.head ntfyUsername)
+      )}
+      ${check "the jellyfin triggers list fails and points to the boolean options" (
+        lib.length jellyfinTriggers == 1
+        && lib.hasInfix "nixflix.notif.jellyfin.triggers" (lib.head jellyfinTriggers)
+        && lib.hasInfix "nixflix.notif.jellyfin.onGrab" (lib.head jellyfinTriggers)
+      )}
+      ${check "a removed option fails even when notif is disabled" (lib.length disabledNotif == 1)}
+      echo 'PASS: notif-removed-options' > $out
     '';
 
   notif-webhook-headers =

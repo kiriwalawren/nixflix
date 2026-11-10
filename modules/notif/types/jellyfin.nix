@@ -127,7 +127,9 @@ mkOption {
         };
       }
     ) triggers;
-    legacyTriggers = true;
+    removedOptions = {
+      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.jellyfin.onGrab = false;` or `nixflix.notif.jellyfin.sonarr.onImportComplete = false;`.";
+    };
 
     extraOptions = {
       useSsl = notifLib.field types.bool "Connect to Jellyfin over HTTPS instead of HTTP.";

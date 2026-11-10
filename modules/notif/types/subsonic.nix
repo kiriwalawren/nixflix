@@ -52,7 +52,9 @@ mkOption {
     services.default = [ "lidarr" ];
 
     perService = mapAttrs (_: t: { triggers = t; }) triggers;
-    legacyTriggers = true;
+    removedOptions = {
+      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.subsonic.onGrab = false;` or `nixflix.notif.subsonic.lidarr.onTrackRetag = false;`.";
+    };
 
     extraOptions = {
       useSsl = notifLib.field types.bool "Connect to Subsonic over HTTPS instead of HTTP.";

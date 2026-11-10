@@ -151,7 +151,7 @@ rec {
       services ? { },
       extraOptions ? { },
       imports ? [ ],
-      legacyTriggers ? false,
+      removedOptions ? { },
       omitFields ? [ ],
       fieldRenames ? { },
     }:
@@ -279,24 +279,24 @@ rec {
             default = omitFields;
             description = "Option names that are not sent to the Starr API.";
           };
-        }
-        // optionalAttrs legacyTriggers {
-          triggers = mkOption {
-            type = types.submodule {
-              options = mapAttrs (
-                _: spec:
-                mkOption {
-                  type = types.nullOr (types.listOf (types.enum spec.triggers.valid));
-                  default = null;
-                  description = "List of enabled triggers. Replaces the boolean trigger options for this service.";
-                }
-              ) (removeAttrs allPerService [ "sonarr-anime" ]);
-            };
-            default = { };
-            visible = false;
-            description = "Deprecated list form of the trigger options.";
+
+          _removedOptions = mkOption {
+            type = types.attrsOf types.str;
+            readOnly = true;
+            internal = true;
+            default = removedOptions;
+            description = "Removed option names, mapped to instructions for what replaces them.";
           };
         }
+        // mapAttrs (
+          _: instructions:
+          mkOption {
+            type = types.nullOr types.raw;
+            default = null;
+            visible = false;
+            description = "Removed. ${instructions}";
+          }
+        ) removedOptions
         // genAttrs sharedTriggers (
           t:
           triggerOption (isDefault t (head serviceNames)) "Whether to notify on ${t} from every Starr service."
