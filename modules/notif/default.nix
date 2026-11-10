@@ -29,12 +29,6 @@ let
 
   triggerServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
 
-  notifTriggers = import ./triggers.nix;
-
-  allTriggerKeys = unique (
-    concatMap (t: t.valid) (collect (x: x ? valid && x ? default) notifTriggers)
-  );
-
   notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
 
   notificationDependencies =
@@ -154,11 +148,17 @@ let
                 echo "$notification_json" | ${pkgs.jq}/bin/jq \
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" \
-                  --argjson triggerKeys ${escapeShellArg (builtins.toJSON allTriggerKeys)} \
                   --argjson enabledTriggers ${escapeShellArg (builtins.toJSON enabledTriggers)} '
                     ${optionalString jqSecrets.hasSecrets "($overrides | ${concatStringsSep " | " jqSecrets.assignments}) as $overrides |"}
-                    . + $overrides
-                    | reduce $triggerKeys[] as $t (.; .[$t] = ($enabledTriggers | index($t) != null))
+                    [.fields[].name] as $fieldNames
+                    | . + ($overrides | with_entries(select(.key as $k | $fieldNames | index($k) == null)))
+                    | with_entries(
+                        if (.key | test("^on[A-Z]")) then
+                          .value = (.key as $k | $enabledTriggers | index($k) != null)
+                        else
+                          .
+                        end
+                      )
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then

@@ -2,297 +2,56 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
-  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
+  notifLib = import ./lib.nix { inherit lib secrets; };
 
-  navidromeAdmin =
-    (getFirstAdmin {
-      inherit (config.nixflix.navidrome) users;
-      isAdmin = user: user.isAdmin;
-    }).user;
-
-  notifTriggers = import ./triggers.nix;
-
-  mkTriggersOption =
-    serviceTriggers:
-    mkOption {
-      type = types.listOf (types.enum serviceTriggers.valid);
-      inherit (serviceTriggers) default;
-      description = "Starr trigger events that enable this notification.";
+  importType =
+    name:
+    import (./types + "/${name}.nix") {
+      inherit
+        config
+        lib
+        secrets
+        notifLib
+        ;
     };
 
-  mkNotificationType =
-    {
-      implementationName,
-      enable ? { },
-      dependencies ? { },
-      services ? { },
-      triggers ? { },
-      extraOptions ? { },
-    }:
-    types.submodule {
-      freeformType = types.attrsOf types.anything;
-      options = {
-        enable = mkOption (
-          {
-            type = types.bool;
-            default = false;
-            description = "Whether or not this notification is enabled.";
-          }
-          // enable
-        );
-
-        dependencies = mkOption (
-          {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "systemd services that this integration depends on";
-          }
-          // dependencies
-        );
-
-        services = mkOption (
-          {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Which Starr services to configure this notification on.";
-          }
-          // services
-        );
-
-        triggers = mkOption (
-          {
-            type = types.attrsOf (types.listOf types.str);
-            default = { };
-            description = "Starr trigger events that enable this notification, per service.";
-          }
-          // triggers
-        );
-
-        name = mkOption {
-          type = types.str;
-          default = implementationName;
-          description = "User-defined name for the notification instance.";
-        };
-
-        implementationName = mkOption {
-          type = types.str;
-          readOnly = true;
-          default = implementationName;
-          description = "Type of notification to configure (matches schema implementationName).";
-        };
-      }
-      // extraOptions;
-    };
-
-  jellyfinType = mkNotificationType {
-    implementationName = "Emby / Jellyfin";
-
-    enable = {
-      default = config.nixflix.jellyfin.enable;
-      defaultText = literalExpression "config.nixflix.jellyfin.enable";
-    };
-
-    dependencies.default = [ "jellyfin-api-key.service" ];
-
-    services = {
-      default = optionals config.nixflix.jellyfin.enable (
-        [
-          "sonarr"
-          "sonarr-anime"
-          "radarr"
-        ]
-        ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-      );
-      defaultText = literalExpression ''
-        optionals config.nixflix.jellyfin.enable (
-          [ "sonarr" "sonarr-anime" "radarr" ]
-          ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-        )
-      '';
-    };
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          sonarr = mkTriggersOption notifTriggers.jellyfin.sonarr;
-          radarr = mkTriggersOption notifTriggers.jellyfin.radarr;
-          lidarr = mkTriggersOption notifTriggers.jellyfin.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      host = mkOption {
-        type = types.str;
-        description = "Host of the Jellyfin server.";
-        default = config.nixflix.jellyfin.connectionAddress;
-        defaultText = literalExpression "config.nixflix.jellyfin.connectionAddress";
-      };
-
-      port = mkOption {
-        type = types.port;
-        description = "Port of the Jellyfin server.";
-        default = config.nixflix.jellyfin.network.internalHttpPort;
-        defaultText = literalExpression "config.nixflix.jellyfin.network.internalHttpPort";
-      };
-
-      apiKey = secrets.mkSecretOption {
-        description = "API key for Jellyfin.";
-        default = config.nixflix.jellyfin.apiKey;
-        defaultText = literalExpression "config.nixflix.jellyfin.apiKey";
-        nullable = true;
-      };
-    };
-  };
-
-  subsonicType = mkNotificationType {
-    implementationName = "Subsonic";
-
-    enable = {
-      default = config.nixflix.navidrome.enable;
-      defaultText = literalExpression "config.nixflix.navidrome.enable";
-    };
-
-    dependencies.default = [ "navidrome.service" ];
-
-    services.default = [ "lidarr" ];
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          lidarr = mkTriggersOption notifTriggers.subsonic.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      host = mkOption {
-        type = types.str;
-        description = "Host of the Navidrome (Subsonic) server.";
-        default = config.nixflix.navidrome.connectionAddress;
-        defaultText = literalExpression "config.nixflix.navidrome.connectionAddress";
-      };
-
-      port = mkOption {
-        type = types.port;
-        description = "Port of the Navidrome (Subsonic) server.";
-        default = config.nixflix.navidrome.settings.Port;
-        defaultText = literalExpression "config.nixflix.navidrome.settings.Port";
-      };
-
-      username = secrets.mkSecretOption {
-        description = "Username for the Navidrome (Subsonic) server.";
-        default = navidromeAdmin.userName or null;
-        defaultText = literalExpression "(getFirstAdmin { inherit (config.nixflix.navidrome) users; isAdmin = user: user.isAdmin; }).user.userName";
-        nullable = true;
-      };
-
-      password = secrets.mkSecretOption {
-        description = "Password for the Navidrome (Subsonic) server.";
-        default = navidromeAdmin.password or null;
-        defaultText = literalExpression "(getFirstAdmin { inherit (config.nixflix.navidrome) users; isAdmin = user: user.isAdmin; }).user.password";
-        nullable = true;
-      };
-    };
-  };
-
-  ntfyType = mkNotificationType {
-    implementationName = "ntfy.sh";
-
-    services.default = [
-      "sonarr"
-      "sonarr-anime"
-      "radarr"
-      "lidarr"
-    ];
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          sonarr = mkTriggersOption notifTriggers.ntfy.sonarr;
-          radarr = mkTriggersOption notifTriggers.ntfy.radarr;
-          lidarr = mkTriggersOption notifTriggers.ntfy.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      serverUrl = mkOption {
-        type = types.str;
-        default = "https://ntfy.sh";
-        description = "ntfy server URL.";
-      };
-
-      topics = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "Topics to publish notifications to.";
-      };
-
-      accessToken = secrets.mkSecretOption {
-        description = "Access token for the ntfy server.";
-        nullable = true;
-      };
-
-      username = secrets.mkSecretOption {
-        description = "Username for the ntfy server.";
-        nullable = true;
-      };
-
-      password = secrets.mkSecretOption {
-        description = "Password for the ntfy server.";
-        nullable = true;
-      };
-
-      priority = mkOption {
-        type = types.ints.between 1 5;
-        default = 3;
-        description = "Priority of the notification.";
-      };
-
-      tags = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "Tags/emojis to include on the notification.";
-      };
-
-      clickUrl = mkOption {
-        type = types.str;
-        default = "";
-        description = "URL to open when the notification is clicked.";
-      };
-    };
-  };
+  notificationTypes = [
+    "jellyfin"
+    "subsonic"
+    "ntfy"
+    "apprise"
+    "customScript"
+    "discord"
+    "email"
+    "gotify"
+    "join"
+    "kodi"
+    "mailgun"
+    "notifiarr"
+    "plex"
+    "prowl"
+    "pushbullet"
+    "pushcut"
+    "pushover"
+    "pushsafer"
+    "sendgrid"
+    "signal"
+    "simplepush"
+    "slack"
+    "synologyIndexer"
+    "telegram"
+    "twitter"
+    "webhook"
+  ];
 in
 {
   options.nixflix.notif = mkOption {
     type = types.submodule {
-      options = {
+      options = genAttrs notificationTypes importType // {
         enable = mkOption {
           type = types.bool;
           default = true;
           description = "Whether to enable Notif.";
-        };
-
-        jellyfin = mkOption {
-          type = jellyfinType;
-          default = { };
-          description = "Emby/Jellyfin notification definition for Starr services.";
-        };
-
-        subsonic = mkOption {
-          type = subsonicType;
-          default = { };
-          description = "Subsonic notification definition for Starr services.";
-        };
-
-        ntfy = mkOption {
-          type = ntfyType;
-          default = { };
-          description = "ntfy notification definition for Starr services.";
         };
 
         extraNotifications = mkOption {

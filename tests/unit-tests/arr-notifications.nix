@@ -131,7 +131,7 @@
         lib.hasInfix ''"includeHealthWarnings":true'' sonarrNotifications.script
       )}
       ${check "apply_field_overrides merges top-level overrides (name, enable, freeform properties)" (
-        lib.hasInfix ". + \$overrides" sonarrNotifications.script
+        lib.hasInfix ". + (\$overrides" sonarrNotifications.script
       )}
       ${check "notification overrides do not include the nested triggers attrset" (
         !lib.hasInfix "\"triggers\":" sonarrNotifications.script
@@ -186,5 +186,269 @@
       ${check "script reads the ntfy password via --rawfile" (lib.hasInfix ntfyPasswordFile script)}
       ${check "no _secret refs leak into the override JSON" (!lib.hasInfix "_secret" script)}
       echo 'PASS: notif-any-field-secret' > $out
+    '';
+
+  notif-all-connector-types =
+    let
+      connectors = {
+        apprise = {
+          impl = "Apprise";
+          secret = "authPassword";
+        };
+        customScript = {
+          impl = "Custom Script";
+          secret = null;
+        };
+        discord = {
+          impl = "Discord";
+          secret = "webHookUrl";
+        };
+        email = {
+          impl = "Email";
+          secret = "password";
+        };
+        gotify = {
+          impl = "Gotify";
+          secret = "appToken";
+        };
+        join = {
+          impl = "Join";
+          secret = "apiKey";
+        };
+        kodi = {
+          impl = "Kodi";
+          secret = "password";
+        };
+        mailgun = {
+          impl = "Mailgun";
+          secret = "apiKey";
+        };
+        notifiarr = {
+          impl = "Notifiarr";
+          secret = "apiKey";
+        };
+        plex = {
+          impl = "Plex Media Server";
+          secret = "authToken";
+        };
+        prowl = {
+          impl = "Prowl";
+          secret = "apiKey";
+        };
+        pushbullet = {
+          impl = "Pushbullet";
+          secret = "apiKey";
+        };
+        pushcut = {
+          impl = "Pushcut";
+          secret = "apiKey";
+        };
+        pushover = {
+          impl = "Pushover";
+          secret = "apiKey";
+        };
+        pushsafer = {
+          impl = "Pushsafer";
+          secret = "apiKey";
+        };
+        sendgrid = {
+          impl = "SendGrid";
+          secret = "apiKey";
+        };
+        signal = {
+          impl = "Signal";
+          secret = "authPassword";
+        };
+        simplepush = {
+          impl = "Simplepush";
+          secret = "key";
+        };
+        slack = {
+          impl = "Slack";
+          secret = "webHookUrl";
+        };
+        synologyIndexer = {
+          impl = "Synology Indexer";
+          secret = null;
+        };
+        telegram = {
+          impl = "Telegram";
+          secret = "botToken";
+        };
+        twitter = {
+          impl = "Twitter";
+          secret = "consumerSecret";
+        };
+        webhook = {
+          impl = "Webhook";
+          secret = "password";
+        };
+      };
+      secretPath = name: "/run/secrets/notif-${name}";
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            lidarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/lidarr-api";
+            };
+            notif = lib.mapAttrs (
+              name: c:
+              {
+                enable = true;
+              }
+              // lib.optionalAttrs (c.secret != null) { ${c.secret}._secret = secretPath name; }
+            ) connectors;
+          };
+        }
+      ];
+      scripts = lib.genAttrs [ "sonarr" "radarr" "lidarr" ] (
+        s: config.config.systemd.services."${s}-notifications".script
+      );
+      expectedOn = name: service: name != "pushsafer" || service == "radarr";
+      checks = lib.concatLists (
+        lib.mapAttrsToList (
+          name: c:
+          map (
+            service:
+            let
+              script = scripts.${service};
+              present = lib.hasInfix "Processing notification: ${c.impl}" script;
+            in
+            ''
+              ${check "${name} configured on ${service} only when the schema has it" (
+                present == expectedOn name service
+              )}
+              ${check "${name} secret is read by path on ${service}" (
+                c.secret == null || !(expectedOn name service) || lib.hasInfix (secretPath name) script
+              )}
+            ''
+          ) (lib.attrNames scripts)
+        ) connectors
+      );
+    in
+    pkgs.runCommand "unit-test-notif-all-connector-types" { } ''
+      ${lib.concatStrings checks}
+      ${check "no _secret refs leak into any script" (
+        lib.all (script: !lib.hasInfix "_secret" script) (lib.attrValues scripts)
+      )}
+      ${check "new connectors default to no enabled triggers" (
+        lib.all (script: !lib.hasInfix "enabledTriggers '[\"" script) (lib.attrValues scripts)
+      )}
+      echo 'PASS: notif-all-connector-types' > $out
+    '';
+
+  notif-connector-trigger-validation =
+    let
+      evalPlexTriggers =
+        sonarrTriggers:
+        (evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              notif.plex.triggers.sonarr = sonarrTriggers;
+            };
+          }
+        ]).config.nixflix.notif.plex.triggers.sonarr;
+      evaluates =
+        triggers: (builtins.tryEval (builtins.deepSeq (evalPlexTriggers triggers) true)).success;
+    in
+    pkgs.runCommand "unit-test-notif-connector-trigger-validation" { } ''
+      ${check "plex accepts a supported sonarr trigger" (evaluates [ "onDownload" ])}
+      ${check "plex rejects onGrab, which its sonarr schema does not support" (!evaluates [ "onGrab" ])}
+      echo 'PASS: notif-connector-trigger-validation' > $out
+    '';
+
+  notif-field-names =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            notif = {
+              notifiarr = {
+                enable = true;
+                apiKey = "plain-notifiarr-key";
+              };
+              ntfy = {
+                enable = true;
+                topics = [ "media" ];
+                username = "legacy-user";
+              };
+            };
+          };
+        }
+      ];
+      script = config.config.systemd.services."radarr-notifications".script;
+    in
+    pkgs.runCommand "unit-test-notif-field-names" { } ''
+      ${check "notifiarr sets the Sonarr field name apiKey" (
+        lib.hasInfix ''"apiKey":"plain-notifiarr-key"'' script
+      )}
+      ${check "notifiarr sets the Radarr/Lidarr field name aPIKey" (
+        lib.hasInfix ''"aPIKey":"plain-notifiarr-key"'' script
+      )}
+      ${check "legacy ntfy username is sent as the schema field userName" (
+        lib.hasInfix ''"userName":"legacy-user"'' script
+      )}
+      ${check "field-named overrides are not merged into the top level" (
+        lib.hasInfix "select(.key as $k | $fieldNames | index($k) == null)" script
+      )}
+      echo 'PASS: notif-field-names' > $out
+    '';
+
+  notif-webhook-headers =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            notif.webhook = {
+              enable = true;
+              url = "https://hooks.example/notify";
+              headers = [
+                {
+                  key = "Authorization";
+                  value._secret = "/run/secrets/webhook-auth";
+                }
+                {
+                  key = "X-Plain";
+                  value = "plain-value";
+                }
+              ];
+            };
+          };
+        }
+      ];
+      script = config.config.systemd.services."sonarr-notifications".script;
+    in
+    pkgs.runCommand "unit-test-notif-webhook-headers" { } ''
+      ${check "headers are sent as a key/value list with the secret value stripped" (
+        lib.hasInfix ''"headers":[{"key":"Authorization"},{"key":"X-Plain","value":"plain-value"}]'' script
+      )}
+      ${check "secret header value is read from its file" (
+        lib.hasInfix "/run/secrets/webhook-auth" script
+      )}
+      ${check "secret header value is assigned into the first header" (
+        lib.hasInfix ''.["headers"][0]["value"] = ($nixflixSecret0Content'' script
+      )}
+      echo 'PASS: notif-webhook-headers' > $out
     '';
 }
