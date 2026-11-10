@@ -361,8 +361,48 @@
             ]).config.nixflix.notif.${name}
           ) notifConfig) true
         )).success;
+      notifLib = import ../../modules/notif/lib.nix {
+        inherit lib;
+        secrets = import ../../lib/secrets { inherit lib; };
+      };
+      connectorEvaluates =
+        perService:
+        (builtins.tryEval (
+          builtins.deepSeq
+            (lib.evalModules {
+              modules = [
+                {
+                  options.connector = notifLib.mkConnectorOption {
+                    implementationName = "Test";
+                    description = "Test connector.";
+                    inherit perService;
+                  };
+                }
+              ];
+            }).config.connector._supportedTriggers
+            true
+        )).success;
+      supported = (evalConfig [ { nixflix.enable = true; } ]).config.nixflix.notif;
     in
     pkgs.runCommand "unit-test-notif-connector-trigger-validation" { } ''
+      ${check "a well-formed perService spec evaluates" (connectorEvaluates {
+        sonarr.unsupportedTriggers = [ "onRename" ];
+      })}
+      ${check "a perService spec given as a bare list is rejected" (
+        !connectorEvaluates { radarr = [ "onRename" ]; }
+      )}
+      ${check "an unknown perService key is rejected" (
+        !connectorEvaluates { radarr.unsuportedTriggers = [ "onRename" ]; }
+      )}
+      ${check "an unsupported trigger that the service lacks is rejected" (
+        !connectorEvaluates { radarr.unsupportedTriggers = [ "onSeriesAdd" ]; }
+      )}
+      ${check "kodi supports onManualInteractionRequired on sonarr" (
+        lib.elem "onManualInteractionRequired" supported.kodi._supportedTriggers.sonarr
+      )}
+      ${check "pushsafer does not support onRename on radarr" (
+        !lib.elem "onRename" supported.pushsafer._supportedTriggers.radarr
+      )}
       ${check "plex accepts a supported sonarr-only trigger" (evaluates {
         plex.sonarr.onDownload = true;
       })}

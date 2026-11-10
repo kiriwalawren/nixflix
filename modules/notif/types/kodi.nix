@@ -5,7 +5,7 @@ mkConnectorOption {
   implementationName = "Kodi";
   description = "Kodi notification definition for Starr services.";
   perService = {
-    sonarr.unsupportedTriggers = [ "onManualInteractionRequired" ];
+    sonarr = { };
     radarr.unsupportedTriggers = [ "onMovieAdded" ];
     lidarr.unsupportedTriggers = [
       "onAlbumDelete"

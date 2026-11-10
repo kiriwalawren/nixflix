@@ -118,8 +118,17 @@ rec {
         perService = mapAttrs (
           svc: spec:
           let
-            valid = subtractLists (spec.unsupportedTriggers or [ ]) allTriggers.${svc};
+            unsupported = spec.unsupportedTriggers or [ ];
+            unknownKeys = subtractLists [ "unsupportedTriggers" "fields" ] (attrNames spec);
+            unknownTriggers = subtractLists allTriggers.${svc} unsupported;
+            valid = subtractLists unsupported allTriggers.${svc};
           in
+          assert assertMsg (
+            isAttrs spec && unknownKeys == [ ]
+          ) "${implementationName}: perService.${svc} only takes unsupportedTriggers and fields";
+          assert assertMsg (
+            unknownTriggers == [ ]
+          ) "${implementationName}: ${svc} has no triggers named ${concatStringsSep ", " unknownTriggers}";
           {
             triggers = {
               inherit valid;

@@ -5,7 +5,7 @@ mkConnectorOption {
   implementationName = "Pushsafer";
   description = "Pushsafer notification definition for Radarr.";
   perService = {
-    radarr = [ "onRename" ];
+    radarr.unsupportedTriggers = [ "onRename" ];
   };
   fields = {
     apiKey = secretField "Pushsafer API key.";
