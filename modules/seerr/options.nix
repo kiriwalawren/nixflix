@@ -7,6 +7,7 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
 in
 {
   options.nixflix.seerr = {
@@ -98,6 +99,42 @@ in
         defaultText = literalExpression "config.nixflix.vpn.namespace";
         description = "Name of the VPN network namespace to confine Seerr to when `vpn.enable = true`.";
       };
+    };
+
+    syncMode = {
+      radarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Radarr servers";
+        collectionOption = "nixflix.seerr.radarr";
+      };
+
+      sonarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Sonarr servers";
+        collectionOption = "nixflix.seerr.sonarr";
+      };
+
+      jellyfinLibraries =
+        syncMode.mkModeOption {
+          inherit config;
+          what = "enabled Jellyfin libraries";
+          collectionOption = "nixflix.seerr.jellyfin.libraryFilter";
+        }
+        // {
+          description = ''
+            What to do with Jellyfin libraries that are enabled in Seerr but do
+            not match `nixflix.seerr.jellyfin.libraryFilter`. Seerr libraries are
+            disabled rather than deleted, and only when
+            `nixflix.seerr.jellyfin.enableAllLibraries = false`. Defaults to
+            `nixflix.syncMode`.
+
+            - `"delete"`: disable them.
+            - `"keep"`: enable the matching libraries, leave the others as they
+              are; the unit logs what it kept enabled.
+            - `"refuse"`: if any would be disabled, fail the unit before changing
+              anything and list them.
+          '';
+        };
     };
 
     connectionAddress = mkOption {
