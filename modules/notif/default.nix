@@ -101,6 +101,45 @@ let
             }
           })
 
+          TAGS_FILE=$(mktemp)
+          trap 'rm -f "$TAGS_FILE"' EXIT
+          ${optionalString (concatMap (n: n.tags or [ ]) notifications != [ ]) ''
+            echo "Fetching tags..."
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/tag";
+                extraArgs = "-S";
+              }
+            } > "$TAGS_FILE"
+          ''}
+
+          resolve_tag_id() {
+            local label="$1"
+            local id
+            id=$(${pkgs.jq}/bin/jq -r --arg label "$label" '.[] | select(.label == $label) | .id' "$TAGS_FILE")
+            if [ -z "$id" ]; then
+              echo "Creating tag $label..." >&2
+              local payload
+              payload=$(${pkgs.jq}/bin/jq -n --arg label "$label" '{label: $label}')
+              local created
+              created=$(${
+                mkSecureCurl serviceConfig.apiKey {
+                  url = "$BASE_URL/tag";
+                  method = "POST";
+                  headers = {
+                    "Content-Type" = "application/json";
+                  };
+                  data = "$payload";
+                  extraArgs = "-Sf";
+                }
+              })
+              id=$(echo "$created" | ${pkgs.jq}/bin/jq -r '.id')
+              ${pkgs.jq}/bin/jq --argjson tag "$created" '. + [$tag]' "$TAGS_FILE" > "$TAGS_FILE.new"
+              mv "$TAGS_FILE.new" "$TAGS_FILE"
+            fi
+            echo "$id"
+          }
+
           # Build list of configured notification names
           CONFIGURED_NAMES=$(cat <<'EOF'
           ${builtins.toJSON (map (n: n.name) notifications)}
@@ -140,13 +179,18 @@ let
                   [
                     "implementationName"
                     "triggers"
+                    "tags"
                   ]
                   ++ arrServiceKeys
                   ++ triggerNames
                   ++ notificationConfig._omitFields or [ ]
                 )
                 // builtins.removeAttrs serviceBlock triggerNames;
-              fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
+              fieldRenames = notificationConfig._fieldRenames or { };
+              fieldOverrides = mapAttrs' (name: nameValuePair (fieldRenames.${name} or name)) (
+                filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides
+              );
+              tagLabels = notificationConfig.tags or [ ];
               fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
               jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
@@ -168,6 +212,7 @@ let
                 echo "$notification_json" | ${pkgs.jq}/bin/jq \
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" \
+                  --argjson tagIds "$TAG_IDS" \
                   --argjson enabledTriggers ${escapeShellArg (builtins.toJSON enabledTriggers)} '
                     ${optionalString jqSecrets.hasSecrets "($overrides | ${concatStringsSep " | " jqSecrets.assignments}) as $overrides |"}
                     [.fields[].name] as $fieldNames
@@ -179,6 +224,7 @@ let
                           .
                         end
                       )
+                    | .tags = $tagIds
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then
@@ -191,6 +237,11 @@ let
               }
 
               FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
+
+              TAG_IDS='[]'
+              ${concatMapStringsSep "\n" (label: ''
+                TAG_IDS=$(echo "$TAG_IDS" | ${pkgs.jq}/bin/jq -c --argjson id "$(resolve_tag_id ${escapeShellArg label})" '. + [$id]')
+              '') tagLabels}
 
               EXISTING_NOTIFICATION=$(echo "$NOTIFICATIONS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg notificationName} '.[] | select(.name == $name) | @json' || echo "")
 

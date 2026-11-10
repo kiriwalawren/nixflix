@@ -113,6 +113,7 @@ mkOption {
     perService = mapAttrs (_: t: { triggers = t; }) triggers;
     legacyTriggers = true;
     omitFields = [ "username" ];
+    fieldRenames.ntfyTags = "tags";
 
     extraOptions = {
       serverUrl = mkOption {
@@ -148,7 +149,7 @@ mkOption {
         description = "Priority of the notification.";
       };
 
-      tags = mkOption {
+      ntfyTags = mkOption {
         type = types.listOf types.str;
         default = [ ];
         description = "Tags/emojis to include on the notification.";

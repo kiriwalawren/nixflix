@@ -75,7 +75,10 @@ pkgsUnfree.testers.runNixOSTest {
         };
       };
 
-      notif.jellyfin.includeHealthWarnings = true;
+      notif.jellyfin = {
+        includeHealthWarnings = true;
+        tags = [ "nixflix-test" ];
+      };
 
       navidrome = {
         enable = true;
@@ -133,6 +136,15 @@ pkgsUnfree.testers.runNixOSTest {
         )
         return json.loads(raw)
 
+    def get_tag_id(port, api_key, api_version="v3"):
+        raw = machine.succeed(
+            f"curl -sf -H 'X-Api-Key: {api_key}' http://127.0.0.1:{port}/api/{api_version}/tag"
+        )
+        tags = json.loads(raw)
+        matches = [t["id"] for t in tags if t["label"] == "nixflix-test"]
+        assert len(matches) == 1, f"Expected one 'nixflix-test' tag on port {port}, found {tags}"
+        return matches[0]
+
     # Sonarr and Radarr should only get the Emby/Jellyfin connection - Subsonic
     # is Lidarr-only and must NOT show up here.
     sonarr_notifs = get_notifications(8989, SONARR_KEY)
@@ -150,6 +162,10 @@ pkgsUnfree.testers.runNixOSTest {
         f"Expected onHealthIssue false (excluded from UI defaults), found {sonarr_notifs[0]['onHealthIssue']}"
     assert sonarr_notifs[0]["includeHealthWarnings"] is True, \
         f"Expected includeHealthWarnings true (top-level freeform override), found {sonarr_notifs[0]['includeHealthWarnings']}"
+
+    sonarr_tag = get_tag_id(8989, SONARR_KEY)
+    assert sonarr_notifs[0]["tags"] == [sonarr_tag], \
+        f"Expected Sonarr Jellyfin tags [{sonarr_tag}], found {sonarr_notifs[0]['tags']}"
 
     radarr_notifs = get_notifications(7878, RADARR_KEY)
     print(f"Radarr notifications: {radarr_notifs}")
@@ -178,6 +194,12 @@ pkgsUnfree.testers.runNixOSTest {
         f"Expected onArtistDelete true (default-enabled trigger), found {lidarr_media_browser['onArtistDelete']}"
     assert lidarr_media_browser["onAlbumDelete"] is False, \
         f"Expected onAlbumDelete false (excluded from UI defaults), found {lidarr_media_browser['onAlbumDelete']}"
+
+    lidarr_tag = get_tag_id(8686, LIDARR_KEY, api_version="v1")
+    assert lidarr_media_browser["tags"] == [lidarr_tag], \
+        f"Expected Lidarr Jellyfin tags [{lidarr_tag}], found {lidarr_media_browser['tags']}"
+    assert lidarr_subsonic["tags"] == [], \
+        f"Expected no tags on Subsonic, found {lidarr_subsonic['tags']}"
 
     print("Notif configured Emby/Jellyfin on Sonarr/Radarr/Lidarr and Subsonic on Lidarr only!")
   '';

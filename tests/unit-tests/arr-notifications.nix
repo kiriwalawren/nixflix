@@ -469,6 +469,82 @@
       echo 'PASS: notif-webhook-headers' > $out
     '';
 
+  notif-tags =
+    let
+      scriptFor =
+        notif:
+        (evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              sonarr = {
+                enable = true;
+                config.apiKey._secret = "/run/secrets/sonarr-api";
+              };
+              inherit notif;
+            };
+          }
+        ]).config.systemd.services."sonarr-notifications".script;
+      gotify = scriptFor {
+        gotify = {
+          enable = true;
+          tags = [
+            "anime"
+            "4k"
+          ];
+        };
+      };
+      ntfy = scriptFor {
+        ntfy = {
+          enable = true;
+          topics = [ "media" ];
+          ntfyTags = [ "warning" ];
+          tags = [ "anime" ];
+        };
+      };
+      apprise = scriptFor {
+        apprise = {
+          enable = true;
+          appriseTags = [ "family" ];
+        };
+      };
+      untagged = scriptFor { gotify.enable = true; };
+      rejects =
+        notif:
+        !(builtins.tryEval (
+          builtins.deepSeq
+            (evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  inherit notif;
+                };
+              }
+            ]).config.nixflix.notif.gotify.tags
+            true
+        )).success;
+    in
+    pkgs.runCommand "unit-test-notif-tags" { } ''
+      ${check "tags are fetched from the tag endpoint" (lib.hasInfix "$BASE_URL/tag" gotify)}
+      ${check "each label is resolved to an id" (
+        lib.hasInfix "resolve_tag_id anime" gotify && lib.hasInfix "resolve_tag_id 4k" gotify
+      )}
+      ${check "resolved ids replace the top-level tags" (lib.hasInfix ".tags = $tagIds" gotify)}
+      ${check "Starr tags are not sent as a field override" (!lib.hasInfix ''"tags":'' gotify)}
+      ${check "ntfy tags/emojis are sent as the schema field tags" (
+        lib.hasInfix ''"tags":["warning"]'' ntfy
+      )}
+      ${check "ntfy Starr tags are resolved separately" (lib.hasInfix "resolve_tag_id anime" ntfy)}
+      ${check "apprise tags are sent as the schema field tags" (
+        lib.hasInfix ''"tags":["family"]'' apprise
+      )}
+      ${check "no tag lookups without tags" (!lib.hasInfix "Fetching tags" untagged)}
+      ${check "uppercase labels are rejected" (rejects {
+        gotify.tags = [ "Anime" ];
+      })}
+      echo 'PASS: notif-tags' > $out
+    '';
+
   notif-boolean-triggers =
     let
       config = evalConfig [

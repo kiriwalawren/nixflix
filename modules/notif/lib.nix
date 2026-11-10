@@ -110,6 +110,7 @@ rec {
       description,
       perService,
       fields ? { },
+      fieldRenames ? { },
     }:
     mkOption {
       type = mkNotificationType {
@@ -128,6 +129,7 @@ rec {
           }
         ) perService;
         extraOptions = fields;
+        inherit fieldRenames;
       };
       default = { };
       inherit description;
@@ -144,6 +146,7 @@ rec {
       imports ? [ ],
       legacyTriggers ? false,
       omitFields ? [ ],
+      fieldRenames ? { },
     }:
     let
       serviceNames = attrNames perService;
@@ -228,6 +231,20 @@ rec {
             internal = true;
             default = mapAttrs (_: spec: spec.triggers.valid) perService;
             description = "Triggers each Starr service supports for this notification.";
+          };
+
+          tags = mkOption {
+            type = types.listOf (types.strMatching "[a-z0-9-]+");
+            default = [ ];
+            description = "Starr tags (by label) that restrict this connection to tagged items. Missing tags are created.";
+          };
+
+          _fieldRenames = mkOption {
+            type = types.attrsOf types.str;
+            readOnly = true;
+            internal = true;
+            default = fieldRenames;
+            description = "Option names that are sent to the Starr API under a different field name.";
           };
 
           _omitFields = mkOption {

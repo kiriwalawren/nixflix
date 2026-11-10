@@ -15,6 +15,7 @@ mkConnectorOption {
       "onTrackRetag"
     ];
   };
+  fieldRenames.appriseTags = "tags";
   fields = {
     serverUrl = field types.str "Apprise server URL, including http(s):// and port if needed.";
     configurationKey = field types.str "Configuration key for the persistent storage solution. Leave unset if stateless URLs are used.";
@@ -25,7 +26,7 @@ mkConnectorOption {
       2
       3
     ]) "Apprise notification type: 0 = Info, 1 = Success, 2 = Warning, 3 = Failure.";
-    tags = field (types.listOf types.str) "Only notify Apprise targets tagged accordingly.";
+    appriseTags = field (types.listOf types.str) "Only notify Apprise targets tagged accordingly.";
     authUsername = secretField "HTTP basic auth username.";
     authPassword = secretField "HTTP basic auth password.";
   };
