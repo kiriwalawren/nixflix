@@ -132,6 +132,46 @@ in
           else
             [ defaultDelayProfile ] ++ cfg.config.delayProfiles;
         sortedProfiles = sort (a: b: a.id < b.id) mergedProfiles;
+        toApiBody =
+          p:
+          if serviceName == "lidarr" then
+            let
+              usenet = {
+                name = "Usenet";
+                protocol = "UsenetDownloadProtocol";
+                allowed = p.enableUsenet;
+                delay = p.usenetDelay;
+              };
+              torrent = {
+                name = "Torrent";
+                protocol = "TorrentDownloadProtocol";
+                allowed = p.enableTorrent;
+                delay = p.torrentDelay;
+              };
+            in
+            {
+              inherit (p)
+                id
+                order
+                tags
+                bypassIfHighestQuality
+                bypassIfAboveCustomFormatScore
+                minimumCustomFormatScore
+                ;
+              items =
+                if p.preferredProtocol == "torrent" then
+                  [
+                    torrent
+                    usenet
+                  ]
+                else
+                  [
+                    usenet
+                    torrent
+                  ];
+            }
+          else
+            p;
       in
       {
         description = "Configure ${serviceName} delay profiles via API";
@@ -181,7 +221,7 @@ in
           ${concatMapStringsSep "\n" (
             profileConfig:
             let
-              profileJson = builtins.toJSON profileConfig;
+              profileJson = builtins.toJSON (toApiBody profileConfig);
               profileId = toString profileConfig.id;
             in
             ''

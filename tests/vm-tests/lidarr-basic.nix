@@ -300,11 +300,12 @@ pkgsUnfree.testers.runNixOSTest {
     print(f"Delay profiles: {delay_profiles}")
     assert len(profiles_list) == 1, f"Expected 1 delay profile, found {len(profiles_list)}"
     assert profiles_list[0]['id'] == 1, "Expected default delay profile with id=1"
-    assert profiles_list[0]['enableUsenet'] == True, "Expected enableUsenet=true"
-    assert profiles_list[0]['enableTorrent'] == True, "Expected enableTorrent=true"
-    assert profiles_list[0]['preferredProtocol'] == 'torrent', "Expected preferredProtocol=torrent"
-    assert profiles_list[0]['usenetDelay'] == 0, "Expected usenetDelay=0"
-    assert profiles_list[0]['torrentDelay'] == 360, "Expected torrentDelay=360"
+    items = profiles_list[0]['items']
+    assert items[0]['protocol'] == 'TorrentDownloadProtocol', "Expected torrent to be the preferred (first) protocol"
+    assert all(i['allowed'] for i in items), "Expected both protocols allowed"
+    delays = {i['protocol']: i['delay'] for i in items}
+    assert delays['UsenetDownloadProtocol'] == 0, "Expected usenet delay=0"
+    assert delays['TorrentDownloadProtocol'] == 360, "Expected torrent delay=360"
     assert profiles_list[0]['order'] == 2147483647, "Expected order=2147483647"
     print("Default delay profile configured successfully!")
 
