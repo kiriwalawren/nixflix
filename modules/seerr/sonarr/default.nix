@@ -14,6 +14,36 @@ let
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
 
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.sonarr;
+
+  getServers = ''
+    EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
+      ${authUtil.curlAuthArgs} \
+      "$BASE_URL/api/v1/settings/sonarr")
+  '';
+
+  servers = syncMode.mkPrune {
+    inherit mode;
+    unit = "seerr-sonarr";
+    what = "Sonarr servers";
+    option = "nixflix.seerr.syncMode.sonarr";
+    live = "EXISTING_SERVERS";
+    declared = attrNames cfg.sonarr;
+    onDelete = ''
+      SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
+        --slurpfile configured "$CONFIGURED_NAMES" \
+        '.[] | select([.name] | inside($configured[0]) | not) | .id')
+
+      for server_id in $SERVERS_TO_DELETE; do
+        echo "Deleting Sonarr server (ID: $server_id)..."
+        ${pkgs.curl}/bin/curl -sf -X DELETE \
+          ${authUtil.curlAuthArgs} \
+          "$BASE_URL/api/v1/settings/sonarr/$server_id" >/dev/null
+      done
+    '';
+  };
+
   mkSonarrConfigScript =
     sonarrName: sonarrCfg:
     let
@@ -248,28 +278,21 @@ in
 
         # Authenticate
         source ${authUtil.authScript}
+        ${optionalString (mode == "refuse") ''
 
+          # Read the live servers before any change so a refused sync changes nothing
+          ${getServers}
+          ${servers.guard}
+          ${syncMode.refuseCheckpoint}
+        ''}
         # Configure each Sonarr instance
         ${concatStringsSep "\n" (mapAttrsToList mkSonarrConfigScript cfg.sonarr)}
 
         # Delete servers not in configuration
         CONFIGURED_NAMES="${pkgs.writeText "sonarr-names.json" (builtins.toJSON (attrNames cfg.sonarr))}"
 
-        EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-          ${authUtil.curlAuthArgs} \
-          "$BASE_URL/api/v1/settings/sonarr")
-
-        SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-          --slurpfile configured "$CONFIGURED_NAMES" \
-          '.[] | select([.name] | inside($configured[0]) | not) | .id')
-
-        for server_id in $SERVERS_TO_DELETE; do
-          echo "Deleting Sonarr server (ID: $server_id)..."
-          ${pkgs.curl}/bin/curl -sf -X DELETE \
-            ${authUtil.curlAuthArgs} \
-            "$BASE_URL/api/v1/settings/sonarr/$server_id" >/dev/null
-        done
-
+        ${getServers}
+        ${servers.prune}
         echo "Sonarr configuration completed"
       '';
     };

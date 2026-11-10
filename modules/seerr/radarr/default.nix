@@ -14,6 +14,38 @@ let
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
 
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.radarr;
+
+  getServers = ''
+    EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
+      --max-time 30 \
+      ${authUtil.curlAuthArgs} \
+      "$BASE_URL/api/v1/settings/radarr")
+  '';
+
+  servers = syncMode.mkPrune {
+    inherit mode;
+    unit = "seerr-radarr";
+    what = "Radarr servers";
+    option = "nixflix.seerr.syncMode.radarr";
+    live = "EXISTING_SERVERS";
+    declared = attrNames cfg.radarr;
+    onDelete = ''
+      SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
+        --slurpfile configured "$CONFIGURED_NAMES" \
+        '.[] | select([.name] | inside($configured[0]) | not) | .id')
+
+      for server_id in $SERVERS_TO_DELETE; do
+        echo "Deleting Radarr server (ID: $server_id)..."
+        ${pkgs.curl}/bin/curl -sf -X DELETE \
+          --max-time 30 \
+          ${authUtil.curlAuthArgs} \
+          "$BASE_URL/api/v1/settings/radarr/$server_id" >/dev/null
+      done
+    '';
+  };
+
   mkRadarrConfigScript =
     radarrName: radarrCfg:
     let
@@ -215,30 +247,21 @@ in
 
         # Authenticate
         source ${authUtil.authScript}
+        ${optionalString (mode == "refuse") ''
 
+          # Read the live servers before any change so a refused sync changes nothing
+          ${getServers}
+          ${servers.guard}
+          ${syncMode.refuseCheckpoint}
+        ''}
         # Configure each Radarr instance
         ${concatStringsSep "\n" (mapAttrsToList mkRadarrConfigScript cfg.radarr)}
 
         # Delete servers not in configuration
         CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (attrNames cfg.radarr))}"
 
-        EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-          --max-time 30 \
-          ${authUtil.curlAuthArgs} \
-          "$BASE_URL/api/v1/settings/radarr")
-
-        SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-          --slurpfile configured "$CONFIGURED_NAMES" \
-          '.[] | select([.name] | inside($configured[0]) | not) | .id')
-
-        for server_id in $SERVERS_TO_DELETE; do
-          echo "Deleting Radarr server (ID: $server_id)..."
-          ${pkgs.curl}/bin/curl -sf -X DELETE \
-            --max-time 30 \
-            ${authUtil.curlAuthArgs} \
-            "$BASE_URL/api/v1/settings/radarr/$server_id" >/dev/null
-        done
-
+        ${getServers}
+        ${servers.prune}
         echo "Radarr configuration completed"
       '';
     };
