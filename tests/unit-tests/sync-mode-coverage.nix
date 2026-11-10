@@ -294,13 +294,13 @@ let
     lib.any (lib.hasInfix "syncMode.customFormats = \"refuse\" cannot be enforced") r.config.warnings;
 
   goldens = lib.importJSON ../lib/sync-mode-delete-goldens.json;
-  currentHashes = renderer.hashes defaults.texts;
+  currentHashes = renderer.hashes defaults;
   # The only delete-mode changes against upstream, each with its reason and
   # the hash it must have now (from the test's failure message).
   intentionalDeleteChanges = {
     sabnzbd-categories = {
       reason = "Delete-loop fix (CHANGELOG, Fixed): names are read one per line, URL-encoded, \"*\" is never deleted, and matching is fixed-string and ASCII case-insensitive.";
-      hash = "8560eaf77e2796bd7b1fcb6a24164c1f151ca6e20dc3b39878899bb1e93fd94a";
+      hash = "c019fa208c61ba2ff3ab6bc3a8a84957d0b5e1286dc6da0661a7408978792c26";
     };
   };
 

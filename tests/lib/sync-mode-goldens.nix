@@ -35,4 +35,4 @@ let
       ;
   };
 in
-renderer.hashes (renderer.render [ ]).texts
+renderer.hashes (renderer.render [ ])

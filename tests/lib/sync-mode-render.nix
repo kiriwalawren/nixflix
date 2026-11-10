@@ -29,22 +29,22 @@ let
   # Everything a unit runs that nixflix generates: script, preStart (qBittorrent
   # syncs categories there) and writeShellApplication ExecStarts (maintainerr,
   # recyclarr). seerr-libraries `source`s a separate script, read separately.
-  unitText =
+  # The text keeps its string context: the derivations it references.
+  unitTextWithContext =
     evaluated: name:
     let
       s = evaluated.config.systemd.services.${name};
       sc = s.serviceConfig or { };
     in
-    plain (
-      lib.concatMapStringsSep "\n" textOf [
-        (s.preStart or "")
-        (s.script or "")
-        (s.postStart or "")
-        (sc.ExecStartPre or "")
-        (sc.ExecStart or "")
-        (sc.ExecStartPost or "")
-      ]
-    );
+    lib.concatMapStringsSep "\n" textOf [
+      (s.preStart or "")
+      (s.script or "")
+      (s.postStart or "")
+      (sc.ExecStartPre or "")
+      (sc.ExecStart or "")
+      (sc.ExecStartPost or "")
+    ];
+  unitText = evaluated: name: plain (unitTextWithContext evaluated name);
 
   seerrLibrarySyncText =
     evaluated:
@@ -74,19 +74,77 @@ let
       texts = lib.genAttrs names (unitText evaluated) // {
         seerr-libraries = unitText evaluated "seerr-libraries" + "\n" + seerrLibrarySyncText evaluated;
       };
+      # Derivations each unit's text references (scripts, JSON and config
+      # files it reads, packages), as .drv paths.
+      refs = lib.genAttrs names (
+        n: builtins.attrNames (builtins.getContext (unitTextWithContext evaluated n))
+      );
     };
 
-  # Store paths are blanked so the hash does not depend on the system or on
-  # unrelated rebuilds; a changed referenced script must be inlined to count.
+  # Store-path hashes and the system name are blanked so a hash is the same on
+  # every system and unaffected by unrelated rebuilds.
   normalize =
     text:
-    lib.concatStrings (
-      map (x: if builtins.isList x then "/nix/store/HASH-" else x) (
-        builtins.split "/nix/store/[a-z0-9]{32}-" text
+    builtins.replaceStrings [ "x86_64-linux" "aarch64-linux" ] [ "SYSTEM" "SYSTEM" ] (
+      lib.concatStrings (
+        map (x: if builtins.isList x then "/nix/store/HASH-" else x) (
+          builtins.split "/nix/store/[a-z0-9]{32}-" text
+        )
       )
     );
-  hashes = texts: lib.mapAttrs (_: t: builtins.hashString "sha256" (normalize t)) texts;
+
+  # Generated files a unit refers to (jellyfin-auth, radarr-names.json,
+  # categories.json, an ExecStartPre script, ...) count as part of the unit:
+  # every referenced text-file derivation (writeText, writeShellScript, ...;
+  # its .drv carries a `text` attribute) is read from its .drv, and so are
+  # the text files those reference. Packages and stdenv are not followed.
+  isTextDrv = drv: lib.hasInfix "\\\"text\\\":" drv || lib.hasInfix "(\"text\"," drv;
+  inputDrvs =
+    drv:
+    map builtins.head (
+      builtins.filter builtins.isList (
+        builtins.split "\\(\"(/nix/store/[a-z0-9]{32}-[^\"]+\\.drv)\"," drv
+      )
+    );
+  textFiles =
+    roots:
+    map (i: normalize i.drv) (
+      builtins.filter (i: isTextDrv i.drv) (
+        builtins.genericClosure {
+          startSet = map (key: {
+            inherit key;
+            drv = builtins.readFile key;
+          }) roots;
+          operator =
+            item:
+            let
+              text = isTextDrv item.drv;
+            in
+            lib.optionals text (
+              map (key: {
+                inherit key;
+                drv = builtins.readFile key;
+              }) (inputDrvs item.drv)
+            );
+        }
+      )
+    );
+  hashes =
+    rendered:
+    lib.mapAttrs (
+      n: t:
+      builtins.hashString "sha256" (
+        lib.concatStringsSep "\n--- referenced file\n" (
+          [ (normalize t) ] ++ lib.sort lib.lessThan (textFiles (rendered.refs.${n} or [ ]))
+        )
+      )
+    ) rendered.texts;
 in
 {
-  inherit render normalize hashes;
+  inherit
+    render
+    normalize
+    hashes
+    textFiles
+    ;
 }
