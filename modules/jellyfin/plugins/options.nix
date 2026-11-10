@@ -1,9 +1,21 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
   jellyfinPlugins = import ../../../lib/jellyfin-plugins.nix { inherit lib; };
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
 in
 {
+  options.nixflix.jellyfin.syncMode.plugins = syncMode.mkModeOption {
+    inherit config;
+    what = "plugin directories that nixflix installed earlier (its state file)";
+    collectionOption = "nixflix.jellyfin.plugins";
+  };
+
   options.nixflix.jellyfin.plugins =
 
     mkOption {

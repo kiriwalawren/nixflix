@@ -60,6 +60,92 @@ let
       inherit lookupName;
     }
   ) pluginsWithConfig;
+
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  jq = "${pkgs.jq}/bin/jq";
+  pluginsMode = cfg.syncMode.plugins;
+
+  # Prefixes every non-empty line but the first, so a block spliced into an
+  # indented string renders exactly as if it were written there literally.
+  indentRest =
+    n: text:
+    let
+      lines = splitString "\n" text;
+      pad = l: if l == "" then l else fixedWidthString n " " "" + l;
+    in
+    concatStringsSep "\n" ([ (head lines) ] ++ map pad (tail lines));
+
+  removeOldPluginDirs = ''
+    while IFS= read -r old_dir; do
+      [ -z "$old_dir" ] && continue
+
+      if ! echo "$CONFIGURED_PLUGINS" | ${pkgs.jq}/bin/jq -e --arg dir "$old_dir" \
+        'to_entries[] | select(.value.dir == $dir)' >/dev/null 2>&1; then
+        if [ -d "$PLUGIN_DIR/$old_dir" ]; then
+          ${pkgs.coreutils}/bin/rm -rf "$PLUGIN_DIR/$old_dir"
+          echo "Removed managed plugin directory: $old_dir"
+        fi
+      fi
+    done < <(previous_dirs | sed '/^$/d' | sort -u)'';
+
+  # Candidates are directories nixflix installed earlier (state file and legacy
+  # manifest) that still exist, as in delete mode. An older version of a plugin
+  # that is still declared is superseded, not undeclared: replacing it is an
+  # update and happens in every mode.
+  pluginsPrune = syncMode.mkPrune {
+    mode = pluginsMode;
+    unit = "jellyfin-plugins";
+    what = "nixflix-managed plugin directories";
+    option = "nixflix.jellyfin.syncMode.plugins";
+    live = "NIXFLIX_MANAGED_PLUGIN_DIRS";
+    declared = mapAttrsToList (_name: pluginCfg: pluginDirName pluginCfg.package) managedPlugins;
+    key = ".dir";
+    id = ".dir";
+    onDelete = "";
+  };
+
+  removeSupersededPluginDirs = ''
+    while IFS= read -r old_dir; do
+      ${pkgs.coreutils}/bin/rm -rf "$PLUGIN_DIR/$old_dir"
+      echo "Removed superseded plugin directory: $old_dir"
+    done < <(printf '%s' "$NIXFLIX_SUPERSEDED_PLUGIN_DIRS" | ${jq} -r '.[].dir')'';
+
+  # Runs before Jellyfin is stopped or any plugin directory is touched.
+  undeclaredCheck = ''
+    NIXFLIX_PREVIOUS_PLUGIN_DIRS=$(
+      PREVIOUS_STATE=$(load_previous_state)
+      {
+        echo "$PREVIOUS_STATE" | ${jq} -c 'to_entries[] | select((.value.dir // "") != "") | {name: .key, dir: .value.dir, path: .value.path}'
+        if [ -f "$LEGACY_MANIFEST" ]; then
+          sed '/^$/d' "$LEGACY_MANIFEST" | ${jq} -Rc '{name: null, dir: ., path: null}'
+        fi
+      } | while IFS= read -r entry; do
+        if [ -d "$PLUGIN_DIR/$(${jq} -r .dir <<<"$entry")" ]; then printf '%s\n' "$entry"; fi
+      done | ${jq} -sc --argjson c "$CONFIGURED_PLUGINS" '
+        [$c[].dir] as $d
+        | map(select(.dir as $x | $d | any(. == $x) | not))
+        | group_by(.dir) | map(sort_by(.name == null) | .[0])'
+    )
+    NIXFLIX_MANAGED_PLUGIN_DIRS=$(printf '%s' "$NIXFLIX_PREVIOUS_PLUGIN_DIRS" | ${jq} -c --argjson c "$CONFIGURED_PLUGINS" \
+      'map(select(.name == null or (.name as $n | $c | has($n) | not)))')
+    NIXFLIX_SUPERSEDED_PLUGIN_DIRS=$(printf '%s' "$NIXFLIX_PREVIOUS_PLUGIN_DIRS" | ${jq} -c --argjson c "$CONFIGURED_PLUGINS" \
+      'map(select(.name != null and (.name as $n | $c | has($n))))')
+
+    ${pluginsPrune.guard}
+    ${syncMode.refuseCheckpoint}
+    ${pluginsPrune.prune}
+    ${optionalString (pluginsMode == "keep") ''
+      # keep: the state file also records the kept directories, so they are
+      # neither reinstalled nor forgotten, and a later switch to delete still
+      # removes them. Unchanged entries keep the state identical, so dropping a
+      # plugin from the config does not restart Jellyfin.
+      CONFIGURED_PLUGINS=$(printf '%s' "$NIXFLIX_MANAGED_PLUGIN_DIRS" | ${jq} -c --argjson c "$CONFIGURED_PLUGINS" '
+        [$c[].dir] as $d
+        | $c + ([.[] | select(.dir as $x | $d | any(. == $x) | not)
+          | {key: (.name // ("nixflix-kept/" + .dir)), value: {dir, path}}] | from_entries)')
+    ''}
+
+  '';
 in
 {
   config = mkIf (nixflix.enable && cfg.enable) {
@@ -140,21 +226,16 @@ in
           fi
         }
 
-        sync_plugins() {
+        ${optionalString (pluginsMode != "delete") undeclaredCheck}sync_plugins() {
           ${pkgs.coreutils}/bin/mkdir -p "$PLUGIN_DIR"
           ${pkgs.coreutils}/bin/chown '${cfg.user}:${cfg.group}' "$PLUGIN_DIR"
 
-          while IFS= read -r old_dir; do
-            [ -z "$old_dir" ] && continue
-
-            if ! echo "$CONFIGURED_PLUGINS" | ${pkgs.jq}/bin/jq -e --arg dir "$old_dir" \
-              'to_entries[] | select(.value.dir == $dir)' >/dev/null 2>&1; then
-              if [ -d "$PLUGIN_DIR/$old_dir" ]; then
-                ${pkgs.coreutils}/bin/rm -rf "$PLUGIN_DIR/$old_dir"
-                echo "Removed managed plugin directory: $old_dir"
-              fi
-            fi
-          done < <(previous_dirs | sed '/^$/d' | sort -u)
+          ${
+            if pluginsMode == "delete" then
+              indentRest 2 removeOldPluginDirs
+            else
+              indentRest 2 removeSupersededPluginDirs
+          }
 
           ${concatStringsSep "\n" (
             mapAttrsToList (
