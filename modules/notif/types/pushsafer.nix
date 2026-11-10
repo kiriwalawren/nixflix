@@ -4,8 +4,9 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Pushsafer";
   description = "Pushsafer notification definition for Radarr.";
-  services = [ "radarr" ];
-  triggers = mkTriggers { radarr = [ "onRename" ]; };
+  perService = {
+    radarr = [ "onRename" ];
+  };
   fields = {
     apiKey = secretField "Pushsafer API key.";
     deviceIds = field (types.listOf types.str) "Device group ID or device IDs. If unset, all devices receive notifications.";

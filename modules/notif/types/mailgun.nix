@@ -4,10 +4,10 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Mailgun";
   description = "Mailgun notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ "onRename" ];
-    radarr = [ "onRename" ];
-    lidarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [ "onRename" ];
+    radarr.unsupportedTriggers = [ "onRename" ];
+    lidarr.unsupportedTriggers = [
       "onRename"
       "onDownloadFailure"
       "onImportFailure"

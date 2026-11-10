@@ -9,10 +9,10 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Webhook";
   description = "Webhook notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ ];
-    radarr = [ ];
-    lidarr = [ ];
+  perService = {
+    sonarr.unsupportedTriggers = [ ];
+    radarr.unsupportedTriggers = [ ];
+    lidarr.unsupportedTriggers = [ ];
   };
   fields = {
     url = secretField "Webhook URL.";

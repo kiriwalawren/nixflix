@@ -4,10 +4,13 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Apprise";
   description = "Apprise notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ "onRename" ];
-    radarr = [ "onRename" ];
-    lidarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [ "onRename" ];
+    radarr = {
+      unsupportedTriggers = [ "onRename" ];
+      fields.includePoster = field types.bool "Include the poster in the message.";
+    };
+    lidarr.unsupportedTriggers = [
       "onRename"
       "onTrackRetag"
     ];
@@ -23,7 +26,6 @@ mkConnectorOption {
       3
     ]) "Apprise notification type: 0 = Info, 1 = Success, 2 = Warning, 3 = Failure.";
     tags = field (types.listOf types.str) "Only notify Apprise targets tagged accordingly.";
-    includePoster = field types.bool "Include the poster in the message. Radarr only.";
     authUsername = secretField "HTTP basic auth username.";
     authPassword = secretField "HTTP basic auth password.";
   };

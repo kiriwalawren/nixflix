@@ -1,16 +1,51 @@
 { lib, notifLib, ... }:
 with lib;
 with notifLib;
+let
+  metadataLinks = values: field (types.listOf (types.enum values));
+  preferredMetadataLink = values: field (types.enum values);
+in
 mkConnectorOption {
   implementationName = "Gotify";
   description = "Gotify notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ "onRename" ];
-    radarr = [ "onRename" ];
-    lidarr = [
-      "onRename"
-      "onTrackRetag"
-    ];
+  perService = {
+    sonarr = {
+      unsupportedTriggers = [ "onRename" ];
+      fields = {
+        includeSeriesPoster = field types.bool "Include the series poster in the message.";
+        metadataLinks = metadataLinks [
+          0
+          1
+          2
+          3
+        ] "Metadata links to add: 0 IMDb, 1 TVDb, 2 TVMaze, 3 Trakt.";
+        preferredMetadataLink = preferredMetadataLink [
+          0
+          1
+          2
+          3
+        ] "Link for clients that only support one: 0 IMDb, 1 TVDb, 2 TVMaze, 3 Trakt.";
+      };
+    };
+    radarr = {
+      unsupportedTriggers = [ "onRename" ];
+      fields = {
+        includeMoviePoster = field types.bool "Include the movie poster in the message.";
+        metadataLinks = metadataLinks [ 0 1 2 ] "Metadata links to add: 0 TMDb, 1 IMDb, 2 Trakt.";
+        preferredMetadataLink = preferredMetadataLink [
+          0
+          1
+          2
+        ] "Link for clients that only support one: 0 TMDb, 1 IMDb, 2 Trakt.";
+      };
+    };
+    lidarr = {
+      unsupportedTriggers = [
+        "onRename"
+        "onTrackRetag"
+      ];
+      fields.includeArtistPoster = field types.bool "Include the artist poster in the message.";
+    };
   };
   fields = {
     server = field types.str "Gotify server URL, including http(s):// and port if needed.";
@@ -21,10 +56,5 @@ mkConnectorOption {
       5
       8
     ]) "Priority: 0 = Min, 2 = Low, 5 = Normal, 8 = High.";
-    includeSeriesPoster = field types.bool "Include the series poster in the message. Sonarr only.";
-    includeMoviePoster = field types.bool "Include the movie poster in the message. Radarr only.";
-    includeArtistPoster = field types.bool "Include the artist poster in the message. Lidarr only.";
-    metadataLinks = field (types.listOf types.int) "Metadata links to add to notifications. The values differ per Starr service; see the notification schema. Sonarr and Radarr only.";
-    preferredMetadataLink = field types.int "Metadata link for clients that only support a single link. Sonarr and Radarr only.";
   };
 }

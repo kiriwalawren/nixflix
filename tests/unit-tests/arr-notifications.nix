@@ -127,10 +127,10 @@
       ${check "radarr-notifications still uses the jellyfin default trigger set" (
         lib.hasInfix ''["onGrab","onDownload","onUpgrade","onRename","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onApplicationUpdate"]'' radarrNotifications.script
       )}
-      ${check "sonarr-notifications applies the freeform includeHealthWarnings override" (
+      ${check "sonarr-notifications applies the includeHealthWarnings option" (
         lib.hasInfix ''"includeHealthWarnings":true'' sonarrNotifications.script
       )}
-      ${check "apply_field_overrides merges top-level overrides (name, enable, freeform properties)" (
+      ${check "apply_field_overrides merges top-level overrides (name, enable, includeHealthWarnings)" (
         lib.hasInfix ". + (\$overrides" sonarrNotifications.script
       )}
       ${check "notification overrides do not include the nested triggers attrset" (
@@ -341,30 +341,47 @@
       ${check "no _secret refs leak into any script" (
         lib.all (script: !lib.hasInfix "_secret" script) (lib.attrValues scripts)
       )}
-      ${check "new connectors default to no enabled triggers" (
-        lib.all (script: !lib.hasInfix "enabledTriggers '[\"" script) (lib.attrValues scripts)
-      )}
       echo 'PASS: notif-all-connector-types' > $out
     '';
 
   notif-connector-trigger-validation =
     let
-      evalPlexTriggers =
-        sonarrTriggers:
-        (evalConfig [
-          {
-            nixflix = {
-              enable = true;
-              notif.plex.triggers.sonarr = sonarrTriggers;
-            };
-          }
-        ]).config.nixflix.notif.plex.triggers.sonarr;
       evaluates =
-        triggers: (builtins.tryEval (builtins.deepSeq (evalPlexTriggers triggers) true)).success;
+        notifConfig:
+        (builtins.tryEval (
+          builtins.deepSeq (lib.mapAttrs (
+            name: _:
+            (evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  notif = notifConfig;
+                };
+              }
+            ]).config.nixflix.notif.${name}
+          ) notifConfig) true
+        )).success;
     in
     pkgs.runCommand "unit-test-notif-connector-trigger-validation" { } ''
-      ${check "plex accepts a supported sonarr trigger" (evaluates [ "onDownload" ])}
-      ${check "plex rejects onGrab, which its sonarr schema does not support" (!evaluates [ "onGrab" ])}
+      ${check "plex accepts a supported sonarr-only trigger" (evaluates {
+        plex.sonarr.onDownload = true;
+      })}
+      ${check "plex has no sonarr onGrab, which its sonarr schema does not support" (
+        !evaluates { plex.sonarr.onGrab = true; }
+      )}
+      ${check "a shared trigger is not accepted in a service block" (
+        !evaluates { gotify.radarr.onGrab = true; }
+      )}
+      ${check "an undeclared top-level name is rejected" (!evaluates { gotify.bogusField = true; })}
+      ${check "a service block that the schema lacks is rejected" (
+        !evaluates { pushsafer.sonarr.onDownload = true; }
+      )}
+      ${check "the legacy list form still evaluates on jellyfin" (evaluates {
+        jellyfin = {
+          apiKey = "test-jellyfin-key";
+          triggers.sonarr = [ "onDownload" ];
+        };
+      })}
       echo 'PASS: notif-connector-trigger-validation' > $out
     '';
 
@@ -450,5 +467,284 @@
         lib.hasInfix ''.["headers"][0]["value"] = ($nixflixSecret0Content'' script
       )}
       echo 'PASS: notif-webhook-headers' > $out
+    '';
+
+  notif-boolean-triggers =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            sonarr-anime = {
+              enable = true;
+              config = {
+                hostConfig.port = 8990;
+                apiKey._secret = "/run/secrets/sonarr-anime-api";
+              };
+            };
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            lidarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/lidarr-api";
+            };
+            notif.gotify = {
+              enable = true;
+              onGrab = false;
+              sonarr.onSeriesAdd = false;
+              radarr.onHealthIssue = true;
+            };
+          };
+        }
+      ];
+      script = s: config.config.systemd.services."${s}-notifications".script;
+      sonarrTriggers = ''["onDownload","onUpgrade","onImportComplete","onSeriesDelete","onEpisodeFileDelete","onEpisodeFileDeleteForUpgrade","onApplicationUpdate","onManualInteractionRequired"]'';
+    in
+    pkgs.runCommand "unit-test-notif-boolean-triggers" { } ''
+      ${check "sonarr gets UI defaults minus the shared onGrab and its own onSeriesAdd" (
+        lib.hasInfix sonarrTriggers (script "sonarr")
+      )}
+      ${check "sonarr-anime uses the sonarr block" (lib.hasInfix sonarrTriggers (script "sonarr-anime"))}
+      ${check "radarr enables its per-service onHealthIssue and drops the shared onGrab" (
+        lib.hasInfix ''["onDownload","onUpgrade","onMovieAdded","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onHealthIssue","onApplicationUpdate","onManualInteractionRequired"]'' (
+          script "radarr"
+        )
+      )}
+      ${check "lidarr keeps the UI default onHealthIssue and drops the shared onGrab" (
+        lib.hasInfix ''["onReleaseImport","onUpgrade","onArtistAdd","onArtistDelete","onHealthIssue","onDownloadFailure","onImportFailure","onApplicationUpdate"]'' (
+          script "lidarr"
+        )
+      )}
+      ${check "trigger booleans are not sent as overrides" (
+        lib.all (s: !lib.hasInfix ''"onGrab":'' (script s) && !lib.hasInfix ''"onHealthIssue":'' (script s))
+          [
+            "sonarr"
+            "radarr"
+            "lidarr"
+          ]
+      )}
+      echo 'PASS: notif-boolean-triggers' > $out
+    '';
+
+  notif-per-service-fields =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            lidarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/lidarr-api";
+            };
+            notif = {
+              gotify = {
+                enable = true;
+                sonarr.includeSeriesPoster = true;
+                radarr.metadataLinks = [ 0 ];
+              };
+              email = {
+                enable = true;
+                lidarr.requireEncryption = true;
+              };
+            };
+          };
+        }
+      ];
+      script = s: config.config.systemd.services."${s}-notifications".script;
+      rejects =
+        notifConfig:
+        !(builtins.tryEval (
+          builtins.deepSeq (lib.mapAttrs (
+            name: _:
+            (evalConfig [
+              {
+                nixflix = {
+                  enable = true;
+                  notif = notifConfig;
+                };
+              }
+            ]).config.nixflix.notif.${name}
+          ) notifConfig) true
+        )).success;
+    in
+    pkgs.runCommand "unit-test-notif-per-service-fields" { } ''
+      ${check "sonarr-only field is sent to sonarr" (
+        lib.hasInfix ''"includeSeriesPoster":true'' (script "sonarr")
+      )}
+      ${check "sonarr-only field is not sent to radarr or lidarr" (
+        !lib.hasInfix "includeSeriesPoster" (script "radarr")
+        && !lib.hasInfix "includeSeriesPoster" (script "lidarr")
+      )}
+      ${check "radarr metadataLinks is sent to radarr only" (
+        lib.hasInfix ''"metadataLinks":[0]'' (script "radarr")
+        && !lib.hasInfix "metadataLinks" (script "sonarr")
+      )}
+      ${check "lidarr-only email field is sent to lidarr only" (
+        lib.hasInfix ''"requireEncryption":true'' (script "lidarr")
+        && !lib.hasInfix "requireEncryption" (script "sonarr")
+      )}
+      ${check "a field is rejected in the block of another service" (rejects {
+        gotify.radarr.includeSeriesPoster = true;
+      })}
+      ${check "radarr metadataLinks rejects a sonarr-only value" (rejects {
+        gotify.radarr.metadataLinks = [ 3 ];
+      })}
+      echo 'PASS: notif-per-service-fields' > $out
+    '';
+
+  notif-default-triggers-unchanged =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+            };
+            navidrome = {
+              enable = true;
+              users.admin = {
+                userName = "admin";
+                isAdmin = true;
+                password = "testpassword";
+              };
+            };
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            lidarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/lidarr-api";
+            };
+            notif = {
+              jellyfin.services = [
+                "sonarr"
+                "radarr"
+                "lidarr"
+              ];
+              ntfy = {
+                enable = true;
+                topics = [ "media" ];
+              };
+            };
+          };
+        }
+      ];
+      script = s: config.config.systemd.services."${s}-notifications".script;
+      has = s: triggers: lib.hasInfix (builtins.toJSON triggers) (script s);
+    in
+    pkgs.runCommand "unit-test-notif-default-triggers-unchanged" { } ''
+      ${check "jellyfin sonarr defaults" (
+        has "sonarr" [
+          "onGrab"
+          "onDownload"
+          "onUpgrade"
+          "onImportComplete"
+          "onRename"
+          "onSeriesAdd"
+          "onSeriesDelete"
+          "onEpisodeFileDelete"
+          "onEpisodeFileDeleteForUpgrade"
+          "onApplicationUpdate"
+        ]
+      )}
+      ${check "jellyfin radarr defaults" (
+        has "radarr" [
+          "onGrab"
+          "onDownload"
+          "onUpgrade"
+          "onRename"
+          "onMovieDelete"
+          "onMovieFileDelete"
+          "onMovieFileDeleteForUpgrade"
+          "onApplicationUpdate"
+        ]
+      )}
+      ${check "jellyfin lidarr defaults" (
+        has "lidarr" [
+          "onGrab"
+          "onReleaseImport"
+          "onUpgrade"
+          "onRename"
+          "onArtistAdd"
+          "onArtistDelete"
+          "onHealthIssue"
+          "onTrackRetag"
+          "onApplicationUpdate"
+        ]
+      )}
+      ${check "ntfy sonarr defaults" (
+        has "sonarr" [
+          "onGrab"
+          "onDownload"
+          "onUpgrade"
+          "onImportComplete"
+          "onSeriesAdd"
+          "onSeriesDelete"
+          "onEpisodeFileDelete"
+          "onEpisodeFileDeleteForUpgrade"
+          "onApplicationUpdate"
+          "onManualInteractionRequired"
+        ]
+      )}
+      ${check "ntfy radarr defaults" (
+        has "radarr" [
+          "onGrab"
+          "onDownload"
+          "onUpgrade"
+          "onMovieAdded"
+          "onMovieDelete"
+          "onMovieFileDelete"
+          "onMovieFileDeleteForUpgrade"
+          "onApplicationUpdate"
+          "onManualInteractionRequired"
+        ]
+      )}
+      ${check "ntfy lidarr defaults" (
+        has "lidarr" [
+          "onGrab"
+          "onReleaseImport"
+          "onUpgrade"
+          "onArtistAdd"
+          "onArtistDelete"
+          "onHealthIssue"
+          "onDownloadFailure"
+          "onImportFailure"
+          "onApplicationUpdate"
+        ]
+      )}
+      ${check "subsonic lidarr defaults" (
+        has "lidarr" [
+          "onGrab"
+          "onReleaseImport"
+          "onUpgrade"
+          "onRename"
+          "onArtistAdd"
+          "onArtistDelete"
+          "onHealthIssue"
+          "onTrackRetag"
+        ]
+      )}
+      echo 'PASS: notif-default-triggers-unchanged' > $out
     '';
 }

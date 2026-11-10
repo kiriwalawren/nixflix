@@ -4,10 +4,10 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Slack";
   description = "Slack notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ ];
-    radarr = [ "onMovieAdded" ];
-    lidarr = [ ];
+  perService = {
+    sonarr.unsupportedTriggers = [ ];
+    radarr.unsupportedTriggers = [ "onMovieAdded" ];
+    lidarr.unsupportedTriggers = [ ];
   };
   fields = {
     webHookUrl = secretField "Slack channel webhook URL.";

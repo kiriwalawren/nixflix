@@ -110,10 +110,9 @@ mkOption {
       "lidarr"
     ];
 
-    triggers = {
-      type = types.submodule { options = mapAttrs (_: notifLib.mkTriggersOption) triggers; };
-      default = { };
-    };
+    perService = mapAttrs (_: t: { triggers = t; }) triggers;
+    legacyTriggers = true;
+    omitFields = [ "username" ];
 
     extraOptions = {
       serverUrl = mkOption {

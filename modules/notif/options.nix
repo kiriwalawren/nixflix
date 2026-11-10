@@ -85,8 +85,10 @@ in
       Unlike Downloadarr, not every notification type applies to every Starr service. Each notification type
       declares a `services` list controlling which Starr services it gets configured on.
 
-      Each module is currently only a subset of the options available. You can add more options represented
-      in the UI if you know their keys, or add an entirely new type via `extraNotifications`.
+      Each notification type exposes the fields of its Starr schema as typed options. Fields and triggers that
+      every applicable Starr service supports are set on the type itself; ones that only some services support
+      are set in that service's block (for example `nixflix.notif.gotify.sonarr.includeSeriesPoster`).
+      Anything not modeled here can be configured through `extraNotifications`.
     '';
   };
 }

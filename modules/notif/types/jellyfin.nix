@@ -115,12 +115,26 @@ mkOption {
       '';
     };
 
-    triggers = {
-      type = types.submodule { options = mapAttrs (_: notifLib.mkTriggersOption) triggers; };
-      default = { };
-    };
+    perService = mapAttrs (
+      svc: t:
+      {
+        triggers = t;
+      }
+      // optionalAttrs (svc != "lidarr") {
+        fields = {
+          mapFrom = notifLib.field types.str "Starr path to rewrite when Jellyfin sees the library path differently (requires updateLibrary).";
+          mapTo = notifLib.field types.str "Jellyfin path that mapFrom is rewritten to (requires updateLibrary).";
+        };
+      }
+    ) triggers;
+    legacyTriggers = true;
 
     extraOptions = {
+      useSsl = notifLib.field types.bool "Connect to Jellyfin over HTTPS instead of HTTP.";
+      urlBase = notifLib.field types.str "Prefix for the Jellyfin URL.";
+      notify = notifLib.field types.bool "Have Emby send notifications to configured providers. Not supported on Jellyfin.";
+      updateLibrary = notifLib.field types.bool "Update the library on import, rename or delete.";
+
       host = mkOption {
         type = types.str;
         description = "Host of the Jellyfin server.";

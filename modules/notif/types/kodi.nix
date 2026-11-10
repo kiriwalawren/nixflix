@@ -4,10 +4,10 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Kodi";
   description = "Kodi notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ "onManualInteractionRequired" ];
-    radarr = [ "onMovieAdded" ];
-    lidarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [ "onManualInteractionRequired" ];
+    radarr.unsupportedTriggers = [ "onMovieAdded" ];
+    lidarr.unsupportedTriggers = [
       "onAlbumDelete"
       "onDownloadFailure"
       "onImportFailure"

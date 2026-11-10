@@ -29,6 +29,8 @@ let
 
   triggerServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
 
+  arrServiceKeys = unique (map triggerServiceKey arrServices);
+
   notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
 
   notificationDependencies =
@@ -128,15 +130,33 @@ let
             let
               notificationName = notificationConfig.name;
               inherit (notificationConfig) implementationName;
-              allOverrides = builtins.removeAttrs notificationConfig [
-                "implementationName"
-                "triggers"
-              ];
+              serviceKey = triggerServiceKey serviceName;
+              serviceBlock = notificationConfig.${serviceKey} or { };
+              supportedTriggers = notificationConfig._supportedTriggers or { };
+              triggerNames = concatLists (attrValues supportedTriggers);
+              legacyTriggers = (notificationConfig.triggers or { }).${serviceKey} or null;
+              allOverrides =
+                builtins.removeAttrs notificationConfig (
+                  [
+                    "implementationName"
+                    "triggers"
+                  ]
+                  ++ arrServiceKeys
+                  ++ triggerNames
+                  ++ notificationConfig._omitFields or [ ]
+                )
+                // builtins.removeAttrs serviceBlock triggerNames;
               fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
               fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
               jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
-              enabledTriggers = notificationConfig.triggers.${triggerServiceKey serviceName} or [ ];
+              enabledTriggers =
+                if legacyTriggers != null then
+                  legacyTriggers
+                else
+                  filter (t: (notificationConfig.${t} or false) || (serviceBlock.${t} or false)) (
+                    supportedTriggers.${serviceKey} or [ ]
+                  );
             in
             ''
               echo "Processing notification: ${notificationName}"

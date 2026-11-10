@@ -1,22 +1,25 @@
 { lib, notifLib, ... }:
 with lib;
 with notifLib;
-mkConnectorOption {
-  implementationName = "Notifiarr";
-  description = "Notifiarr notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ ];
-    radarr = [ ];
-    lidarr = [ ];
-  };
-  # Sonarr names this field apiKey, Radarr and Lidarr name it aPIKey.
-  fields = cfg: {
-    apiKey = secretField "Your API key from your Notifiarr profile.";
+let
+  aPIKey = cfg: {
     aPIKey = mkOption {
       type = types.anything;
       internal = true;
       default = cfg.apiKey;
-      description = "Alias of apiKey for the Radarr and Lidarr field name.";
+      description = "Alias of apiKey under the field name this service uses.";
     };
+  };
+in
+mkConnectorOption {
+  implementationName = "Notifiarr";
+  description = "Notifiarr notification definition for Starr services.";
+  perService = {
+    sonarr = { };
+    radarr.fields = aPIKey;
+    lidarr.fields = aPIKey;
+  };
+  fields = {
+    apiKey = secretField "Your API key from your Notifiarr profile.";
   };
 }

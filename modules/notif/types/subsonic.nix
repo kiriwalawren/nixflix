@@ -51,12 +51,15 @@ mkOption {
 
     services.default = [ "lidarr" ];
 
-    triggers = {
-      type = types.submodule { options = mapAttrs (_: notifLib.mkTriggersOption) triggers; };
-      default = { };
-    };
+    perService = mapAttrs (_: t: { triggers = t; }) triggers;
+    legacyTriggers = true;
 
     extraOptions = {
+      useSsl = notifLib.field types.bool "Connect to Subsonic over HTTPS instead of HTTP.";
+      urlBase = notifLib.field types.str "Prefix for the Subsonic URL.";
+      notify = notifLib.field types.bool "Notify with a chat message.";
+      updateLibrary = notifLib.field types.bool "Update the library on download and rename.";
+
       host = mkOption {
         type = types.str;
         description = "Host of the Navidrome (Subsonic) server.";

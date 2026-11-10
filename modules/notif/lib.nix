@@ -54,12 +54,32 @@ rec {
     ];
   };
 
-  # Keyed by service, each value lists the triggers the schema marks as unsupported.
-  mkTriggers = mapAttrs (
-    service: unsupported: {
-      valid = subtractLists unsupported allTriggers.${service};
-      default = [ ];
-    }
+  # Triggers the Starr UI leaves unchecked when a connection is added
+  # (SELECT_NOTIFICATION_SCHEMA in each frontend's notifications.js).
+  uiDefaultOff = {
+    sonarr = [
+      "onHealthIssue"
+      "onHealthRestored"
+    ];
+    radarr = [
+      "onHealthIssue"
+      "onHealthRestored"
+    ];
+    lidarr = [
+      "onAlbumDelete"
+      "onHealthRestored"
+    ];
+  };
+
+  expandServices = concatMap (
+    s:
+    if s == "sonarr" then
+      [
+        "sonarr"
+        "sonarr-anime"
+      ]
+    else
+      [ s ]
   );
 
   field =
@@ -77,50 +97,88 @@ rec {
       nullable = true;
     };
 
+  triggerOption =
+    default: description:
+    mkOption {
+      type = types.bool;
+      inherit default description;
+    };
+
   mkConnectorOption =
     {
       implementationName,
       description,
-      services ? allServices,
-      triggers,
-      fields,
+      perService,
+      fields ? { },
     }:
     mkOption {
       type = mkNotificationType {
         inherit implementationName;
-        services.default = services;
-        triggers = {
-          type = types.submodule { options = mapAttrs (_: mkTriggersOption) triggers; };
-          default = { };
-        };
+        perService = mapAttrs (
+          svc: spec:
+          let
+            valid = subtractLists (spec.unsupportedTriggers or [ ]) allTriggers.${svc};
+          in
+          {
+            triggers = {
+              inherit valid;
+              default = subtractLists uiDefaultOff.${svc} valid;
+            };
+            fields = spec.fields or { };
+          }
+        ) perService;
         extraOptions = fields;
       };
       default = { };
       inherit description;
     };
 
-  mkTriggersOption =
-    serviceTriggers:
-    mkOption {
-      type = types.listOf (types.enum serviceTriggers.valid);
-      inherit (serviceTriggers) default;
-      description = "Starr trigger events that enable this notification.";
-    };
-
   mkNotificationType =
     {
       implementationName,
+      perService,
       enable ? { },
       dependencies ? { },
       services ? { },
-      triggers ? { },
       extraOptions ? { },
       imports ? [ ],
+      legacyTriggers ? false,
+      omitFields ? [ ],
     }:
+    let
+      serviceNames = attrNames perService;
+      validOf = svc: perService.${svc}.triggers.valid;
+      defaultOf = svc: perService.${svc}.triggers.default;
+      isDefault = t: svc: elem t (defaultOf svc);
+      sharedTriggers = filter (
+        t:
+        all (svc: elem t (validOf svc)) serviceNames
+        && all (svc: isDefault t svc == isDefault t (head serviceNames)) serviceNames
+      ) (validOf (head serviceNames));
+      resolve = opts: cfg: if isFunction opts then opts cfg else opts;
+    in
     types.submodule (
-      { config, ... }: {
+      { config, ... }:
+      let
+        serviceBlock =
+          svc: spec:
+          let
+            options =
+              genAttrs (subtractLists sharedTriggers spec.triggers.valid) (
+                t: triggerOption (elem t spec.triggers.default) "Whether to notify on ${t} from ${svc}."
+              )
+              // resolve (spec.fields or { }) config;
+          in
+          optionalAttrs (options != { }) {
+            ${svc} = mkOption {
+              type = types.submodule { inherit options; };
+              default = { };
+              description = "Settings that only apply to ${svc}.";
+            };
+          };
+      in
+      {
         inherit imports;
-        freeformType = types.attrsOf types.anything;
         options = {
           enable = mkOption (
             {
@@ -143,19 +201,10 @@ rec {
           services = mkOption (
             {
               type = types.listOf types.str;
-              default = [ ];
+              default = expandServices serviceNames;
               description = "Which Starr services to configure this notification on.";
             }
             // services
-          );
-
-          triggers = mkOption (
-            {
-              type = types.attrsOf (types.listOf types.str);
-              default = { };
-              description = "Starr trigger events that enable this notification, per service.";
-            }
-            // triggers
           );
 
           name = mkOption {
@@ -170,8 +219,48 @@ rec {
             default = implementationName;
             description = "Type of notification to configure (matches schema implementationName).";
           };
+
+          includeHealthWarnings = field types.bool "Include health warnings, not only errors, in health notifications.";
+
+          _supportedTriggers = mkOption {
+            type = types.attrsOf (types.listOf types.str);
+            readOnly = true;
+            internal = true;
+            default = mapAttrs (_: spec: spec.triggers.valid) perService;
+            description = "Triggers each Starr service supports for this notification.";
+          };
+
+          _omitFields = mkOption {
+            type = types.listOf types.str;
+            readOnly = true;
+            internal = true;
+            default = omitFields;
+            description = "Option names that are not sent to the Starr API.";
+          };
         }
-        // (if isFunction extraOptions then extraOptions config else extraOptions);
+        // optionalAttrs legacyTriggers {
+          triggers = mkOption {
+            type = types.submodule {
+              options = mapAttrs (
+                _: spec:
+                mkOption {
+                  type = types.nullOr (types.listOf (types.enum spec.triggers.valid));
+                  default = null;
+                  description = "List of enabled triggers. Replaces the boolean trigger options for this service.";
+                }
+              ) perService;
+            };
+            default = { };
+            visible = false;
+            description = "Deprecated list form of the trigger options.";
+          };
+        }
+        // genAttrs sharedTriggers (
+          t:
+          triggerOption (isDefault t (head serviceNames)) "Whether to notify on ${t} from every Starr service."
+        )
+        // concatMapAttrs serviceBlock perService
+        // resolve extraOptions config;
       }
     );
 }

@@ -4,15 +4,15 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Plex Media Server";
   description = "Plex Media Server notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [
       "onGrab"
       "onHealthIssue"
       "onHealthRestored"
       "onApplicationUpdate"
       "onManualInteractionRequired"
     ];
-    radarr = [
+    radarr.unsupportedTriggers = [
       "onGrab"
       "onMovieAdded"
       "onHealthIssue"
@@ -20,7 +20,7 @@ mkConnectorOption {
       "onApplicationUpdate"
       "onManualInteractionRequired"
     ];
-    lidarr = [
+    lidarr.unsupportedTriggers = [
       "onGrab"
       "onHealthIssue"
       "onHealthRestored"

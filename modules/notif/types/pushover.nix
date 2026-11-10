@@ -4,10 +4,13 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Pushover";
   description = "Pushover notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ "onRename" ];
-    radarr = [ "onRename" ];
-    lidarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [ "onRename" ];
+    radarr = {
+      unsupportedTriggers = [ "onRename" ];
+      fields.ttl = field types.int "Seconds before the message expires, 0 for unlimited.";
+    };
+    lidarr.unsupportedTriggers = [
       "onRename"
       "onTrackRetag"
     ];
@@ -25,7 +28,6 @@ mkConnectorOption {
     ]) "Priority: -2 = Silent, -1 = Quiet, 0 = Normal, 1 = High, 2 = Emergency.";
     retry = field types.int "Interval to retry emergency alerts, minimum 30 seconds.";
     expire = field types.int "Maximum time to retry emergency alerts, maximum 86400 seconds.";
-    ttl = field types.int "Seconds before the message expires, 0 for unlimited. Radarr only.";
     sound = field types.str "Notification sound. If unset, the default is used.";
   };
 }

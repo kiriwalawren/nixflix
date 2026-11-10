@@ -4,10 +4,10 @@ with notifLib;
 mkConnectorOption {
   implementationName = "Custom Script";
   description = "Custom Script notification definition for Starr services.";
-  triggers = mkTriggers {
-    sonarr = [ ];
-    radarr = [ ];
-    lidarr = [
+  perService = {
+    sonarr.unsupportedTriggers = [ ];
+    radarr.unsupportedTriggers = [ ];
+    lidarr.unsupportedTriggers = [
       "onDownloadFailure"
       "onImportFailure"
     ];
