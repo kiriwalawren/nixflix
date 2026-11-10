@@ -138,4 +138,53 @@
       )}
       echo 'PASS: notif-triggers' > $out
     '';
+
+  notif-any-field-secret =
+    let
+      tokenFile = "/run/secrets/notif-token";
+      ntfyPasswordFile = "/run/secrets/ntfy-password";
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+
+            sonarr = {
+              enable = true;
+              config = {
+                hostConfig.port = 8989;
+                apiKey._secret = "/run/secrets/sonarr-api";
+              };
+            };
+
+            notif = {
+              ntfy = {
+                enable = true;
+                topics = [ "media" ];
+                password._secret = ntfyPasswordFile;
+              };
+              extraNotifications = [
+                {
+                  enable = true;
+                  name = "Gotify";
+                  implementationName = "Gotify";
+                  services = [ "sonarr" ];
+                  dependencies = [ ];
+                  server = "https://gotify.example";
+                  appToken._secret = tokenFile;
+                }
+              ];
+            };
+          };
+        }
+      ];
+      script = config.config.systemd.services."sonarr-notifications".script;
+    in
+    pkgs.runCommand "unit-test-notif-any-field-secret" { } ''
+      ${check "script reads the extra notification secret via --rawfile" (
+        lib.hasInfix "--rawfile" script && lib.hasInfix tokenFile script
+      )}
+      ${check "script reads the ntfy password via --rawfile" (lib.hasInfix ntfyPasswordFile script)}
+      ${check "no _secret refs leak into the override JSON" (!lib.hasInfix "_secret" script)}
+      echo 'PASS: notif-any-field-secret' > $out
+    '';
 }
