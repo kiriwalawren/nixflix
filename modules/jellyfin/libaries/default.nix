@@ -64,7 +64,28 @@ let
   keepLivePathInfos = optionalString (pathsMode != "delete") "--argjson live \"$EXISTING_PATHS\" ";
   keepLivePathInfosFilter =
     optionalString (pathsMode != "delete")
-      " | (.PathInfos | map(.Path)) as $d | .PathInfos += [ $live[] | select(. as $p | $d | any(. == $p) | not) | {Path: .} ]";
+      " | (.PathInfos | map(.Path | ${jqNormPath})) as $d | .PathInfos += [ $live[] | select(${jqNormPath} as $p | $d | any(. == $p) | not) | {Path: .} ]";
+
+  # Outside delete mode a declared "/media/movies/" is the live "/media/movies":
+  # trailing slashes are ignored when comparing paths. delete keeps comparing
+  # them as written, as it always has.
+  jqNormPath = ''(if test("^/+$") then "/" else sub("/+$"; "") end)'';
+  normPath =
+    p:
+    let
+      q = removeSuffix "/" p;
+    in
+    if q == "" then
+      "/"
+    else if q == p then
+      p
+    else
+      normPath q;
+  configuredPathExists =
+    if pathsMode == "delete" then
+      ''echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$configured_path" 'index($path)' >/dev/null 2>&1''
+    else
+      ''echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$configured_path" '($path | ${jqNormPath}) as $p | map(${jqNormPath}) | any(. == $p)' >/dev/null 2>&1'';
 
   inherit (syncMode) indentRest;
 
@@ -157,11 +178,11 @@ let
         name: libraryCfg:
         map (path: [
           name
-          path
+          (normPath path)
         ]) libraryCfg.paths
       ) libraries
     );
-    key = "[.library, .path]";
+    key = "[.library, (.path | ${jqNormPath})]";
     id = ".ItemId";
     label = ''"\(.library): \(.path)"'';
     onDelete = "";
@@ -457,7 +478,7 @@ in
                     }
 
                     echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r configured_path; do
-                      if ! echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$configured_path" 'index($path)' >/dev/null 2>&1; then
+                      if ! ${configuredPathExists}; then
                         echo "Creating path: $configured_path"
                         mkdir -p "$configured_path"
                         echo "Adding path: $configured_path"

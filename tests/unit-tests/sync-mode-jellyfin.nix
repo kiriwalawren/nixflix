@@ -513,6 +513,37 @@ in
         '';
       };
 
+  # A declared "/srv/movies/" is the live "/srv/movies" outside delete mode:
+  # not listed as undeclared, not added again, not duplicated in PathInfos.
+  sync-mode-jellyfin-libraries-trailing-slash =
+    let
+      slashed =
+        mode:
+        scriptsOf {
+          syncMode = mode;
+          jellyfin.libraries.Movies.paths = lib.mkForce [ "/srv/movies/" ];
+        };
+      keepSlash = slashed "keep";
+      refuseSlash = slashed "refuse";
+    in
+    runScenario "sync-mode-jellyfin-libraries-trailing-slash" {
+      setup = librarySetup;
+      steps = [
+        (step refuseSlash "libraries" "refuse" ''
+          [ "$(cat refuse.rc)" = 78 ] || fail "refuse rc=$(cat refuse.rc)"
+          expectLine refuse.err 'nixflix:   - Movies: /srv/extra (id i-movies)'
+          ! grep -qF 'Movies: /srv/movies ' refuse.err || fail "refuse listed the declared /srv/movies/"
+        '')
+        (step keepSlash "libraries" "keep" ''
+          [ "$(cat keep.rc)" = 0 ] || fail "keep rc=$(cat keep.rc)"
+          expectLine keep.out 'nixflix: jellyfin-libraries: keeping 1 undeclared library paths (nixflix.jellyfin.syncMode.libraryPaths = "keep"): Movies: /srv/extra'
+          ! grep -qF 'POST http://127.0.0.1:8096/Library/VirtualFolders/Paths' keep.mutated || fail "keep added /srv/movies/ again: $(cat keep.mutated)"
+          [ "$(jq -c '.LibraryOptions.PathInfos | map(.Path)' library-options.json)" = '["/srv/movies/","/srv/extra"]' ] \
+            || fail "PathInfos: $(jq -c '.LibraryOptions.PathInfos' library-options.json)"
+        '')
+      ];
+    };
+
   # Regression: keep wrote its state with `--argjson k ""` when the first
   # library read was not JSON (no managed list), failing the unit at the end.
   sync-mode-jellyfin-libraries-keep-state-without-managed-list =
