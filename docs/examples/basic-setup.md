@@ -237,7 +237,9 @@ This example shows a working media server configuration based on a real producti
   `nixflix.pinchflat.mediaDir` (or give them their own library). To change the YouTube
   fetchers, set `nixflix.jellyfin.libraries.YouTube.typeOptions = lib.mkForce [ ... ];`:
   `typeOptions` is a list, so without `lib.mkForce` your entries are appended to the
-  defaults and Series appears twice
+  defaults and Series appears twice. Seerr leaves this library out (and disables it on
+  every sync) through `nixflix.seerr.jellyfin.excludeLibraries`, so YouTube channels
+  never show up as requestable TV shows next to Sonarr's
 
 **Prowlarr Apps**: Automatically configured connections to Sonarr, Radarr, and Lidarr
 

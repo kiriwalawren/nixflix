@@ -80,7 +80,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - Media request management
 - Automatic integration with Starr services
-- Automatic integration with Jellyfin libraries
+- Automatic integration with Jellyfin libraries (the Pinchflat "YouTube" library is left out, see `nixflix.seerr.jellyfin.excludeLibraries`)
 
 ### Navidrome
 

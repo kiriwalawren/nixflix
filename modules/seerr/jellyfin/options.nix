@@ -129,5 +129,23 @@ in
       default = { };
       description = "Filter which libraries to enable (only used when enableAllLibraries = false)";
     };
+
+    excludeLibraries = mkOption {
+      type = types.listOf types.str;
+      default = optional (config.nixflix.pinchflat.enable or false) "YouTube";
+      defaultText = literalExpression ''optional (config.nixflix.pinchflat.enable or false) "YouTube"'';
+      example = [
+        "YouTube"
+        "Home Videos"
+      ];
+      description = ''
+        Names of Jellyfin libraries Seerr must never enable, whether
+        `enableAllLibraries` is set or `libraryFilter` is used. Excluded
+        libraries are explicitly disabled in Seerr on every sync.
+
+        Defaults to the `YouTube` library that `nixflix.pinchflat` creates, so
+        Seerr does not scan YouTube channels as TV shows next to Sonarr's.
+      '';
+    };
   };
 }

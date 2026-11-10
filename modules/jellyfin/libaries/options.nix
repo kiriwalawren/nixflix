@@ -408,7 +408,8 @@ in
         sources out of `nixflix.pinchflat.mediaDir` (or give them their own library).
         `typeOptions` is a list, so to change the YouTube fetchers set
         `nixflix.jellyfin.libraries.YouTube.typeOptions = lib.mkForce [ ... ];`;
-        without `lib.mkForce` your entries are appended and Series appears twice
+        without `lib.mkForce` your entries are appended and Series appears twice.
+        Seerr leaves it out via `nixflix.seerr.jellyfin.excludeLibraries`
 
       Default libraries can be removed with the following: `nixflix.jellyfin.libraries.Movies = lib.mkForce null;`
     '';
