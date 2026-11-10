@@ -21,6 +21,10 @@
 #         echo "$ROOT_FOLDERS" | jq ... | while ...; do ... -X DELETE ...; done
 #       '';                                       # the unit's existing loop, verbatim
 #     };
+#     # refuseCheckpoint is non-empty, so it is only emitted in refuse mode;
+#     # that keeps the delete-mode script byte-for-byte what it was before.
+#     rootFoldersGuard = lib.optionalString (cfg.syncMode.rootFolders == "refuse")
+#       "${rootFolders.guard}${syncMode.refuseCheckpoint}\n";
 #   in
 #   {
 #     options.nixflix.${serviceName}.syncMode.rootFolders = syncMode.mkModeOption {
@@ -33,16 +37,16 @@
 #       set -eu
 #       ROOT_FOLDERS=$(curl ... "$BASE_URL/rootfolder")
 #
-#       ${rootFolders.guard}
-#       ${syncMode.refuseCheckpoint}
-#
-#       ${rootFolders.prune}
+#       ${rootFoldersGuard}${rootFolders.prune}
 #       # ... create/update declared objects ...
 #     '';
 #   }
 #
+# `guard` is "" outside refuse and `prune` is "" in refuse, so interpolating
+# both unconditionally is safe; only the checkpoint needs the optionalString.
 # A unit with several collections runs every guard first, then a single
-# refuseCheckpoint, so one failed run lists everything that blocks the sync.
+# checkpoint (still only when at least one of them is "refuse"), so one failed
+# run lists everything that blocks the sync. See modules/arr-common/rootFolders.nix.
 # Every guard is placed before the unit's first mutating call; tests check that
 # with `guardPrecedesMutations` from tests/lib/unit-test-helpers.nix.
 { lib, pkgs }:

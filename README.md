@@ -44,6 +44,7 @@ Nixflix is:
 - **WireGuard VPN Integration**: Built-in support for Wireguard VPN with kill switch and custom DNS
 - **Flexible Directory Management**: Configurable media and state directories with automatic setup
 - **Service Dependencies**: Configure custom systemd service dependencies
+- **Safe Adoption of Existing Installs**: `nixflix.syncMode` controls what happens to objects you did not declare: `"delete"` (default), `"keep"`, or `"refuse"`, which fails the sync and lists them before anything changes. See [Adopting an Existing Install](https://kiriwalawren.github.io/nixflix/examples/adopting-existing-install/)
 - **Reverse Proxy Support**: Configurable nginx or Caddy integration for all services, with per-service opt-out
 - **Unified Theming**: All supported services can be themed to look the same, powered by [theme.park](https://docs.theme-park.dev/)
 - [**TRaSH Guides**](https://trash-guides.info): Default configuration follows TRaSH guidelines

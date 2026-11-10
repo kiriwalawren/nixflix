@@ -93,7 +93,7 @@ pkgs.testers.runNixOSTest {
         "order": 1, "tags": [tag["id"]],
     })
     pid = injected_profile["id"]
-    assert folder_paths() == ["/media/movies", "${injectedFolder}"], folder_paths()
+    assert folder_paths() == sorted(["/media/movies", "${injectedFolder}"]), folder_paths()
     assert profile_ids() == [1, pid], profile_ids()
 
     with subtest("refuse: the units fail with 78 and change nothing"):
@@ -103,12 +103,12 @@ pkgs.testers.runNixOSTest {
         for unit in UNITS:
             machine.wait_until_fails(f"systemctl is-active {unit}", timeout=60)
             assert main_status(unit) == "78", f"{unit}: ExecMainStatus {main_status(unit)}"
-        log = machine.succeed("journalctl -o cat -u radarr-rootfolders.service -u radarr-delayprofiles.service")
-        assert "nixflix:   - ${injectedFolder} (id " in log, log
-        assert f"nixflix:   - {pid} (id {pid})" in log, log
-        assert "Nothing was changed." in log, log
-        assert "${apiKey}" not in log, "API key leaked into the journal"
-        assert folder_paths() == ["/media/movies", "${injectedFolder}"], folder_paths()
+        journal = machine.succeed("journalctl -o cat -u radarr-rootfolders.service -u radarr-delayprofiles.service")
+        assert "nixflix:   - ${injectedFolder} (id " in journal, journal
+        assert f"nixflix:   - {pid} (id {pid})" in journal, journal
+        assert "Nothing was changed." in journal, journal
+        assert "${apiKey}" not in journal, "API key leaked into the journal"
+        assert folder_paths() == sorted(["/media/movies", "${injectedFolder}"]), folder_paths()
         assert profile_ids() == [1, pid], profile_ids()
 
     with subtest("keep: the units succeed and keep the undeclared objects"):
@@ -117,10 +117,10 @@ pkgs.testers.runNixOSTest {
         assert rc == 0, "switching to keep failed"
         for unit in UNITS:
             machine.wait_for_unit(unit, timeout=60)
-        log = machine.succeed("journalctl -o cat -u radarr-rootfolders.service -u radarr-delayprofiles.service")
-        assert 'keeping 1 undeclared root folders (nixflix.radarr.syncMode.rootFolders = "keep"): ${injectedFolder}' in log, log
-        assert f'keeping 1 undeclared delay profiles (nixflix.radarr.syncMode.delayProfiles = "keep"): {pid}' in log, log
-        assert folder_paths() == ["/media/movies", "${injectedFolder}"], folder_paths()
+        journal = machine.succeed("journalctl -o cat -u radarr-rootfolders.service -u radarr-delayprofiles.service")
+        assert 'keeping 1 undeclared root folders (nixflix.radarr.syncMode.rootFolders = "keep"): ${injectedFolder}' in journal, journal
+        assert f'keeping 1 undeclared delay profiles (nixflix.radarr.syncMode.delayProfiles = "keep"): {pid}' in journal, journal
+        assert folder_paths() == sorted(["/media/movies", "${injectedFolder}"]), folder_paths()
         assert profile_ids() == [1, pid], profile_ids()
 
     with subtest("delete (the default): the undeclared objects are removed"):
