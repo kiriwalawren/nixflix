@@ -150,6 +150,7 @@ in
       enable = true;
       settings = {
         jellyfin.jellyfin_api_key = "jf-key";
+        forceJellyfinToIgnoreEmptyMediaFolders = true;
         radarr = [
           {
             serverName = "Radarr";
@@ -204,9 +205,14 @@ in
       };
     };
     # No pruning units today. Enabled so a deleting unit added to either one
-    # is scanned by the keep/refuse tests below.
+    # is scanned by the keep/refuse tests (sync-mode-coverage-every-unit-rendered).
+    # Its ExecStartPost is a nixflix script.
+    flaresolverr.enable = true;
+    # Adds the per-*arr <arr>-setup-logs-db units.
+    postgres.enable = true;
     navidrome = {
       enable = true;
+      plugins.lyrics.enable = true;
       users.admin = {
         userName = "admin";
         isAdmin = true;

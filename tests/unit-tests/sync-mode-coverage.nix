@@ -306,10 +306,11 @@ let
 
   report = xs: if xs == [ ] then true else builtins.trace (lib.concatStringsSep "\n" xs) false;
 
-  # Source-level backstop for modules `everything` does not enable: every
-  # module file that can remove something must go through syncMode, or be
-  # listed here with the reason it only touches what nixflix owns.
-  modulesDir = ../../modules;
+  # Source-level backstop. Every removal token in modules/ and lib/ is counted
+  # per file and pinned here with the reason it is allowed; a new or removed
+  # call anywhere fails with the file and counts, whether or not the file
+  # uses syncMode. Rendered behaviour per unit is checked above; this catches
+  # code no rendered unit shows (lib/, units nobody enables).
   sourceTokens = [
     "DELETE"
     "del_config"
@@ -317,25 +318,165 @@ let
     "rmdir"
     "unlink"
     " -delete"
+    # Whole-file replacement: what a service had in that file is gone. Pinned
+    # so a new one is a conscious, documented choice. A PUT that replaces a
+    # whole collection through an API cannot be seen by tokens; those units
+    # are reviewed by hand (docs/examples/adopting-existing-install.md).
+    "cp -f"
+    "install -"
   ];
-  sourceExempt = {
-    # Maintainerr's rule action enum ("DELETE" = 0, ...), not a call.
-    "maintainerr/rules/options.nix" = true;
-    # Replaces the `nixflix` API key it created; see jellyfin-own-api-key.
-    "jellyfin/apiKeyService.nix" = true;
+  prune = "inside a mkPrune onDelete loop (delete mode only; keep/refuse never render it)";
+  sourceRemovals = {
+    "modules/arr-common/rootFolders.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/arr-common/delayProfiles.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/downloadarr/service.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/notif/default.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/lidarr/qualityProfiles.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/lidarr/metadataProfiles.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/prowlarr/indexers.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/prowlarr/indexerProxies.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/prowlarr/applications.nix" = {
+      counts.DELETE = 1;
+      why = prune;
+    };
+    "modules/usenetClients/sabnzbd/categoriesService.nix" = {
+      counts.del_config = 1;
+      why = prune;
+    };
+    "modules/seerr/radarr/default.nix" = {
+      counts.DELETE = 3;
+      why = "${prune}; with its deleteServer helper and log line";
+    };
+    "modules/seerr/sonarr/default.nix" = {
+      counts.DELETE = 3;
+      why = "${prune}; with its deleteServer helper and log line";
+    };
+    "modules/maintainerr/settings/default.nix" = {
+      counts.DELETE = 3;
+      why = "${prune} (one loop per *arr type) and the text around it";
+    };
+    "modules/maintainerr/rules/default.nix" = {
+      counts.DELETE = 3;
+      why = "${prune}, its log line and comment";
+    };
+    "modules/maintainerr/overlays/templates/default.nix" = {
+      counts.DELETE = 3;
+      why = "${prune}, its log line and comment";
+    };
+    "modules/recyclarr/cleanup-profiles.nix" = {
+      counts.DELETE = 7;
+      why = "the reassign-then-delete loop (delete mode only) and the comments and logs around it";
+    };
+    "modules/jellyfin/libaries/default.nix" = {
+      counts.DELETE = 15;
+      why = "library and path mkPrune loops (delete mode only) and the collectionType recreate, which keep/refuse skip";
+    };
+    "modules/jellyfin/liveTv/default.nix" = {
+      counts.DELETE = 2;
+      why = "tuner and guide mkPrune loops (delete mode only)";
+    };
+    "modules/jellyfin/plugins/pluginsService.nix" = {
+      counts."rm -r" = 3;
+      why = "undeclared managed dirs (mkPrune, delete mode only) and the plugin-reinstall exemption (superseded and declared plugin dirs)";
+    };
+    "modules/jellyfin/apiKeyService.nix" = {
+      counts.DELETE = 1;
+      why = "replaces the `nixflix` API key it created (jellyfin-own-api-key)";
+    };
+    "modules/maintainerr/rules/options.nix" = {
+      counts.DELETE = 4;
+      why = "Maintainerr's rule action enum (\"DELETE\" = 0, ...), not a call";
+    };
+    "modules/torrentClients/qbittorrent.nix" = {
+      counts."cp -f" = 1;
+      why = "delete mode replaces categories.json with the declared categories (qbittorrent-refuse-write after the checkpoint)";
+    };
+    "modules/jellyfin/network/default.nix" = {
+      counts."install -" = 1;
+      why = "network.xml is rewritten from the declared settings on every start, in every mode (documented caveat)";
+    };
+    "modules/jellyfin/encoding/default.nix" = {
+      counts."install -" = 1;
+      why = "encoding.xml is rewritten from the declared settings on every start, in every mode (documented caveat)";
+    };
+    "lib/sync-mode.nix" = {
+      counts.DELETE = 2;
+      why = "comments describing what mkPrune replaces";
+    };
   };
-  moduleSources =
-    map
-      (p: {
-        rel = lib.removePrefix "${toString modulesDir}/" (toString p);
-        text = builtins.readFile p;
-      })
+  sourceFiles =
+    lib.concatMap
       (
-        builtins.filter (p: lib.hasSuffix ".nix" (toString p)) (
-          lib.filesystem.listFilesRecursive modulesDir
-        )
-      );
-  removesSomething = src: lib.any (t: lib.hasInfix t src.text) sourceTokens;
+        dir:
+        map (p: {
+          rel = lib.removePrefix "${toString ../..}/" (toString p);
+          text = builtins.readFile p;
+        }) (builtins.filter (p: lib.hasSuffix ".nix" (toString p)) (lib.filesystem.listFilesRecursive dir))
+      )
+      [
+        ../../modules
+        ../../lib
+      ];
+  tokenCounts = src: lib.filterAttrs (_: n: n > 0) (lib.genAttrs sourceTokens (t: count t src.text));
+
+  # Every systemd unit a module names literally must be rendered by
+  # `everything`, so the per-unit keep/refuse scans see it. An interpolated
+  # name ("${serviceName}-rootfolders") needs a rendered unit with that suffix;
+  # a file that builds units as an attrset must contribute at least one.
+  unitNameRefs =
+    src:
+    map builtins.head (
+      builtins.filter builtins.isList (
+        builtins.split "systemd\\.services\\.(\"[^\"]+\"|[A-Za-z0-9_-]+)" src.text
+      )
+    );
+  # Units deliberately left out of `everything`, with the reason. Empty: every
+  # unit nixflix defines is rendered.
+  unrenderedUnits = { };
+  renderedNames = builtins.attrNames defaults.texts;
+  unitRefMissing =
+    ref:
+    let
+      name = lib.removePrefix "\"" (lib.removeSuffix "\"" ref);
+      dyn = builtins.match "\\$\\{[A-Za-z]+}(.*)" name;
+    in
+    if unrenderedUnits ? ${name} then
+      false
+    else if dyn != null then
+      !lib.any (lib.hasSuffix (builtins.head dyn)) renderedNames
+    else
+      !builtins.elem name renderedNames;
+  quotedUnitKeys =
+    src:
+    map builtins.head (
+      builtins.filter builtins.isList (builtins.split "(\"[$A-Za-z0-9{}_-]+\") = \\{" src.text)
+    );
+  attrsetUnitFiles = builtins.filter (s: lib.hasInfix "systemd.services = " s.text) sourceFiles;
+  definingFiles = map (d: toString d.file) defaults.options.systemd.services.definitionsWithLocations;
 in
 {
   sync-mode-coverage-default-is-delete = assertTest "sync-mode-coverage-default-is-delete" (
@@ -482,20 +623,45 @@ in
         )
       );
 
-  # A module that can remove things but never mentions syncMode is a pruning
-  # unit nobody wired up; a stale exemption is reported too.
   sync-mode-coverage-source-scan = assertTest "sync-mode-coverage-source-scan" (
     report (
-      map (s: "modules/${s.rel}: removes objects but does not use nixflix.syncMode") (
-        builtins.filter (
-          s: removesSomething s && !(sourceExempt.${s.rel} or false) && !lib.hasInfix "syncMode" s.text
-        ) moduleSources
+      lib.concatMap (
+        src:
+        let
+          now = tokenCounts src;
+          pinned = (sourceRemovals.${src.rel} or { counts = { }; }).counts;
+        in
+        lib.optional (now != pinned)
+          "${src.rel}: removal tokens ${builtins.toJSON now}, pinned ${builtins.toJSON pinned} in sourceRemovals"
+      ) sourceFiles
+      ++ map (rel: "${rel}: in sourceRemovals but not found") (
+        builtins.filter (rel: !lib.any (s: s.rel == rel) sourceFiles) (builtins.attrNames sourceRemovals)
       )
-      ++ map (rel: "modules/${rel}: exempt in sourceExempt but no longer removes anything") (
-        builtins.filter (rel: !lib.any (s: s.rel == rel && removesSomething s) moduleSources) (
-          builtins.attrNames sourceExempt
+    )
+  );
+
+  sync-mode-coverage-every-unit-rendered = assertTest "sync-mode-coverage-every-unit-rendered" (
+    report (
+      lib.concatMap (
+        src:
+        map (ref: "${src.rel}: unit ${ref} is not rendered by tests/lib/sync-mode-everything.nix") (
+          builtins.filter unitRefMissing (unitNameRefs src)
         )
-      )
+      ) sourceFiles
+      ++
+        map (src: "${src.rel}: defines systemd.services but sync-mode-everything.nix renders none of them")
+          (
+            builtins.filter (
+              src:
+              let
+                # module files are often imported through their directory
+                mod = lib.removeSuffix "/default.nix" src.rel;
+              in
+              !lib.any (f: lib.hasSuffix src.rel f || lib.hasSuffix mod f) definingFiles
+              # imported as a function (arr-common/postgres.nix): match its unit keys
+              && lib.all unitRefMissing (quotedUnitKeys src)
+            ) attrsetUnitFiles
+          )
     )
   );
 }

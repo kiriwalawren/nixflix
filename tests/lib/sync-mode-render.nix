@@ -70,6 +70,7 @@ let
     in
     {
       inherit config;
+      inherit (evaluated) options;
       texts = lib.genAttrs names (unitText evaluated) // {
         seerr-libraries = unitText evaluated "seerr-libraries" + "\n" + seerrLibrarySyncText evaluated;
       };
