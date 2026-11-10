@@ -150,29 +150,15 @@ let
             let
               notificationName = notificationConfig.name;
               inherit (notificationConfig) implementationName;
-              apiKey = notificationConfig.apiKey or null;
-              username = notificationConfig.username or null;
-              password = notificationConfig.password or null;
-              accessToken = notificationConfig.accessToken or null;
               allOverrides = builtins.removeAttrs notificationConfig [
                 "implementationName"
-                "apiKey"
-                "username"
-                "password"
-                "accessToken"
                 "triggers"
               ];
               fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
-              fieldOverridesJson = builtins.toJSON fieldOverrides;
+              fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
+              jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
               enabledTriggers = notificationConfig.triggers.${triggerServiceKey serviceName} or [ ];
-
-              jqSecrets = secrets.mkJqSecretArgs {
-                apiKey = if apiKey == null then "" else apiKey;
-                username = if username == null then "" else username;
-                password = if password == null then "" else password;
-                accessToken = if accessToken == null then "" else accessToken;
-              };
             in
             ''
               echo "Processing notification: ${notificationName}"
@@ -186,15 +172,8 @@ let
                   --argjson overrides "$overrides" \
                   --argjson triggerKeys ${escapeShellArg (builtins.toJSON allTriggerKeys)} \
                   --argjson enabledTriggers ${escapeShellArg (builtins.toJSON enabledTriggers)} '
-                    .fields[] |= (
-                      if .name == "apiKey" and ${jqSecrets.refs.apiKey} != "" then .value = ${jqSecrets.refs.apiKey}
-                      elif .name == "username" and ${jqSecrets.refs.username} != "" then .value = ${jqSecrets.refs.username}
-                      elif .name == "password" and ${jqSecrets.refs.password} != "" then .value = ${jqSecrets.refs.password}
-                      elif .name == "accessToken" and ${jqSecrets.refs.accessToken} != "" then .value = ${jqSecrets.refs.accessToken}
-                      else .
-                      end
-                    )
-                    | . + $overrides
+                    ${optionalString jqSecrets.hasSecrets "($overrides | ${concatStringsSep " | " jqSecrets.assignments}) as $overrides |"}
+                    . + $overrides
                     | reduce $triggerKeys[] as $t (.; .[$t] = ($enabledTriggers | index($t) != null))
                     | .fields[] |= (
                         . as $field |
