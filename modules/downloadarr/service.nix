@@ -292,7 +292,7 @@ in
 {
   # Declared per *arr service rather than under nixflix.downloadarr, whose
   # attributes are all treated as download clients.
-  options.nixflix = genAttrs arrServices (serviceName: {
+  options.nixflix = genAttrs arrServices (_serviceName: {
     syncMode.downloadClients = syncMode.mkModeOption {
       inherit config;
       what = "download clients";

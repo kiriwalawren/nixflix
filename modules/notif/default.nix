@@ -297,7 +297,7 @@ in
 
   # Declared per *arr service rather than under nixflix.notif, whose
   # attributes are all treated as notifications.
-  options.nixflix = genAttrs arrServices (serviceName: {
+  options.nixflix = genAttrs arrServices (_serviceName: {
     syncMode.notifications = syncMode.mkModeOption {
       inherit config;
       what = "notifications";

@@ -111,9 +111,15 @@ let
 
   defaultCfg = eval { };
   defaultScripts = scriptsOf defaultCfg;
-  explicitDeleteScripts = scriptsOf (eval { syncMode = "delete"; });
-  refuseScripts = scriptsOf (eval { syncMode = "refuse"; });
-  keepScripts = scriptsOf (eval { syncMode = "keep"; });
+  explicitDeleteScripts = scriptsOf (eval {
+    syncMode = "delete";
+  });
+  refuseScripts = scriptsOf (eval {
+    syncMode = "refuse";
+  });
+  keepScripts = scriptsOf (eval {
+    syncMode = "keep";
+  });
 
   allUnits = pred: lib.all pred units;
 
@@ -313,7 +319,8 @@ let
   ];
 
   expectDeclaredCall =
-    s: lib.optionalString (s.declaredCall != null) ''
+    s:
+    lib.optionalString (s.declaredCall != null) ''
       grep -qFx ${lib.escapeShellArg s.declaredCall} mutated.log || fail "declared object not updated"
     '';
 

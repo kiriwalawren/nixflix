@@ -10,47 +10,45 @@ in
 pkgs.testers.runNixOSTest {
   name = "radarr-sync-mode";
 
-  nodes.machine =
-    { config, pkgs, ... }:
-    {
-      imports = [ nixosModules ];
+  nodes.machine = { config, pkgs, ... }: {
+    imports = [ nixosModules ];
 
-      virtualisation.cores = 4;
+    virtualisation.cores = 4;
 
-      # Radarr only accepts a root folder that exists and that it can write to.
-      systemd.tmpfiles.settings."10-radarr-sync-mode-test".${injectedFolder}.d = {
-        inherit (config.nixflix.globals.libraryOwner) user group;
-        mode = "0775";
-      };
+    # Radarr only accepts a root folder that exists and that it can write to.
+    systemd.tmpfiles.settings."10-radarr-sync-mode-test".${injectedFolder}.d = {
+      inherit (config.nixflix.globals.libraryOwner) user group;
+      mode = "0775";
+    };
 
-      nixflix = {
+    nixflix = {
+      enable = true;
+
+      radarr = {
         enable = true;
-
-        radarr = {
-          enable = true;
-          mediaDirs = [ "/media/movies" ];
-          config = {
-            hostConfig = {
-              port = 7878;
-              username = "admin";
-              password._secret = pkgs.writeText "radarr-password" "testpassword123";
-            };
-            apiKey._secret = pkgs.writeText "radarr-apikey" apiKey;
+        mediaDirs = [ "/media/movies" ];
+        config = {
+          hostConfig = {
+            port = 7878;
+            username = "admin";
+            password._secret = pkgs.writeText "radarr-password" "testpassword123";
           };
-        };
-      };
-
-      specialisation = {
-        refuse.configuration.nixflix.radarr.syncMode = {
-          rootFolders = "refuse";
-          delayProfiles = "refuse";
-        };
-        keep.configuration.nixflix.radarr.syncMode = {
-          rootFolders = "keep";
-          delayProfiles = "keep";
+          apiKey._secret = pkgs.writeText "radarr-apikey" apiKey;
         };
       };
     };
+
+    specialisation = {
+      refuse.configuration.nixflix.radarr.syncMode = {
+        rootFolders = "refuse";
+        delayProfiles = "refuse";
+      };
+      keep.configuration.nixflix.radarr.syncMode = {
+        rootFolders = "keep";
+        delayProfiles = "keep";
+      };
+    };
+  };
 
   testScript = ''
     import json
