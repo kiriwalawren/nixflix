@@ -17,7 +17,11 @@ not written down yet.
 | --- | --- | --- |
 | `"delete"` (default) | created and updated | deleted |
 | `"keep"` | created and updated | left alone, listed in the unit's log |
-| `"refuse"` | nothing happens | the unit fails before changing anything and lists them |
+| `"refuse"` | created and updated, as in `"delete"`, when nothing is undeclared | if any exist, the unit lists them and fails before changing anything |
+
+`"refuse"` flags exactly what `"delete"` would delete on that run, no more and
+no less. When `"delete"` would delete nothing, `"refuse"` passes and the unit
+syncs your declared objects like it always does.
 
 The global option sets the default for every collection. Each collection can be
 overridden with `nixflix.<service>.syncMode.<collection>`, see the
@@ -38,8 +42,8 @@ overridden with `nixflix.<service>.syncMode.<collection>`, see the
 ```
 
 Rebuild. Every sync unit first reads the live state. If it finds anything you did
-not declare, it prints what it found, exits with code **78**, and changes nothing
-in that service: no creates, no updates, no deletes. For example:
+not declare, it prints what it found, exits with code **78**, and that unit
+changes nothing: no creates, no updates, no deletes. For example:
 
 ```text
 nixflix: radarr-rootfolders: refusing to sync: 1 root folders exist that are not declared (nixflix.radarr.syncMode.rootFolders = "refuse"). Nothing was changed.
@@ -57,6 +61,13 @@ journalctl -o cat -u radarr-rootfolders.service | grep '^nixflix:'
 
 A unit with several collections checks all of them before it stops, so one run
 lists everything that blocks it.
+
+A refusal only holds back the unit that refused. The other sync units of the same
+service still run when their own checks pass: a refused `radarr-rootfolders` does
+not stop `radarr-config`, `radarr-delayprofiles` or `radarr-downloadclients`
+from creating and updating what you declared. The exception is a unit that
+`requires` the refused one: systemd does not start it (see
+[the caveats](#not-covered-caveats)).
 
 For each object listed, either declare it in your configuration (it is then
 updated, never deleted), or remove it by hand in the service's UI. Rebuild until
@@ -113,7 +124,7 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
 | Option | Governs | Unit |
 | --- | --- | --- |
 | `nixflix.<arr>.syncMode.rootFolders` | root folders | `<arr>-rootfolders` |
-| `nixflix.<arr>.syncMode.delayProfiles` | delay profiles (the built-in default profile, id 1, is never deleted) | `<arr>-delayprofiles` |
+| `nixflix.<arr>.syncMode.delayProfiles` | delay profiles, matched by `id` (the built-in default profile, id 1, is always declared and never deleted) | `<arr>-delayprofiles` |
 | `nixflix.<arr>.syncMode.downloadClients` | download clients | `<arr>-downloadclients` |
 | `nixflix.<arr>.syncMode.notifications` | notifications (Connect) | `<arr>-notifications` |
 | `nixflix.prowlarr.syncMode.downloadClients` | download clients | `prowlarr-downloadclients` |
@@ -122,10 +133,10 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
 | `nixflix.prowlarr.syncMode.applications` | applications (the *arrs Prowlarr syncs to) | `prowlarr-applications` |
 | `nixflix.lidarr.syncMode.qualityProfiles` | quality profiles | `lidarr-qualityprofiles` |
 | `nixflix.lidarr.syncMode.metadataProfiles` | metadata profiles | `lidarr-metadataprofiles` |
-| `nixflix.seerr.syncMode.radarr` | Radarr servers | `seerr-radarr` |
-| `nixflix.seerr.syncMode.sonarr` | Sonarr servers | `seerr-sonarr` |
+| `nixflix.seerr.syncMode.radarr` | Radarr servers (see the name-matching caveat) | `seerr-radarr` |
+| `nixflix.seerr.syncMode.sonarr` | Sonarr servers (see the name-matching caveat) | `seerr-sonarr` |
 | `nixflix.seerr.syncMode.jellyfinLibraries` | enabled Jellyfin libraries that do not match `nixflix.seerr.jellyfin.libraryFilter` (disabled, not deleted; only with `enableAllLibraries = false`) | `seerr-libraries` |
-| `nixflix.jellyfin.syncMode.libraries` | libraries nixflix created earlier (tracked in its state file; libraries you made in the UI are never touched) | `jellyfin-libraries` |
+| `nixflix.jellyfin.syncMode.libraries` | libraries nixflix created earlier (tracked in its state file), and the recreate of a declared library whose `collectionType` differs | `jellyfin-libraries` |
 | `nixflix.jellyfin.syncMode.libraryPaths` | paths of declared libraries | `jellyfin-libraries` |
 | `nixflix.jellyfin.syncMode.plugins` | plugin directories nixflix installed earlier (state file) | `jellyfin-plugins` |
 | `nixflix.jellyfin.syncMode.liveTv` | Live TV tuners and guides nixflix created earlier (state file) | `jellyfin-livetv` |
@@ -133,10 +144,10 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
 | `nixflix.maintainerr.syncMode.sonarr` | Sonarr servers | `maintainerr-settings` |
 | `nixflix.maintainerr.syncMode.rules` | rule groups | `maintainerr-rules` |
 | `nixflix.maintainerr.syncMode.overlayTemplates` | overlay templates (presets are never touched) | `maintainerr-overlay-templates` |
-| `nixflix.usenetClients.sabnzbd.syncMode.categories` | categories (the built-in `*` is never touched) | `sabnzbd-categories` |
+| `nixflix.usenetClients.sabnzbd.syncMode.categories` | categories, matched ignoring ASCII case (the built-in `*` is never touched) | `sabnzbd-categories` |
 | `nixflix.torrentClients.qbittorrent.syncMode.categories` | categories in `categories.json` | `qbittorrent` (its `preStart`) |
-| `nixflix.recyclarr.syncMode.qualityProfiles` | quality profiles not listed in `cleanupUnmanagedProfiles.managedProfiles` (only with `cleanupUnmanagedProfiles.enable`) | `recyclarr-cleanup-profiles` |
-| `nixflix.recyclarr.syncMode.customFormats` | the default of each instance's `delete_old_custom_formats` (see below) | `recyclarr` |
+| `nixflix.recyclarr.syncMode.qualityProfiles` | quality profiles not listed in `cleanupUnmanagedProfiles.managedProfiles` (only with `cleanupUnmanagedProfiles.enable`; an instance where none of the listed profiles exists is skipped, as `"delete"` skips it) | `recyclarr-cleanup-profiles` |
+| `nixflix.recyclarr.syncMode.customFormats` | the default of each instance's `delete_old_custom_formats`; defaults to `"keep"` under a global `"refuse"` (see below) | `recyclarr` |
 
 ## Not covered / caveats
 
@@ -149,18 +160,47 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
   in the `preStart` of `qbittorrent.service`, so a refused sync fails the daemon
   itself, not a separate unit, until the undeclared categories are declared or
   removed from `categories.json`.
-- **Recyclarr `customFormats = "refuse"` cannot be enforced.** Recyclarr decides
-  which custom formats it deletes (only ones it synced itself), and nixflix cannot
-  inspect that before Recyclarr runs. `"refuse"` behaves like `"keep"`
-  (`delete_old_custom_formats` defaults to `false`) and produces an evaluation
-  warning. Only `"delete"` defaults it to `true`.
-- **A changed Jellyfin `collectionType` recreates the library.** Jellyfin cannot
-  change the type of an existing library, so a declared library whose
-  `collectionType` changed is deleted and created again, in every mode. That only
-  ever happens to a library you declared.
-- **Jellyfin `libraries` only know what nixflix made.** The libraries guard works
-  from nixflix's state file, so libraries created in the Jellyfin UI are never
-  listed, kept or deleted.
+- **Recyclarr custom formats cannot be refused.** Recyclarr decides which custom
+  formats it deletes (only ones it synced itself), and nixflix cannot inspect that
+  before Recyclarr runs. A global `nixflix.syncMode = "refuse"` therefore gives
+  `nixflix.recyclarr.syncMode.customFormats = "keep"` (`delete_old_custom_formats`
+  defaults to `false`), without a warning. Setting
+  `customFormats = "refuse"` explicitly behaves the same and produces an
+  evaluation warning. Only `"delete"` defaults it to `true`.
+- **Declaring a Jellyfin library by name adopts the one you already have.** A
+  library you created in the Jellyfin UI is matched by its name. Once you declare
+  that name, nixflix manages it like one it created: its library options are
+  overwritten with the declared ones, its paths are pruned according to
+  `nixflix.jellyfin.syncMode.libraryPaths`, and if its `collectionType` differs
+  from the declared one it is deleted and created again (Jellyfin cannot change
+  the type of a library), which drops Jellyfin's metadata for it. Under
+  `"refuse"` the option overwrite still happens once nothing blocks the unit,
+  because it changes a declared library; the undeclared paths
+  (`libraryPaths = "refuse"`) and the recreate (`libraries = "refuse"`) are
+  refused and listed instead. Libraries you made in the UI and do not declare are
+  never listed, kept or deleted, because the libraries guard works from
+  nixflix's state file.
+- **The `collectionType` recreate follows `nixflix.jellyfin.syncMode.libraries`.**
+  Under `"delete"` the library is deleted and created again. Under `"refuse"`
+  the unit refuses and lists it, by name and types only:
+  `nixflix:   - Movies (collectionType tvshows -> movies)`. Under `"keep"` it
+  is left as it is (its options and paths are not updated either) and the log
+  says `not recreating library Movies`. Fix the declared `collectionType`, or
+  delete the library in Jellyfin, to clear it. With `libraries = "delete"` and
+  `libraryPaths = "refuse"` the recreate still happens, and the recreated
+  library has only its declared paths.
+- **Delay profiles are matched by `id`.** A live delay profile whose `id` equals
+  a declared `id` counts as declared, whatever its settings, so under `"keep"`
+  and `"refuse"` it is overwritten (PUT) with the declared profile rather than
+  listed. Check the ids in the *arr before you declare delay profiles.
+- **Names are compared exactly, with two exceptions.** Most collections match a
+  live object to a declaration by exact, case-sensitive name (or path, or id).
+  SABnzbd stores category names lowercased, so its categories match ignoring
+  ASCII case: a declared `Movies` is the live `movies`. Seerr's Radarr and
+  Sonarr servers keep the historical `delete` matching, which treats a live
+  server as declared when its name is part of a declared name: with
+  `"Radarr 4K"` declared, live servers named `Radarr` or `4K` are neither
+  deleted nor refused.
 - **Seerr's library check makes one request first.** Seerr only returns the
   Jellyfin library list through `POST /api/v1/settings/jellyfin/library/sync`,
   which refreshes Seerr's copy of the list (it keeps each library's enabled flag).
@@ -170,11 +210,20 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
   unit whose `requires` failed, so one refusal can hold back units that have
   nothing undeclared. For example, `lidarr-rootfolders` requires
   `lidarr-qualityprofiles`, so a refused quality profile sync also leaves root
-  folders unsynced. Clear the first failure and the rest follow.
+  folders unsynced, and `seerr-radarr`/`seerr-sonarr` require
+  `recyclarr-cleanup-profiles` when profile cleanup is enabled. Units that only
+  `want` or order after it still run. Clear the first failure and the rest
+  follow.
+- **qBittorrent's `categories.json` is read like qBittorrent reads it.** A
+  missing, empty or whitespace-only file holds no categories. So does a file
+  that is not a single JSON object; nixflix logs a warning for that one. In all
+  of these cases there is nothing undeclared: `"refuse"` passes and `"keep"`
+  writes the declared categories.
 - **Exit code 78 is not retried.** A refused unit exits with 78 (`EX_CONFIG`).
   Units that restart on failure (`prowlarr-indexer-proxies`) set
   `RestartPreventExitStatus = 78`, so a refusal fails once instead of looping.
   Rebuild, or `systemctl restart` the unit, after fixing what it listed.
 - **`delete` is unchanged.** With the default, every unit renders exactly the
-  script it did before `syncMode` existed, apart from a bug fix in
-  `sabnzbd-categories` (category names with spaces or `*` were mangled).
+  script it did before `syncMode` existed, apart from bug fixes in
+  `sabnzbd-categories` (category names with spaces or `*` were mangled, and
+  names were matched as case-sensitive regular expressions).

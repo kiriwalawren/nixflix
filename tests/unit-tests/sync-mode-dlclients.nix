@@ -88,9 +88,16 @@ let
       mode,
       getConfig,
       checks,
+      categories ? null,
     }:
     let
-      script = sabnzbdScript { usenetClients.sabnzbd.syncMode.categories = mode; };
+      script = sabnzbdScript (
+        lib.recursiveUpdate { usenetClients.sabnzbd.syncMode.categories = mode; } (
+          lib.optionalAttrs (categories != null) {
+            usenetClients.sabnzbd.settings.categories = map category categories;
+          }
+        )
+      );
       scriptFile = pkgs.writeText "${name}.sh" ''
         curl() {
           local url
@@ -148,6 +155,26 @@ let
       }
     ];
   };
+
+  # Declared names that are regex metacharacters, a grep option and a case
+  # difference, against SABnzbd's lowercased live copy.
+  trickyDeclared = [
+    "radarr"
+    "[tv]"
+    "-x"
+    "Books"
+    "abc"
+  ];
+  trickyLive.config.categories = lib.imap0 (order: name: { inherit name order; }) [
+    "*"
+    "radarr"
+    "[tv]"
+    "-x"
+    "books"
+    "abc"
+    "a.c"
+    "old"
+  ];
 
   # Runs the rendered qbittorrent preStart against a categories.json in the
   # build directory. `existing` is the file's raw text, or null for no file.
@@ -291,11 +318,13 @@ in
     '';
   };
 
-  # "*" is ignored even when the declared list leaves it out, so refuse can pass.
+  # "*" is ignored even when the declared list leaves it out, so refuse can
+  # pass. Real SABnzbd always returns "*", so this fails without `ignore`.
   sync-mode-dlclients-sabnzbd-refuse-all-declared =
     runSabnzbd "sync-mode-dlclients-sabnzbd-refuse-all-declared"
       {
         mode = "refuse";
+        categories = [ "radarr" ];
         getConfig.config.categories = [
           {
             name = "*";
@@ -310,6 +339,96 @@ in
           [ "$rc" = 0 ] || fail "rc=$rc"
           [ -z "$(deletes)" ] || fail "deleted: $(deletes)"
           grep -q '^set_config&section=categories&.*name=radarr' calls.log || fail "sync did not proceed"
+        '';
+      };
+
+  sync-mode-dlclients-sabnzbd-keep-ignores-star =
+    runSabnzbd "sync-mode-dlclients-sabnzbd-keep-ignores-star"
+      {
+        mode = "keep";
+        categories = [ "radarr" ];
+        getConfig.config.categories = [
+          {
+            name = "*";
+            order = 0;
+          }
+          {
+            name = "radarr";
+            order = 1;
+          }
+        ];
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          ! grep -q keeping out.txt || fail "keep listed the built-in *"
+        '';
+      };
+
+  # Regression: the delete loop matched the live name as a case-sensitive
+  # regex (`grep -qx "$existing_cat"`). SABnzbd stores names lowercased, so a
+  # declared "Books" (live "books") was deleted and re-created on every run;
+  # "[tv]" was a character class and "-x" a grep option, so both were deleted
+  # although declared; "a.c" matched the declared "abc" and was kept although
+  # undeclared. refuse and keep must agree with delete on every one of them.
+  sync-mode-dlclients-sabnzbd-delete-fixed-string-names =
+    runSabnzbd "sync-mode-dlclients-sabnzbd-delete-fixed-string-names"
+      {
+        mode = "delete";
+        categories = trickyDeclared;
+        getConfig = trickyLive;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(deletes)" = "a.c|old|" ] || fail "deleted: $(deletes)"
+        '';
+      };
+
+  sync-mode-dlclients-sabnzbd-refuse-fixed-string-names =
+    runSabnzbd "sync-mode-dlclients-sabnzbd-refuse-fixed-string-names"
+      {
+        mode = "refuse";
+        categories = trickyDeclared;
+        getConfig = trickyLive;
+        checks = ''
+          [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+          [ ! -s calls.log ] || fail "refuse mutated SABnzbd"
+          expectLine err.txt 'nixflix: sabnzbd-categories: refusing to sync: 2 categories exist that are not declared (nixflix.usenetClients.sabnzbd.syncMode.categories = "refuse"). Nothing was changed.'
+          expectLine err.txt 'nixflix:   - a.c (id 6)'
+          expectLine err.txt 'nixflix:   - old (id 7)'
+        '';
+      };
+
+  sync-mode-dlclients-sabnzbd-keep-fixed-string-names =
+    runSabnzbd "sync-mode-dlclients-sabnzbd-keep-fixed-string-names"
+      {
+        mode = "keep";
+        categories = trickyDeclared;
+        getConfig = trickyLive;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ -z "$(deletes)" ] || fail "keep deleted: $(deletes)"
+          expectLine out.txt 'nixflix: sabnzbd-categories: keeping 2 undeclared categories (nixflix.usenetClients.sabnzbd.syncMode.categories = "keep"): a.c, old'
+        '';
+      };
+
+  # A declared "Movies" is live as "movies": nothing undeclared, refuse passes.
+  sync-mode-dlclients-sabnzbd-refuse-case-insensitive =
+    runSabnzbd "sync-mode-dlclients-sabnzbd-refuse-case-insensitive"
+      {
+        mode = "refuse";
+        categories = [ "Movies" ];
+        getConfig.config.categories = [
+          {
+            name = "*";
+            order = 0;
+          }
+          {
+            name = "movies";
+            order = 1;
+          }
+        ];
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ -z "$(deletes)" ] || fail "deleted: $(deletes)"
+          grep -q '^set_config&section=categories&.*name=Movies' calls.log || fail "sync did not proceed"
         '';
       };
 
@@ -351,7 +470,7 @@ in
   sync-mode-dlclients-qbittorrent-keep-merges =
     assertTest "sync-mode-dlclients-qbittorrent-keep-merges"
       (
-        lib.hasInfix "'.[0] * $declared[0]'" qbKeep
+        lib.hasInfix "'. * $declared[0]'" qbKeep
         && !lib.hasInfix "nixflix-sync-guard" qbKeep
         && lib.hasInfix "keeping " qbKeep
       );
@@ -461,15 +580,130 @@ in
         '';
       };
 
+  # qBittorrent loads nothing from a file that is not one JSON object, so
+  # there is nothing undeclared: refuse writes the declared categories.
   sync-mode-dlclients-qbittorrent-refuse-invalid-file =
     runQbittorrent "sync-mode-dlclients-qbittorrent-refuse-invalid-file"
       {
         mode = "refuse";
         existing = "[1, 2]";
         checks = ''
-          [ "$rc" = 1 ] || fail "expected rc 1, got $rc"
-          cmp -s before.json config/categories.json || fail "refuse wrote categories.json"
-          grep -q 'cannot check for undeclared categories' err.txt || fail "no error"
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          grep -q 'categories.json is not a JSON object' err.txt || fail "no warning"
+          ! grep -q refusing err.txt || fail "refused"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-keep-whitespace-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-keep-whitespace-file"
+      {
+        mode = "keep";
+        existing = " \n\t \n";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          ! grep -q 'not a JSON object' err.txt || fail "warned about a file with no categories"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-keep-empty-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-keep-empty-file"
+      {
+        mode = "keep";
+        existing = "";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          ! grep -q 'not a JSON object' err.txt || fail "warned about a file with no categories"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-keep-broken-json-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-keep-broken-json-file"
+      {
+        mode = "keep";
+        existing = "{ not json";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          grep -q 'categories.json is not a JSON object' err.txt || fail "no warning"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-keep-two-values-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-keep-two-values-file"
+      {
+        mode = "keep";
+        existing = "{} {}";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          grep -q 'categories.json is not a JSON object' err.txt || fail "no warning"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-refuse-whitespace-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-refuse-whitespace-file"
+      {
+        mode = "refuse";
+        existing = " \n\t \n";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          ! grep -q 'not a JSON object' err.txt || fail "warned about a file with no categories"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-refuse-empty-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-refuse-empty-file"
+      {
+        mode = "refuse";
+        existing = "";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          ! grep -q 'not a JSON object' err.txt || fail "warned about a file with no categories"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-refuse-broken-json-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-refuse-broken-json-file"
+      {
+        mode = "refuse";
+        existing = "{ not json";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          grep -q 'categories.json is not a JSON object' err.txt || fail "no warning"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
+        '';
+      };
+
+  sync-mode-dlclients-qbittorrent-refuse-two-values-file =
+    runQbittorrent "sync-mode-dlclients-qbittorrent-refuse-two-values-file"
+      {
+        mode = "refuse";
+        existing = "{} {}";
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ "$(result)" = '${declaredQb}' ] || fail "not written: $(result)"
+          grep -q 'categories.json is not a JSON object' err.txt || fail "no warning"
+          ! grep -q -e refusing -e keeping out.txt err.txt || fail "listed categories that do not exist"
+          [ "$(stat -c %a config/categories.json)" = 640 ] || fail "mode not 640"
         '';
       };
 }

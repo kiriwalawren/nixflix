@@ -13,13 +13,16 @@ let
   # The existing delete loop. Names are read one per line and URL-encoded: a
   # `for` over the unquoted list split names with spaces and glob-expanded "*",
   # and curl's config file ends an unquoted url at the first space. "*" is
-  # SABnzbd's built-in catch-all and is never deleted.
+  # SABnzbd's built-in catch-all and is never deleted. SABnzbd lowercases
+  # category names when it stores them, so names compare case-insensitively,
+  # as fixed strings; LC_ALL=C folds ASCII only, exactly like the guard's
+  # ascii_downcase below.
   deleteCategories = ''
     # Delete categories not in configuration
     echo "Removing categories not in configuration..."
     while IFS= read -r existing_cat; do
       [ -n "$existing_cat" ] && [ "$existing_cat" != "*" ] || continue
-      if ! echo "$CONFIGURED_NAMES" | grep -qx "$existing_cat"; then
+      if ! echo "$CONFIGURED_NAMES" | LC_ALL=C grep -qixF -- "$existing_cat"; then
         echo "Deleting category not in config: $existing_cat"
         api_call "del_config" "section=categories" "keyword=$(jq -rn --arg c "$existing_cat" '$c | @uri')" >/dev/null 2>&1 || true
       fi
@@ -32,7 +35,12 @@ let
     what = "categories";
     option = "nixflix.usenetClients.sabnzbd.syncMode.categories";
     live = "LIVE_CATEGORIES";
-    declared = map (c: c.name) cfg.settings.categories;
+    # Same match as deleteCategories: ASCII case-insensitive, and an empty
+    # name is skipped. `tostring` mirrors `jq -r` printing a non-string name.
+    declared = map (c: toLower c.name) cfg.settings.categories;
+    key = ".name | tostring | ascii_downcase";
+    label = ".name";
+    select = "(.name | tostring) != \"\"";
     id = ".order";
     ignore = [ "*" ];
     onDelete = deleteCategories;

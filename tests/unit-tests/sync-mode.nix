@@ -154,6 +154,39 @@ in
     && !guardPrecedesMutations "del_config x\n${refuseThings.guard}"
     && !guardPrecedesMutations "echo no guard here"
     && guardPrecedesMutations (singleUnit refuseThings)
+    # every mutation shape counts, ahead of the guard
+    && lib.all (m: !guardPrecedesMutations "${m}\n${refuseThings.guard}") [
+      "curl -X PATCH x"
+      "curl -X PUT x"
+      "api POST x"
+      "api PUT x"
+      "api DELETE x"
+      "api PATCH x"
+      "set_config x"
+      "systemctl start foo"
+      "systemctl restart foo"
+      "rm -f /x"
+      "mkdir -p /x"
+      "mv a b"
+      "cp a b"
+      "chown a b"
+      "chmod 640 b"
+      "echo x > \"$STATE_FILE\""
+      "echo x >>\"$LOG\""
+      "echo x > '/var/lib/x'"
+      "echo x > /var/lib/x"
+    ]
+    # reads, /dev redirects and plain words are not mutations
+    && guardPrecedesMutations "curl -s x >/dev/null 2>&1\napi GET x\necho ok >&2\necho cpu mvp\n${refuseThings.guard}\ncurl -X POST x"
+    # function definitions are skipped, their calls are not
+    && guardPrecedesMutations "f() {\n  systemctl start x\n}\n${refuseThings.guard}\nf"
+    && !guardPrecedesMutations "f() {\n  systemctl start x\n}\nf\n${refuseThings.guard}"
+    && !guardPrecedesMutations "f() {\n  systemctl start x\n}\ng() {\n  f\n}\ng\n${refuseThings.guard}"
+    && !guardPrecedesMutations "s() { rm -f x; }\ns\n${refuseThings.guard}"
+    && guardPrecedesMutations "s() { rm -f x; }\nsx=1\n${refuseThings.guard}\ns"
+    # `<fn> GET` is the read form of a method-taking helper
+    && guardPrecedesMutations "api() {\n  curl -X \"$1\" > \"$bf\"\n}\nr=$(api GET x)\n${refuseThings.guard}\napi POST y"
+    && !guardPrecedesMutations "api() {\n  curl -X \"$1\" > \"$bf\"\n}\nr=$(api FOO x)\n${refuseThings.guard}"
   );
 
   sync-mode-delete-runs-ondelete = runScenario "sync-mode-delete-runs-ondelete" {

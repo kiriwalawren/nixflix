@@ -98,7 +98,8 @@ let
     pkgs.linkFarm "sync-mode-recyclarr-fixtures" (
       lib.mapAttrsToList (name: value: {
         inherit name;
-        path = pkgs.writeText name (builtins.toJSON value);
+        # a string is the raw response body, anything else is JSON
+        path = pkgs.writeText name (if builtins.isString value then value else builtins.toJSON value);
       }) files
     );
 
@@ -128,6 +129,41 @@ let
       ${checks}
       echo 'PASS: ${name}' > $out
     '';
+
+  # The finding's repro: a radarr-only managed profile, a sonarr instance
+  # with none of the managed profiles.
+  noManagedScript =
+    mode:
+    cleanupScript
+      (evalConfig [
+        baseConfig
+        {
+          nixflix.recyclarr = {
+            syncMode.qualityProfiles = mode;
+            cleanupUnmanagedProfiles.managedProfiles = lib.mkForce [ "[SQP] SQP-1 (1080p)" ];
+          };
+        }
+      ]).config;
+  noManagedState = {
+    "sonarr.test-qualityprofile" = [
+      {
+        id = 1;
+        name = "WEB-1080p";
+      }
+      {
+        id = 2;
+        name = "Any";
+      }
+    ];
+    "sonarr.test-series" = [ ];
+    "radarr.test-qualityprofile" = [
+      {
+        id = 3;
+        name = "[SQP] SQP-1 (1080p)";
+      }
+    ];
+    "radarr.test-movie" = [ ];
+  };
 
   # sonarr is clean; radarr (processed second) has an undeclared profile in use.
   liveState = {
@@ -228,6 +264,11 @@ in
     let
       keep = eval { recyclarr.syncMode.customFormats = "keep"; };
       refuse = eval { syncMode = "refuse"; };
+      explicitRefuse = eval { recyclarr.syncMode.customFormats = "refuse"; };
+      explicitRefuseGlobal = eval {
+        syncMode = "refuse";
+        recyclarr.syncMode.customFormats = "refuse";
+      };
       overridden = eval {
         syncMode = "refuse";
         recyclarr.syncMode.customFormats = "delete";
@@ -251,13 +292,23 @@ in
       false
     ]
     && recyclarrWarnings keep == [ ]
-    && refuse.nixflix.recyclarr.syncMode.customFormats == "refuse"
+    # a global "refuse" means "keep" here: no warning on every evaluation
+    && refuse.nixflix.recyclarr.syncMode.customFormats == "keep"
     &&
       oldCustomFormats refuse == [
         false
         false
       ]
-    && builtins.length (recyclarrWarnings refuse) == 1
+    && recyclarrWarnings refuse == [ ]
+    # only an explicit "refuse" warns
+    && explicitRefuse.nixflix.recyclarr.syncMode.customFormats == "refuse"
+    &&
+      oldCustomFormats explicitRefuse == [
+        false
+        false
+      ]
+    && builtins.length (recyclarrWarnings explicitRefuse) == 1
+    && builtins.length (recyclarrWarnings explicitRefuseGlobal) == 1
     &&
       oldCustomFormats overridden == [
         true
@@ -337,4 +388,85 @@ in
       [ "$(mutations | wc -l)" = 2 ] || fail "unexpected mutations: $(mutations)"
     '';
   };
+
+  # Regression: managedProfiles is one list for every instance. Delete mode
+  # skips an instance where none of them exists ("None of the managed
+  # profiles exist"), so refuse must not fail there (seerr-radarr/-sonarr
+  # require this unit) and keep must not list anything.
+  sync-mode-recyclarr-run-refuse-no-managed-profile =
+    runCleanup "sync-mode-recyclarr-run-refuse-no-managed-profile"
+      {
+        script = noManagedScript "refuse";
+        files = noManagedState;
+        checks = ''
+          [ "$rc" = 0 ] || fail "expected rc 0 (delete would delete nothing), got $rc"
+          [ -z "$(mutations)" ] || fail "mutated: $(mutations)"
+          ! grep -q 'refusing' err.txt || fail "refused"
+          grep -q 'Quality profile cleanup completed' out.txt || fail "did not complete"
+        '';
+      };
+
+  sync-mode-recyclarr-run-keep-no-managed-profile =
+    runCleanup "sync-mode-recyclarr-run-keep-no-managed-profile"
+      {
+        script = noManagedScript "keep";
+        files = noManagedState;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ -z "$(mutations)" ] || fail "mutated: $(mutations)"
+          ! grep -q 'keeping' out.txt err.txt || fail "keep listed profiles delete would not delete"
+        '';
+      };
+
+  sync-mode-recyclarr-run-delete-no-managed-profile =
+    runCleanup "sync-mode-recyclarr-run-delete-no-managed-profile"
+      {
+        script = noManagedScript "delete";
+        files = noManagedState;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ -z "$(mutations)" ] || fail "delete mutated: $(mutations)"
+          grep -qF 'ERROR: None of the managed profiles exist in sonarr; skipping cleanup' out.txt || fail "no skip"
+        '';
+      };
+
+  # Same declared list, but radarr has it: radarr's extra profile is still refused.
+  sync-mode-recyclarr-run-refuse-managed-in-one-instance =
+    runCleanup "sync-mode-recyclarr-run-refuse-managed-in-one-instance"
+      {
+        script = noManagedScript "refuse";
+        files = noManagedState // {
+          "radarr.test-qualityprofile" = [
+            {
+              id = 3;
+              name = "[SQP] SQP-1 (1080p)";
+            }
+            {
+              id = 4;
+              name = "HD-1080p";
+            }
+          ];
+        };
+        checks = ''
+          [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+          [ -z "$(mutations)" ] || fail "mutated: $(mutations)"
+          expectLine err.txt 'nixflix:   - HD-1080p (id 4)'
+          ! grep -qE 'WEB-1080p|Any' err.txt || fail "listed the skipped sonarr instance"
+        '';
+      };
+
+  # An empty response is "no quality profiles" in delete mode.
+  sync-mode-recyclarr-run-refuse-empty-response =
+    runCleanup "sync-mode-recyclarr-run-refuse-empty-response"
+      {
+        script = refuseScript;
+        files = liveState // {
+          "sonarr.test-qualityprofile" = "";
+          "radarr.test-qualityprofile" = "";
+        };
+        checks = ''
+          [ "$rc" = 0 ] || fail "expected rc 0, got $rc"
+          [ -z "$(mutations)" ] || fail "mutated: $(mutations)"
+        '';
+      };
 }

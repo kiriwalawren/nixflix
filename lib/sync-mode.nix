@@ -70,7 +70,17 @@ let
   '';
 in
 {
-  inherit modes refuseExitCode;
+  inherit modes refuseExitCode modesDescription;
+
+  # Prefixes every non-empty line but the first, so a block spliced into an
+  # indented string renders exactly as if it were written there literally.
+  indentRest =
+    n: text:
+    let
+      lines = lib.splitString "\n" text;
+      pad = l: if l == "" then l else lib.fixedWidthString n " " "" + l;
+    in
+    lib.concatStringsSep "\n" ([ (builtins.head lines) ] ++ map pad (builtins.tail lines));
 
   mkModeOption =
     {
@@ -105,6 +115,7 @@ in
       id ? ".id",
       label ? key,
       select ? "true",
+      scope ? null,
       ignore ? [ ],
       onDelete,
     }:
@@ -116,7 +127,10 @@ in
 
       # Undeclared candidates as a JSON array. `any(. == $k)` is plain element
       # equality; `index($k)` changes meaning with the type of $k and its input.
-      undeclared = "($declared + $ignore) as $known | [ .[] | select(${select}) | select((${key}) as $k | $known | any(. == $k) | not) ]";
+      # `scope` narrows the whole live array first, for a delete loop that skips
+      # a collection outright under some condition (it sees `$declared` too).
+      scoped = lib.optionalString (scope != null) "(${scope}) | ";
+      undeclared = "($declared + $ignore) as $known | ${scoped}[ .[] | select(${select}) | select((${key}) as $k | $known | any(. == $k) | not) ]";
 
       # Newlines are flattened so one object is always one log line.
       oneLine = expr: "((${expr}) | tostring | gsub(\"[\\r\\n]\"; \" \"))";

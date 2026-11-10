@@ -190,9 +190,11 @@ in
           option = "nixflix.${serviceName}.syncMode.delayProfiles";
           live = "DELAY_PROFILES";
           declared = map (p: p.id) sortedProfiles;
+          # Keyed by id: a live profile whose id is declared counts as declared
+          # (and is PUT over). The *arr's undeletable default profile, id 1, is
+          # always in sortedProfiles (mergedProfiles adds it), so it is never
+          # a candidate.
           key = ".id";
-          # The default profile (id 1) cannot be deleted from the *arr.
-          ignore = [ 1 ];
           onDelete = ''
             echo "Removing delay profiles not in configuration..."
             echo "$DELAY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do

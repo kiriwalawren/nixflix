@@ -284,6 +284,18 @@ let
   explicitDelete = render "delete";
   keep = render "keep";
   refuse = render "refuse";
+  explicitCfRefuse = {
+    inherit
+      (evalConfig [
+        everything
+        {
+          nixflix.syncMode = "refuse";
+          nixflix.recyclarr.syncMode.customFormats = "refuse";
+        }
+      ])
+      config
+      ;
+  };
 
   # Every per-collection option, relative to `nixflix` (the table in
   # docs/examples/adopting-existing-install.md).
@@ -324,6 +336,15 @@ let
       "recyclarr.syncMode.qualityProfiles"
       "recyclarr.syncMode.customFormats"
     ];
+
+  # Recyclarr cannot enforce "refuse" for custom formats, so a global
+  # "refuse" gives "keep" there; everything else follows the global.
+  expectedMode =
+    r: path:
+    if path == "recyclarr.syncMode.customFormats" && r.config.nixflix.syncMode == "refuse" then
+      "keep"
+    else
+      r.config.nixflix.syncMode;
 
   modeOf = r: path: lib.attrByPath (lib.splitString "." path) "<missing option>" r.config.nixflix;
   allModesAre = r: mode: lib.all (p: modeOf r p == mode) collectionOptions;
@@ -386,17 +407,17 @@ let
     ''"\($id) \($enabled | index($id) != null)"''
   ];
 
-  # THE allowlist: every deletion that may remain under "keep" or "refuse",
-  # as an exact count per unit and pattern. Each one touches a declared object
-  # only; anything not listed must occur zero times.
+  # THE allowlist: every deletion that may remain under "keep" or "refuse".
+  # Each entry is named, says why it only touches declared objects, and pins
+  # the exact count for the mode it applies to; any (unit, pattern) not listed
+  # must occur zero times.
   #
   # Not visible here, so documented instead (docs/examples/adopting-existing-install.md):
   # the sabnzbd unit rewrites sabnzbd.ini from the template on every start
   # (settings added in the UI are dropped in every mode), outside any sync unit.
-  allowed =
+  exemptions =
     r:
     let
-      declaredLibraries = builtins.length (builtins.attrNames r.config.nixflix.jellyfin.libraries);
       packagedPlugins = builtins.length (
         builtins.attrNames (
           lib.filterAttrs (_: p: p.enable && p.package != null) r.config.nixflix.jellyfin.plugins
@@ -404,46 +425,52 @@ let
       );
     in
     {
-      # A declared library whose collectionType changed is deleted and
-      # recreated (one DELETE per declared library, behind "recreating library").
-      jellyfin-libraries."-X DELETE" = declaredLibraries;
-      # The superseded-version removal (one loop) plus wiping each declared
-      # packaged plugin's own directory before copying it in again.
-      jellyfin-plugins."rm -rf" = 1 + packagedPlugins;
-      # keep: only when categories.json is missing, empty or not a JSON object.
-      # refuse: after the checkpoint, once every live category is known to be declared.
-      qbittorrent."cp -f" = 1;
+      # The superseded-version removal of DECLARED plugins (one loop) plus
+      # wiping each declared packaged plugin's own directory before copying
+      # it in again. Undeclared managed directories go through the guard.
+      plugin-reinstall = {
+        unit = "jellyfin-plugins";
+        pattern = "rm -rf";
+        count = 1 + packagedPlugins;
+      };
+      # refuse overwrites categories.json with the declared categories only
+      # after its checkpoint, i.e. once every live category is declared.
+      # keep merges with jq instead and has no `cp -f`.
+      qbittorrent-refuse-write = {
+        unit = "qbittorrent";
+        pattern = "cp -f";
+        count = if r.config.nixflix.syncMode == "refuse" then 1 else 0;
+      };
     };
 
-  # Ties each allowlisted jellyfin-libraries DELETE to its recreate branch.
-  recreatesOnly =
-    r:
+  allowedCount =
+    r: unit: pattern:
     let
-      text = r.texts.jellyfin-libraries;
+      hits = lib.filter (e: e.unit == unit && e.pattern == pattern) (builtins.attrValues (exemptions r));
     in
-    lib.optional (
-      count "recreating library..." text != count "-X DELETE" text
-    ) "jellyfin-libraries: a DELETE outside the collectionType recreate";
+    if hits == [ ] then 0 else (builtins.head hits).count;
 
   unexpectedDeletions =
     r:
-    let
-      allow = allowed r;
-    in
-    recreatesOnly r
-    ++ lib.concatLists (
+    lib.concatLists (
       lib.mapAttrsToList (
         unit: text:
         lib.concatMap (
           p:
           let
             n = count p text;
-            ok = (allow.${unit} or { }).${p} or 0;
+            ok = allowedCount r unit p;
           in
           lib.optional (n != ok) "${unit}: ${toString n} x '${p}' (allowed ${toString ok})"
         ) deletions
       ) r.texts
     );
+
+  # A declared library whose collectionType differs is deleted and recreated
+  # by delete mode only; keep skips it and refuse refuses it.
+  recreates = r: count "recreating library..." r.texts.jellyfin-libraries;
+  skippedRecreates = r: count "not recreating library" r.texts.jellyfin-libraries;
+  declaredLibraries = r: builtins.length (builtins.attrNames r.config.nixflix.jellyfin.libraries);
 
   # Calls that change state, which a refused run must not reach. SABnzbd's API
   # is GET-only: its mutations are the `mode=` values.
@@ -519,7 +546,7 @@ in
           lib.concatMap (
             p:
             lib.optional (
-              modeOf r p != r.config.nixflix.syncMode
+              modeOf r p != expectedMode r p
             ) "nixflix.${p} = ${modeOf r p} under global ${r.config.nixflix.syncMode}"
           ) collectionOptions
         )
@@ -558,13 +585,10 @@ in
       (
         report (
           unexpectedDeletions refuse
-          ++ map (u: "${u}: allowlisted deletion before the refuse checkpoint") (
-            builtins.filter (
-              u:
-              lib.any (p: lib.hasInfix p (beforeCheckpoint refuse.texts.${u})) (
-                builtins.attrNames (allowed refuse).${u}
-              )
-            ) (builtins.attrNames (allowed refuse))
+          ++ lib.mapAttrsToList (name: _e: "${name}: allowlisted deletion before the refuse checkpoint") (
+            lib.filterAttrs (_: e: lib.hasInfix e.pattern (beforeCheckpoint refuse.texts.${e.unit})) (
+              exemptions refuse
+            )
           )
         )
       );
@@ -583,7 +607,8 @@ in
       );
 
   # Recyclarr deletes custom formats itself, so the mode only picks the default
-  # of delete_old_custom_formats; "refuse" degrades to "keep" with a warning.
+  # of delete_old_custom_formats. A global "refuse" gives "keep" there without
+  # a warning; only an explicit customFormats = "refuse" warns.
   sync-mode-coverage-recyclarr-custom-formats =
     assertTest "sync-mode-coverage-recyclarr-custom-formats"
       (
@@ -591,8 +616,30 @@ in
         && lib.all (v: v == true) (deletesOldCustomFormats defaults)
         && lib.all (v: v == false) (deletesOldCustomFormats keep)
         && lib.all (v: v == false) (deletesOldCustomFormats refuse)
+        && lib.all (v: v == false) (deletesOldCustomFormats explicitCfRefuse)
         && !customFormatsWarning defaults
         && !customFormatsWarning keep
-        && customFormatsWarning refuse
+        && !customFormatsWarning refuse
+        && customFormatsWarning explicitCfRefuse
+      );
+
+  sync-mode-coverage-recreate-only-in-delete =
+    assertTest "sync-mode-coverage-recreate-only-in-delete"
+      (
+        report (
+          lib.optional (recreates defaults != declaredLibraries defaults)
+            "delete: ${toString (recreates defaults)} recreate branches for ${toString (declaredLibraries defaults)} libraries"
+          ++
+            lib.concatMap
+              (
+                r:
+                lib.optional (recreates r != 0 || skippedRecreates r != declaredLibraries r)
+                  "${r.config.nixflix.syncMode}: ${toString (recreates r)} recreates, ${toString (skippedRecreates r)} skips"
+              )
+              [
+                keep
+                refuse
+              ]
+        )
       );
 }

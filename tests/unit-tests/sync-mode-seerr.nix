@@ -194,6 +194,22 @@ let
       echo 'PASS: ${name}' > $out
     '';
 
+  # Substrings of the declared "Radarr 4K".
+  substringRadarr = builtins.toJSON [
+    {
+      id = 1;
+      name = "Radarr";
+    }
+    {
+      id = 2;
+      name = "4K";
+    }
+    {
+      id = 3;
+      name = "Radarr 4K";
+    }
+  ];
+
   # Live Radarr servers: one declared (Main), one undeclared (Old).
   liveRadarr = builtins.toJSON [
     {
@@ -383,6 +399,91 @@ in
           [ "$rc" = 0 ] || fail "rc=$rc"
           grep -q '^PUT /api/v1/settings/radarr/1 ' curl.log || fail "Main not updated"
           grep -q '^POST /api/v1/settings/radarr {' curl.log || fail "Radarr 4K not created"
+          ! grep -q '^DELETE ' curl.log || fail "refuse deleted a server"
+        '';
+      };
+
+  # The delete loop matches with jq `inside`, i.e. by substring: with "Radarr 4K"
+  # declared, live "Radarr" and "4K" are not deleted, so refuse and keep must
+  # not flag them either.
+  sync-mode-seerr-radarr-substring-delete-run =
+    runSeerr "sync-mode-seerr-radarr-substring-delete-run"
+      {
+        r = defaults;
+        script = defaults.radarr;
+        servers = substringRadarr;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          ! grep -q '^DELETE ' curl.log || fail "delete deleted: $(grep '^DELETE ' curl.log)"
+        '';
+      };
+
+  sync-mode-seerr-radarr-substring-refuse-run =
+    runSeerr "sync-mode-seerr-radarr-substring-refuse-run"
+      {
+        r = globalRefuse;
+        script = globalRefuse.radarr;
+        servers = substringRadarr;
+        checks = ''
+          [ "$rc" = 0 ] || fail "expected rc 0 (delete deletes nothing), got $rc"
+          ! grep -q refusing err.txt || fail "refused"
+          ! grep -q '^DELETE ' curl.log || fail "refuse deleted a server"
+          grep -q '^PUT /api/v1/settings/radarr/3 ' curl.log || fail "Radarr 4K not updated"
+        '';
+      };
+
+  sync-mode-seerr-radarr-substring-keep-run = runSeerr "sync-mode-seerr-radarr-substring-keep-run" {
+    r = globalKeep;
+    script = globalKeep.radarr;
+    servers = substringRadarr;
+    checks = ''
+      [ "$rc" = 0 ] || fail "rc=$rc"
+      ! grep -q keeping out.txt || fail "keep listed servers delete would not delete"
+      ! grep -q '^DELETE ' curl.log || fail "keep deleted a server"
+    '';
+  };
+
+  # A name that is not a substring of any declared one is still flagged.
+  sync-mode-seerr-radarr-substring-refuse-other-run =
+    runSeerr "sync-mode-seerr-radarr-substring-refuse-other-run"
+      {
+        r = globalRefuse;
+        script = globalRefuse.radarr;
+        servers = builtins.toJSON [
+          {
+            id = 3;
+            name = "Radarr 4K";
+          }
+          {
+            id = 4;
+            name = "Radarr 4K HDR";
+          }
+        ];
+        checks = ''
+          [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+          expectLine err.txt 'nixflix:   - Radarr 4K HDR (id 4)'
+          [ -z "$(mutations)" ] || fail "refuse mutated: $(mutations)"
+        '';
+      };
+
+  # Same substring matching in seerr-sonarr: "Ma" is part of the declared "Main".
+  sync-mode-seerr-sonarr-substring-refuse-run =
+    runSeerr "sync-mode-seerr-sonarr-substring-refuse-run"
+      {
+        r = globalRefuse;
+        script = globalRefuse.sonarr;
+        servers = builtins.toJSON [
+          {
+            id = 1;
+            name = "Main";
+          }
+          {
+            id = 2;
+            name = "Ma";
+          }
+        ];
+        checks = ''
+          [ "$rc" = 0 ] || fail "expected rc 0 (delete deletes nothing), got $rc"
           ! grep -q '^DELETE ' curl.log || fail "refuse deleted a server"
         '';
       };

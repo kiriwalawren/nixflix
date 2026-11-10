@@ -176,6 +176,10 @@ let
       what = "quality profiles in ${instance.serviceType} instance ${instance.instanceName}";
       option = "nixflix.recyclarr.syncMode.qualityProfiles";
       declared = cfg.cleanupUnmanagedProfiles.managedProfiles;
+      # deleteUnmanaged skips the whole instance ("None of the managed profiles
+      # exist") unless some non-empty managed name matches a live profile with
+      # an id; refuse and keep must see nothing to delete there either.
+      scope = ". as $live | if any($declared[]; . as $m | $m != \"\" and (($live | map(select(.name == $m)) | .[0].id // false) != false)) then . else [] end";
       onDelete = deleteUnmanaged instance;
     };
 
@@ -195,12 +199,16 @@ let
       ALL_PROFILES=$(${fetchProfiles instance})
 
     ''
+    # An empty response is "no quality profiles", as in delete mode.
+    + optionalString (mode == "keep") ''
+      : "''${ALL_PROFILES:=[]}"
+    ''
     + (prune instance "ALL_PROFILES").prune
   ) allInstances;
 
   # The reassign loop PUTs media and deletes profiles instance by instance, so
   # refuse reads and checks every instance before anything can change. Past the
-  # checkpoint no undeclared profile exists, so there is nothing left to do.
+  # checkpoint delete mode would remove nothing, so there is nothing left to do.
   refuseCleanup =
     let
       indexed = imap0 (i: instance: {
@@ -213,12 +221,13 @@ let
       describeInstance instance
       + ''
         ${live}=$(${fetchProfiles instance})
+        : "''${${live}:=[]}"
         ${(prune instance live).guard}
       ''
     ) indexed
     + ''
       ${syncMode.refuseCheckpoint}
-      echo "  No unmanaged quality profiles found"
+      echo "  No unmanaged quality profiles to delete"
     '';
 in
 {

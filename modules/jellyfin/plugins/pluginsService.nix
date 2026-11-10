@@ -65,15 +65,7 @@ let
   jq = "${pkgs.jq}/bin/jq";
   pluginsMode = cfg.syncMode.plugins;
 
-  # Prefixes every non-empty line but the first, so a block spliced into an
-  # indented string renders exactly as if it were written there literally.
-  indentRest =
-    n: text:
-    let
-      lines = splitString "\n" text;
-      pad = l: if l == "" then l else fixedWidthString n " " "" + l;
-    in
-    concatStringsSep "\n" ([ (head lines) ] ++ map pad (tail lines));
+  inherit (syncMode) indentRest;
 
   removeOldPluginDirs = ''
     while IFS= read -r old_dir; do

@@ -37,15 +37,21 @@ let
     onDelete = "";
   };
 
-  # categories.json as a JSON array of { name, save_path }, `[]` when the file
-  # is missing or empty, `null` when it is not a JSON object.
+  # categories.json as one JSON object in NIXFLIX_LIVE_OBJECT and as an array
+  # of { name, save_path } in NIXFLIX_LIVE_CATEGORIES. qBittorrent loads no
+  # categories from a file that is missing, empty or whitespace, not valid
+  # JSON or not a single JSON object, so all of those read as `{}`: there is
+  # nothing to keep and nothing undeclared.
   readLiveCategories = ''
     NIXFLIX_CATEGORIES_FILE='${configPath}/categories.json'
+    NIXFLIX_LIVE_OBJECT='{}'
     if [ -e "$NIXFLIX_CATEGORIES_FILE" ]; then
-      NIXFLIX_LIVE_CATEGORIES=$(${jq} -cs 'if . == [] then [] elif (.[0] | type) == "object" then .[0] | to_entries | map({ name: .key, save_path: ((.value | objects | .save_path) // .value | tostring) }) else null end' "$NIXFLIX_CATEGORIES_FILE" 2>/dev/null) || NIXFLIX_LIVE_CATEGORIES=null
-    else
-      NIXFLIX_LIVE_CATEGORIES='[]'
+      if ! NIXFLIX_LIVE_OBJECT=$(${jq} -cs 'if . == [] then {} elif length == 1 and (.[0] | type) == "object" then .[0] else error("not one JSON object") end' "$NIXFLIX_CATEGORIES_FILE" 2>/dev/null); then
+        echo "nixflix: qbittorrent: categories.json is not a JSON object; qBittorrent cannot load categories from it, so it is treated as empty" >&2
+        NIXFLIX_LIVE_OBJECT='{}'
+      fi
     fi
+    NIXFLIX_LIVE_CATEGORIES=$(printf '%s' "$NIXFLIX_LIVE_OBJECT" | ${jq} -c 'to_entries | map({ name: .key, save_path: ((.value | objects | .save_path) // .value | tostring) })')
   '';
 
   syncCategories =
@@ -56,15 +62,8 @@ let
       keep = ''
         ${readLiveCategories}
         ${categories.prune}
-        if [ "$NIXFLIX_LIVE_CATEGORIES" != null ] && [ -s "$NIXFLIX_CATEGORIES_FILE" ]; then
-          ${jq} -s --slurpfile declared '${categoriesFile}' '.[0] * $declared[0]' "$NIXFLIX_CATEGORIES_FILE" > "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp"
-          mv -f "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp" "$NIXFLIX_CATEGORIES_FILE"
-        else
-          if [ "$NIXFLIX_LIVE_CATEGORIES" = null ]; then
-            echo "nixflix: qbittorrent: categories.json is not a JSON object; replacing it with the declared categories" >&2
-          fi
-          cp -f '${categoriesFile}' "$NIXFLIX_CATEGORIES_FILE"
-        fi
+        printf '%s' "$NIXFLIX_LIVE_OBJECT" | ${jq} -c --slurpfile declared '${categoriesFile}' '. * $declared[0]' > "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp"
+        mv -f "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp" "$NIXFLIX_CATEGORIES_FILE"
         chmod 640 "$NIXFLIX_CATEGORIES_FILE"
         chown ${service.user}:${service.group} "$NIXFLIX_CATEGORIES_FILE"
       '';

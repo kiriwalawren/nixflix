@@ -31,6 +31,10 @@ let
     option = "nixflix.seerr.syncMode.radarr";
     live = "EXISTING_SERVERS";
     declared = attrNames cfg.radarr;
+    # The delete loop's `[.name] | inside($configured[0])` is jq containment,
+    # which matches strings by SUBSTRING: a live "Radarr" or "4K" survives when
+    # "Radarr 4K" is declared. refuse and keep flag exactly what it deletes.
+    select = "[.name] | inside($declared) | not";
     onDelete = ''
       SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
         --slurpfile configured "$CONFIGURED_NAMES" \

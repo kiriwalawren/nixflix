@@ -116,13 +116,25 @@ in
       in
       option
       // {
-        description = option.description + ''
+        # "refuse" cannot be enforced here, so a global "refuse" means "keep"
+        # rather than a warning on every evaluation.
+        default = if config.nixflix.syncMode == "refuse" then "keep" else config.nixflix.syncMode;
+        defaultText = literalExpression ''if config.nixflix.syncMode == "refuse" then "keep" else config.nixflix.syncMode'';
+        description = ''
+          What to do with custom formats that Recyclarr synced earlier but that
+          are no longer declared in
+          `nixflix.recyclarr.config.<sonarr|radarr>.<instance>.custom_formats`.
+          Defaults to `nixflix.syncMode`, except that a global `"refuse"` gives
+          `"keep"` here.
+
+          ${syncMode.modesDescription}
 
           This sets the default of each instance's `delete_old_custom_formats`
           (true only for `"delete"`). Recyclarr only ever deletes custom formats it
           synced itself, and nixflix cannot inspect that state before Recyclarr
-          runs, so `"refuse"` cannot be enforced: it behaves like `"keep"` and
-          produces an evaluation warning.
+          runs, so `"refuse"` cannot be enforced. Setting this option to
+          `"refuse"` explicitly behaves like `"keep"` and produces an evaluation
+          warning.
         '';
       };
 

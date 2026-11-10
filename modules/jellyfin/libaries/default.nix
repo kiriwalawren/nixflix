@@ -58,15 +58,7 @@ let
   pathsMode = cfg.syncMode.libraryPaths;
   anyRefuse = librariesMode == "refuse" || pathsMode == "refuse";
 
-  # Prefixes every non-empty line but the first, so a block spliced into an
-  # indented string renders exactly as if it were written there literally.
-  indentRest =
-    n: text:
-    let
-      lines = splitString "\n" text;
-      pad = l: if l == "" then l else fixedWidthString n " " "" + l;
-    in
-    concatStringsSep "\n" ([ (head lines) ] ++ map pad (tail lines));
+  inherit (syncMode) indentRest;
 
   createPaths = ''
     echo "Creating library paths..."
@@ -167,20 +159,103 @@ let
     onDelete = "";
   };
 
+  # A declared library whose collectionType differs is deleted and created
+  # again (Jellyfin cannot change the type). Only delete mode does that; the
+  # curl calls are spliced in after indentRest because mkSecureCurl's heredoc
+  # must stay unindented, which keeps the rendered script as it was.
+  recreateLibrary =
+    libraryName: libraryCfg:
+    let
+      deleteCall = mkSecureCurl authUtil.token {
+        method = "DELETE";
+        url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')";
+        apiKeyHeader = "Authorization";
+        extraArgs = "-w \"\\n%{http_code}\"";
+      };
+      createCall = mkSecureCurl authUtil.token {
+        method = "POST";
+        url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true";
+        apiKeyHeader = "Authorization";
+        headers = {
+          "Content-Type" = "application/json";
+        };
+        data = "@${libraryConfigFiles.${libraryName}}";
+        extraArgs = "-w \"\\n%{http_code}\"";
+      };
+    in
+    replaceStrings [ "@deleteCall@" "@createCall@" ] [ deleteCall createCall ] (
+      indentRest 8 ''
+        echo "CollectionType changed from $EXISTING_COLLECTION_TYPE to ${libraryCfg.collectionType}, recreating library..."
+
+        DELETE_RESPONSE=$(@deleteCall@)
+
+        DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
+
+        if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
+          echo "Failed to delete library ${libraryName} for recreate (HTTP $DELETE_HTTP_CODE)" >&2
+          exit 1
+        fi
+
+        CREATE_RESPONSE=$(@createCall@)
+
+        CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
+
+        if [ "$CREATE_HTTP_CODE" -lt 200 ] || [ "$CREATE_HTTP_CODE" -ge 300 ]; then
+          echo "Failed to recreate library ${libraryName} (HTTP $CREATE_HTTP_CODE)" >&2
+          exit 1
+        fi
+
+        echo "Successfully recreated library: ${libraryName}"''
+    );
+
+  # keep leaves the library as it is; refuse never gets here, its guard
+  # stops the unit first.
+  skipRecreate =
+    libraryName: libraryCfg:
+    ''echo "nixflix: jellyfin-libraries: not recreating library ${libraryName} (collectionType $EXISTING_COLLECTION_TYPE -> ${libraryCfg.collectionType}): that deletes it in Jellyfin (nixflix.jellyfin.syncMode.libraries = \"${librariesMode}\")"'';
+
+  declaredTypes = escapeShellArg (
+    builtins.toJSON (mapAttrs (_: libraryCfg: libraryCfg.collectionType) libraries)
+  );
+
+  # Declared libraries whose live collectionType differs: delete mode deletes
+  # and recreates them, so refuse lists them (names and types only).
+  typeChangesGuard = optionalString (librariesMode == "refuse") ''
+    # nixflix-sync-guard: jellyfin-libraries collectionType changes
+    if ! printf '%s' "$NIXFLIX_TYPE_CHANGES" | ${jq} -e 'type == "array"' >/dev/null 2>&1; then
+      echo 'nixflix: jellyfin-libraries: cannot check declared libraries for collectionType changes: live state is not a JSON array (did the API request fail?)' >&2
+      exit 1
+    fi
+    _nixflix_sync_count=$(printf '%s' "$NIXFLIX_TYPE_CHANGES" | ${jq} length)
+    if [ "$_nixflix_sync_count" -gt 0 ]; then
+      {
+        printf '%s\n' "nixflix: jellyfin-libraries: refusing to sync: $_nixflix_sync_count declared libraries have a different collectionType in Jellyfin and would be deleted and recreated (nixflix.jellyfin.syncMode.libraries = \"refuse\"). Nothing was changed."
+        printf '%s' "$NIXFLIX_TYPE_CHANGES" | ${jq} -r '.[] | "nixflix:   - \(.Name | gsub("[\r\n]"; " ")) (collectionType \(.live | tostring | gsub("[\r\n]"; " ")) -> \(.declared))"'
+        printf '%s\n' 'nixflix: set their collectionType to what Jellyfin has, delete them in Jellyfin, or set nixflix.jellyfin.syncMode.libraries to "keep" or "delete".'
+      } >&2
+      NIXFLIX_SYNC_REFUSED=1
+    fi
+  '';
+
   undeclaredCheck = ''
     NIXFLIX_MANAGED_LIBRARIES=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --arg prev "$PREVIOUS_MANAGED" '
       if type != "array" then error("not an array") else . end
       | ((try ($prev | fromjson) catch []) | if type == "array" then . else [] end) as $p
       | [.[] | select(.Name as $n | $p | any(. == $n)) | {Name, ItemId}]') || NIXFLIX_MANAGED_LIBRARIES=""
-    NIXFLIX_LIBRARY_PATHS=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --argjson decl ${
-      escapeShellArg (builtins.toJSON (mapAttrs (_: libraryCfg: libraryCfg.collectionType) libraries))
-    } '
+    NIXFLIX_LIBRARY_PATHS=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --argjson decl ${declaredTypes} '
       if type != "array" then error("not an array") else . end
       | [.[] | select((.Name | type) == "string") | . as $l | ($decl[$l.Name] // null) as $t
         | select($t != null and (($l.CollectionType // "unknown") == $t))
         | (.Locations // [])[] | {library: $l.Name, path: ., ItemId: $l.ItemId}]') || NIXFLIX_LIBRARY_PATHS=""
-
+    ${optionalString (librariesMode == "refuse") ''
+      NIXFLIX_TYPE_CHANGES=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --argjson decl ${declaredTypes} '
+        if type != "array" then error("not an array") else . end
+        | [.[] | select((.Name | type) == "string") | . as $l | ($decl[$l.Name] // null) as $t
+          | select($t != null and (($l.CollectionType // "unknown") != $t))
+          | {Name, ItemId, live: ($l.CollectionType // "unknown"), declared: $t}]') || NIXFLIX_TYPE_CHANGES=""
+    ''}
     ${librariesPrune.guard}
+    ${typeChangesGuard}
     ${pathsPrune.guard}
     ${syncMode.refuseCheckpoint}
     ${optionalString anyRefuse createPaths}
@@ -194,10 +269,14 @@ let
   writeState =
     if librariesMode == "keep" then
       ''
-        NIXFLIX_KEPT_LIBRARIES=$(printf '%s' "$NIXFLIX_MANAGED_LIBRARIES" | ${jq} -c '[.[].Name]' 2>/dev/null) \
-          || NIXFLIX_KEPT_LIBRARIES=$(echo "$PREVIOUS_MANAGED" | ${jq} -c '[.[] | strings]' 2>/dev/null) \
-          || NIXFLIX_KEPT_LIBRARIES="[]"
-        ${jq} -cn --argjson c "$CONFIGURED_NAMES" --argjson k "$NIXFLIX_KEPT_LIBRARIES" '$c + ($k - $c)' > "$STATE_FILE"''
+        # The managed list, else the previous state, else nothing; any of
+        # them may be empty or not JSON when the library list could not be read.
+        ${jq} -cn --argjson c "$CONFIGURED_NAMES" --arg m "$NIXFLIX_MANAGED_LIBRARIES" --arg p "$PREVIOUS_MANAGED" '
+          def parse($s): try ($s | fromjson) catch null;
+          ((parse($m) | if type == "array" then map(.Name? | strings) else null end)
+            // (parse($p) | if type == "array" then map(strings) else null end)
+            // []) as $k
+          | $c + ($k - $c)' > "$STATE_FILE"''
     else
       ''echo "$CONFIGURED_NAMES" > "$STATE_FILE"'';
 in
@@ -399,45 +478,12 @@ in
 
                     echo "Successfully updated library: ${libraryName}"
                   else
-                    echo "CollectionType changed from $EXISTING_COLLECTION_TYPE to ${libraryCfg.collectionType}, recreating library..."
-
-                    DELETE_RESPONSE=$(${
-                      mkSecureCurl authUtil.token {
-                        method = "DELETE";
-                        url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')";
-                        apiKeyHeader = "Authorization";
-                        extraArgs = "-w \"\\n%{http_code}\"";
-                      }
-                    })
-
-                    DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
-
-                    if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
-                      echo "Failed to delete library ${libraryName} for recreate (HTTP $DELETE_HTTP_CODE)" >&2
-                      exit 1
-                    fi
-
-                    CREATE_RESPONSE=$(${
-                      mkSecureCurl authUtil.token {
-                        method = "POST";
-                        url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&collectionType=${libraryCfg.collectionType}&refreshLibrary=true";
-                        apiKeyHeader = "Authorization";
-                        headers = {
-                          "Content-Type" = "application/json";
-                        };
-                        data = "@${libraryConfigFiles.${libraryName}}";
-                        extraArgs = "-w \"\\n%{http_code}\"";
-                      }
-                    })
-
-                    CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
-
-                    if [ "$CREATE_HTTP_CODE" -lt 200 ] || [ "$CREATE_HTTP_CODE" -ge 300 ]; then
-                      echo "Failed to recreate library ${libraryName} (HTTP $CREATE_HTTP_CODE)" >&2
-                      exit 1
-                    fi
-
-                    echo "Successfully recreated library: ${libraryName}"
+                    ${
+                      if librariesMode == "delete" then
+                        recreateLibrary libraryName libraryCfg
+                      else
+                        skipRecreate libraryName libraryCfg
+                    }
                   fi
                 fi
           '') libraries

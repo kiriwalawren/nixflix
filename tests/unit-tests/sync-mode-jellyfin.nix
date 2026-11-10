@@ -146,7 +146,15 @@ let
       done
       [ "$method" = GET ] || echo "$method $url" >> "$MUTATED_LOG"
       case "$method $url" in
-        "GET "*/Library/VirtualFolders) cat "$FIXTURES/libraries.json" ;;
+        "GET "*/Library/VirtualFolders)
+          # libraries-first.json, when present, answers the first read only
+          if [ -f "$FIXTURES/libraries-first.json" ] && [ ! -e "$FIXTURES/.first-served" ]; then
+            : > "$FIXTURES/.first-served"
+            cat "$FIXTURES/libraries-first.json"
+          else
+            cat "$FIXTURES/libraries.json"
+          fi
+          ;;
         "GET "*/System/Configuration/livetv) cat "$FIXTURES/livetv.json" ;;
         "POST "*/LiveTv/TunerHosts) echo '{"Id":"new-tuner"}' ;;
         "POST "*/LiveTv/ListingProviders*) echo '{"Id":"new-guide"}' ;;
@@ -246,6 +254,22 @@ let
       CollectionType = "movies";
       ItemId = "i-kids";
       Locations = [ "/srv/kids-old" ];
+    }
+  ];
+
+  # Only Kids differs from the declaration, in its collectionType.
+  typeOnlyFixture = builtins.toJSON [
+    {
+      Name = "Movies";
+      CollectionType = "movies";
+      ItemId = "i-movies";
+      Locations = [ "/srv/movies" ];
+    }
+    {
+      Name = "Kids";
+      CollectionType = "movies";
+      ItemId = "i-kids";
+      Locations = [ "/srv/kids" ];
     }
   ];
 
@@ -361,14 +385,17 @@ in
     ) units
   );
 
-  # The only DELETE left under keep/refuse is the collectionType recreate of
-  # a declared library (one per library); live TV issues none.
+  # No DELETE is left under keep/refuse: the collectionType recreate of a
+  # declared library (one per library) only exists in delete mode.
   sync-mode-jellyfin-keep-has-no-deletes = assertTest "sync-mode-jellyfin-keep-has-no-deletes" (
     lib.all (u: hasNone deleteLoops.${u} keep.${u}) units
-    && countOf "-X DELETE" keep.libraries == 2
-    && countOf "-X DELETE" refuse.libraries == 2
+    && countOf "-X DELETE" keep.libraries == 0
+    && countOf "-X DELETE" refuse.libraries == 0
     && countOf "-X DELETE" default.libraries == 5
-    && lib.hasInfix "recreating library" keep.libraries
+    && countOf "recreating library..." default.libraries == 2
+    && !lib.hasInfix "recreating library..." keep.libraries
+    && countOf "not recreating library" keep.libraries == 2
+    && !lib.hasInfix "not recreating library" default.libraries
     && !lib.hasInfix "api DELETE" keep.livetv
     && !lib.hasInfix "Removed managed plugin directory" keep.plugins
     && !lib.hasInfix "nixflix-sync-guard" keep.libraries
@@ -418,14 +445,17 @@ in
         expectLine refuse.err 'nixflix:   - Old (id i-old)'
         expectLine refuse.err 'nixflix: jellyfin-libraries: refusing to sync: 1 library paths exist that are not declared (nixflix.jellyfin.syncMode.libraryPaths = "refuse"). Nothing was changed.'
         expectLine refuse.err 'nixflix:   - Movies: /srv/extra (id i-movies)'
+        expectLine refuse.err 'nixflix: jellyfin-libraries: refusing to sync: 1 declared libraries have a different collectionType in Jellyfin and would be deleted and recreated (nixflix.jellyfin.syncMode.libraries = "refuse"). Nothing was changed.'
+        expectLine refuse.err 'nixflix:   - Kids (collectionType movies -> tvshows)'
         ! grep -qE 'Manual|kids-old' refuse.err || fail "refuse listed an unmanaged library or a recreated library's path"
         [ "$(state)" = '["Kids","Movies","Old"]' ] || fail "refuse changed the state: $(state)"
       '')
       (step keep "libraries" "keep" ''
-        # keep: creates/updates, deletes only for the Kids recreate, keeps Old in the state
+        # keep: updates, deletes nothing (not even to recreate Kids), keeps Old in the state
         [ "$(cat keep.rc)" = 0 ] || fail "keep rc=$(cat keep.rc)"
-        [ "$(grep -c '^DELETE' keep.mutated)" = 1 ] || fail "keep deleted: $(grep '^DELETE' keep.mutated)"
-        grep -qF 'DELETE http://127.0.0.1:8096/Library/VirtualFolders?name=Kids' keep.mutated || fail "Kids not recreated"
+        ! grep -q '^DELETE' keep.mutated || fail "keep deleted: $(grep '^DELETE' keep.mutated)"
+        ! grep -qF 'name=Kids' keep.mutated || fail "keep recreated Kids: $(cat keep.mutated)"
+        expectLine keep.out 'nixflix: jellyfin-libraries: not recreating library Kids (collectionType movies -> tvshows): that deletes it in Jellyfin (nixflix.jellyfin.syncMode.libraries = "keep")'
         grep -qF 'POST http://127.0.0.1:8096/Library/VirtualFolders/LibraryOptions' keep.mutated || fail "keep did not update"
         expectLine keep.out 'nixflix: jellyfin-libraries: keeping 1 undeclared nixflix-managed libraries (nixflix.jellyfin.syncMode.libraries = "keep"): Old'
         expectLine keep.out 'nixflix: jellyfin-libraries: keeping 1 undeclared library paths (nixflix.jellyfin.syncMode.libraryPaths = "keep"): Movies: /srv/extra'
@@ -436,11 +466,72 @@ in
         [ "$(cat delete.rc)" = 0 ] || fail "delete rc=$(cat delete.rc)"
         grep -qF 'DELETE http://127.0.0.1:8096/Library/VirtualFolders?name=Old' delete.mutated || fail "Old not deleted"
         grep -qF 'DELETE http://127.0.0.1:8096/Library/VirtualFolders/Paths?name=Movies&path=%2Fsrv%2Fextra' delete.mutated || fail "path not removed"
+        grep -qFx 'DELETE http://127.0.0.1:8096/Library/VirtualFolders?name=Kids' delete.mutated || fail "delete did not recreate Kids"
+        grep -qF 'POST http://127.0.0.1:8096/Library/VirtualFolders?name=Kids&collectionType=tvshows' delete.mutated || fail "Kids not created again"
         ! grep -qF 'name=Manual' delete.mutated || fail "deleted an unmanaged library"
         [ "$(state)" = '["Kids","Movies"]' ] || fail "delete state: $(state)"
       '')
     ];
   };
+
+  # A collectionType change alone is a refusal (delete would delete and
+  # recreate the library); with the types matching, refuse proceeds.
+  sync-mode-jellyfin-libraries-type-change-refuse =
+    runScenario "sync-mode-jellyfin-libraries-type-change-refuse"
+      {
+        setup = ''
+          cp ${pkgs.writeText "libraries.json" typeOnlyFixture} "$FIXTURES/libraries.json"
+          echo '["Movies","Kids"]' > "$DATA/nixflix-managed-libraries.json"
+        '';
+        steps = [
+          (step refuse "libraries" "refuse" ''
+            [ "$(cat refuse.rc)" = 78 ] || fail "refuse rc=$(cat refuse.rc)"
+            [ ! -s refuse.mutated ] || fail "refuse mutated: $(cat refuse.mutated)"
+            expectLine refuse.err 'nixflix:   - Kids (collectionType movies -> tvshows)'
+            [ "$(grep -c '^nixflix:   - ' refuse.err)" = 1 ] || fail "refuse listed more than Kids"
+            ! grep -q /srv refuse.err || fail "refuse printed a path"
+          '')
+        ];
+        checks = ''
+          sed -i 's/"CollectionType":"movies","ItemId":"i-kids"/"CollectionType":"tvshows","ItemId":"i-kids"/' "$FIXTURES/libraries.json"
+          grep -q '"tvshows","ItemId":"i-kids"' "$FIXTURES/libraries.json" || fail "fixture edit failed"
+          run clean ${prepare refuse refuse.libraries}
+          [ "$(cat clean.rc)" = 0 ] || fail "refuse with matching types rc=$(cat clean.rc)"
+          ! grep -q '^DELETE' clean.mutated || fail "deleted: $(cat clean.mutated)"
+        '';
+      };
+
+  # Regression: keep wrote its state with `--argjson k ""` when the first
+  # library read was not JSON (no managed list), failing the unit at the end.
+  sync-mode-jellyfin-libraries-keep-state-without-managed-list =
+    runScenario "sync-mode-jellyfin-libraries-keep-state-without-managed-list"
+      {
+        setup = ''
+          cp ${pkgs.writeText "libraries.json" libraryFixture} "$FIXTURES/libraries.json"
+          echo '["Movies","Old","Kids"]' > "$DATA/nixflix-managed-libraries.json"
+          state() { jq -c 'sort' "$DATA/nixflix-managed-libraries.json"; }
+          first() { printf 'not json' > "$FIXTURES/libraries-first.json"; rm -f "$FIXTURES/.first-served"; }
+          first
+        '';
+        steps = [
+          (step keep "libraries" "keep" ''
+            [ "$(cat keep.rc)" = 0 ] || fail "keep rc=$(cat keep.rc)"
+            [ "$(state)" = '["Kids","Movies","Old"]' ] || fail "keep state (previous state kept): $(state)"
+            rm "$DATA/nixflix-managed-libraries.json"
+            first
+          '')
+          (step keep "libraries" "keep-no-state" ''
+            [ "$(cat keep-no-state.rc)" = 0 ] || fail "keep-no-state rc=$(cat keep-no-state.rc)"
+            [ "$(state)" = '["Kids","Movies"]' ] || fail "keep state (no previous state): $(state)"
+            echo 'garbage' > "$DATA/nixflix-managed-libraries.json"
+            first
+          '')
+          (step keep "libraries" "keep-bad-state" ''
+            [ "$(cat keep-bad-state.rc)" = 0 ] || fail "keep-bad-state rc=$(cat keep-bad-state.rc)"
+            [ "$(state)" = '["Kids","Movies"]' ] || fail "keep state (invalid previous state): $(state)"
+          '')
+        ];
+      };
 
   sync-mode-jellyfin-plugins-runtime = runScenario "sync-mode-jellyfin-plugins-runtime" {
     setup = ''
