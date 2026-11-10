@@ -301,6 +301,7 @@ in
           description = ''
             For more notification types, or if you have more than one instance of a specific type.
             Follows the same general schema as the other options. `implementationName` and `services` are required fields.
+            Any field may be set to `{ _secret = /path/to/file; }` to read its value from a file at runtime.
 
             A list of implementation names can be acquired with:
 
