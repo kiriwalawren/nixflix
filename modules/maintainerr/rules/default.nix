@@ -8,6 +8,7 @@ with lib;
 let
   cfg = config.nixflix.maintainerr;
   maintainerrUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
 
@@ -117,6 +118,31 @@ let
     '';
 
   declaredNames = builtins.toJSON (map (r: r.name) cfg.rules);
+
+  rulesPrune = syncMode.mkPrune {
+    mode = cfg.syncMode.rules;
+    unit = "maintainerr-rules";
+    what = "rule groups";
+    option = "nixflix.maintainerr.syncMode.rules";
+    live = "CURRENT";
+    declared = map (r: r.name) cfg.rules;
+    onDelete = ''
+      echo "Removing undeclared rule groups..."
+      TO_DELETE=$(echo "$CURRENT" | ${pkgs.jq}/bin/jq -r \
+        --argjson declared '${declaredNames}' \
+        '.[] | select(.name as $n | ($declared | index($n)) == null) | .id')
+      for ID in $TO_DELETE; do
+        echo "  Deleting undeclared rule group (id=$ID)..."
+        ${pkgs.curl}/bin/curl -s -X DELETE \
+          "${maintainerrUrl}/api/rules/$ID" > /dev/null
+      done
+    '';
+  };
+
+  refuseGuard = optionalString (cfg.syncMode.rules == "refuse") ''
+    ${rulesPrune.guard}${syncMode.refuseCheckpoint}
+
+  '';
 in
 {
   imports = [ ./options.nix ];
@@ -140,18 +166,9 @@ in
           RADARR_SERVERS=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/radarr")
           SONARR_SERVERS=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/sonarr")
 
-          ${concatStringsSep "\n" (map mkRuleGroupScript cfg.rules)}
+          ${refuseGuard}${concatStringsSep "\n" (map mkRuleGroupScript cfg.rules)}
 
-          echo "Removing undeclared rule groups..."
-          TO_DELETE=$(echo "$CURRENT" | ${pkgs.jq}/bin/jq -r \
-            --argjson declared '${declaredNames}' \
-            '.[] | select(.name as $n | ($declared | index($n)) == null) | .id')
-          for ID in $TO_DELETE; do
-            echo "  Deleting undeclared rule group (id=$ID)..."
-            ${pkgs.curl}/bin/curl -s -X DELETE \
-              "${maintainerrUrl}/api/rules/$ID" > /dev/null
-          done
-
+          ${rulesPrune.prune}
           echo "Maintainerr rules configured successfully."
         '';
       };
