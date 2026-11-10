@@ -9,302 +9,19 @@
 let
   syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
 
-  fakePlugin = pkgs.runCommand "fake-plugin-1.0.0.0" { } ''
-    mkdir -p "$out"
-    echo dll > "$out/Fake.dll"
-  '';
-
-  arrConfig = svc: port: rootFolder: {
-    enable = true;
-    config = {
-      hostConfig.port = port;
-      apiKey._secret = "/run/secrets/${svc}-api";
-      hostConfig.password._secret = "/run/secrets/${svc}-pw";
-      rootFolders = [ { path = rootFolder; } ];
-    };
+  renderer = import ../lib/sync-mode-render.nix {
+    inherit lib pkgs;
+    src = ../..;
+    evalModules = evalConfig;
   };
+  inherit (renderer) render;
+  everything = import ../lib/sync-mode-everything.nix { inherit pkgs lib; };
+  withGlobal = global: render (lib.optional (global != null) { nixflix.syncMode = global; });
 
-  sabCategory = name: {
-    inherit name;
-    dir = name;
-    priority = 0;
-    pp = 3;
-    script = "None";
-  };
-
-  # Every collection nixflix can prune, enabled at once. The *arrs also add
-  # their own Jellyfin libraries, so `libraries` ends up with more than Movies.
-  everything = {
-    # sabnzbd.service's ExecStart is read too, and SABnzbd pulls in unrar.
-    nixpkgs.config.allowUnfreePredicate = p: lib.getName p == "unrar";
-
-    nixflix = {
-      enable = true;
-      radarr = arrConfig "radarr" 7878 "/media/movies";
-      sonarr = arrConfig "sonarr" 8989 "/media/tv";
-      sonarr-anime = arrConfig "sonarr-anime" 8990 "/media/anime";
-      lidarr = lib.recursiveUpdate (arrConfig "lidarr" 8686 "/media/music") {
-        config.rootFolders = [
-          {
-            path = "/media/music";
-            name = "Music";
-            defaultQualityProfileId = 1;
-            defaultMetadataProfileId = 1;
-          }
-        ];
-      };
-      prowlarr = {
-        enable = true;
-        config = {
-          hostConfig.port = 9696;
-          apiKey._secret = "/run/secrets/prowlarr-api";
-          hostConfig.password._secret = "/run/secrets/prowlarr-pw";
-          indexers = [ { name = "Declared Indexer"; } ];
-          indexerProxies = [
-            {
-              name = "Http";
-              host = "127.0.0.1";
-              port = 3128;
-            }
-          ];
-          applications = [
-            {
-              name = "Declared App";
-              implementationName = "Sonarr";
-              apiKey = "appkey";
-              baseUrl = "http://127.0.0.1:8989";
-              prowlarrUrl = "http://127.0.0.1:9696";
-            }
-          ];
-        };
-      };
-      downloadarr.extraClients = [
-        {
-          enable = true;
-          name = "SAB";
-          implementationName = "SABnzbd";
-          host = "localhost";
-          port = 8080;
-          apiKey = "sab-test-key";
-          dependencies = [ ];
-          categories = {
-            radarr = "radarr";
-            sonarr = "sonarr";
-            sonarr-anime = "sonarr-anime";
-            lidarr = "lidarr";
-            prowlarr = "prowlarr";
-          };
-        }
-      ];
-      notif.extraNotifications = [
-        {
-          enable = true;
-          name = "Ntfy";
-          implementationName = "ntfy.sh";
-          services = [
-            "radarr"
-            "sonarr"
-            "sonarr-anime"
-            "lidarr"
-          ];
-          dependencies = [ ];
-        }
-      ];
-      seerr = {
-        enable = true;
-        apiKey._secret = "/run/secrets/seerr-api";
-        jellyfin = {
-          adminUsername = "admin";
-          adminPassword = "password";
-          # With every library enabled there is nothing to switch off, so the
-          # jellyfinLibraries guard only exists on the filter path.
-          enableAllLibraries = false;
-          libraryFilter.types = [ "movie" ];
-        };
-        radarr.Main.apiKey._secret = "/run/secrets/radarr";
-        sonarr.Main.apiKey._secret = "/run/secrets/sonarr";
-      };
-      jellyfin = {
-        enable = true;
-        apiKey = "test-jellyfin-key";
-        users.admin = {
-          password = "testpassword";
-          policy.isAdministrator = true;
-        };
-        libraries.Movies = {
-          collectionType = "movies";
-          paths = [ "/srv/movies" ];
-        };
-        plugins."Fake Plugin" = {
-          enable = true;
-          package = fakePlugin;
-        };
-        liveTv = {
-          tuners.a = {
-            url = "/srv/a.m3u";
-            friendlyName = "Tuner A";
-          };
-          listingProviders.guide = {
-            path = "/srv/guide.xml";
-            tuners = [ "a" ];
-          };
-        };
-      };
-      maintainerr = {
-        enable = true;
-        settings = {
-          jellyfin.jellyfin_api_key = "jf-key";
-          radarr = [
-            {
-              serverName = "Radarr";
-              url = "http://radarr:7878";
-              apiKey = "r-key";
-            }
-          ];
-          sonarr = [
-            {
-              serverName = "Sonarr";
-              url = "http://sonarr:8989";
-              apiKey = "s-key";
-            }
-          ];
-        };
-        rules = [
-          {
-            name = "Old movies";
-            library = "Movies";
-            dataType = "movie";
-          }
-        ];
-        overlays.templates = [
-          {
-            name = "Mine";
-            mode = "poster";
-            canvasWidth = 1000;
-            canvasHeight = 1500;
-          }
-        ];
-      };
-      usenetClients.sabnzbd = {
-        enable = true;
-        settings = {
-          misc = {
-            api_key._secret = pkgs.writeText "sabnzbd-apikey" "testapikey";
-            nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey";
-          };
-          categories = [ (sabCategory "radarr") ];
-        };
-      };
-      torrentClients.qbittorrent = {
-        enable = true;
-        password._secret = pkgs.writeText "qbittorrent-password" "pw";
-        categories.radarr = "/data/torrent/radarr";
-      };
-      recyclarr = {
-        enable = true;
-        cleanupUnmanagedProfiles = {
-          enable = true;
-          managedProfiles = [ "Managed" ];
-        };
-      };
-      # No pruning units today. Enabled so a deleting unit added to either one
-      # is scanned by the keep/refuse tests below.
-      navidrome = {
-        enable = true;
-        users.admin = {
-          userName = "admin";
-          isAdmin = true;
-          password._secret = "/run/secrets/navidrome-admin";
-        };
-      };
-      slskd = {
-        enable = true;
-        vpn.enable = false;
-        username._secret = "/run/secrets/slskd-user";
-        password._secret = "/run/secrets/slskd-pw";
-        apiKey._secret = "/run/secrets/slskd-api";
-        settings.soulseek = {
-          username._secret = "/run/secrets/soulseek-user";
-          password._secret = "/run/secrets/soulseek-pw";
-        };
-      };
-    };
-  };
-
-  evalWith =
-    global:
-    evalConfig [
-      everything
-      (lib.optionalAttrs (global != null) { nixflix.syncMode = global; })
-    ];
-
-  # Store-path context makes lib.hasInfix reject a string; the text is all we need.
-  plain = builtins.unsafeDiscardStringContext;
-
-  textOf =
-    v:
-    if builtins.isList v then
-      lib.concatMapStringsSep "\n" textOf v
-    else if lib.isDerivation v && v ? text then
-      v.text
-    else if builtins.isString v then
-      v
-    else
-      "";
-
-  # Everything a unit runs that nixflix generates: script, preStart (qBittorrent
-  # syncs categories there) and writeShellApplication ExecStarts (maintainerr,
-  # recyclarr). seerr-libraries `source`s a separate script, read separately.
-  unitText =
-    evaluated: name:
-    let
-      s = evaluated.config.systemd.services.${name};
-      sc = s.serviceConfig or { };
-    in
-    plain (
-      lib.concatMapStringsSep "\n" textOf [
-        (s.preStart or "")
-        (s.script or "")
-        (s.postStart or "")
-        (sc.ExecStartPre or "")
-        (sc.ExecStart or "")
-        (sc.ExecStartPost or "")
-      ]
-    );
-
-  seerrLibrarySyncText =
-    evaluated:
-    let
-      cfg = evaluated.config.nixflix.seerr;
-      authUtil = import ../../modules/seerr/authUtil.nix {
-        inherit lib cfg;
-        inherit (evaluated) pkgs;
-      };
-    in
-    plain
-      (import ../../modules/seerr/librarySync.nix {
-        inherit lib cfg;
-        inherit (evaluated) pkgs;
-      } authUtil.curlAuthArgs).text;
-
-  render =
-    global:
-    let
-      evaluated = evalWith global;
-      inherit (evaluated) config;
-      names = builtins.attrNames config.systemd.services;
-    in
-    {
-      inherit config;
-      texts = lib.genAttrs names (unitText evaluated) // {
-        seerr-libraries = unitText evaluated "seerr-libraries" + "\n" + seerrLibrarySyncText evaluated;
-      };
-    };
-
-  defaults = render null;
-  explicitDelete = render "delete";
-  keep = render "keep";
-  refuse = render "refuse";
+  defaults = withGlobal null;
+  explicitDelete = withGlobal "delete";
+  keep = withGlobal "keep";
+  refuse = withGlobal "refuse";
   explicitCfRefuse = {
     inherit
       (evalConfig [
@@ -352,6 +69,7 @@ let
       "maintainerr.syncMode.sonarr"
       "maintainerr.syncMode.rules"
       "maintainerr.syncMode.overlayTemplates"
+      "maintainerr.syncMode.mediaServer"
       "usenetClients.sabnzbd.syncMode.categories"
       "torrentClients.qbittorrent.syncMode.categories"
       "recyclarr.syncMode.qualityProfiles"
@@ -575,6 +293,17 @@ let
     r:
     lib.any (lib.hasInfix "syncMode.customFormats = \"refuse\" cannot be enforced") r.config.warnings;
 
+  goldens = lib.importJSON ../lib/sync-mode-delete-goldens.json;
+  currentHashes = renderer.hashes defaults.texts;
+  # The only delete-mode changes against upstream, each with its reason and
+  # the hash it must have now (from the test's failure message).
+  intentionalDeleteChanges = {
+    sabnzbd-categories = {
+      reason = "Delete-loop fix (CHANGELOG, Fixed): names are read one per line, URL-encoded, \"*\" is never deleted, and matching is fixed-string and ASCII case-insensitive.";
+      hash = "8560eaf77e2796bd7b1fcb6a24164c1f151ca6e20dc3b39878899bb1e93fd94a";
+    };
+  };
+
   report = xs: if xs == [ ] then true else builtins.trace (lib.concatStringsSep "\n" xs) false;
 
   # Source-level backstop for modules `everything` does not enable: every
@@ -633,13 +362,46 @@ in
     )
   );
 
-  # "delete" must stay byte-for-byte the historical behaviour: an explicit
-  # global "delete" renders exactly what the default renders, with no guard.
-  sync-mode-coverage-delete-unchanged = assertTest "sync-mode-coverage-delete-unchanged" (
-    explicitDelete.texts == defaults.texts
-    && guarded defaults == [ ]
-    && lib.all (t: !lib.hasInfix "NIXFLIX_SYNC_REFUSED" t) (builtins.attrValues defaults.texts)
-  );
+  # An explicit global "delete" renders exactly what the default renders, with
+  # no guard. Whether that is still upstream's behaviour is the next test.
+  sync-mode-coverage-explicit-delete-is-default =
+    assertTest "sync-mode-coverage-explicit-delete-is-default"
+      (
+        explicitDelete.texts == defaults.texts
+        && guarded defaults == [ ]
+        && lib.all (t: !lib.hasInfix "NIXFLIX_SYNC_REFUSED" t) (builtins.attrValues defaults.texts)
+      );
+
+  # Delete mode against upstream: every unit's delete-mode text, store paths
+  # blanked, hashed and compared with tests/lib/sync-mode-delete-goldens.json,
+  # which tests/lib/regen-sync-mode-goldens.sh renders from the merge-base with
+  # upstream. Only intentionalDeleteChanges may differ, and only to its pinned
+  # hash.
+  sync-mode-coverage-delete-matches-upstream =
+    assertTest "sync-mode-coverage-delete-matches-upstream"
+      (
+        report (
+          lib.concatMap (
+            unit:
+            let
+              now = currentHashes.${unit} or "<not rendered>";
+              before = goldens.units.${unit} or "<no golden>";
+              intended = intentionalDeleteChanges.${unit} or null;
+            in
+            if intended != null then
+              lib.optional (
+                now != intended.hash
+              ) "${unit}: delete-mode hash ${now}, pinned intentional change is ${intended.hash}"
+              ++ lib.optional (
+                before == intended.hash
+              ) "${unit}: listed in intentionalDeleteChanges but matches upstream"
+            else
+              lib.optional (
+                now != before
+              ) "${unit}: delete-mode script differs from upstream ${goldens.base} (${before} -> ${now})"
+          ) (lib.unique (builtins.attrNames goldens.units ++ builtins.attrNames currentHashes))
+        )
+      );
 
   # Keeps the deletion list honest: under "delete" every pruning unit still
   # matches it, so a zero count under keep/refuse means something.
