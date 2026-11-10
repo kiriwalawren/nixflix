@@ -11,7 +11,36 @@
 let
   everything = import ./sync-mode-everything.nix { inherit pkgs lib; };
 
-  evalWith = modules: evalModules ([ everything ] ++ modules);
+  # Generated files a unit refers to (jellyfin-auth, radarr-names.json,
+  # categories.json, an ExecStartPre script, ...) must count as part of the
+  # unit, but their contents are not readable here: pure evaluation reads no
+  # .drv, and building them would be import-from-derivation. So, for this
+  # render only, every generated text file (writeText, writeShellScript,
+  # writeScript, writeTextFile) gets a hash of its normalized text appended to
+  # its name. A unit that refers to the file then changes when its content
+  # does, nested references included, on every system.
+  contentNamed =
+    name: text:
+    "${name}-c${builtins.substring 0 16 (builtins.hashString "sha256" (normalize (plain text)))}";
+  # trivial-builders' writers call their own writeTextFile, so each writer
+  # nixflix (and the NixOS modules it configures) uses is wrapped.
+  contentNamedTextFiles = _final: prev: {
+    writeTextFile =
+      args: prev.writeTextFile (args // { name = contentNamed args.name (args.text or ""); });
+    writeText = name: text: prev.writeText (contentNamed name text) text;
+    writeScript = name: text: prev.writeScript (contentNamed name text) text;
+    writeShellScript = name: text: prev.writeShellScript (contentNamed name text) text;
+  };
+
+  evalWith =
+    modules:
+    evalModules (
+      [
+        everything
+        { nixpkgs.overlays = [ contentNamedTextFiles ]; }
+      ]
+      ++ modules
+    );
 
   plain = builtins.unsafeDiscardStringContext;
 
@@ -74,11 +103,6 @@ let
       texts = lib.genAttrs names (unitText evaluated) // {
         seerr-libraries = unitText evaluated "seerr-libraries" + "\n" + seerrLibrarySyncText evaluated;
       };
-      # Derivations each unit's text references (scripts, JSON and config
-      # files it reads, packages), as .drv paths.
-      refs = lib.genAttrs names (
-        n: builtins.attrNames (builtins.getContext (unitTextWithContext evaluated n))
-      );
     };
 
   # Store-path hashes and the system name are blanked so a hash is the same on
@@ -93,58 +117,8 @@ let
       )
     );
 
-  # Generated files a unit refers to (jellyfin-auth, radarr-names.json,
-  # categories.json, an ExecStartPre script, ...) count as part of the unit:
-  # every referenced text-file derivation (writeText, writeShellScript, ...;
-  # its .drv carries a `text` attribute) is read from its .drv, and so are
-  # the text files those reference. Packages and stdenv are not followed.
-  isTextDrv = drv: lib.hasInfix "\\\"text\\\":" drv || lib.hasInfix "(\"text\"," drv;
-  inputDrvs =
-    drv:
-    map builtins.head (
-      builtins.filter builtins.isList (
-        builtins.split "\\(\"(/nix/store/[a-z0-9]{32}-[^\"]+\\.drv)\"," drv
-      )
-    );
-  textFiles =
-    roots:
-    map (i: normalize i.drv) (
-      builtins.filter (i: isTextDrv i.drv) (
-        builtins.genericClosure {
-          startSet = map (key: {
-            inherit key;
-            drv = builtins.readFile key;
-          }) roots;
-          operator =
-            item:
-            let
-              text = isTextDrv item.drv;
-            in
-            lib.optionals text (
-              map (key: {
-                inherit key;
-                drv = builtins.readFile key;
-              }) (inputDrvs item.drv)
-            );
-        }
-      )
-    );
-  hashes =
-    rendered:
-    lib.mapAttrs (
-      n: t:
-      builtins.hashString "sha256" (
-        lib.concatStringsSep "\n--- referenced file\n" (
-          [ (normalize t) ] ++ lib.sort lib.lessThan (textFiles (rendered.refs.${n} or [ ]))
-        )
-      )
-    ) rendered.texts;
+  hashes = rendered: lib.mapAttrs (_: t: builtins.hashString "sha256" (normalize t)) rendered.texts;
 in
 {
-  inherit
-    render
-    normalize
-    hashes
-    textFiles
-    ;
+  inherit render normalize hashes;
 }

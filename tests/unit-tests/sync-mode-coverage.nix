@@ -300,7 +300,7 @@ let
   intentionalDeleteChanges = {
     sabnzbd-categories = {
       reason = "Delete-loop fix (CHANGELOG, Fixed): names are read one per line, URL-encoded, \"*\" is never deleted, and matching is fixed-string and ASCII case-insensitive.";
-      hash = "c019fa208c61ba2ff3ab6bc3a8a84957d0b5e1286dc6da0661a7408978792c26";
+      hash = "8560eaf77e2796bd7b1fcb6a24164c1f151ca6e20dc3b39878899bb1e93fd94a";
     };
   };
 
