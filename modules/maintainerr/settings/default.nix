@@ -86,11 +86,92 @@ let
 
   refuseTypes = filter (type: cfg.syncMode.${type} == "refuse") arrTypes;
 
-  refuseGuards = optionalString (refuseTypes != [ ]) (
+  # POST media-server/switch from anything but Jellyfin clears every rule group
+  # (and its rules), collection, collection media and log, and exclusion
+  # (Maintainerr's MediaServerSwitchService.clearMediaServerData). "delete"
+  # keeps nixflix's historical unconditional switch; keep/refuse first ask the
+  # preview endpoint what it would clear and only switch when that is nothing.
+  mediaServerMode = cfg.syncMode.mediaServer;
+  mediaServerOption = "nixflix.maintainerr.syncMode.mediaServer";
+
+  switchToJellyfin = removeSuffix "\n" ''
+    echo "Switching media server type to Jellyfin..."
+    ${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -d '{"targetServerType":"jellyfin"}' \
+      "${maintainerrUrl}/api/settings/media-server/switch" \
+      | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
+  '';
+
+  # Sets MEDIA_SERVER_TYPE and MS_CLEARS (what a switch would clear, "" for
+  # nothing). A malformed answer aborts the unit under `set -e`.
+  inspectSwitch = ''
+    MEDIA_SERVER_TYPE=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings" \
+      | ${pkgs.jq}/bin/jq -r '.media_server_type // ""')
+    MS_CLEARS=""
+    if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
+      MS_PREVIEW=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/media-server/switch/preview/jellyfin")
+      MS_RULE_GROUPS=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/rules")
+      MS_CLEARS=$(${pkgs.jq}/bin/jq -nr --argjson p "$MS_PREVIEW" --argjson r "$MS_RULE_GROUPS" '
+        if ($r | type) != "array" or ($p.dataToBeCleared | type) != "object" then
+          error("unexpected answer from the Maintainerr API")
+        else
+          [ ($r | length), "rule groups (with their rules)" ],
+          [ $p.dataToBeCleared.collections, "collections" ],
+          [ $p.dataToBeCleared.collectionMedia, "collection media items" ],
+          [ $p.dataToBeCleared.exclusions, "exclusions" ],
+          [ $p.dataToBeCleared.collectionLogs, "collection logs" ]
+          | select(.[0] > 0) | "\(.[0]) \(.[1])"
+        end' | paste -sd, - | sed 's/,/, /g')
+    fi
+  '';
+
+  mediaServerGuard = ''
+    # nixflix-sync-guard: maintainerr-settings media server switch
+    ${inspectSwitch}
+    if [ -n "$MS_CLEARS" ]; then
+      {
+        echo "nixflix: maintainerr-settings: refusing to sync: Maintainerr uses media server '$MEDIA_SERVER_TYPE', and switching it to Jellyfin clears $MS_CLEARS (${mediaServerOption} = \"refuse\"). Nothing was changed."
+        echo "nixflix: switch it in the Maintainerr UI, which can migrate the rules, or set ${mediaServerOption} to \"delete\"."
+      } >&2
+      NIXFLIX_SYNC_REFUSED=1
+    fi
+  '';
+
+  mediaServerSwitch =
+    if mediaServerMode == "delete" then
+      ''
+        MEDIA_SERVER_TYPE=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings" \
+          | ${pkgs.jq}/bin/jq -r '.media_server_type')
+        if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
+          ${syncMode.indentRest 2 switchToJellyfin}
+        fi
+      ''
+    else if mediaServerMode == "refuse" then
+      # The guard ran before the checkpoint, so nothing is cleared here.
+      ''
+        if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
+          ${syncMode.indentRest 2 switchToJellyfin}
+        fi
+      ''
+    else
+      ''
+        ${syncMode.indentRest 2 inspectSwitch}
+        if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
+          if [ -n "$MS_CLEARS" ]; then
+            echo "nixflix: maintainerr-settings: not switching media server '$MEDIA_SERVER_TYPE' to Jellyfin: that clears $MS_CLEARS (${mediaServerOption} = \"keep\")"
+          else
+            ${syncMode.indentRest 6 switchToJellyfin}
+          fi
+        fi
+      '';
+
+  refuseGuards = optionalString (refuseTypes != [ ] || mediaServerMode == "refuse") (
     concatMapStrings (type: ''
       ${arrLiveVar type}=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/${type}")
     '') refuseTypes
     + concatMapStrings (type: (mkArrPrune type cfg.settings.${type}).guard) refuseTypes
+    + optionalString (mediaServerMode == "refuse") mediaServerGuard
     + syncMode.refuseCheckpoint
     + "\n\n"
   );
@@ -158,17 +239,8 @@ in
 
           ''
           + refuseGuards
+          + mediaServerSwitch
           + ''
-            MEDIA_SERVER_TYPE=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings" \
-              | ${pkgs.jq}/bin/jq -r '.media_server_type')
-            if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
-              echo "Switching media server type to Jellyfin..."
-              ${pkgs.curl}/bin/curl -s -X POST \
-                -H "Content-Type: application/json" \
-                -d '{"targetServerType":"jellyfin"}' \
-                "${maintainerrUrl}/api/settings/media-server/switch" \
-                | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
-            fi
 
             JELLYFIN_URL=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_url}
             JELLYFIN_API_KEY=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_api_key}

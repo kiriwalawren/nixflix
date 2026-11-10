@@ -226,6 +226,51 @@ let
       }
     ];
   };
+
+  # Maintainerr still set up for Plex, with data a switch to Jellyfin clears.
+  # Every *arr server is declared, so only the switch decides the outcome.
+  switchFixtures =
+    {
+      type ? "plex",
+      clears ? true,
+    }:
+    {
+      api_settings.media_server_type = type;
+      api_settings_radarr = [
+        {
+          id = 1;
+          serverName = "Radarr";
+        }
+      ];
+      api_settings_sonarr = [
+        {
+          id = 3;
+          serverName = "Sonarr";
+        }
+      ];
+      api_settings_media-server_switch_preview_jellyfin.dataToBeCleared = {
+        collections = if clears then 2 else 0;
+        collectionMedia = 0;
+        exclusions = if clears then 1 else 0;
+        collectionLogs = 0;
+      };
+      api_rules =
+        if clears then
+          [
+            {
+              id = 10;
+              name = "Old movies";
+            }
+            {
+              id = 11;
+              name = "Plex only";
+            }
+          ]
+        else
+          [ ];
+    };
+  switchCall = "POST /api/settings/media-server/switch";
+  clearsText = "2 rule groups (with their rules), 2 collections, 1 exclusions";
 in
 {
   sync-mode-maintainerr-options-inherit-global =
@@ -238,6 +283,7 @@ in
           sonarr = mode;
           rules = mode;
           overlayTemplates = mode;
+          mediaServer = mode;
         };
     in
     assertTest "sync-mode-maintainerr-options-inherit-global" (
@@ -256,6 +302,7 @@ in
     );
 
   # Default mode keeps every original delete loop and adds no sync-mode code.
+  # Byte-for-byte equality with upstream is sync-mode-coverage-delete-matches-upstream.
   sync-mode-maintainerr-default-unchanged = assertTest "sync-mode-maintainerr-default-unchanged" (
     allUnits (
       u: s:
@@ -473,4 +520,109 @@ in
           mutated "PUT /api/overlays/templates/3"
         '';
       };
+
+  sync-mode-maintainerr-switch-delete-run = runUnit "sync-mode-maintainerr-switch-delete-run" {
+    scripts = defaults;
+    unit = "maintainerr-settings";
+    fixtures = switchFixtures { };
+    checks = ''
+      [ "$rc" = 0 ] || fail "rc=$rc"
+      mutated ${lib.escapeShellArg switchCall}
+    '';
+  };
+
+  sync-mode-maintainerr-switch-keep-run = runUnit "sync-mode-maintainerr-switch-keep-run" {
+    scripts = keepAll;
+    unit = "maintainerr-settings";
+    fixtures = switchFixtures { };
+    checks = ''
+      [ "$rc" = 0 ] || fail "rc=$rc"
+      notMutated ${lib.escapeShellArg switchCall}
+      expectLine out.txt ${lib.escapeShellArg "nixflix: maintainerr-settings: not switching media server 'plex' to Jellyfin: that clears ${clearsText} (nixflix.maintainerr.syncMode.mediaServer = \"keep\")"}
+      # The rest of the unit still syncs declared settings.
+      mutated "PUT /api/settings/radarr/1"
+    '';
+  };
+
+  sync-mode-maintainerr-switch-refuse-run = runUnit "sync-mode-maintainerr-switch-refuse-run" {
+    scripts = refuseAll;
+    unit = "maintainerr-settings";
+    fixtures = switchFixtures { };
+    checks = ''
+      [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+      [ ! -s mutated.log ] || fail "refuse let the unit mutate"
+      expectLine err.txt ${lib.escapeShellArg "nixflix: maintainerr-settings: refusing to sync: Maintainerr uses media server 'plex', and switching it to Jellyfin clears ${clearsText} (nixflix.maintainerr.syncMode.mediaServer = \"refuse\"). Nothing was changed."}
+    '';
+  };
+
+  # A switch that clears nothing (empty Plex setup, or a fresh install with no
+  # media server yet) happens in every mode.
+  sync-mode-maintainerr-switch-refuse-empty-run =
+    runUnit "sync-mode-maintainerr-switch-refuse-empty-run"
+      {
+        scripts = refuseAll;
+        unit = "maintainerr-settings";
+        fixtures = switchFixtures { clears = false; };
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          mutated ${lib.escapeShellArg switchCall}
+        '';
+      };
+
+  sync-mode-maintainerr-switch-keep-fresh-run =
+    runUnit "sync-mode-maintainerr-switch-keep-fresh-run"
+      {
+        scripts = keepAll;
+        unit = "maintainerr-settings";
+        fixtures = switchFixtures {
+          type = null;
+          clears = false;
+        };
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          mutated ${lib.escapeShellArg switchCall}
+        '';
+      };
+
+  sync-mode-maintainerr-switch-jellyfin-refuse-run =
+    runUnit "sync-mode-maintainerr-switch-jellyfin-refuse-run"
+      {
+        scripts = refuseAll;
+        unit = "maintainerr-settings";
+        fixtures = switchFixtures { type = "jellyfin"; };
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          notMutated ${lib.escapeShellArg switchCall}
+        '';
+      };
+
+  # A preview that is not the expected object fails the unit before any change.
+  sync-mode-maintainerr-switch-refuse-bad-preview-run =
+    runUnit "sync-mode-maintainerr-switch-refuse-bad-preview-run"
+      {
+        scripts = refuseAll;
+        unit = "maintainerr-settings";
+        fixtures = switchFixtures { } // {
+          api_settings_media-server_switch_preview_jellyfin = {
+            message = "Unauthorized";
+          };
+        };
+        checks = ''
+          [ "$rc" != 0 ] && [ "$rc" != 78 ] || fail "expected a non-refusal failure, got rc $rc"
+          [ ! -s mutated.log ] || fail "mutated after a bad preview"
+        '';
+      };
+
+  sync-mode-maintainerr-switch-override-run = runUnit "sync-mode-maintainerr-switch-override-run" {
+    scripts = scriptsWith {
+      syncMode = "refuse";
+      maintainerr.syncMode.mediaServer = "delete";
+    };
+    unit = "maintainerr-settings";
+    fixtures = switchFixtures { };
+    checks = ''
+      [ "$rc" = 0 ] || fail "rc=$rc"
+      mutated ${lib.escapeShellArg switchCall}
+    '';
+  };
 }

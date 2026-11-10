@@ -118,6 +118,26 @@ in
         what = "overlay templates (presets are never touched)";
         collectionOption = "nixflix.maintainerr.overlays.templates";
       };
+
+      mediaServer = mkOption {
+        type = types.enum syncMode.modes;
+        default = config.nixflix.syncMode;
+        defaultText = literalExpression "config.nixflix.syncMode";
+        description = ''
+          What `maintainerr-settings` does when Maintainerr is set up for
+          another media server (Plex, Emby). Switching it to Jellyfin makes
+          Maintainerr clear every rule group and its rules, collection,
+          collection media item and log, and exclusion. Defaults to
+          `nixflix.syncMode` (`"delete"` unless set); setting this overrides it
+          for the switch only.
+
+          - `"delete"`: switch to Jellyfin, clearing that data.
+          - `"keep"`: switch only when it clears nothing; otherwise stay on the
+            current media server and log what a switch would clear.
+          - `"refuse"`: if a switch would clear anything, fail the unit before
+            changing anything and list the counts.
+        '';
+      };
     };
 
     connectionAddress = mkOption {
