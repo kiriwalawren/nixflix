@@ -71,16 +71,14 @@ rec {
     ];
   };
 
-  expandServices = concatMap (
-    s:
-    if s == "sonarr" then
-      [
-        "sonarr"
-        "sonarr-anime"
-      ]
-    else
-      [ s ]
-  );
+  baseService = svc: if svc == "sonarr-anime" then "sonarr" else svc;
+
+  withSonarrAnime =
+    perService:
+    perService
+    // optionalAttrs (perService ? sonarr && !(perService ? "sonarr-anime")) {
+      sonarr-anime = perService.sonarr;
+    };
 
   field =
     type: description:
@@ -120,8 +118,8 @@ rec {
           let
             unsupported = spec.unsupportedTriggers or [ ];
             unknownKeys = subtractLists [ "unsupportedTriggers" "fields" ] (attrNames spec);
-            unknownTriggers = subtractLists allTriggers.${svc} unsupported;
-            valid = subtractLists unsupported allTriggers.${svc};
+            unknownTriggers = subtractLists allTriggers.${baseService svc} unsupported;
+            valid = subtractLists unsupported allTriggers.${baseService svc};
           in
           assert assertMsg (
             isAttrs spec && unknownKeys == [ ]
@@ -132,11 +130,11 @@ rec {
           {
             triggers = {
               inherit valid;
-              default = subtractLists uiDefaultOff.${svc} valid;
+              default = subtractLists uiDefaultOff.${baseService svc} valid;
             };
             fields = spec.fields or { };
           }
-        ) perService;
+        ) (withSonarrAnime perService);
         extraOptions = fields;
         inherit fieldRenames;
       };
@@ -158,9 +156,10 @@ rec {
       fieldRenames ? { },
     }:
     let
-      serviceNames = attrNames perService;
-      validOf = svc: perService.${svc}.triggers.valid;
-      defaultOf = svc: perService.${svc}.triggers.default;
+      allPerService = withSonarrAnime perService;
+      serviceNames = attrNames allPerService;
+      validOf = svc: allPerService.${svc}.triggers.valid;
+      defaultOf = svc: allPerService.${svc}.triggers.default;
       isDefault = t: svc: elem t (defaultOf svc);
       sharedTriggers = filter (
         t:
@@ -172,20 +171,51 @@ rec {
     types.submodule (
       { config, ... }:
       let
+        fieldOptions = {
+          name = mkOption {
+            type = types.str;
+            default = implementationName;
+            description = "User-defined name for the notification instance.";
+          };
+
+          includeHealthWarnings = field types.bool "Include health warnings, not only errors, in health notifications.";
+
+          tags = mkOption {
+            type = types.listOf (types.strMatching "[a-z0-9-]+");
+            default = [ ];
+            description = "Starr tags (by label) that restrict this connection to tagged items. Missing tags are created.";
+          };
+        }
+        // resolve extraOptions config;
+
+        overrideOption =
+          svc: name: opt:
+          removeAttrs opt [ "defaultText" ]
+          // {
+            type = types.nullOr opt.type;
+            default = null;
+            description = "Overrides `${name}` for ${svc}. Null uses the connector-level value.";
+          };
+
         serviceBlock =
           svc: spec:
           let
-            options =
+            ownOptions =
               genAttrs (subtractLists sharedTriggers spec.triggers.valid) (
                 t: triggerOption (elem t spec.triggers.default) "Whether to notify on ${t} from ${svc}."
               )
               // resolve (spec.fields or { }) config;
+            overrides =
+              mapAttrs (overrideOption svc) fieldOptions
+              // genAttrs sharedTriggers (
+                t: overrideOption svc t (triggerOption false "Whether to notify on ${t}.")
+              );
           in
-          optionalAttrs (options != { }) {
+          {
             ${svc} = mkOption {
-              type = types.submodule { inherit options; };
+              type = types.submodule { options = overrides // ownOptions; };
               default = { };
-              description = "Settings that only apply to ${svc}.";
+              description = "Settings for ${svc}. Any connector-level field or trigger set here overrides it for ${svc} only.";
             };
           };
       in
@@ -213,17 +243,11 @@ rec {
           services = mkOption (
             {
               type = types.listOf types.str;
-              default = expandServices serviceNames;
+              default = serviceNames;
               description = "Which Starr services to configure this notification on.";
             }
             // services
           );
-
-          name = mkOption {
-            type = types.str;
-            default = implementationName;
-            description = "User-defined name for the notification instance.";
-          };
 
           implementationName = mkOption {
             type = types.str;
@@ -232,20 +256,12 @@ rec {
             description = "Type of notification to configure (matches schema implementationName).";
           };
 
-          includeHealthWarnings = field types.bool "Include health warnings, not only errors, in health notifications.";
-
           _supportedTriggers = mkOption {
             type = types.attrsOf (types.listOf types.str);
             readOnly = true;
             internal = true;
-            default = mapAttrs (_: spec: spec.triggers.valid) perService;
+            default = mapAttrs (_: spec: spec.triggers.valid) allPerService;
             description = "Triggers each Starr service supports for this notification.";
-          };
-
-          tags = mkOption {
-            type = types.listOf (types.strMatching "[a-z0-9-]+");
-            default = [ ];
-            description = "Starr tags (by label) that restrict this connection to tagged items. Missing tags are created.";
           };
 
           _fieldRenames = mkOption {
@@ -274,7 +290,7 @@ rec {
                   default = null;
                   description = "List of enabled triggers. Replaces the boolean trigger options for this service.";
                 }
-              ) perService;
+              ) (removeAttrs allPerService [ "sonarr-anime" ]);
             };
             default = { };
             visible = false;
@@ -285,8 +301,8 @@ rec {
           t:
           triggerOption (isDefault t (head serviceNames)) "Whether to notify on ${t} from every Starr service."
         )
-        // concatMapAttrs serviceBlock perService
-        // resolve extraOptions config;
+        // concatMapAttrs serviceBlock allPerService
+        // fieldOptions;
       }
     );
 }

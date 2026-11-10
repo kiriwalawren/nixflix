@@ -409,9 +409,9 @@
       ${check "plex has no sonarr onGrab, which its sonarr schema does not support" (
         !evaluates { plex.sonarr.onGrab = true; }
       )}
-      ${check "a shared trigger is not accepted in a service block" (
-        !evaluates { gotify.radarr.onGrab = true; }
-      )}
+      ${check "a shared trigger can be overridden in a service block" (evaluates {
+        gotify.radarr.onGrab = false;
+      })}
       ${check "an undeclared top-level name is rejected" (!evaluates { gotify.bogusField = true; })}
       ${check "a service block that the schema lacks is rejected" (
         !evaluates { pushsafer.sonarr.onDownload = true; }
@@ -626,7 +626,11 @@
       ${check "sonarr gets UI defaults minus the shared onGrab and its own onSeriesAdd" (
         lib.hasInfix sonarrTriggers (script "sonarr")
       )}
-      ${check "sonarr-anime uses the sonarr block" (lib.hasInfix sonarrTriggers (script "sonarr-anime"))}
+      ${check "sonarr-anime has its own block, unaffected by the sonarr block" (
+        lib.hasInfix ''["onDownload","onUpgrade","onImportComplete","onSeriesAdd","onSeriesDelete",'' (
+          script "sonarr-anime"
+        )
+      )}
       ${check "radarr enables its per-service onHealthIssue and drops the shared onGrab" (
         lib.hasInfix ''["onDownload","onUpgrade","onMovieAdded","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onHealthIssue","onApplicationUpdate","onManualInteractionRequired"]'' (
           script "radarr"
@@ -720,6 +724,97 @@
         gotify.radarr.metadataLinks = [ 3 ];
       })}
       echo 'PASS: notif-per-service-fields' > $out
+    '';
+
+  notif-per-service-overrides =
+    let
+      arr = port: {
+        enable = true;
+        config = {
+          hostConfig.port = port;
+          apiKey._secret = "/run/secrets/api";
+        };
+      };
+      services = {
+        sonarr = arr 8989;
+        sonarr-anime = arr 8990;
+        radarr = arr 7878;
+        lidarr = arr 8686;
+      };
+      eval =
+        notif:
+        (evalConfig [
+          {
+            nixflix = services // {
+              enable = true;
+              inherit notif;
+            };
+          }
+        ]).config.systemd.services;
+      defaults = eval {
+        discord = {
+          enable = true;
+          webHookUrl = "https://discord.example/hook";
+        };
+      };
+      overridden = eval {
+        discord = {
+          enable = true;
+          webHookUrl = "https://discord.example/hook";
+          username = "Bot";
+          lidarr.username = "Music Bot";
+        };
+        slack = {
+          enable = true;
+          channel = "media";
+          radarr.channel = "movies";
+          onGrab = true;
+          sonarr-anime = {
+            onGrab = false;
+            name = "Anime Slack";
+            tags = [ "anime" ];
+          };
+        };
+      };
+      script = svcs: s: svcs."${s}-notifications".script;
+      username =
+        svcs: s: name:
+        lib.hasInfix ''"username":"${name}"'' (script svcs s);
+    in
+    pkgs.runCommand "unit-test-notif-per-service-overrides" { } ''
+      ${check "discord posts as the service name by default" (
+        username defaults "sonarr" "Sonarr"
+        && username defaults "sonarr-anime" "Sonarr Anime"
+        && username defaults "radarr" "Radarr"
+        && username defaults "lidarr" "Lidarr"
+      )}
+      ${check "the connector-level discord username replaces the service names" (
+        username overridden "sonarr" "Bot"
+        && username overridden "sonarr-anime" "Bot"
+        && username overridden "radarr" "Bot"
+      )}
+      ${check "a per-service discord username beats the connector-level one" (
+        username overridden "lidarr" "Music Bot"
+      )}
+      ${check "a per-service field override applies to that service only" (
+        lib.hasInfix ''"channel":"movies"'' (script overridden "radarr")
+        && lib.hasInfix ''"channel":"media"'' (script overridden "sonarr")
+      )}
+      ${check "a per-service trigger override beats the shared trigger" (
+        lib.hasInfix ''["onGrab",'' (script overridden "sonarr")
+        && lib.hasInfix ''["onDownload","onUpgrade","onImportComplete","onRename","onSeriesAdd",'' (
+          script overridden "sonarr-anime"
+        )
+      )}
+      ${check "name can be overridden per service" (
+        lib.hasInfix "Anime Slack" (script overridden "sonarr-anime")
+        && !lib.hasInfix "Anime Slack" (script overridden "sonarr")
+      )}
+      ${check "tags can be overridden per service" (
+        lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr-anime")
+        && !lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr")
+      )}
+      echo 'PASS: notif-per-service-overrides' > $out
     '';
 
   notif-default-triggers-unchanged =

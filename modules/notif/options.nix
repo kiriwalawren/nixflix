@@ -88,6 +88,21 @@ in
       Each notification type exposes the fields of its Starr schema as typed options. Fields and triggers that
       every applicable Starr service supports are set on the type itself; ones that only some services support
       are set in that service's block (for example `nixflix.notif.gotify.sonarr.includeSeriesPoster`).
+
+      Every service block (`sonarr`, `sonarr-anime`, `radarr` and `lidarr`) can also override any field or
+      trigger set on the type itself, for that service only. A value set in the service block takes precedence
+      over the type-level value; leaving it `null` uses the type-level value. For example, this posts Sonarr Anime
+      notifications to a different Discord channel:
+
+      ```nix
+      nixflix.notif.discord = {
+        webHookUrl = { _secret = "/run/secrets/discord-webhook"; };
+        sonarr-anime.webHookUrl = { _secret = "/run/secrets/discord-anime-webhook"; };
+      };
+      ```
+
+      `sonarr-anime` has its own block, separate from `sonarr`, so settings in `sonarr` do not apply to it.
+
       Anything not modeled here can be configured through `extraNotifications`.
     '';
   };

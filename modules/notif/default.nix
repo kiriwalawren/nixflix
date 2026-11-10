@@ -27,9 +27,11 @@ let
     "lidarr"
   ];
 
-  triggerServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
+  legacyServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
 
-  arrServiceKeys = unique (map triggerServiceKey arrServices);
+  resolveFor =
+    serviceName: n:
+    removeAttrs n arrServices // filterAttrs (_: v: v != null) (n.${serviceName} or { });
 
   notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
 
@@ -45,7 +47,7 @@ let
 
       notifications = map (
         n:
-        builtins.removeAttrs n [
+        builtins.removeAttrs (resolveFor serviceName n) [
           "services"
           "dependencies"
         ]
@@ -169,23 +171,18 @@ let
             let
               notificationName = notificationConfig.name;
               inherit (notificationConfig) implementationName;
-              serviceKey = triggerServiceKey serviceName;
-              serviceBlock = notificationConfig.${serviceKey} or { };
               supportedTriggers = notificationConfig._supportedTriggers or { };
               triggerNames = concatLists (attrValues supportedTriggers);
-              legacyTriggers = (notificationConfig.triggers or { }).${serviceKey} or null;
-              allOverrides =
-                builtins.removeAttrs notificationConfig (
-                  [
-                    "implementationName"
-                    "triggers"
-                    "tags"
-                  ]
-                  ++ arrServiceKeys
-                  ++ triggerNames
-                  ++ notificationConfig._omitFields or [ ]
-                )
-                // builtins.removeAttrs serviceBlock triggerNames;
+              legacyTriggers = (notificationConfig.triggers or { }).${legacyServiceKey serviceName} or null;
+              allOverrides = builtins.removeAttrs notificationConfig (
+                [
+                  "implementationName"
+                  "triggers"
+                  "tags"
+                ]
+                ++ triggerNames
+                ++ notificationConfig._omitFields or [ ]
+              );
               fieldRenames = notificationConfig._fieldRenames or { };
               fieldOverrides = mapAttrs' (name: nameValuePair (fieldRenames.${name} or name)) (
                 filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides
@@ -198,9 +195,7 @@ let
                 if legacyTriggers != null then
                   legacyTriggers
                 else
-                  filter (t: (notificationConfig.${t} or false) || (serviceBlock.${t} or false)) (
-                    supportedTriggers.${serviceKey} or [ ]
-                  );
+                  filter (t: notificationConfig.${t} or false) (supportedTriggers.${serviceName} or [ ]);
             in
             ''
               echo "Processing notification: ${notificationName}"
