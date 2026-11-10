@@ -91,6 +91,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - YouTube media manager ([Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX))
 - Downloads channels and playlists into your media directory
+- Automatic integration with a Jellyfin "YouTube" library
 
 ### SABnzbd
 

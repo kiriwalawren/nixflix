@@ -3,11 +3,31 @@
   pkgs,
   evalConfig,
   assertTest,
+  check,
   ...
 }:
 let
   secretMessage = "Either nixflix.pinchflat.selfhosted must be true, or nixflix.pinchflat.secretsFile must be set.";
   packageMessage = "nixflix.pinchflat.package is null: pkgs.pinchflat-ngx does not exist in this nixpkgs (it is only in nixpkgs unstable). Set nixflix.pinchflat.package to pinchflat-ngx from nixpkgs unstable.";
+
+  # Jellyfin plus Pinchflat, the minimum for the YouTube default library
+  jellyfinWithPinchflat =
+    pinchflat:
+    evalConfig [
+      {
+        nixflix = {
+          enable = true;
+          jellyfin = {
+            enable = true;
+            apiKey = "test-jellyfin-key";
+          };
+          pinchflat = {
+            selfhosted = true;
+          }
+          // pinchflat;
+        };
+      }
+    ];
 in
 {
   # Pinchflat refuses to start without a SECRET_KEY_BASE unless it runs in
@@ -223,5 +243,141 @@ in
     in
     assertTest "pinchflat-freeform-passthrough" (
       service.logLevel == "debug" && service.extraConfig.YT_DLP_WORKER_CONCURRENCY == 1
+    );
+
+  pinchflat-jellyfin-youtube-library =
+    let
+      config = jellyfinWithPinchflat { enable = true; };
+      inherit (config.config.nixflix.jellyfin) libraries;
+      youtube = libraries.YouTube;
+      typeOptionsFor = type: lib.findFirst (o: o.type == type) null youtube.typeOptions;
+      remote = [
+        "TheMovieDb"
+        "The Open Movie Database"
+      ];
+      noRemote = o: o.metadataFetchers == [ ] && !(lib.any (f: builtins.elem f remote) o.imageFetchers);
+      mediaDirRule =
+        config.config.systemd.tmpfiles.settings."10-pinchflat".${config.config.nixflix.pinchflat.mediaDir}.d;
+    in
+    pkgs.runCommand "unit-test-pinchflat-jellyfin-youtube-library" { } ''
+      ${check "YouTube library exists" (libraries ? YouTube)}
+      ${check "YouTube library is a TV shows library" (youtube.collectionType == "tvshows")}
+      ${check "YouTube library points at the Pinchflat media dir" (
+        youtube.paths == [ "/data/media/youtube" ]
+      )}
+      ${check "YouTube library watches the folder for new downloads" youtube.enableRealtimeMonitor}
+      # A type with no typeOptions entry falls back to Jellyfin's defaults,
+      # which enable TMDB/OMDb, so every TV type must be listed
+      ${check "YouTube library pins fetchers for Series, Season and Episode" (
+        lib.all (t: typeOptionsFor t != null) [
+          "Series"
+          "Season"
+          "Episode"
+        ]
+      )}
+      ${check "YouTube library never queries TMDB/OMDb" (lib.all noRemote youtube.typeOptions)}
+      ${check "YouTube library keeps the NFO reader" (youtube.disabledLocalMetadataReaders == [ ])}
+      ${check "YouTube library is created by jellyfin-libraries" (
+        lib.hasInfix "Processing library: YouTube" config.config.systemd.services.jellyfin-libraries.script
+      )}
+      ${check "Jellyfin shares the group Pinchflat downloads as" (
+        config.config.users.users.jellyfin.group == config.config.nixflix.pinchflat.group
+        && mediaDirRule.group == config.config.users.users.jellyfin.group
+        && mediaDirRule.mode == "0775"
+      )}
+      echo 'PASS: pinchflat-jellyfin-youtube-library' > $out
+    '';
+
+  pinchflat-jellyfin-youtube-library-disabled =
+    let
+      config = jellyfinWithPinchflat { enable = false; };
+    in
+    assertTest "pinchflat-jellyfin-youtube-library-disabled" (
+      !(config.config.nixflix.jellyfin.libraries ? YouTube)
+    );
+
+  # Without Jellyfin the default library is still declared but never consumed
+  pinchflat-without-jellyfin-creates-no-libraries-service =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            pinchflat = {
+              enable = true;
+              selfhosted = true;
+            };
+          };
+        }
+      ];
+      # The bare test host also fails NixOS' own root-filesystem/bootloader assertions
+      failed = builtins.filter (
+        a: !a.assertion && (lib.hasInfix "nixflix" a.message || lib.hasInfix "jellyfin" a.message)
+      ) config.config.assertions;
+    in
+    assertTest "pinchflat-without-jellyfin-creates-no-libraries-service" (
+      failed == [ ]
+      && config.config.systemd.services ? pinchflat
+      && !(config.config.systemd.services ? jellyfin-libraries)
+    );
+
+  pinchflat-jellyfin-youtube-library-custom-media-dir =
+    let
+      config = jellyfinWithPinchflat {
+        enable = true;
+        mediaDir = "/srv/youtube";
+      };
+    in
+    assertTest "pinchflat-jellyfin-youtube-library-custom-media-dir" (
+      config.config.nixflix.jellyfin.libraries.YouTube.paths == [ "/srv/youtube" ]
+    );
+
+  pinchflat-jellyfin-youtube-library-realtime-monitor-overridable =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+              libraries.YouTube.enableRealtimeMonitor = false;
+            };
+            pinchflat = {
+              enable = true;
+              selfhosted = true;
+            };
+          };
+        }
+      ];
+    in
+    assertTest "pinchflat-jellyfin-youtube-library-realtime-monitor-overridable" (
+      !config.config.nixflix.jellyfin.libraries.YouTube.enableRealtimeMonitor
+    );
+
+  # The documented way to drop a default library
+  pinchflat-jellyfin-youtube-library-removable =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            jellyfin = {
+              enable = true;
+              apiKey = "test-jellyfin-key";
+              libraries.YouTube = lib.mkForce null;
+            };
+            pinchflat = {
+              enable = true;
+              selfhosted = true;
+            };
+          };
+        }
+      ];
+    in
+    assertTest "pinchflat-jellyfin-youtube-library-removable" (
+      config.config.nixflix.jellyfin.libraries.YouTube == null
+      # YouTube was the only library, so nothing is left to configure
+      && !(config.config.systemd.services ? jellyfin-libraries)
     );
 }
