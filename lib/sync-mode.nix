@@ -94,7 +94,8 @@ in
       defaultText = lib.literalExpression "config.nixflix.syncMode";
       description = ''
         What to do with ${what} that exist in the service but are not declared
-        in `${collectionOption}`. Defaults to `nixflix.syncMode`.
+        in `${collectionOption}`. Defaults to `nixflix.syncMode` (`"delete"`
+        unless set); setting this overrides it for this collection only.
 
         ${modesDescription}
       '';

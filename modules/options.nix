@@ -55,11 +55,18 @@ in
           configuration exactly.
         - `"keep"`: create and update declared objects, never delete undeclared
           ones; the unit logs what it kept.
-        - `"refuse"`: if undeclared objects exist, fail the unit before changing
-          anything and list them, so they can be declared or removed by hand.
+        - `"refuse"`: if undeclared objects exist, fail the unit (exit code 78)
+          before changing anything and list them, so they can be declared or
+          removed by hand.
 
-        This is the default for every collection. Override it per collection
-        with `nixflix.<service>.syncMode.<collection>`.
+        The default, `"delete"`, is how nixflix behaved before this option
+        existed, so configurations that do not set it keep that behaviour.
+
+        Every per-collection option `nixflix.<service>.syncMode.<collection>`
+        defaults to this value; setting one explicitly overrides it for that
+        collection only. When moving an existing install to nixflix, start
+        with `"refuse"`, see
+        [Adopting an Existing Install](https://kiriwalawren.github.io/nixflix/examples/adopting-existing-install/).
       '';
     };
 

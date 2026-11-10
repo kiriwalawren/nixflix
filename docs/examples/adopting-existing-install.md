@@ -75,10 +75,22 @@ no unit fails. Exit code 78 is the only one nixflix uses for this, so a unit
 that fails with any other code failed for a different reason (the API was not
 reachable, a request was rejected) and its log says why.
 
-### 2. Move to `keep`
+### 2. Switch to `delete` once `refuse` passes
 
-Once a refuse run is clean, or when you decide some undeclared objects should
-just stay, switch to `keep`:
+When a rebuild finishes with no refused unit, `"delete"` would delete nothing
+on that run: `"refuse"` flags exactly what `"delete"` deletes. That is the
+point to let nixflix enforce the configuration. Remove the `syncMode` line (or
+set it to `"delete"`) and rebuild. From then on nixflix removes anything that is
+not declared, so the services always match the configuration.
+
+Switch soon after the clean run. Something added in a UI in between is deleted
+by the first `"delete"` run; if in doubt, rebuild once more with `"refuse"`
+first.
+
+### Or stay on `keep`
+
+If you want nixflix to manage some things while you keep managing others in
+the UI, use `keep` instead of `delete`, globally or per collection:
 
 ```nix
 {
@@ -93,14 +105,8 @@ and logged on every run:
 nixflix: radarr-rootfolders: keeping 1 undeclared root folders (nixflix.radarr.syncMode.rootFolders = "keep"): /media/old-movies
 ```
 
-`keep` is a fine place to stay if you want nixflix to manage some things while
-you keep managing others in the UI.
-
-### 3. Move to `delete` when you are ready
-
-When your configuration describes everything you want, remove the `syncMode`
-line (or set it to `"delete"`). From then on nixflix removes anything that is
-not declared, so the services always match the configuration.
+`keep` also gets a rebuild through while you are still declaring things, at the
+cost of not telling you about them by failing.
 
 You can also move one collection at a time:
 
@@ -118,7 +124,8 @@ You can also move one collection at a time:
 
 ## Every collection
 
-Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
+Every option defaults to `nixflix.syncMode`; setting one explicitly overrides
+the global for that collection only. `<arr>` is `radarr`, `sonarr`,
 `sonarr-anime` or `lidarr`.
 
 | Option | Governs | Unit |
@@ -150,6 +157,14 @@ Every option defaults to `nixflix.syncMode`. `<arr>` is `radarr`, `sonarr`,
 | `nixflix.recyclarr.syncMode.customFormats` | the default of each instance's `delete_old_custom_formats`; defaults to `"keep"` under a global `"refuse"` (see below) | `recyclarr` |
 
 ## Not covered / caveats
+
+- **Units that never delete have no `syncMode`.** The other sync units only
+  create and update what you declared and never remove anything: the *arr host
+  config, media management, metadata consumers and metadata provider, Jellyfin
+  users, system, branding and metadata settings, Seerr's Jellyfin connection,
+  Navidrome users and plugin settings, and slskd's settings.
+  `jellyfin-api-key` replaces only the API key named `nixflix`, which it
+  created itself.
 
 - **sabnzbd.ini is rewritten on every SABnzbd start.** `sabnzbd.service`
   regenerates `sabnzbd.ini` from the declared settings each time it starts, so
