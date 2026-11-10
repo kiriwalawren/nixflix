@@ -58,6 +58,14 @@ let
   pathsMode = cfg.syncMode.libraryPaths;
   anyRefuse = librariesMode == "refuse" || pathsMode == "refuse";
 
+  # Jellyfin's POST /Library/VirtualFolders/LibraryOptions stores PathInfos as
+  # sent. It keeps undeclared paths as library locations, but drops them from
+  # options.xml; outside delete mode the live locations are sent back with it.
+  keepLivePathInfos = optionalString (pathsMode != "delete") "--argjson live \"$EXISTING_PATHS\" ";
+  keepLivePathInfosFilter =
+    optionalString (pathsMode != "delete")
+      " | (.PathInfos | map(.Path)) as $d | .PathInfos += [ $live[] | select(. as $p | $d | any(. == $p) | not) | {Path: .} ]";
+
   inherit (syncMode) indentRest;
 
   createPaths = ''
@@ -405,7 +413,7 @@ in
               "Id": "$EXISTING_ITEM_ID",
               "LibraryOptions": $(cat ${
                 libraryConfigFiles.${libraryName}
-              } | ${pkgs.jq}/bin/jq '.LibraryOptions')
+              } | ${pkgs.jq}/bin/jq ${keepLivePathInfos}'.LibraryOptions${keepLivePathInfosFilter}')
             }
             EOF
             )

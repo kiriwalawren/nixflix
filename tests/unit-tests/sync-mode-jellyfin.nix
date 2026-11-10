@@ -135,16 +135,25 @@ let
   # start/stop and library mkdir goes to mutated.log.
   stubs = pkgs.writeText "sync-mode-jellyfin-stubs.sh" ''
     curl_stub() {
-      local method=GET url="" w=0
+      local method=GET url="" w=0 data=""
       while [ $# -gt 0 ]; do
         case "$1" in
           -X) method=$2; shift 2 ;;
           -w) w=1; shift 2 ;;
-          --variable|--expand-header|--header|-H|--data-binary|-d|-m) shift 2 ;;
+          --data-binary|-d) data=$2; shift 2 ;;
+          --variable|--expand-header|--header|-H|-m) shift 2 ;;
           *) url=$1; shift ;;
         esac
       done
       [ "$method" = GET ] || echo "$method $url" >> "$MUTATED_LOG"
+      case "$method $url" in
+        "POST "*/Library/VirtualFolders/LibraryOptions)
+          case "$data" in
+            @*) cat "''${data#@}" > "$PWD/library-options.json" ;;
+            *) printf '%s' "$data" > "$PWD/library-options.json" ;;
+          esac
+          ;;
+      esac
       case "$method $url" in
         "GET "*/Library/VirtualFolders)
           # libraries-first.json, when present, answers the first read only
@@ -457,6 +466,9 @@ in
         ! grep -qF 'name=Kids' keep.mutated || fail "keep recreated Kids: $(cat keep.mutated)"
         expectLine keep.out 'nixflix: jellyfin-libraries: not recreating library Kids (collectionType movies -> tvshows): that deletes it in Jellyfin (nixflix.jellyfin.syncMode.libraries = "keep")'
         grep -qF 'POST http://127.0.0.1:8096/Library/VirtualFolders/LibraryOptions' keep.mutated || fail "keep did not update"
+        # the undeclared /srv/extra stays in the PathInfos it sends
+        jq -e '.LibraryOptions.PathInfos | map(.Path) | index("/srv/extra") != null' library-options.json >/dev/null \
+          || fail "keep dropped an undeclared path from LibraryOptions: $(cat library-options.json)"
         expectLine keep.out 'nixflix: jellyfin-libraries: keeping 1 undeclared nixflix-managed libraries (nixflix.jellyfin.syncMode.libraries = "keep"): Old'
         expectLine keep.out 'nixflix: jellyfin-libraries: keeping 1 undeclared library paths (nixflix.jellyfin.syncMode.libraryPaths = "keep"): Movies: /srv/extra'
         [ "$(state)" = '["Kids","Movies","Old"]' ] || fail "keep dropped a kept library from the state: $(state)"
