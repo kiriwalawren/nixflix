@@ -102,8 +102,62 @@ let
       };
     };
   };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.metadataProfiles;
+  prune = syncMode.mkPrune {
+    inherit mode;
+    unit = "lidarr-metadataprofiles";
+    what = "metadata profiles";
+    option = "nixflix.lidarr.syncMode.metadataProfiles";
+    live = "METADATA_PROFILES";
+    declared = map (p: p.name) cfg.config.metadataProfiles;
+    # Lidarr returns its built-in "None" metadata profile from /metadataprofile
+    # but refuses to delete it, so in "refuse" mode it would block every run.
+    ignore = [ "None" ];
+    onDelete = ''
+      echo "Removing metadata profiles not in configuration..."
+      echo "$METADATA_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
+        PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
+        PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
+          echo "Deleting metadata profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/metadataprofile/$PROFILE_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null 2>&1 || echo "Warning: Failed to delete metadata profile $PROFILE_NAME (may be in use)"
+        fi
+      done
+    '';
+  };
+  # Empty in "delete" mode so the unit script stays exactly as it was.
+  pre = optionalString (mode == "refuse") ''
+    ${prune.guard}
+    ${syncMode.refuseCheckpoint}
+
+  '';
 in
 {
+  options.nixflix.lidarr.syncMode.metadataProfiles =
+    let
+      opt = syncMode.mkModeOption {
+        inherit config;
+        what = "metadata profiles";
+        collectionOption = "nixflix.lidarr.config.metadataProfiles";
+      };
+    in
+    opt
+    // {
+      description = opt.description + ''
+
+        `lidarr-rootfolders.service` requires `lidarr-metadataprofiles.service`, so
+        a `"refuse"` failure here also stops Lidarr's root folders from syncing.
+      '';
+    };
+
   options.nixflix.lidarr.config.metadataProfiles = mkOption {
     type = types.listOf metadataProfileType;
     default = [ defaultMetadataProfile ];
@@ -157,23 +211,7 @@ in
           EOF
           )
 
-          echo "Removing metadata profiles not in configuration..."
-          echo "$METADATA_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
-            PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
-            PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting metadata profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/metadataprofile/$PROFILE_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null 2>&1 || echo "Warning: Failed to delete metadata profile $PROFILE_NAME (may be in use)"
-            fi
-          done
-
+          ${pre}${prune.prune}
           ${concatMapStringsSep "\n" (
             profileConfig:
             let
