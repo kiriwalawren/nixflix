@@ -93,16 +93,46 @@ mkOption {
   type = notifLib.mkNotificationType {
     implementationName = "ntfy.sh";
 
-    services.default = [
-      "sonarr"
-      "sonarr-anime"
-      "radarr"
-      "lidarr"
-    ];
+    seerr = {
+      agent = "ntfy";
+      mappedFields = [
+        "serverUrl"
+        "topics"
+        "ntfyTags"
+        "userName"
+        "password"
+        "accessToken"
+        "priority"
+      ];
+      fields.locale = notifLib.field types.str "Language of Seerr's notification text, for example `en`.";
+      toSeerr =
+        r:
+        notifLib.seerrOptions r {
+          url = "serverUrl";
+          username = "userName";
+          password = "password";
+          token = "accessToken";
+          priority = "priority";
+          locale = "locale";
+        }
+        // {
+          topic = if (r.topics or [ ]) == [ ] then null else head r.topics;
+          tags = concatStringsSep "," (r.ntfyTags or [ ]);
+          authMethodUsernamePassword = (r.userName or null) != null;
+          authMethodToken = (r.accessToken or null) != null;
+        };
+      required = _: [ "serverUrl" ];
+      checks = r: [
+        {
+          assertion = length (r.topics or [ ]) == 1;
+          message = "Seerr's ntfy agent publishes to a single topic; set `nixflix.notif.ntfy.seerr.topics` to exactly one topic.";
+        }
+      ];
+    };
 
     perService = mapAttrs (_: t: { triggers = t; }) triggers;
     removedOptions = {
-      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.ntfy.onGrab = false;` or `nixflix.notif.ntfy.sonarr.onImportComplete = false;`.";
+      triggers = "Use the boolean trigger options in each service block instead, for example `nixflix.notif.ntfy.sonarr.onGrab = false;`.";
       username = "It has been renamed to `nixflix.notif.ntfy.userName`.";
     };
     fieldRenames.ntfyTags = "tags";

@@ -8,6 +8,26 @@ mkConnectorOption {
   implementationName = "Telegram";
   description = "Telegram notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "telegram";
+      mappedFields = [
+        "botToken"
+        "chatId"
+        "topicId"
+        "sendSilently"
+      ];
+      fields.botUsername = field types.str "Bot username, which Seerr shows users so they can start a chat with the bot.";
+      toSeerr =
+        r:
+        seerrOptions r {
+          botAPI = "botToken";
+          chatId = "chatId";
+          messageThreadId = "topicId";
+          sendSilently = "sendSilently";
+          botUsername = "botUsername";
+        };
+      required = r: [ "botToken" ] ++ optional (seerrTypes r != 0) "chatId";
+    };
     sonarr = {
       unsupportedTriggers = [ "onRename" ];
       fields = {

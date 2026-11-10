@@ -7,6 +7,8 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  notifLib = import ./lib.nix { inherit lib secrets; };
+  inherit (notifLib) resolveFor;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   cfg = config.nixflix.notif;
 
@@ -27,13 +29,15 @@ let
     "lidarr"
   ];
 
-  resolveFor =
-    serviceName: n:
-    removeAttrs n arrServices // filterAttrs (_: v: v != null) (n.${serviceName} or { });
-
   notificationsFor =
     serviceName:
-    filter (n: elem serviceName n.services && (n.${serviceName}.enable or true)) allNotifications;
+    filter (
+      n:
+      if (n.services or null) != null then
+        elem serviceName n.services
+      else
+        n.${serviceName}.enable or false
+    ) allNotifications;
 
   notificationDependencies =
     serviceName: unique (concatMap (n: n.dependencies) (notificationsFor serviceName));
@@ -320,7 +324,10 @@ let
   ) arrServices;
 in
 {
-  imports = [ ./options.nix ];
+  imports = [
+    ./options.nix
+    ./seerr.nix
+  ];
 
   config = mkMerge [
     {
@@ -330,7 +337,9 @@ in
             connector: n:
             mapAttrsToList (opt: instructions: {
               assertion = n.${opt} == null;
-              message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${instructions}";
+              message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${
+                replaceStrings [ "<connector>" ] [ connector ] instructions
+              }";
             }) n._removedOptions
           )
           (

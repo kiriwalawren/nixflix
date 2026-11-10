@@ -5,6 +5,25 @@ mkConnectorOption {
   implementationName = "Pushover";
   description = "Pushover notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "pushover";
+      mappedFields = [
+        "apiKey"
+        "userKey"
+        "sound"
+      ];
+      toSeerr =
+        r:
+        seerrOptions r {
+          accessToken = "apiKey";
+          userToken = "userKey";
+          sound = "sound";
+        };
+      required = _: [
+        "apiKey"
+        "userKey"
+      ];
+    };
     sonarr.unsupportedTriggers = [ "onRename" ];
     radarr = {
       unsupportedTriggers = [ "onRename" ];

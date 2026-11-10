@@ -19,8 +19,20 @@ in
   config = mkIf (nixflix.enable && cfg.enable) {
     systemd.services.seerr-setup = {
       description = "Complete Seerr initial setup with Jellyfin";
-      after = [ "seerr.service" ] ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
-      requires = [ "seerr.service" ] ++ optional nixflix.jellyfin.enable "jellyfin-setup-wizard.service";
+      after = [
+        "seerr.service"
+      ]
+      ++ optionals nixflix.jellyfin.enable [
+        "jellyfin-setup-wizard.service"
+        "jellyfin-libraries.service"
+      ];
+      requires = [
+        "seerr.service"
+      ]
+      ++ optionals nixflix.jellyfin.enable [
+        "jellyfin-setup-wizard.service"
+        "jellyfin-libraries.service"
+      ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {

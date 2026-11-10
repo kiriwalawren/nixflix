@@ -28,6 +28,34 @@ mkConnectorOption {
   implementationName = "Discord";
   description = "Discord notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "discord";
+      mappedFields = [
+        "webHookUrl"
+        "avatar"
+      ];
+      fields = config: {
+        username = username "Seerr" config;
+        webhookRoleId = field types.str "Discord role ID to mention in Seerr notifications.";
+        webhookThreadId = field types.str "Discord thread ID to post Seerr notifications in.";
+        enableMentions = field types.bool "Whether Seerr mentions users who have linked their Discord ID.";
+        locale = field types.str "Language of Seerr's notification text, for example `en`.";
+        useUserLocale = field types.bool "Whether Seerr uses each user's own language for notifications about them.";
+      };
+      toSeerr =
+        r:
+        seerrOptions r {
+          webhookUrl = "webHookUrl";
+          botUsername = "username";
+          botAvatarUrl = "avatar";
+          webhookRoleId = "webhookRoleId";
+          webhookThreadId = "webhookThreadId";
+          enableMentions = "enableMentions";
+          locale = "locale";
+          useUserLocale = "useUserLocale";
+        };
+      required = _: [ "webHookUrl" ];
+    };
     sonarr.fields = config: sonarrFields // { username = username "Sonarr" config; };
     sonarr-anime.fields = config: sonarrFields // { username = username "Sonarr Anime" config; };
     radarr.fields = config: {

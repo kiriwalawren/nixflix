@@ -49,11 +49,9 @@ mkOption {
 
     dependencies.default = [ "navidrome.service" ];
 
-    services.default = [ "lidarr" ];
-
     perService = mapAttrs (_: t: { triggers = t; }) triggers;
     removedOptions = {
-      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.subsonic.onGrab = false;` or `nixflix.notif.subsonic.lidarr.onTrackRetag = false;`.";
+      triggers = "Use the boolean trigger options in each service block instead, for example `nixflix.notif.subsonic.lidarr.onGrab = false;`.";
     };
 
     extraOptions = {

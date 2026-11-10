@@ -42,6 +42,7 @@ let
     "telegram"
     "twitter"
     "webhook"
+    "webpush"
   ];
 in
 {
@@ -82,15 +83,18 @@ in
       Notif is a service that is responsible for configuring Starr services with "Connect" notifications.
       When you enable the service for a target that it applies to, Notif integrates it automatically with each applicable Starr service.
 
-      Unlike Downloadarr, not every notification type applies to every Starr service. Each notification type
-      declares a `services` list controlling which Starr services it gets configured on.
+      Unlike Downloadarr, not every notification type applies to every Starr service. Each notification type has
+      a block for each service it supports (`sonarr`, `sonarr-anime`, `radarr`, `lidarr` and, where Seerr supports
+      it, `seerr`), and is configured on every service whose block is enabled.
 
-      Each notification type exposes the fields of its Starr schema as typed options. Fields and triggers that
-      every applicable Starr service supports are set on the type itself; ones that only some services support
-      are set in that service's block (for example `nixflix.notif.gotify.sonarr.includeSeriesPoster`).
+      Each notification type exposes the fields of its Starr schema as typed options. Fields that every
+      applicable Starr service supports are set on the type itself; ones that only some services support are set
+      in that service's block (for example `nixflix.notif.gotify.sonarr.includeSeriesPoster`). Triggers are always
+      set in the service block (for example `nixflix.notif.gotify.sonarr.onGrab`), because not every trigger
+      applies to every service.
 
-      Every service block (`sonarr`, `sonarr-anime`, `radarr` and `lidarr`) can also override any field or
-      trigger set on the type itself, for that service only. A value set in the service block takes precedence
+      Every service block (`sonarr`, `sonarr-anime`, `radarr` and `lidarr`) can also override any field set on
+      the type itself, for that service only. A value set in the service block takes precedence
       over the type-level value; leaving it `null` uses the type-level value. For example, this posts Sonarr Anime
       notifications to a different Discord channel:
 
@@ -103,8 +107,18 @@ in
 
       `sonarr-anime` has its own block, separate from `sonarr`, so settings in `sonarr` do not apply to it.
 
-      Each service block also has an `enable` option, `true` by default. Setting it to `false` (for example
-      `nixflix.notif.discord.sonarr-anime.enable = false`) skips that service without changing `services`.
+      Each service block has an `enable` option, `true` by default (for `jellyfin.lidarr`, only when a Jellyfin
+      `Music` library exists). Setting it to `false` (for example `nixflix.notif.discord.sonarr-anime.enable = false`)
+      skips that service.
+
+      Seerr is also a target, through the `seerr` block of `discord`, `email`, `gotify`, `ntfy`, `pushbullet`,
+      `pushover`, `slack`, `telegram`, `webhook` and `webpush` (Seerr only). The `seerr` block uses the same
+      option names as the type (for example `nixflix.notif.discord.seerr.username`), but only offers the fields
+      Seerr supports, plus Seerr-only options and one boolean per Seerr notification type (for example
+      `nixflix.notif.discord.seerr.onMediaPending`, all `true` by default; `email` and `webpush` have none
+      because Seerr sends those per user). Seerr has a single configuration per agent, so `extraNotifications`
+      cannot target it. When `nixflix.seerr` is enabled, any Seerr agent that no enabled type targets is
+      disabled, keeping its other settings.
 
       Anything not modeled here can be configured through `extraNotifications`.
     '';

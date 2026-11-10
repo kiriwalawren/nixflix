@@ -98,27 +98,16 @@ mkOption {
 
     dependencies.default = [ "jellyfin-api-key.service" ];
 
-    services = {
-      default = optionals config.nixflix.jellyfin.enable (
-        [
-          "sonarr"
-          "sonarr-anime"
-          "radarr"
-        ]
-        ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-      );
-      defaultText = literalExpression ''
-        optionals config.nixflix.jellyfin.enable (
-          [ "sonarr" "sonarr-anime" "radarr" ]
-          ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-        )
-      '';
-    };
-
     perService = mapAttrs (
       svc: t:
       {
         triggers = t;
+      }
+      // optionalAttrs (svc == "lidarr") {
+        enable = {
+          default = config.nixflix.jellyfin.libraries.Music or null != null;
+          defaultText = literalExpression "config.nixflix.jellyfin.libraries.Music or null != null";
+        };
       }
       // optionalAttrs (svc != "lidarr") {
         fields = {
@@ -128,7 +117,7 @@ mkOption {
       }
     ) triggers;
     removedOptions = {
-      triggers = "Use the boolean trigger options instead, for example `nixflix.notif.jellyfin.onGrab = false;` or `nixflix.notif.jellyfin.sonarr.onImportComplete = false;`.";
+      triggers = "Use the boolean trigger options in each service block instead, for example `nixflix.notif.jellyfin.sonarr.onGrab = false;`.";
     };
 
     extraOptions = {

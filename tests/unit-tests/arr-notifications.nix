@@ -420,9 +420,10 @@
       ${check "plex has no sonarr onGrab, which its sonarr schema does not support" (
         !evaluates { plex.sonarr.onGrab = true; }
       )}
-      ${check "a shared trigger can be overridden in a service block" (evaluates {
+      ${check "every trigger lives in the service block" (evaluates {
         gotify.radarr.onGrab = false;
       })}
+      ${check "a trigger at the connector root is rejected" (!evaluates { gotify.onGrab = true; })}
       ${check "an undeclared top-level name is rejected" (!evaluates { gotify.bogusField = true; })}
       ${check "a service block that the schema lacks is rejected" (
         !evaluates { pushsafer.sonarr.onDownload = true; }
@@ -490,6 +491,7 @@
             ]).config.assertions
         );
       ntfyUsername = removedAssertions { ntfy.username = "old-user"; };
+      gotifyServices = removedAssertions { gotify.services = [ "sonarr" ]; };
       jellyfinTriggers = removedAssertions {
         jellyfin = {
           apiKey = "test-jellyfin-key";
@@ -503,6 +505,11 @@
     in
     pkgs.runCommand "unit-test-notif-removed-options" { } ''
       ${check "no removed-option assertion fires by default" (removedAssertions { } == [ ])}
+      ${check "services fails on a named connector and points to the per-service enable options" (
+        lib.length gotifyServices == 1
+        && lib.hasInfix "nixflix.notif.gotify.services" (lib.head gotifyServices)
+        && lib.hasInfix "nixflix.notif.gotify.radarr.enable = false;" (lib.head gotifyServices)
+      )}
       ${check "ntfy.username fails and points to ntfy.userName" (
         lib.length ntfyUsername == 1
         && lib.hasInfix "nixflix.notif.ntfy.username" (lib.head ntfyUsername)
@@ -511,7 +518,7 @@
       ${check "the jellyfin triggers list fails and points to the boolean options" (
         lib.length jellyfinTriggers == 1
         && lib.hasInfix "nixflix.notif.jellyfin.triggers" (lib.head jellyfinTriggers)
-        && lib.hasInfix "nixflix.notif.jellyfin.onGrab" (lib.head jellyfinTriggers)
+        && lib.hasInfix "nixflix.notif.jellyfin.sonarr.onGrab" (lib.head jellyfinTriggers)
       )}
       ${check "a removed option fails even when notif is disabled" (lib.length disabledNotif == 1)}
       echo 'PASS: notif-removed-options' > $out
@@ -662,9 +669,16 @@
             };
             notif.gotify = {
               enable = true;
-              onGrab = false;
-              sonarr.onSeriesAdd = false;
-              radarr.onHealthIssue = true;
+              sonarr = {
+                onGrab = false;
+                onSeriesAdd = false;
+              };
+              sonarr-anime.onGrab = false;
+              radarr = {
+                onGrab = false;
+                onHealthIssue = true;
+              };
+              lidarr.onGrab = false;
             };
           };
         }
@@ -818,7 +832,7 @@
           enable = true;
           channel = "media";
           radarr.channel = "movies";
-          onGrab = true;
+          sonarr.onGrab = true;
           sonarr-anime = {
             onGrab = false;
             name = "Anime Slack";
@@ -875,6 +889,176 @@
       echo 'PASS: notif-per-service-overrides' > $out
     '';
 
+  notif-seerr =
+    let
+      eval =
+        notif:
+        (evalConfig [
+          {
+            nixflix = {
+              enable = true;
+              seerr = {
+                enable = true;
+                apiKey = "seerr-key";
+              };
+              jellyfin = {
+                enable = true;
+                apiKey = "jellyfin-key";
+                users.admin = {
+                  password = "testpassword";
+                  policy.isAdministrator = true;
+                };
+              };
+              sonarr = {
+                enable = true;
+                config.apiKey._secret = "/run/secrets/sonarr-api";
+              };
+              inherit notif;
+            };
+          }
+        ]).config;
+      scriptOf = c: c.systemd.services.seerr-notifications.script;
+      seerrFailures =
+        c: map (a: a.message) (lib.filter (a: !a.assertion && lib.hasInfix "eerr" a.message) c.assertions);
+      discord = {
+        enable = true;
+        webHookUrl = "https://discord.example/starr";
+      };
+      defaults = eval { inherit discord; };
+      tuned = eval {
+        discord = discord // {
+          seerr = {
+            webHookUrl = "https://discord.example/seerr";
+            onIssueComment = false;
+          };
+        };
+        email = {
+          enable = true;
+          server = "smtp.example";
+          port = 587;
+          from = "seerr@example.com";
+          username = "mailer";
+          seerr.useEncryption = 1;
+        };
+        ntfy = {
+          enable = true;
+          topics = [ "media" ];
+          ntfyTags = [
+            "tv"
+            "warning"
+          ];
+          accessToken = "ntfy-token";
+        };
+        webhook = {
+          enable = true;
+          url = "https://hook.example";
+          username = "bob";
+          password = "pw";
+        };
+      };
+      disabledDiscord = eval {
+        discord = discord // {
+          seerr.enable = false;
+        };
+      };
+      failures = seerrFailures (eval {
+        discord.enable = true;
+        telegram = {
+          enable = true;
+          botToken = "t";
+        };
+        ntfy = {
+          enable = true;
+          topics = [
+            "a"
+            "b"
+          ];
+        };
+        email = {
+          enable = true;
+          server = "smtp.example";
+          from = "a@example.com";
+          seerr.pgpPassword = "x";
+        };
+        webhook = {
+          enable = true;
+          url = "https://hook.example";
+          username = "a";
+          seerr.authHeader = "Bearer x";
+        };
+        extraNotifications = [
+          {
+            implementationName = "Discord";
+            name = "extra";
+            enable = true;
+            services = [ "seerr" ];
+          }
+        ];
+      });
+      hasFailure = needle: lib.any (lib.hasInfix needle) failures;
+      options = (eval { }).nixflix.notif;
+    in
+    pkgs.runCommand "unit-test-notif-seerr" { } ''
+      ${check "discord posts to Seerr as Seerr with every event on" (
+        lib.hasInfix ''"botUsername":"Seerr"'' (scriptOf defaults)
+        && lib.hasInfix ''"webhookUrl":"https://discord.example/starr"'' (scriptOf defaults)
+        && lib.hasInfix ''"types":8158'' (scriptOf defaults)
+      )}
+      ${check "a seerr block override and a disabled event reach Seerr only" (
+        lib.hasInfix ''"webhookUrl":"https://discord.example/seerr"'' (scriptOf tuned)
+        && lib.hasInfix ''"types":7646'' (scriptOf tuned)
+        && lib.hasInfix "https://discord.example/starr" tuned.systemd.services.sonarr-notifications.script
+      )}
+      ${check "seerr block options use nixflix names" (
+        options.discord.seerr ? username && !(options.discord.seerr ? botUsername)
+      )}
+      ${check "email maps to the Seerr SMTP options without event types" (
+        lib.hasInfix ''"smtpHost":"smtp.example"'' (scriptOf tuned)
+        && lib.hasInfix ''"authUser":"mailer"'' (scriptOf tuned)
+        && !(options.email.seerr ? onMediaPending)
+        && options.discord.seerr ? onMediaPending
+      )}
+      ${check "email useEncryption is mapped onto the Seerr TLS flags" (
+        lib.hasInfix ".options.requireTls = ($e == 1 and .options.smtpPort != 465)" (scriptOf tuned)
+      )}
+      ${check "ntfy joins tags and enables token auth" (
+        lib.hasInfix ''"tags":"tv,warning"'' (scriptOf tuned)
+        && lib.hasInfix ''"authMethodToken":true'' (scriptOf tuned)
+        && lib.hasInfix ''"topic":"media"'' (scriptOf tuned)
+      )}
+      ${check "webhook username and password become a Basic authorization header" (
+        lib.hasInfix ''"__basicUser":"bob"'' (scriptOf tuned) && lib.hasInfix "@base64" (scriptOf tuned)
+      )}
+      ${check "agents nixflix does not target are disabled" (
+        lib.hasInfix "for agent in email gotify ntfy pushbullet pushover slack telegram webhook webpush; do" (
+          scriptOf defaults
+        )
+      )}
+      ${check "a seerr block with enable = false disables that agent" (
+        lib.hasInfix "for agent in discord email" (scriptOf disabledDiscord)
+      )}
+      ${check "a missing required field names both option paths" (
+        hasFailure "Set `nixflix.notif.discord.webHookUrl` or `nixflix.notif.discord.seerr.webHookUrl`."
+      )}
+      ${check "telegram requires chatId while events are on" (
+        hasFailure "`nixflix.notif.telegram` is enabled for Seerr, but `chatId` is not set."
+      )}
+      ${check "email PGP key and password require each other" (
+        hasFailure "Set `nixflix.notif.email.seerr.pgpPrivateKey`."
+      )}
+      ${check "ntfy needs exactly one topic for Seerr" (hasFailure "single topic")}
+      ${check "webhook authHeader conflicts with username/password" (
+        hasFailure "sends a single Authorization header"
+      )}
+      ${check "extraNotifications cannot target Seerr" (
+        hasFailure "`nixflix.notif.extraNotifications` cannot target Seerr"
+      )}
+      ${check "Starr triggers are only in service blocks" (
+        !(options.gotify ? onGrab) && options.gotify.sonarr ? onGrab
+      )}
+      echo 'PASS: notif-seerr' > $out
+    '';
+
   notif-default-triggers-unchanged =
     let
       config = evalConfig [
@@ -906,11 +1090,7 @@
               config.apiKey._secret = "/run/secrets/lidarr-api";
             };
             notif = {
-              jellyfin.services = [
-                "sonarr"
-                "radarr"
-                "lidarr"
-              ];
+              jellyfin.lidarr.enable = true;
               ntfy = {
                 enable = true;
                 topics = [ "media" ];

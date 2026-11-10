@@ -71,6 +71,90 @@ rec {
     ];
   };
 
+  # Seerr notification agents (NotificationAgentKey in Seerr's server/lib/settings/index.ts).
+  seerrAgents = [
+    "discord"
+    "email"
+    "gotify"
+    "ntfy"
+    "pushbullet"
+    "pushover"
+    "slack"
+    "telegram"
+    "webhook"
+    "webpush"
+  ];
+
+  # Seerr's Notification Types toggles (src/components/NotificationTypeSelector) and their bits.
+  seerrEvents = [
+    {
+      name = "onMediaAutoRequested";
+      label = "Request Automatically Submitted";
+      bit = 4096;
+    }
+    {
+      name = "onMediaPending";
+      label = "Request Pending Approval";
+      bit = 2;
+    }
+    {
+      name = "onMediaAutoApproved";
+      label = "Request Automatically Approved";
+      bit = 128;
+    }
+    {
+      name = "onMediaApproved";
+      label = "Request Approved";
+      bit = 4;
+    }
+    {
+      name = "onMediaDeclined";
+      label = "Request Declined";
+      bit = 64;
+    }
+    {
+      name = "onMediaAvailable";
+      label = "Request Available";
+      bit = 8;
+    }
+    {
+      name = "onMediaFailed";
+      label = "Request Processing Failed";
+      bit = 16;
+    }
+    {
+      name = "onIssueCreated";
+      label = "Issue Reported";
+      bit = 256;
+    }
+    {
+      name = "onIssueComment";
+      label = "Issue Comment";
+      bit = 512;
+    }
+    {
+      name = "onIssueResolved";
+      label = "Issue Resolved";
+      bit = 1024;
+    }
+    {
+      name = "onIssueReopened";
+      label = "Issue Reopened";
+      bit = 2048;
+    }
+  ];
+
+  resolveFor =
+    serviceName: n:
+    removeAttrs n (allServices ++ [ "seerr" ])
+    // filterAttrs (_: v: v != null) (n.${serviceName} or { });
+
+  # Maps { seerrKey = "nixflixName"; } to Seerr option values from a resolved connector config.
+  seerrOptions = resolved: mapping: mapAttrs (_: name: resolved.${name} or null) mapping;
+
+  seerrTypes =
+    resolved: foldl' (acc: e: acc + (if resolved.${e.name} or false then e.bit else 0)) 0 seerrEvents;
+
   baseService = svc: if svc == "sonarr-anime" then "sonarr" else svc;
 
   withSonarrAnime =
@@ -113,6 +197,7 @@ rec {
     mkOption {
       type = mkNotificationType {
         inherit implementationName;
+        seerr = perService.seerr or null;
         perService = mapAttrs (
           svc: spec:
           let
@@ -134,7 +219,7 @@ rec {
             };
             fields = spec.fields or { };
           }
-        ) (withSonarrAnime perService);
+        ) (withSonarrAnime (removeAttrs perService [ "seerr" ]));
         extraOptions = fields;
         inherit fieldRenames;
       };
@@ -148,24 +233,19 @@ rec {
       perService,
       enable ? { },
       dependencies ? { },
-      services ? { },
       extraOptions ? { },
       imports ? [ ],
       removedOptions ? { },
       omitFields ? [ ],
       fieldRenames ? { },
+      seerr ? null,
     }:
     let
       allPerService = withSonarrAnime perService;
-      serviceNames = attrNames allPerService;
-      validOf = svc: allPerService.${svc}.triggers.valid;
-      defaultOf = svc: allPerService.${svc}.triggers.default;
-      isDefault = t: svc: elem t (defaultOf svc);
-      sharedTriggers = filter (
-        t:
-        all (svc: elem t (validOf svc)) serviceNames
-        && all (svc: isDefault t svc == isDefault t (head serviceNames)) serviceNames
-      ) (validOf (head serviceNames));
+      seerrHasTypes = seerr.hasTypes or true;
+      allRemovedOptions = removedOptions // {
+        services = "Use the `enable` option in each service block instead, for example `nixflix.notif.<connector>.radarr.enable = false;`.";
+      };
       resolve = opts: cfg: if isFunction opts then opts cfg else opts;
     in
     types.submodule (
@@ -201,15 +281,11 @@ rec {
           svc: spec:
           let
             ownOptions =
-              genAttrs (subtractLists sharedTriggers spec.triggers.valid) (
+              genAttrs spec.triggers.valid (
                 t: triggerOption (elem t spec.triggers.default) "Whether to notify on ${t} from ${svc}."
               )
               // resolve (spec.fields or { }) config;
-            overrides =
-              mapAttrs (overrideOption svc) fieldOptions
-              // genAttrs sharedTriggers (
-                t: overrideOption svc t (triggerOption false "Whether to notify on ${t}.")
-              );
+            overrides = mapAttrs (overrideOption svc) fieldOptions;
           in
           {
             ${svc} = mkOption {
@@ -218,17 +294,52 @@ rec {
                   overrides
                   // ownOptions
                   // {
-                    enable = mkOption {
-                      type = types.bool;
-                      default = true;
-                      description = "Whether to configure this notification on ${svc}.";
-                    };
+                    enable = mkOption (
+                      {
+                        type = types.bool;
+                        default = true;
+                        description = "Whether to configure this notification on ${svc}.";
+                      }
+                      // (spec.enable or { })
+                    );
                   };
               };
               default = { };
-              description = "Settings for ${svc}. Any connector-level field or trigger set here overrides it for ${svc} only.";
+              description = "Settings and triggers for ${svc}. Any connector-level field set here overrides it for ${svc} only.";
             };
           };
+
+        seerrBlock = optionalAttrs (seerr != null) {
+          seerr = mkOption {
+            type = types.submodule {
+              options =
+                mapAttrs (overrideOption "seerr") (
+                  filterAttrs (name: _: elem name (seerr.mappedFields or [ ])) fieldOptions
+                )
+                // resolve (seerr.fields or { }) config
+                // optionalAttrs seerrHasTypes (
+                  listToAttrs (
+                    map (
+                      e: nameValuePair e.name (triggerOption true "Whether to notify on ${e.label} from Seerr.")
+                    ) seerrEvents
+                  )
+                )
+                // {
+                  embedPoster = field types.bool "Whether to include the media poster in notifications from Seerr. Null keeps Seerr's current value.";
+                  enable = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Whether to configure this notification on Seerr.";
+                  };
+                };
+            };
+            default = { };
+            description = ''
+              Settings for Seerr's ${seerr.agent} agent. Fields set here override the connector-level ones for
+              Seerr only. Seerr has a single ${seerr.agent} configuration, so only one connector can target it.
+            '';
+          };
+        };
       in
       {
         inherit imports;
@@ -249,15 +360,6 @@ rec {
               description = "systemd services that this integration depends on";
             }
             // dependencies
-          );
-
-          services = mkOption (
-            {
-              type = types.listOf types.str;
-              default = serviceNames;
-              description = "Which Starr services to configure this notification on.";
-            }
-            // services
           );
 
           implementationName = mkOption {
@@ -291,11 +393,20 @@ rec {
             description = "Option names that are not sent to the Starr API.";
           };
 
+          _seerr = mkOption {
+            type = types.nullOr types.raw;
+            readOnly = true;
+            internal = true;
+            visible = false;
+            default = if seerr == null then null else { hasTypes = seerrHasTypes; } // seerr;
+            description = "How this connector maps onto a Seerr notification agent.";
+          };
+
           _removedOptions = mkOption {
             type = types.attrsOf types.str;
             readOnly = true;
             internal = true;
-            default = removedOptions;
+            default = allRemovedOptions;
             description = "Removed option names, mapped to instructions for what replaces them.";
           };
         }
@@ -307,12 +418,9 @@ rec {
             visible = false;
             description = "Removed. ${instructions}";
           }
-        ) removedOptions
-        // genAttrs sharedTriggers (
-          t:
-          triggerOption (isDefault t (head serviceNames)) "Whether to notify on ${t} from every Starr service."
-        )
+        ) allRemovedOptions
         // concatMapAttrs serviceBlock allPerService
+        // seerrBlock
         // fieldOptions;
       }
     );

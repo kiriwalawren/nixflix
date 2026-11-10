@@ -5,6 +5,18 @@ mkConnectorOption {
   implementationName = "Slack";
   description = "Slack notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "slack";
+      mappedFields = [ "webHookUrl" ];
+      fields.locale = field types.str "Language of Seerr's notification text, for example `en`.";
+      toSeerr =
+        r:
+        seerrOptions r {
+          webhookUrl = "webHookUrl";
+          locale = "locale";
+        };
+      required = _: [ "webHookUrl" ];
+    };
     sonarr.unsupportedTriggers = [ ];
     radarr.unsupportedTriggers = [ "onMovieAdded" ];
     lidarr.unsupportedTriggers = [ ];

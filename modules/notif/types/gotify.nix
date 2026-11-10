@@ -9,6 +9,27 @@ mkConnectorOption {
   implementationName = "Gotify";
   description = "Gotify notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "gotify";
+      mappedFields = [
+        "server"
+        "appToken"
+        "priority"
+      ];
+      fields.locale = field types.str "Language of Seerr's notification text, for example `en`.";
+      toSeerr =
+        r:
+        seerrOptions r {
+          url = "server";
+          token = "appToken";
+          priority = "priority";
+          locale = "locale";
+        };
+      required = _: [
+        "server"
+        "appToken"
+      ];
+    };
     sonarr = {
       unsupportedTriggers = [ "onRename" ];
       fields = {

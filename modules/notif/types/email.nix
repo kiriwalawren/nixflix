@@ -12,6 +12,59 @@ mkConnectorOption {
   implementationName = "Email";
   description = "Email notification definition for Starr services.";
   perService = {
+    seerr = {
+      agent = "email";
+      hasTypes = false;
+      mappedFields = [
+        "server"
+        "port"
+        "username"
+        "password"
+        "from"
+      ];
+      fields = {
+        inherit useEncryption;
+        senderName = field types.str "Sender name Seerr uses in emails.";
+        allowSelfSigned = field types.bool "Whether Seerr allows self-signed certificates on the email server.";
+        userEmailRequired = field types.bool "Whether Seerr requires users to provide an email address.";
+        usePublicLogo = field types.bool "Whether Seerr's emails link to the public Seerr logo instead of embedding it.";
+        pgpPrivateKey = secretField "PGP private key Seerr signs emails with. Requires `pgpPassword`.";
+        pgpPassword = secretField "Password for `pgpPrivateKey`. Requires `pgpPrivateKey`.";
+      };
+      toSeerr =
+        r:
+        seerrOptions r {
+          smtpHost = "server";
+          smtpPort = "port";
+          authUser = "username";
+          authPass = "password";
+          emailFrom = "from";
+          senderName = "senderName";
+          allowSelfSigned = "allowSelfSigned";
+          userEmailRequired = "userEmailRequired";
+          usePublicLogo = "usePublicLogo";
+          pgpPrivateKey = "pgpPrivateKey";
+          pgpPassword = "pgpPassword";
+          __useEncryption = "useEncryption";
+        };
+      jqPost = ''
+        (if .options.__useEncryption != null then
+          .options.__useEncryption as $e
+          | .options.secure = ($e == 1 and .options.smtpPort == 465)
+          | .options.requireTls = ($e == 1 and .options.smtpPort != 465)
+          | .options.ignoreTls = ($e == 2)
+        else . end)
+        | del(.options.__useEncryption)
+      '';
+      required =
+        r:
+        [
+          "server"
+          "from"
+        ]
+        ++ optional ((r.pgpPassword or null) != null) "pgpPrivateKey"
+        ++ optional ((r.pgpPrivateKey or null) != null) "pgpPassword";
+    };
     sonarr = {
       unsupportedTriggers = [ "onRename" ];
       fields = { inherit useEncryption; };
