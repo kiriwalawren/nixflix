@@ -20,6 +20,17 @@ in
     echo 'PASS: ${name}'
   '';
 
+  # True when a script contains the `# nixflix-sync-guard` marker (lib/sync-mode.nix)
+  # before its first mutating call, so a refused sync cannot change anything.
+  guardPrecedesMutations =
+    script:
+    let
+      beforeFirstMutation = builtins.head (
+        builtins.split "-X (POST|PUT|DELETE)|systemctl stop|rm -rf|del_config" script
+      );
+    in
+    lib.hasInfix "# nixflix-sync-guard" beforeFirstMutation;
+
   # Helper to evaluate a NixOS configuration without building
   evalConfig =
     modules:

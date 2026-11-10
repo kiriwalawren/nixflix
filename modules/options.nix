@@ -38,6 +38,31 @@ in
       '';
     };
 
+    syncMode = mkOption {
+      type = types.enum [
+        "delete"
+        "keep"
+        "refuse"
+      ];
+      default = "delete";
+      example = "refuse";
+      description = ''
+        What nixflix's sync units do with objects that exist in a service
+        (root folders, profiles, indexers, download clients, ...) but are not
+        declared in the nixflix configuration.
+
+        - `"delete"`: remove undeclared objects, so the service matches the
+          configuration exactly.
+        - `"keep"`: create and update declared objects, never delete undeclared
+          ones; the unit logs what it kept.
+        - `"refuse"`: if undeclared objects exist, fail the unit before changing
+          anything and list them, so they can be declared or removed by hand.
+
+        This is the default for every collection. Override it per collection
+        with `nixflix.<service>.syncMode.<collection>`.
+      '';
+    };
+
     theme = {
       enable = mkOption {
         type = types.bool;
