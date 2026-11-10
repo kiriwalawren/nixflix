@@ -12,6 +12,7 @@ let
 
   settingsType = import ./settingsType.nix { inherit lib config; };
   iniGenerator = import ./iniGenerator.nix { inherit lib; };
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
 
   stateDir = "/var/lib/sabnzbd";
   configFile = "${stateDir}/sabnzbd.ini";
@@ -69,6 +70,25 @@ in
         description = "Whether to expose SABnzbd via the reverse proxy.";
       };
     };
+
+    syncMode.categories =
+      let
+        option = syncMode.mkModeOption {
+          inherit config;
+          what = "categories";
+          collectionOption = "nixflix.usenetClients.sabnzbd.settings.categories";
+        };
+      in
+      option
+      // {
+        description = option.description + ''
+
+          This governs the `sabnzbd-categories` unit only. SABnzbd's
+          `sabnzbd.ini` is regenerated from the declared settings every time
+          `sabnzbd.service` starts, which still drops undeclared categories at
+          that point, whatever this is set to.
+        '';
+      };
 
     settings = mkOption {
       type = settingsType;
@@ -200,7 +220,10 @@ in
           User = cfg.user;
           Group = cfg.group;
 
-          # Run with root privileges ('+' prefix) to read secrets owned by root
+          # Run with root privileges ('+' prefix) to read secrets owned by root.
+          # This rewrites sabnzbd.ini from the template on every start, dropping
+          # undeclared [categories], [servers] and [rss] entries; syncMode does
+          # not cover it, it only governs the sabnzbd-categories unit.
           ExecStartPre =
             "+"
             + pkgs.writeShellScript "sabnzbd-prestart" ''
