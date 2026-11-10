@@ -133,7 +133,11 @@ in
 
           - `"delete"`: switch to Jellyfin, clearing that data.
           - `"keep"`: switch only when it clears nothing; otherwise stay on the
-            current media server and log what a switch would clear.
+            current media server and log what a switch would clear. Staying
+            means the Jellyfin connection is not set up, and
+            `maintainerr-rules`, which asks Maintainerr which media server it
+            uses, skips its rule groups with a log line until Maintainerr is on
+            Jellyfin.
           - `"refuse"`: if a switch would clear anything, fail the unit before
             changing anything and list the counts.
         '';

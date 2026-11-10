@@ -182,6 +182,7 @@ let
   };
 
   rulesFixtures = {
+    api_settings.media_server_type = "jellyfin";
     api_rules = [
       {
         id = 10;
@@ -539,8 +540,11 @@ in
       [ "$rc" = 0 ] || fail "rc=$rc"
       notMutated ${lib.escapeShellArg switchCall}
       expectLine out.txt ${lib.escapeShellArg "nixflix: maintainerr-settings: not switching media server 'plex' to Jellyfin: that clears ${clearsText} (nixflix.maintainerr.syncMode.mediaServer = \"keep\")"}
-      # The rest of the unit still syncs declared settings.
+      # The rest of the unit still syncs declared settings, but not Jellyfin's.
       mutated "PUT /api/settings/radarr/1"
+      notMutated "POST /api/settings/jellyfin/test"
+      notMutated "POST /api/settings/jellyfin"
+      expectLine out.txt ${lib.escapeShellArg "nixflix: maintainerr-settings: Maintainerr stays on media server 'plex', so the Jellyfin connection is not set up (nixflix.maintainerr.syncMode.mediaServer = \"keep\")"}
     '';
   };
 
@@ -581,6 +585,7 @@ in
         checks = ''
           [ "$rc" = 0 ] || fail "rc=$rc"
           mutated ${lib.escapeShellArg switchCall}
+          mutated "POST /api/settings/jellyfin"
         '';
       };
 
@@ -625,4 +630,43 @@ in
       mutated ${lib.escapeShellArg switchCall}
     '';
   };
+
+  # maintainerr-rules asks Maintainerr which media server it uses and, outside
+  # delete mode, skips when it is not Jellyfin (keep left it on Plex).
+  sync-mode-maintainerr-rules-keep-on-plex-run =
+    runUnit "sync-mode-maintainerr-rules-keep-on-plex-run"
+      {
+        scripts = keepAll;
+        unit = "maintainerr-rules";
+        fixtures = rulesFixtures // {
+          api_settings.media_server_type = "plex";
+        };
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ ! -s mutated.log ] || fail "rules synced into a Plex Maintainerr"
+          expectLine out.txt ${lib.escapeShellArg "nixflix: maintainerr-rules: Maintainerr uses media server 'plex', not Jellyfin; rule groups are not synced (nixflix.maintainerr.syncMode.mediaServer = \"keep\")"}
+        '';
+      };
+
+  sync-mode-maintainerr-rules-refuse-on-plex-run =
+    runUnit "sync-mode-maintainerr-rules-refuse-on-plex-run"
+      {
+        scripts = refuseAll;
+        unit = "maintainerr-rules";
+        fixtures = rulesFixtures // {
+          api_settings.media_server_type = "plex";
+        };
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          [ ! -s mutated.log ] || fail "rules synced into a Plex Maintainerr"
+        '';
+      };
+
+  # delete always switched first, so it does not ask (and is upstream's text).
+  sync-mode-maintainerr-rules-delete-no-gate =
+    assertTest "sync-mode-maintainerr-rules-delete-no-gate"
+      (
+        !lib.hasInfix "rule groups are not synced" defaults.maintainerr-rules
+        && lib.hasInfix "rule groups are not synced" keepAll.maintainerr-rules
+      );
 }

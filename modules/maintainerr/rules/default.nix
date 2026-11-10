@@ -139,6 +139,20 @@ let
     '';
   };
 
+  # Rule groups name libraries of the media server Maintainerr uses. Outside
+  # delete mode maintainerr-settings may leave it on Plex/Emby
+  # (syncMode.mediaServer), so ask Maintainerr and skip rather than push
+  # Jellyfin rules into it. delete always switched, so it does not ask.
+  mediaServerGate = optionalString (cfg.syncMode.mediaServer != "delete") ''
+    MEDIA_SERVER_TYPE=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings" \
+      | ${pkgs.jq}/bin/jq -r '.media_server_type // ""')
+    if [ "$MEDIA_SERVER_TYPE" != "jellyfin" ]; then
+      echo "nixflix: maintainerr-rules: Maintainerr uses media server '$MEDIA_SERVER_TYPE', not Jellyfin; rule groups are not synced (nixflix.maintainerr.syncMode.mediaServer = \"${cfg.syncMode.mediaServer}\")"
+      exit 0
+    fi
+
+  '';
+
   refuseGuard = optionalString (cfg.syncMode.rules == "refuse") ''
     ${rulesPrune.guard}${syncMode.refuseCheckpoint}
 
@@ -160,7 +174,7 @@ in
         ExecStart = pkgs.writeShellScript "maintainerr-rules" ''
           set -euo pipefail
 
-          echo "Fetching current Maintainerr state..."
+          ${mediaServerGate}echo "Fetching current Maintainerr state..."
           CURRENT=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/rules")
           LIBRARIES=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/media-server/libraries")
           RADARR_SERVERS=$(${pkgs.curl}/bin/curl -s "${maintainerrUrl}/api/settings/radarr")

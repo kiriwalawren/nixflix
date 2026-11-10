@@ -9,6 +9,7 @@ let
   cfg = config.nixflix.maintainerr;
   secrets = import ../../../lib/secrets { inherit lib; };
   syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  inherit (syncMode) indentRest;
 
   maintainerrUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jobsJson = builtins.toJSON cfg.settings.jobs;
@@ -162,9 +163,50 @@ let
             echo "nixflix: maintainerr-settings: not switching media server '$MEDIA_SERVER_TYPE' to Jellyfin: that clears $MS_CLEARS (${mediaServerOption} = \"keep\")"
           else
             ${syncMode.indentRest 6 switchToJellyfin}
+            MEDIA_SERVER_TYPE=jellyfin
           fi
         fi
       '';
+
+  jellyfinSettings = ''
+
+    JELLYFIN_URL=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_url}
+    JELLYFIN_API_KEY=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_api_key}
+
+    echo "Testing Jellyfin connection..."
+    JELLYFIN_USER_ID=$(${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      --data-binary "$(${pkgs.jq}/bin/jq -n \
+        --arg url "$JELLYFIN_URL" \
+        --arg apiKey "$JELLYFIN_API_KEY" \
+        '{jellyfin_url: $url, jellyfin_api_key: $apiKey}')" \
+      "${maintainerrUrl}/api/settings/jellyfin/test" \
+      | ${pkgs.jq}/bin/jq -e -r '.users[0].id')
+
+    echo "Applying Jellyfin settings..."
+    ${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      --data-binary "$(${pkgs.jq}/bin/jq -n \
+        --arg url "$JELLYFIN_URL" \
+        --arg apiKey "$JELLYFIN_API_KEY" \
+        --arg userId "$JELLYFIN_USER_ID" \
+        '{jellyfin_url: $url, jellyfin_api_key: $apiKey, jellyfin_user_id: $userId}')" \
+      "${maintainerrUrl}/api/settings/jellyfin" \
+      | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
+
+  '';
+
+  # keep may decline the switch; the Jellyfin connection is then not set up,
+  # and maintainerr-rules skips itself (it asks Maintainerr, see rules/).
+  jellyfinSettingsIfOnJellyfin = ''
+
+    if [ "$MEDIA_SERVER_TYPE" = "jellyfin" ]; then
+      ${indentRest 2 (removePrefix "\n" jellyfinSettings)}
+    else
+      echo "nixflix: maintainerr-settings: Maintainerr stays on media server '$MEDIA_SERVER_TYPE', so the Jellyfin connection is not set up (${mediaServerOption} = \"keep\")"
+    fi
+
+  '';
 
   refuseGuards = optionalString (refuseTypes != [ ] || mediaServerMode == "refuse") (
     concatMapStrings (type: ''
@@ -240,33 +282,7 @@ in
           ''
           + refuseGuards
           + mediaServerSwitch
-          + ''
-
-            JELLYFIN_URL=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_url}
-            JELLYFIN_API_KEY=${secrets.toShellValue cfg.settings.jellyfin.jellyfin_api_key}
-
-            echo "Testing Jellyfin connection..."
-            JELLYFIN_USER_ID=$(${pkgs.curl}/bin/curl -s -X POST \
-              -H "Content-Type: application/json" \
-              --data-binary "$(${pkgs.jq}/bin/jq -n \
-                --arg url "$JELLYFIN_URL" \
-                --arg apiKey "$JELLYFIN_API_KEY" \
-                '{jellyfin_url: $url, jellyfin_api_key: $apiKey}')" \
-              "${maintainerrUrl}/api/settings/jellyfin/test" \
-              | ${pkgs.jq}/bin/jq -e -r '.users[0].id')
-
-            echo "Applying Jellyfin settings..."
-            ${pkgs.curl}/bin/curl -s -X POST \
-              -H "Content-Type: application/json" \
-              --data-binary "$(${pkgs.jq}/bin/jq -n \
-                --arg url "$JELLYFIN_URL" \
-                --arg apiKey "$JELLYFIN_API_KEY" \
-                --arg userId "$JELLYFIN_USER_ID" \
-                '{jellyfin_url: $url, jellyfin_api_key: $apiKey, jellyfin_user_id: $userId}')" \
-              "${maintainerrUrl}/api/settings/jellyfin" \
-              | ${pkgs.jq}/bin/jq -e '.status == "OK"' > /dev/null
-
-          ''
+          + (if mediaServerMode == "keep" then jellyfinSettingsIfOnJellyfin else jellyfinSettings)
           + optionalString config.nixflix.seerr.enable ''
             SEERR_URL=${secrets.toShellValue cfg.settings.seerr.url}
             SEERR_API_KEY=${secrets.toShellValue cfg.settings.seerr.api_key}

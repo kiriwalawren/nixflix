@@ -185,7 +185,11 @@ the global for that collection only. `<arr>` is `radarr`, `sonarr`,
   `maintainerr-settings`, and Maintainerr then clears every rule group (with
   its rules), collection, collection media item and log, and exclusion. Under
   `"refuse"` the unit lists the counts and stops; under `"keep"` it stays on the
-  current media server and logs them. To keep your rules, switch in the
+  current media server and logs them. Staying there, `maintainerr-settings`
+  does not set up the Jellyfin connection, and `maintainerr-rules` checks the
+  media server Maintainerr uses and skips the rule groups (they name Jellyfin
+  libraries) with a log line; the *arr servers, Seerr and job schedules are
+  still synced. To keep your rules, switch in the
   Maintainerr UI, which can migrate them, before you let nixflix switch.
 - **qBittorrent.conf is rewritten on every qBittorrent start.** nixflix always
   sets `services.qbittorrent.serverConfig`, so the NixOS module installs
