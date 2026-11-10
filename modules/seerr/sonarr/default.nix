@@ -32,7 +32,7 @@ let
     declared = attrNames cfg.sonarr;
     # The delete loop's `[.name] | inside($configured[0])` is jq containment,
     # which matches strings by SUBSTRING: a live "Sonarr" or "4K" survives when
-    # "Sonarr 4K" is declared. refuse and keep flag exactly what it deletes.
+    # "Sonarr 4K" is declared. refuse and keep flag the same servers it deletes.
     select = "[.name] | inside($declared) | not";
     onDelete = ''
       SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \

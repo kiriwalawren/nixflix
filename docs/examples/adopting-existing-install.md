@@ -19,9 +19,22 @@ not written down yet.
 | `"keep"` | created and updated | left alone, listed in the unit's log |
 | `"refuse"` | created and updated, as in `"delete"`, when nothing is undeclared | if any exist, the unit lists them and fails before changing anything |
 
-`"refuse"` flags exactly what `"delete"` would delete on that run, no more and
-no less. When `"delete"` would delete nothing, `"refuse"` passes and the unit
-syncs your declared objects like it always does.
+`"refuse"` flags what `"delete"` would delete on that run. When `"delete"`
+would delete nothing, `"refuse"` passes and the unit syncs your declared
+objects like it always does. The exceptions:
+
+- **Recyclarr custom formats** cannot be refused: under `"refuse"` they act as
+  `"keep"`, while `"delete"` turns on `delete_old_custom_formats`, so Recyclarr
+  removes custom formats it synced earlier that are no longer in its config.
+- **Maintainerr's media server switch** is refused when it would clear data,
+  which `"delete"` clears without listing it object by object (see
+  `nixflix.maintainerr.syncMode.mediaServer` below).
+- **Objects `"delete"` only tries to remove** are flagged too. A root folder
+  that is still in use, for example, is refused, but `"delete"` just logs
+  `Warning: Failed to delete root folder` and leaves it.
+- **Settings files rewritten on every start** (`sabnzbd.ini`,
+  `qBittorrent.conf`, Jellyfin's `network.xml` and `encoding.xml`) lose UI
+  changes in every mode; see [the caveats](#not-covered-caveats).
 
 The global option sets the default for every collection. Each collection can be
 overridden with `nixflix.<service>.syncMode.<collection>`, see the
@@ -78,8 +91,8 @@ reachable, a request was rejected) and its log says why.
 ### 2. Switch to `delete` once `refuse` passes
 
 When a rebuild finishes with no refused unit, `"delete"` would delete nothing
-on that run: `"refuse"` flags exactly what `"delete"` deletes. That is the
-point to let nixflix enforce the configuration. Remove the `syncMode` line (or
+on that run, apart from the exceptions listed above (Recyclarr custom formats
+in particular). That is the point to let nixflix enforce the configuration. Remove the `syncMode` line (or
 set it to `"delete"`) and rebuild. From then on nixflix removes anything that is
 not declared, so the services always match the configuration.
 
@@ -151,6 +164,7 @@ the global for that collection only. `<arr>` is `radarr`, `sonarr`,
 | `nixflix.maintainerr.syncMode.sonarr` | Sonarr servers | `maintainerr-settings` |
 | `nixflix.maintainerr.syncMode.rules` | rule groups | `maintainerr-rules` |
 | `nixflix.maintainerr.syncMode.overlayTemplates` | overlay templates (presets are never touched) | `maintainerr-overlay-templates` |
+| `nixflix.maintainerr.syncMode.mediaServer` | switching a Maintainerr set up for Plex or Emby to Jellyfin, which clears every rule group (and its rules), collection, collection media item and log, and exclusion. `"keep"`/`"refuse"` switch only when that clears nothing | `maintainerr-settings` |
 | `nixflix.usenetClients.sabnzbd.syncMode.categories` | categories, matched ignoring ASCII case (the built-in `*` is never touched) | `sabnzbd-categories` |
 | `nixflix.torrentClients.qbittorrent.syncMode.categories` | categories in `categories.json` | `qbittorrent` (its `preStart`) |
 | `nixflix.recyclarr.syncMode.qualityProfiles` | quality profiles not listed in `cleanupUnmanagedProfiles.managedProfiles` (only with `cleanupUnmanagedProfiles.enable`; an instance where none of the listed profiles exists is skipped, as `"delete"` skips it) | `recyclarr-cleanup-profiles` |
@@ -166,6 +180,31 @@ the global for that collection only. `<arr>` is `radarr`, `sonarr`,
   `jellyfin-api-key` replaces only the API key named `nixflix`, which it
   created itself.
 
+- **Maintainerr's media server switch clears data in `"delete"`.** A
+  Maintainerr that was set up for Plex or Emby is switched to Jellyfin by
+  `maintainerr-settings`, and Maintainerr then clears every rule group (with
+  its rules), collection, collection media item and log, and exclusion. Under
+  `"refuse"` the unit lists the counts and stops; under `"keep"` it stays on the
+  current media server and logs them. To keep your rules, switch in the
+  Maintainerr UI, which can migrate them, before you let nixflix switch.
+- **qBittorrent.conf is rewritten on every qBittorrent start.** nixflix always
+  sets `services.qbittorrent.serverConfig`, so the NixOS module installs
+  `qBittorrent.conf` from it before each start: settings changed in the WebUI
+  are lost in every mode. Declare them in
+  `nixflix.torrentClients.qbittorrent.serverConfig`.
+- **Jellyfin's network.xml and encoding.xml are rewritten on every start**
+  from `nixflix.jellyfin.network` and `nixflix.jellyfin.encoding`, so changes
+  made on those dashboard pages are lost in every mode.
+- **The built-in delay profile is always overwritten.** Delay profile id 1
+  is always declared: if you do not declare it, nixflix declares its default
+  (usenet preferred, no delay) and PUTs it in every mode, replacing what you set
+  in the UI. Declare `id = 1` in `nixflix.<arr>.config.delayProfiles` to keep
+  your settings.
+- **Undeclared Jellyfin library paths stay in the library under `"keep"`.**
+  Jellyfin stores the PathInfos that nixflix sends with a library's options
+  as they are sent; under `"keep"` and `"refuse"` nixflix sends the live paths
+  along with the declared ones, so an undeclared path is neither removed nor
+  dropped from the library's options.
 - **sabnzbd.ini is rewritten on every SABnzbd start.** `sabnzbd.service`
   regenerates `sabnzbd.ini` from the declared settings each time it starts, so
   servers, RSS feeds and settings added in the SABnzbd UI are dropped in every
