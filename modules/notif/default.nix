@@ -31,7 +31,9 @@ let
     serviceName: n:
     removeAttrs n arrServices // filterAttrs (_: v: v != null) (n.${serviceName} or { });
 
-  notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
+  notificationsFor =
+    serviceName:
+    filter (n: elem serviceName n.services && (n.${serviceName}.enable or true)) allNotifications;
 
   notificationDependencies =
     serviceName: unique (concatMap (n: n.dependencies) (notificationsFor serviceName));

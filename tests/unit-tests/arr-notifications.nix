@@ -825,6 +825,10 @@
             tags = [ "anime" ];
           };
         };
+        gotify = {
+          enable = true;
+          sonarr-anime.enable = false;
+        };
       };
       script = svcs: s: svcs."${s}-notifications".script;
       username =
@@ -863,6 +867,10 @@
       ${check "tags can be overridden per service" (
         lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr-anime")
         && !lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr")
+      )}
+      ${check "a service block with enable = false skips that service only" (
+        !lib.hasInfix "Processing notification: Gotify" (script overridden "sonarr-anime")
+        && lib.hasInfix "Processing notification: Gotify" (script overridden "sonarr")
       )}
       echo 'PASS: notif-per-service-overrides' > $out
     '';

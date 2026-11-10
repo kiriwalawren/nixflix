@@ -213,7 +213,18 @@ rec {
           in
           {
             ${svc} = mkOption {
-              type = types.submodule { options = overrides // ownOptions; };
+              type = types.submodule {
+                options =
+                  overrides
+                  // ownOptions
+                  // {
+                    enable = mkOption {
+                      type = types.bool;
+                      default = true;
+                      description = "Whether to configure this notification on ${svc}.";
+                    };
+                  };
+              };
               default = { };
               description = "Settings for ${svc}. Any connector-level field or trigger set here overrides it for ${svc} only.";
             };

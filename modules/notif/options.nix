@@ -103,6 +103,9 @@ in
 
       `sonarr-anime` has its own block, separate from `sonarr`, so settings in `sonarr` do not apply to it.
 
+      Each service block also has an `enable` option, `true` by default. Setting it to `false` (for example
+      `nixflix.notif.discord.sonarr-anime.enable = false`) skips that service without changing `services`.
+
       Anything not modeled here can be configured through `extraNotifications`.
     '';
   };
