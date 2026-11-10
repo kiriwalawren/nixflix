@@ -51,6 +51,155 @@ let
     inherit pkgs;
     jellyfinCfg = cfg;
   };
+
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  jq = "${pkgs.jq}/bin/jq";
+  librariesMode = cfg.syncMode.libraries;
+  pathsMode = cfg.syncMode.libraryPaths;
+  anyRefuse = librariesMode == "refuse" || pathsMode == "refuse";
+
+  # Prefixes every non-empty line but the first, so a block spliced into an
+  # indented string renders exactly as if it were written there literally.
+  indentRest =
+    n: text:
+    let
+      lines = splitString "\n" text;
+      pad = l: if l == "" then l else fixedWidthString n " " "" + l;
+    in
+    concatStringsSep "\n" ([ (head lines) ] ++ map pad (tail lines));
+
+  createPaths = ''
+    echo "Creating library paths..."
+    ${concatStringsSep "\n" (
+      mapAttrsToList (
+        _libraryName: libraryCfg:
+        concatMapStringsSep "\n" (path: ''
+          mkdir -p "${path}"
+          echo "Created path: ${path}"
+        '') libraryCfg.paths
+      ) libraries
+    )}'';
+
+  deleteRemovedLibraries = ''
+    echo "Checking for removed libraries to delete..."
+    EXISTING_NAMES=$(echo "$LIBRARIES_JSON" | ${pkgs.jq}/bin/jq -c '[.[].Name]')
+
+    echo "$PREVIOUS_MANAGED" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r lib_name; do
+      if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
+        if echo "$EXISTING_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
+          echo "Deleting removed library: $lib_name"
+          DELETE_RESPONSE=$(${
+            mkSecureCurl authUtil.token {
+              method = "DELETE";
+              url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"$lib_name\" '\$n|@uri')";
+              apiKeyHeader = "Authorization";
+              extraArgs = "-w \"\\n%{http_code}\"";
+            }
+          })
+
+          DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
+
+          if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
+            echo "Warning: Failed to delete library $lib_name (HTTP $DELETE_HTTP_CODE)" >&2
+          else
+            echo "Successfully deleted library: $lib_name"
+          fi
+        fi
+      fi
+    done
+  '';
+
+  removeUndeclaredPaths = libraryName: ''
+    echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r existing_path; do
+      if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$existing_path" 'index($path)' >/dev/null 2>&1; then
+        echo "Removing path: $existing_path"
+        REMOVE_PATH_RESPONSE=$(${
+          mkSecureCurl authUtil.token {
+            method = "DELETE";
+            url = "$BASE_URL/Library/VirtualFolders/Paths?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&path=$(${pkgs.jq}/bin/jq -rn --arg p \"$existing_path\" '\$p|@uri')";
+            apiKeyHeader = "Authorization";
+            extraArgs = "-w \"\\n%{http_code}\"";
+          }
+        })
+
+        REMOVE_PATH_HTTP_CODE=$(echo "$REMOVE_PATH_RESPONSE" | tail -n1)
+
+        if [ "$REMOVE_PATH_HTTP_CODE" -lt 200 ] || [ "$REMOVE_PATH_HTTP_CODE" -ge 300 ]; then
+          echo "Warning: Failed to remove path $existing_path from library ${libraryName} (HTTP $REMOVE_PATH_HTTP_CODE)" >&2
+        fi
+      fi
+    done'';
+
+  # Only libraries nixflix created earlier (the state file) are candidates, as
+  # in delete mode; the prune below subtracts the declared ones.
+  librariesPrune = syncMode.mkPrune {
+    mode = librariesMode;
+    unit = "jellyfin-libraries";
+    what = "nixflix-managed libraries";
+    option = "nixflix.jellyfin.syncMode.libraries";
+    live = "NIXFLIX_MANAGED_LIBRARIES";
+    declared = attrNames libraries;
+    key = ".Name";
+    id = ".ItemId";
+    onDelete = deleteRemovedLibraries;
+  };
+
+  # Paths of declared libraries that keep their collectionType. A changed
+  # collectionType recreates the library with its declared paths (an update).
+  pathsPrune = syncMode.mkPrune {
+    mode = pathsMode;
+    unit = "jellyfin-libraries";
+    what = "library paths";
+    option = "nixflix.jellyfin.syncMode.libraryPaths";
+    live = "NIXFLIX_LIBRARY_PATHS";
+    declared = concatLists (
+      mapAttrsToList (
+        name: libraryCfg:
+        map (path: [
+          name
+          path
+        ]) libraryCfg.paths
+      ) libraries
+    );
+    key = "[.library, .path]";
+    id = ".ItemId";
+    label = ''"\(.library): \(.path)"'';
+    onDelete = "";
+  };
+
+  undeclaredCheck = ''
+    NIXFLIX_MANAGED_LIBRARIES=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --arg prev "$PREVIOUS_MANAGED" '
+      if type != "array" then error("not an array") else . end
+      | ((try ($prev | fromjson) catch []) | if type == "array" then . else [] end) as $p
+      | [.[] | select(.Name as $n | $p | any(. == $n)) | {Name, ItemId}]') || NIXFLIX_MANAGED_LIBRARIES=""
+    NIXFLIX_LIBRARY_PATHS=$(printf '%s' "$LIBRARIES_JSON" | ${jq} -c --argjson decl ${
+      escapeShellArg (builtins.toJSON (mapAttrs (_: libraryCfg: libraryCfg.collectionType) libraries))
+    } '
+      if type != "array" then error("not an array") else . end
+      | [.[] | select((.Name | type) == "string") | . as $l | ($decl[$l.Name] // null) as $t
+        | select($t != null and (($l.CollectionType // "unknown") == $t))
+        | (.Locations // [])[] | {library: $l.Name, path: ., ItemId: $l.ItemId}]') || NIXFLIX_LIBRARY_PATHS=""
+
+    ${librariesPrune.guard}
+    ${pathsPrune.guard}
+    ${syncMode.refuseCheckpoint}
+    ${optionalString anyRefuse createPaths}
+
+    ${librariesPrune.prune}
+    ${pathsPrune.prune}
+  '';
+
+  # keep: libraries kept on Jellyfin stay in the state file, so a later switch
+  # to delete still removes them.
+  writeState =
+    if librariesMode == "keep" then
+      ''
+        NIXFLIX_KEPT_LIBRARIES=$(printf '%s' "$NIXFLIX_MANAGED_LIBRARIES" | ${jq} -c '[.[].Name]' 2>/dev/null) \
+          || NIXFLIX_KEPT_LIBRARIES=$(echo "$PREVIOUS_MANAGED" | ${jq} -c '[.[] | strings]' 2>/dev/null) \
+          || NIXFLIX_KEPT_LIBRARIES="[]"
+        ${jq} -cn --argjson c "$CONFIGURED_NAMES" --argjson k "$NIXFLIX_KEPT_LIBRARIES" '$c + ($k - $c)' > "$STATE_FILE"''
+    else
+      ''echo "$CONFIGURED_NAMES" > "$STATE_FILE"'';
 in
 {
   imports = [ ./options.nix ];
@@ -76,16 +225,7 @@ in
 
         echo "Configuring Jellyfin libraries..."
 
-        echo "Creating library paths..."
-        ${concatStringsSep "\n" (
-          mapAttrsToList (
-            _libraryName: libraryCfg:
-            concatMapStringsSep "\n" (path: ''
-              mkdir -p "${path}"
-              echo "Created path: ${path}"
-            '') libraryCfg.paths
-          ) libraries
-        )}
+        ${optionalString (!anyRefuse) createPaths}
 
         source ${authUtil.authScript}
 
@@ -121,33 +261,12 @@ in
           PREVIOUS_MANAGED="[]"
         fi
 
-        echo "Checking for removed libraries to delete..."
-        EXISTING_NAMES=$(echo "$LIBRARIES_JSON" | ${pkgs.jq}/bin/jq -c '[.[].Name]')
-
-        echo "$PREVIOUS_MANAGED" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r lib_name; do
-          if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
-            if echo "$EXISTING_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$lib_name" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting removed library: $lib_name"
-              DELETE_RESPONSE=$(${
-                mkSecureCurl authUtil.token {
-                  method = "DELETE";
-                  url = "$BASE_URL/Library/VirtualFolders?name=$(${pkgs.jq}/bin/jq -rn --arg n \"$lib_name\" '\$n|@uri')";
-                  apiKeyHeader = "Authorization";
-                  extraArgs = "-w \"\\n%{http_code}\"";
-                }
-              })
-
-              DELETE_HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
-
-              if [ "$DELETE_HTTP_CODE" -lt 200 ] || [ "$DELETE_HTTP_CODE" -ge 300 ]; then
-                echo "Warning: Failed to delete library $lib_name (HTTP $DELETE_HTTP_CODE)" >&2
-              else
-                echo "Successfully deleted library: $lib_name"
-              fi
-            fi
-          fi
-        done
-
+        ${
+          if librariesMode == "delete" && pathsMode == "delete" then
+            deleteRemovedLibraries
+          else
+            undeclaredCheck
+        }
         echo "Refreshing library list..."
         LIBRARIES_JSON=$(${
           mkSecureCurl authUtil.token {
@@ -243,25 +362,12 @@ in
 
                     echo "Configured paths: $CONFIGURED_PATHS"
 
-                    echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r existing_path; do
-                      if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$existing_path" 'index($path)' >/dev/null 2>&1; then
-                        echo "Removing path: $existing_path"
-                        REMOVE_PATH_RESPONSE=$(${
-                          mkSecureCurl authUtil.token {
-                            method = "DELETE";
-                            url = "$BASE_URL/Library/VirtualFolders/Paths?name=$(${pkgs.jq}/bin/jq -rn --arg n \"${libraryName}\" '\$n|@uri')&path=$(${pkgs.jq}/bin/jq -rn --arg p \"$existing_path\" '\$p|@uri')";
-                            apiKeyHeader = "Authorization";
-                            extraArgs = "-w \"\\n%{http_code}\"";
-                          }
-                        })
-
-                        REMOVE_PATH_HTTP_CODE=$(echo "$REMOVE_PATH_RESPONSE" | tail -n1)
-
-                        if [ "$REMOVE_PATH_HTTP_CODE" -lt 200 ] || [ "$REMOVE_PATH_HTTP_CODE" -ge 300 ]; then
-                          echo "Warning: Failed to remove path $existing_path from library ${libraryName} (HTTP $REMOVE_PATH_HTTP_CODE)" >&2
-                        fi
-                      fi
-                    done
+                    ${
+                      if pathsMode == "delete" then
+                        indentRest 8 (removeUndeclaredPaths libraryName)
+                      else
+                        "# undeclared paths: nixflix.jellyfin.syncMode.libraryPaths = \"${pathsMode}\""
+                    }
 
                     echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -r '.[]' | while IFS= read -r configured_path; do
                       if ! echo "$EXISTING_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$configured_path" 'index($path)' >/dev/null 2>&1; then
@@ -337,7 +443,7 @@ in
           '') libraries
         )}
 
-        echo "$CONFIGURED_NAMES" > "$STATE_FILE"
+        ${writeState}
         echo "Library configuration completed successfully"
       '';
     };
