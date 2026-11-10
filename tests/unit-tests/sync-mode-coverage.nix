@@ -207,6 +207,27 @@ let
           managedProfiles = [ "Managed" ];
         };
       };
+      # No pruning units today. Enabled so a deleting unit added to either one
+      # is scanned by the keep/refuse tests below.
+      navidrome = {
+        enable = true;
+        users.admin = {
+          userName = "admin";
+          isAdmin = true;
+          password._secret = "/run/secrets/navidrome-admin";
+        };
+      };
+      slskd = {
+        enable = true;
+        vpn.enable = false;
+        username._secret = "/run/secrets/slskd-user";
+        password._secret = "/run/secrets/slskd-pw";
+        apiKey._secret = "/run/secrets/slskd-api";
+        settings.soulseek = {
+          username._secret = "/run/secrets/soulseek-user";
+          password._secret = "/run/secrets/soulseek-pw";
+        };
+      };
     };
   };
 
@@ -395,11 +416,21 @@ let
   # managed directory removal, the qBittorrent categories.json overwrite, and
   # the delete loops that have no unique verb (jellyfin libraries/paths,
   # managed plugin dirs, Seerr switching undeclared libraries off).
+  #
+  # The bare "DELETE", "rm -r", "rmdir", "unlink" and " -delete" entries are the
+  # catch-all for units written later: any HTTP helper (`--request DELETE`,
+  # `foo_request DELETE`), SQL DELETE or recursive removal, so a new pruning
+  # unit that skips lib/sync-mode.nix fails the keep/refuse tests below.
   deletions = [
     "-X DELETE"
     "api DELETE"
+    "DELETE"
     "del_config"
     "rm -rf"
+    "rm -r"
+    "rmdir"
+    "unlink"
+    " -delete"
     "cp -f"
     "Deleting removed library"
     "Removing path:"
@@ -432,6 +463,19 @@ let
         unit = "jellyfin-plugins";
         pattern = "rm -rf";
         count = 1 + packagedPlugins;
+      };
+      # The same removals, seen by the "rm -r" catch-all.
+      plugin-reinstall-rm-r = {
+        unit = "jellyfin-plugins";
+        pattern = "rm -r";
+        count = 1 + packagedPlugins;
+      };
+      # Replaces the API key nixflix itself owns (Name='nixflix') in one
+      # transaction; no other key is touched.
+      jellyfin-own-api-key = {
+        unit = "jellyfin-api-key";
+        pattern = "DELETE";
+        count = 1;
       };
       # refuse overwrites categories.json with the declared categories only
       # after its checkpoint, i.e. once every live category is declared.
@@ -532,6 +576,37 @@ let
     lib.any (lib.hasInfix "syncMode.customFormats = \"refuse\" cannot be enforced") r.config.warnings;
 
   report = xs: if xs == [ ] then true else builtins.trace (lib.concatStringsSep "\n" xs) false;
+
+  # Source-level backstop for modules `everything` does not enable: every
+  # module file that can remove something must go through syncMode, or be
+  # listed here with the reason it only touches what nixflix owns.
+  modulesDir = ../../modules;
+  sourceTokens = [
+    "DELETE"
+    "del_config"
+    "rm -r"
+    "rmdir"
+    "unlink"
+    " -delete"
+  ];
+  sourceExempt = {
+    # Maintainerr's rule action enum ("DELETE" = 0, ...), not a call.
+    "maintainerr/rules/options.nix" = true;
+    # Replaces the `nixflix` API key it created; see jellyfin-own-api-key.
+    "jellyfin/apiKeyService.nix" = true;
+  };
+  moduleSources =
+    map
+      (p: {
+        rel = lib.removePrefix "${toString modulesDir}/" (toString p);
+        text = builtins.readFile p;
+      })
+      (
+        builtins.filter (p: lib.hasSuffix ".nix" (toString p)) (
+          lib.filesystem.listFilesRecursive modulesDir
+        )
+      );
+  removesSomething = src: lib.any (t: lib.hasInfix t src.text) sourceTokens;
 in
 {
   sync-mode-coverage-default-is-delete = assertTest "sync-mode-coverage-default-is-delete" (
@@ -586,9 +661,11 @@ in
         report (
           unexpectedDeletions refuse
           ++ lib.mapAttrsToList (name: _e: "${name}: allowlisted deletion before the refuse checkpoint") (
-            lib.filterAttrs (_: e: lib.hasInfix e.pattern (beforeCheckpoint refuse.texts.${e.unit})) (
-              exemptions refuse
-            )
+            lib.filterAttrs (
+              _: e:
+              builtins.elem e.unit pruningUnits
+              && lib.hasInfix e.pattern (beforeCheckpoint refuse.texts.${e.unit})
+            ) (exemptions refuse)
           )
         )
       );
@@ -642,4 +719,21 @@ in
               ]
         )
       );
+
+  # A module that can remove things but never mentions syncMode is a pruning
+  # unit nobody wired up; a stale exemption is reported too.
+  sync-mode-coverage-source-scan = assertTest "sync-mode-coverage-source-scan" (
+    report (
+      map (s: "modules/${s.rel}: removes objects but does not use nixflix.syncMode") (
+        builtins.filter (
+          s: removesSomething s && !(sourceExempt.${s.rel} or false) && !lib.hasInfix "syncMode" s.text
+        ) moduleSources
+      )
+      ++ map (rel: "modules/${rel}: exempt in sourceExempt but no longer removes anything") (
+        builtins.filter (rel: !lib.any (s: s.rel == rel && removesSomething s) moduleSources) (
+          builtins.attrNames sourceExempt
+        )
+      )
+    )
+  );
 }

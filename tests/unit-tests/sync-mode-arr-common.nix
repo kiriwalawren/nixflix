@@ -130,14 +130,17 @@ let
 
   # Replaces curl in a unit script with a fake that serves fixtures from
   # $FIXTURES/<endpoint>.json (slashes become _) and logs every mutating call
-  # to $MUTATED_LOG as "<METHOD> <endpoint>".
+  # to $MUTATED_LOG as "<METHOD> <endpoint>", plus its `--data-binary @file`
+  # body to $BODY_LOG.
   fakeCurl = pkgs.writeShellScript "fake-curl" ''
     method=GET
     url=
+    data=
     while [ $# -gt 0 ]; do
       case "$1" in
         -X) method=$2; shift 2 ;;
-        --variable|--expand-header|--header|--data-binary|-d) shift 2 ;;
+        --data-binary) data=$2; shift 2 ;;
+        --variable|--expand-header|--header|-d) shift 2 ;;
         -*) shift ;;
         *) url=$1; shift ;;
       esac
@@ -147,6 +150,9 @@ let
       cat "$FIXTURES/$(printf '%s' "$endpoint" | tr / _).json"
     else
       echo "$method $endpoint" >> "$MUTATED_LOG"
+      case "$data" in
+        @*) { echo "$method $endpoint"; cat "''${data#@}"; } >> "$BODY_LOG" ;;
+      esac
       echo '{}'
     fi
   '';
@@ -170,8 +176,8 @@ let
       );
     in
     pkgs.runCommand "unit-test-${name}" { } ''
-      export FIXTURES=${fixtureDir} MUTATED_LOG=$PWD/mutated.log
-      touch mutated.log
+      export FIXTURES=${fixtureDir} MUTATED_LOG=$PWD/mutated.log BODY_LOG=$PWD/bodies.log
+      touch mutated.log bodies.log
       rc=0
       ${pkgs.bash}/bin/bash ${scriptFile} > out.txt 2> err.txt || rc=$?
       echo "rc=$rc"; echo "--- stdout"; cat out.txt; echo "--- stderr"; cat err.txt; echo "--- mutations"; cat mutated.log
@@ -376,6 +382,46 @@ let
     ]
   ) scenarios;
 
+  # #414 lets any notification field be a `_secret` file. keep must still write
+  # the declared notification with the secret resolved, refuse must stop
+  # before it is read or sent, and neither may print it.
+  ntfySecret = pkgs.writeText "ntfy-server-url" "https://NTFY-SECRET.example";
+  secretNotificationScripts =
+    mode:
+    scriptsOf (eval {
+      syncMode = mode;
+      notif.extraNotifications = [
+        {
+          enable = true;
+          name = "Ntfy";
+          implementationName = "ntfy.sh";
+          services = arrs;
+          dependencies = [ ];
+          serverUrl._secret = ntfySecret;
+        }
+      ];
+    });
+  secretNotificationFixtures = notificationFixtures // {
+    notification = map (
+      n:
+      if n.id == 1 then
+        n
+        // {
+          fields = [
+            {
+              name = "serverUrl";
+              value = "";
+            }
+          ];
+        }
+      else
+        n
+    ) notificationFixtures.notification;
+  };
+  noSecretInLog = ''
+    ! grep -q NTFY-SECRET out.txt err.txt || fail "declared secret leaked into the log"
+  '';
+
   # Live delay profiles holding only the built-in id 1 must never block refuse.
   delayProfileBuiltinOnly = {
     delayprofile = [
@@ -533,6 +579,39 @@ lib.listToAttrs scenarioTests
           [ "$rc" = 1 ] || fail "expected rc 1, got $rc"
           [ ! -s mutated.log ] || fail "mutated after a failed GET"
           grep -q 'nixflix: radarr-downloadclients: cannot check for undeclared download clients' err.txt || fail "no error message"
+        '';
+      };
+
+  sync-mode-arr-common-run-notifications-secret-keep =
+    runUnit "sync-mode-arr-common-run-notifications-secret-keep"
+      {
+        script = (secretNotificationScripts "keep").radarr-notifications;
+        fixtures = secretNotificationFixtures;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          ! grep -q '^DELETE' mutated.log || fail "keep deleted something"
+          grep -qFx 'PUT notification/1' mutated.log || fail "declared notification not updated"
+          sed -n '/^PUT notification\/1$/,$p' bodies.log | tail -n +2 \
+            | ${pkgs.jq}/bin/jq -e '.fields[] | select(.name == "serverUrl") | .value == "https://NTFY-SECRET.example"' >/dev/null \
+            || fail "secret field not resolved into the PUT body"
+          expectLine out.txt 'nixflix: radarr-notifications: keeping 1 undeclared notifications (nixflix.radarr.syncMode.notifications = "keep"): Injected Hook'
+          ${noLeak}
+          ${noSecretInLog}
+        '';
+      };
+
+  sync-mode-arr-common-run-notifications-secret-refuse =
+    runUnit "sync-mode-arr-common-run-notifications-secret-refuse"
+      {
+        script = (secretNotificationScripts "refuse").radarr-notifications;
+        fixtures = secretNotificationFixtures;
+        checks = ''
+          [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+          [ ! -s mutated.log ] || fail "refuse mutated the service"
+          [ ! -s bodies.log ] || fail "refuse sent a body"
+          expectLine err.txt 'nixflix:   - Injected Hook (id 3)'
+          ${noLeak}
+          ${noSecretInLog}
         '';
       };
 }
