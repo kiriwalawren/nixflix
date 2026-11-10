@@ -15,6 +15,68 @@ let
   categoriesJson = builtins.toJSON (lib.mapAttrs (_name: path: { save_path = path; }) cfg.categories);
   categoriesFile = pkgs.writeText "categories.json" categoriesJson;
   configPath = "${service.profileDir}/qBittorrent/config";
+
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  jq = "${pkgs.jq}/bin/jq";
+  categoriesMode = cfg.syncMode.categories;
+
+  writeCategories = ''
+    cp -f '${categoriesFile}' '${configPath}/categories.json'
+    chmod 640 '${configPath}/categories.json'
+    chown ${service.user}:${service.group} '${configPath}/categories.json'
+  '';
+
+  categories = syncMode.mkPrune {
+    mode = categoriesMode;
+    unit = "qbittorrent";
+    what = "categories";
+    option = "nixflix.torrentClients.qbittorrent.syncMode.categories";
+    live = "NIXFLIX_LIVE_CATEGORIES";
+    declared = attrNames cfg.categories;
+    id = ".save_path";
+    onDelete = "";
+  };
+
+  # categories.json as a JSON array of { name, save_path }, `[]` when the file
+  # is missing or empty, `null` when it is not a JSON object.
+  readLiveCategories = ''
+    NIXFLIX_CATEGORIES_FILE='${configPath}/categories.json'
+    if [ -e "$NIXFLIX_CATEGORIES_FILE" ]; then
+      NIXFLIX_LIVE_CATEGORIES=$(${jq} -cs 'if . == [] then [] elif (.[0] | type) == "object" then .[0] | to_entries | map({ name: .key, save_path: ((.value | objects | .save_path) // .value | tostring) }) else null end' "$NIXFLIX_CATEGORIES_FILE" 2>/dev/null) || NIXFLIX_LIVE_CATEGORIES=null
+    else
+      NIXFLIX_LIVE_CATEGORIES='[]'
+    fi
+  '';
+
+  syncCategories =
+    {
+      delete = writeCategories;
+
+      # Existing categories first, so the declared save paths win.
+      keep = ''
+        ${readLiveCategories}
+        ${categories.prune}
+        if [ "$NIXFLIX_LIVE_CATEGORIES" != null ] && [ -s "$NIXFLIX_CATEGORIES_FILE" ]; then
+          ${jq} -s --slurpfile declared '${categoriesFile}' '.[0] * $declared[0]' "$NIXFLIX_CATEGORIES_FILE" > "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp"
+          mv -f "$NIXFLIX_CATEGORIES_FILE.nixflix-tmp" "$NIXFLIX_CATEGORIES_FILE"
+        else
+          if [ "$NIXFLIX_LIVE_CATEGORIES" = null ]; then
+            echo "nixflix: qbittorrent: categories.json is not a JSON object; replacing it with the declared categories" >&2
+          fi
+          cp -f '${categoriesFile}' "$NIXFLIX_CATEGORIES_FILE"
+        fi
+        chmod 640 "$NIXFLIX_CATEGORIES_FILE"
+        chown ${service.user}:${service.group} "$NIXFLIX_CATEGORIES_FILE"
+      '';
+
+      refuse = ''
+        ${readLiveCategories}
+        ${categories.guard}
+        ${syncMode.refuseCheckpoint}
+        ${writeCategories}
+      '';
+    }
+    .${categoriesMode};
 in
 {
   options.nixflix.torrentClients.qbittorrent = mkOption {
@@ -80,6 +142,27 @@ in
             sonarr = "/mnt/share/movies";
           };
         };
+
+        syncMode.categories =
+          let
+            option = syncMode.mkModeOption {
+              inherit config;
+              what = "categories";
+              collectionOption = "nixflix.torrentClients.qbittorrent.categories";
+            };
+          in
+          option
+          // {
+            description = option.description + ''
+
+              Applied to `categories.json` in the `preStart` of
+              `qbittorrent.service` itself, so `"refuse"` stops qBittorrent from
+              starting (exit code 78) until the undeclared categories are
+              declared or removed. `"delete"` replaces the file with the
+              declared categories; `"keep"` merges the declared categories into
+              it, declared save paths winning.
+            '';
+          };
 
         webuiPort = mkOption {
           type = types.nullOr types.port;
@@ -234,6 +317,7 @@ in
         "password"
         "reverseProxy"
         "subdomain"
+        "syncMode"
         "vpn"
       ];
 
@@ -284,13 +368,7 @@ in
         after = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         requires = [ "nixflix-setup-dirs.service" ] ++ config.nixflix.serviceDependencies;
         serviceConfig.UMask = "0002";
-        preStart = lib.mkIf (cfg.categories != { }) (
-          lib.mkAfter ''
-            cp -f '${categoriesFile}' '${configPath}/categories.json'
-            chmod 640 '${configPath}/categories.json'
-            chown ${service.user}:${service.group} '${configPath}/categories.json'
-          ''
-        );
+        preStart = lib.mkIf (cfg.categories != { }) (lib.mkAfter syncCategories);
       };
 
     }
