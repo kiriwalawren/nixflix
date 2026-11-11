@@ -15,35 +15,11 @@ let
         ;
     };
 
-  notificationTypes = [
-    "jellyfin"
-    "subsonic"
-    "ntfy"
-    "apprise"
-    "customScript"
-    "discord"
-    "email"
-    "gotify"
-    "join"
-    "kodi"
-    "mailgun"
-    "notifiarr"
-    "plex"
-    "prowl"
-    "pushbullet"
-    "pushcut"
-    "pushover"
-    "pushsafer"
-    "sendgrid"
-    "signal"
-    "simplepush"
-    "slack"
-    "synologyIndexer"
-    "telegram"
-    "twitter"
-    "webhook"
-    "webpush"
-  ];
+  notificationTypes = map (removeSuffix ".nix") (
+    builtins.attrNames (
+      lib.filterAttrs (n: t: t == "regular" && hasSuffix ".nix" n) (builtins.readDir ./types)
+    )
+  );
 in
 {
   options.nixflix.notif = mkOption {
@@ -75,6 +51,8 @@ in
                 radarr = {
                   enable = true;
                   onDownload = true;
+                  onHealthIssue = true;
+                  includeHealthWarnings = true;
                   username = "Anime Movies";
                 };
               }
@@ -90,11 +68,12 @@ in
             - `sonarr`, `sonarr-anime`, `radarr` and `lidarr`: one block per Starr service. An entry is only
               configured on the services whose block sets `enable = true`. Triggers are booleans in the block (for
               example `radarr.onGrab = true`), and any trigger not set to `true` is turned off. Any other field set
-              in a block overrides the top-level value for that service only.
+              in a block overrides the value set on the entry, for that service only.
             - `tags`: Starr tag labels that restrict the connection to tagged items. Missing tags are created.
             - `dependencies`: systemd services to start before the entry is configured.
-            - Any other attribute is a field of the Starr schema for `implementationName` (for example
-              `webHookUrl`), or a top-level setting of the connection such as `includeHealthWarnings`.
+            - Any other attribute, on the entry or in a service block, is sent to Starr. If the Starr schema for
+              `implementationName` has a field with that name (for example `webHookUrl`), it sets that field;
+              otherwise it sets the connection property of that name (for example `includeHealthWarnings`).
 
             Any field may be set to `{ _secret = /path/to/file; }` to read its value from a file at runtime.
             Seerr cannot be targeted from here; use the `seerr` block of a typed connector instead.
@@ -154,13 +133,10 @@ in
       is enabled so their libraries keep refreshing automatically (`jellyfin.lidarr` only when a Jellyfin `Music`
       library exists).
 
-      Seerr is also a target, through the `seerr` block of `discord`, `email`, `gotify`, `ntfy`, `pushbullet`,
-      `pushover`, `slack`, `telegram`, `webhook` and `webpush` (Seerr only), when `seerr.enable` is set (for
+      Seerr is also a target, through the `seerr` block of a connector. When `seerr.enable` is set (for
       example `nixflix.notif.discord.seerr.enable = true`). The `seerr` block uses the same
       option names as the type (for example `nixflix.notif.discord.seerr.username`), but only offers the fields
-      Seerr supports, plus Seerr-only options and one boolean per Seerr notification type (for example
-      `nixflix.notif.discord.seerr.onMediaPending`, all `true` by default; `email` and `webpush` have none
-      because Seerr sends those per user). Seerr has a single configuration per agent, so `extraNotifications`
+      Seerr supports. Seerr has a single configuration per agent, so `extraNotifications`
       cannot target it. When `nixflix.seerr` is enabled, any Seerr agent that no enabled `seerr` block targets is
       disabled, keeping its other settings.
 

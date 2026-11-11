@@ -76,7 +76,7 @@ pkgsUnfree.testers.runNixOSTest {
       };
 
       notif.jellyfin = {
-        includeHealthWarnings = true;
+        sonarr.includeHealthWarnings = true;
         tags = [ "nixflix-test" ];
       };
 
@@ -161,7 +161,7 @@ pkgsUnfree.testers.runNixOSTest {
     assert sonarr_notifs[0]["onHealthIssue"] is False, \
         f"Expected onHealthIssue false (excluded from UI defaults), found {sonarr_notifs[0]['onHealthIssue']}"
     assert sonarr_notifs[0]["includeHealthWarnings"] is True, \
-        f"Expected includeHealthWarnings true (top-level freeform override), found {sonarr_notifs[0]['includeHealthWarnings']}"
+        f"Expected includeHealthWarnings true (set in the sonarr block), found {sonarr_notifs[0]['includeHealthWarnings']}"
 
     sonarr_tag = get_tag_id(8989, SONARR_KEY)
     assert sonarr_notifs[0]["tags"] == [sonarr_tag], \

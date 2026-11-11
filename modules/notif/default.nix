@@ -180,7 +180,6 @@ let
                 ]
                 ++ triggerNames
                 ++ notificationConfig._omitFields or [ ]
-                ++ attrNames (notificationConfig._removedOptions or { })
               );
               fieldRenames = notificationConfig._fieldRenames or { };
               fieldOverrides = mapAttrs' (name: nameValuePair (fieldRenames.${name} or name)) (

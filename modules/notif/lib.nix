@@ -5,6 +5,7 @@ rec {
     "sonarr-anime"
     "radarr"
     "lidarr"
+    "seerr"
   ];
 
   allTriggers = {
@@ -146,8 +147,7 @@ rec {
 
   resolveFor =
     serviceName: n:
-    removeAttrs n (allServices ++ [ "seerr" ])
-    // filterAttrs (_: v: v != null) (n.${serviceName} or { });
+    removeAttrs n allServices // filterAttrs (_: v: v != null) (n.${serviceName} or { });
 
   # Maps { seerrKey = "nixflixName"; } to Seerr option values from a resolved connector config.
   seerrOptions = resolved: mapping: mapAttrs (_: name: resolved.${name} or null) mapping;
@@ -246,6 +246,7 @@ rec {
       allRemovedOptions = removedOptions // {
         enable = perServiceEnable;
         services = perServiceEnable;
+        includeHealthWarnings = "Set it in the block of each service instead, for example `nixflix.notif.<connector>.radarr.includeHealthWarnings = true;`.";
       };
       resolve = opts: cfg: if isFunction opts then opts cfg else opts;
     in
@@ -258,8 +259,6 @@ rec {
             default = implementationName;
             description = "User-defined name for the notification instance.";
           };
-
-          includeHealthWarnings = field types.bool "Include health warnings, not only errors, in health notifications.";
 
           tags = mkOption {
             type = types.listOf (types.strMatching "[a-z0-9-]+");
@@ -285,6 +284,9 @@ rec {
               genAttrs spec.triggers.valid (
                 t: triggerOption (elem t spec.triggers.default) "Whether to notify on ${t} from ${svc}."
               )
+              // optionalAttrs (elem "onHealthIssue" spec.triggers.valid) {
+                includeHealthWarnings = field types.bool "Include health warnings, not only errors, in health notifications from ${svc}.";
+              }
               // resolve (spec.fields or { }) config;
             overrides = mapAttrs (overrideOption svc) fieldOptions;
           in

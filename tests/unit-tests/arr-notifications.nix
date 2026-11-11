@@ -122,9 +122,8 @@
               ] (_: false)
               // {
                 onHealthIssue = true;
+                includeHealthWarnings = true;
               };
-
-            notif.jellyfin.includeHealthWarnings = true;
           };
         }
       ];
@@ -138,10 +137,11 @@
       ${check "radarr-notifications still uses the jellyfin default trigger set" (
         lib.hasInfix ''["onGrab","onDownload","onUpgrade","onRename","onMovieDelete","onMovieFileDelete","onMovieFileDeleteForUpgrade","onApplicationUpdate"]'' radarrNotifications.script
       )}
-      ${check "sonarr-notifications applies the includeHealthWarnings option" (
+      ${check "includeHealthWarnings in the sonarr block applies to sonarr only" (
         lib.hasInfix ''"includeHealthWarnings":true'' sonarrNotifications.script
+        && !lib.hasInfix "includeHealthWarnings" radarrNotifications.script
       )}
-      ${check "apply_field_overrides merges top-level overrides (name, enable, includeHealthWarnings)" (
+      ${check "apply_field_overrides merges top-level overrides (name, includeHealthWarnings)" (
         lib.hasInfix ". + (\$overrides" sonarrNotifications.script
       )}
       ${check "notification overrides do not include the nested triggers attrset" (
@@ -498,6 +498,7 @@
       ntfyUsername = removedAssertions { ntfy.username = "old-user"; };
       gotifyServices = removedAssertions { gotify.services = [ "sonarr" ]; };
       discordEnable = removedAssertions { discord.enable = true; };
+      gotifyHealth = removedAssertions { gotify.includeHealthWarnings = true; };
       extraEnable = removedAssertions {
         extraNotifications = [
           {
@@ -541,6 +542,10 @@
           ) extraEnable
         )
       }
+      ${check "a connector-level includeHealthWarnings fails and points to the service blocks" (
+        lib.length gotifyHealth == 1
+        && lib.hasInfix "nixflix.notif.gotify.radarr.includeHealthWarnings = true;" (lib.head gotifyHealth)
+      )}
       ${check "ntfy.username fails and points to ntfy.userName" (
         lib.length ntfyUsername == 1
         && lib.hasInfix "nixflix.notif.ntfy.username" (lib.head ntfyUsername)
