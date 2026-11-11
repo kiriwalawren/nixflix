@@ -10,6 +10,15 @@ let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.seerr;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
+  pgCfg = config.nixflix.postgres;
+  isLocalDb = pgCfg.host == null;
+  dbPassword = if pgCfg.enable && !isLocalDb then cfg.postgres.password else null;
+  needsEnvFile = cfg.apiKey != null || dbPassword != null;
+  psqlConnArgs =
+    if isLocalDb then
+      "-h /run/postgresql"
+    else
+      "-h ${escapeShellArg pgCfg.host} -p ${toString pgCfg.port} -U ${escapeShellArg cfg.user}";
 in
 {
   imports = [
@@ -44,6 +53,10 @@ in
           sonarrDefaultNon4k = filter (s: !s.is4k) sonarrDefaults;
         in
         [
+          {
+            assertion = (pgCfg.enable && !isLocalDb) -> cfg.postgres.password != null;
+            message = "`nixflix.postgres.host` is set, so Seerr needs a database password. Set `nixflix.seerr.postgres.password`.";
+          }
           {
             assertion = versionAtLeast cfg.package.version "3.5.0";
             message = "nixflix.seerr requires Seerr 3.5.0 or newer, but the Seerr package in use is ${cfg.package.version}. `nixflix.seerr.package` defaults to `pkgs.seerr` from your own nixpkgs rather than the nixpkgs nixflix pins. Update your nixpkgs, or set `nixflix.seerr.package` to a 3.5.0+ build.";
@@ -117,7 +130,7 @@ in
         };
       };
 
-      services.postgresql = mkIf config.nixflix.postgres.enable {
+      services.postgresql = mkIf (pgCfg.enable && isLocalDb) {
         ensureDatabases = [ cfg.user ];
         ensureUsers = [
           {
@@ -128,7 +141,7 @@ in
       };
 
       systemd.services = {
-        seerr-env = mkIf (cfg.apiKey != null) {
+        seerr-env = mkIf needsEnvFile {
           description = "Setup Seerr environment file";
           wantedBy = [ "seerr.service" ];
           before = [ "seerr.service" ];
@@ -140,7 +153,13 @@ in
 
           script = ''
             mkdir -p /run/seerr
-            echo "API_KEY=${secrets.toShellValue cfg.apiKey}" > /run/seerr/env
+            : > /run/seerr/env
+            ${optionalString (cfg.apiKey != null) ''
+              echo "API_KEY=${secrets.toShellValue cfg.apiKey}" >> /run/seerr/env
+            ''}
+            ${optionalString (dbPassword != null) ''
+              echo "DB_PASS=${secrets.toShellValue dbPassword}" >> /run/seerr/env
+            ''}
             chown ${cfg.user}:${cfg.group} /run/seerr/env
             chmod 0400 /run/seerr/env
           '';
@@ -148,10 +167,19 @@ in
 
         seerr-wait-for-db = mkIf config.nixflix.postgres.enable {
           description = "Wait for Seerr PostgreSQL database to be ready";
-          after = [
-            "postgresql.service"
-            "postgresql-setup.service"
-          ];
+          after =
+            if isLocalDb then
+              [
+                "postgresql.service"
+                "postgresql-setup.service"
+              ]
+            else
+              [
+                "network-online.target"
+                "seerr-env.service"
+              ];
+          wants = optional (!isLocalDb) "network-online.target";
+          requires = optional (!isLocalDb) "seerr-env.service";
           before = [ "postgresql-ready.target" ];
           requiredBy = [ "postgresql-ready.target" ];
 
@@ -161,11 +189,13 @@ in
             TimeoutStartSec = "5min";
             User = cfg.user;
             Group = cfg.group;
-          };
+          }
+          // optionalAttrs (!isLocalDb) { EnvironmentFile = "/run/seerr/env"; };
 
           script = ''
+            ${optionalString (!isLocalDb) ''export PGPASSWORD="$DB_PASS"''}
             while true; do
-              if ${pkgs.postgresql}/bin/psql -h /run/postgresql -d ${cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
+              if ${pkgs.postgresql}/bin/psql ${psqlConnArgs} -d ${escapeShellArg cfg.user} -c "SELECT 1" > /dev/null 2>&1; then
                 echo "Seerr PostgreSQL database is ready"
                 exit 0
               fi
@@ -182,7 +212,7 @@ in
             "network-online.target"
             "nixflix-setup-dirs.service"
           ]
-          ++ optional (cfg.apiKey != null) "seerr-env.service"
+          ++ optional needsEnvFile "seerr-env.service"
           ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
           ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
@@ -198,7 +228,7 @@ in
           ]
           ++ optional config.nixflix.jellyfin.enable "jellyfin-setup-wizard.service"
           ++ optional config.nixflix.jellyfin.enable "jellyfin-plugins.service"
-          ++ optional (cfg.apiKey != null) "seerr-env.service"
+          ++ optional needsEnvFile "seerr-env.service"
           ++ optional config.nixflix.postgres.enable "postgresql-ready.target"
           ++ optional (
             config.nixflix.recyclarr.enable && config.nixflix.recyclarr.cleanupUnmanagedProfiles.enable
@@ -215,9 +245,15 @@ in
             PORT = toString cfg.port;
             CONFIG_DIRECTORY = cfg.dataDir;
           }
-          // optionalAttrs config.nixflix.postgres.enable {
-            DB_TYPE = "postgres";
+          // optionalAttrs config.nixflix.postgres.enable { DB_TYPE = "postgres"; }
+          // optionalAttrs (config.nixflix.postgres.enable && isLocalDb) {
             DB_SOCKET_PATH = "/run/postgresql";
+          }
+          // optionalAttrs (config.nixflix.postgres.enable && !isLocalDb) {
+            DB_HOST = pgCfg.host;
+            DB_PORT = toString pgCfg.port;
+          }
+          // optionalAttrs config.nixflix.postgres.enable {
             DB_USER = cfg.user;
             DB_NAME = cfg.user;
             DB_LOG_QUERIES = "false";
@@ -264,7 +300,7 @@ in
               "~@resources"
             ];
           }
-          // optionalAttrs (cfg.apiKey != null) { EnvironmentFile = "/run/seerr/env"; };
+          // optionalAttrs needsEnvFile { EnvironmentFile = "/run/seerr/env"; };
         };
       };
 

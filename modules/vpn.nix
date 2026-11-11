@@ -84,6 +84,18 @@ in
       '';
     };
 
+    allowedEgress = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "192.168.1.10" ];
+      description = ''
+        Subnets or addresses outside the VPN tunnel that VPN-confined services
+        may open connections to, such as an external PostgreSQL server set in
+        `nixflix.postgres.host`. All other outgoing traffic still goes through
+        the tunnel.
+      '';
+    };
+
     openVPNPorts = mkOption {
       type = types.listOf (
         types.submodule {
@@ -123,7 +135,7 @@ in
     vpnNamespaces.${cfg.namespace} = {
       enable = true;
       wireguardConfigFile = cfg.wgConfFile;
-      inherit (cfg) accessibleFrom;
+      inherit (cfg) accessibleFrom allowedEgress;
       inherit (cfg) openVPNPorts;
     };
   };
