@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+
 ## [5.0.0] - 2026-11-11
 
 ### Breaking
@@ -18,7 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
 - Lidarr metadata provider service that configures audio tag writing (`writeAudioTags`, `scrubAudioTags`, `embedCoverArt`) and the metadata source via `nixflix.lidarr.config.metadataProvider` ([#335](https://github.com/kiriwalawren/nixflix/issues/335))
 - `nixflix.nginx.sslCertificate`/`sslCertificateKey` and `nixflix.caddy.tls.certFile`/`keyFile` path options for using an existing (e.g. self-signed) certificate on all nixflix virtual hosts ([#332](https://github.com/kiriwalawren/nixflix/issues/332))
 - Notif connectors for every Starr notification type except Trakt: `apprise`, `customScript`, `discord`, `email`, `gotify`, `join`, `kodi`, `mailgun`, `notifiarr`, `plex`, `prowl`, `pushbullet`, `pushcut`, `pushover`, `pushsafer`, `sendgrid`, `signal`, `simplepush`, `slack`, `synologyIndexer`, `telegram`, `twitter` and `webhook` (including typed `webhook.headers`, whose values can be `_secret` files; Apprise's own tags field is `apprise.appriseTags`) ([#415](https://github.com/kiriwalawren/nixflix/pull/415))
