@@ -70,7 +70,7 @@
 }
 
 /* Make top-level Reference navigation items (services) larger and bold */
-.md-nav--primary .md-nav__item--section > .md-nav__link {
+.md-nav--primary .md-nav[data-md-level="1"] > .md-nav__list > .md-nav__item--nested > .md-nav__link {
   font-size: 1.1em;
   font-weight: 700;
 }

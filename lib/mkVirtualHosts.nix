@@ -4,7 +4,13 @@ let
 
   # --- Caddy helpers ---
   inherit (cfg.caddy) tls;
-  tlsDirective = if tls.enable && tls.internal then "tls internal" else "";
+  tlsDirective =
+    if tls.enable && tls.certFile != null then
+      "tls ${tls.certFile} ${tls.keyFile}"
+    else if tls.enable && tls.internal then
+      "tls internal"
+    else
+      "";
 
   # When TLS is disabled, prefix with http:// to prevent Caddy from
   # automatically enabling HTTPS. "tls off" is not valid Caddyfile syntax.
@@ -45,6 +51,8 @@ let
     lib.mkIf cfg.nginx.enable {
       inherit (cfg.nginx) forceSSL;
       useACMEHost = if cfg.nginx.enableACME then cfg.nginx.domain else null;
+      sslCertificate = lib.mkIf (cfg.nginx.sslCertificate != null) cfg.nginx.sslCertificate;
+      sslCertificateKey = lib.mkIf (cfg.nginx.sslCertificateKey != null) cfg.nginx.sslCertificateKey;
 
       locations."/" = {
         proxyPass = "http://${upstreamHost}:${toString port}";

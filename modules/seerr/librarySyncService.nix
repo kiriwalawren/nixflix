@@ -8,7 +8,6 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
   librarySync = import ./librarySync.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 in
@@ -36,10 +35,7 @@ in
 
         BASE_URL="${baseUrl}"
 
-        # Authenticate
-        source ${authUtil.authScript}
-
-        source ${librarySync authUtil.curlAuthArgs}
+        source ${librarySync { inherit (cfg) apiKey; }}
       '';
     };
   };

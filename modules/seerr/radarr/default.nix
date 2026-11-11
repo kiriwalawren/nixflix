@@ -9,7 +9,7 @@ let
   secrets = import ../../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
@@ -40,13 +40,15 @@ let
         }')
 
       echo "Testing Radarr connection..."
-      TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-        --max-time 30 \
-        ${authUtil.curlAuthArgs} \
-        -H "Content-Type: application/json" \
-        -d "$TEST_PAYLOAD" \
-        -w "\n%{http_code}" \
-        "$BASE_URL/api/v1/settings/radarr/test")
+      TEST_RESPONSE=$(printf '%s' "$TEST_PAYLOAD" | ${
+        mkSecureCurl cfg.apiKey {
+          url = "$BASE_URL/api/v1/settings/radarr/test";
+          method = "POST";
+          headers."Content-Type" = "application/json";
+          data = "@-";
+          extraArgs = ''--max-time 30 -w "\n%{http_code}"'';
+        }
+      })
 
       TEST_HTTP_CODE=$(echo "$TEST_RESPONSE" | tail -n1)
       TEST_BODY=$(echo "$TEST_RESPONSE" | sed '$d')
@@ -87,10 +89,12 @@ let
       echo "Using quality profile: $PROFILE_NAME (ID: $PROFILE_ID)"
 
       # Check if server already exists
-      EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-        --max-time 30 \
-        ${authUtil.curlAuthArgs} \
-        "$BASE_URL/api/v1/settings/radarr")
+      EXISTING_SERVERS=$(${
+        mkSecureCurl cfg.apiKey {
+          url = "$BASE_URL/api/v1/settings/radarr";
+          extraArgs = "--max-time 30";
+        }
+      })
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
         --arg name ${escapeShellArg radarrName} '.[] | select(.name == $name) | .id')
@@ -132,13 +136,15 @@ let
 
       if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
         echo "Updating existing Radarr instance (ID: $EXISTING_ID)..."
-        UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
-          --max-time 30 \
-          ${authUtil.curlAuthArgs} \
-          -H "Content-Type: application/json" \
-          -d "$SERVER_CONFIG" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/settings/radarr/$EXISTING_ID")
+        UPDATE_RESPONSE=$(printf '%s' "$SERVER_CONFIG" | ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/radarr/$EXISTING_ID";
+            method = "PUT";
+            headers."Content-Type" = "application/json";
+            data = "@-";
+            extraArgs = ''--max-time 30 -w "\n%{http_code}"'';
+          }
+        })
 
         UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
         if [ "$UPDATE_HTTP_CODE" != "200" ] && [ "$UPDATE_HTTP_CODE" != "201" ]; then
@@ -149,13 +155,15 @@ let
         echo "Radarr instance updated"
       else
         echo "Creating new Radarr instance..."
-        CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          --max-time 30 \
-          ${authUtil.curlAuthArgs} \
-          -H "Content-Type: application/json" \
-          -d "$SERVER_CONFIG" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/settings/radarr")
+        CREATE_RESPONSE=$(printf '%s' "$SERVER_CONFIG" | ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/radarr";
+            method = "POST";
+            headers."Content-Type" = "application/json";
+            data = "@-";
+            extraArgs = ''--max-time 30 -w "\n%{http_code}"'';
+          }
+        })
 
         CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
         if [ "$CREATE_HTTP_CODE" != "200" ] && [ "$CREATE_HTTP_CODE" != "201" ]; then
@@ -213,19 +221,18 @@ in
 
         BASE_URL="${baseUrl}"
 
-        # Authenticate
-        source ${authUtil.authScript}
-
         # Configure each Radarr instance
         ${concatStringsSep "\n" (mapAttrsToList mkRadarrConfigScript cfg.radarr)}
 
         # Delete servers not in configuration
         CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (attrNames cfg.radarr))}"
 
-        EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-          --max-time 30 \
-          ${authUtil.curlAuthArgs} \
-          "$BASE_URL/api/v1/settings/radarr")
+        EXISTING_SERVERS=$(${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/radarr";
+            extraArgs = "--max-time 30";
+          }
+        })
 
         SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
           --slurpfile configured "$CONFIGURED_NAMES" \
@@ -233,10 +240,13 @@ in
 
         for server_id in $SERVERS_TO_DELETE; do
           echo "Deleting Radarr server (ID: $server_id)..."
-          ${pkgs.curl}/bin/curl -sf -X DELETE \
-            --max-time 30 \
-            ${authUtil.curlAuthArgs} \
-            "$BASE_URL/api/v1/settings/radarr/$server_id" >/dev/null
+          ${
+            mkSecureCurl cfg.apiKey {
+              url = "$BASE_URL/api/v1/settings/radarr/$server_id";
+              method = "DELETE";
+              extraArgs = "-f --max-time 30";
+            }
+          } >/dev/null
         done
 
         echo "Radarr configuration completed"

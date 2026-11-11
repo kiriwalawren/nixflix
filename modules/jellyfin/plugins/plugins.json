@@ -74,12 +74,39 @@
   },
   "AD Account Sync": {
     "category": "Administration",
-    "description": "Jellyfin 12.0.0 release of AD Account Sync.",
+    "description": "Jellyfin 12.4.0 release of AD Account Sync.",
     "guid": "e8261d23-9083-4f20-a9e8-6cf5952ba31c",
     "imageUrl": "https://raw.githubusercontent.com/aober420/AD-Account-Sync/main/images/jellyfin-plugin-AD-Account-Sync.png",
-    "overview": "Jellyfin 12.0.0 release of AD Account Sync.",
+    "overview": "Jellyfin 12.4.0 release of AD Account Sync.",
     "owner": "aober420",
     "versions": [
+      {
+        "changelog": "## 🐛 Bug Fixes\n\n- Wait for Jellyfin to register the sync task before starting the internal timer. Fixes the scheduled task unavailable error and failed trigger cleanup.\n- Remove the legacy interval and startup triggers; automatic syncing uses the plugin timer.\n- Skip timed runs while the manual task is already running.\n\nThe configurable interval remains 5 minutes by default. Restart Jellyfin after installing.",
+        "checksum": "0af360af772355b20a1c8fdf4dc59e7c",
+        "hash": "sha256-IKKI46aJz//QdNUV5JhneH3NXJEAgO9h0Ecse2Mjm9g=",
+        "sourceUrl": "https://raw.githubusercontent.com/aober420/AD-Account-Sync/main/releases/AD%20Account%20Sync_1.0.2.1.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T00:00:00Z",
+        "version": "1.0.2.1"
+      },
+      {
+        "changelog": "## ✨ New Features\n\n- Internal sync timer with a configurable interval of 5–1440 minutes; default 5 minutes.\n\n## ⚙️ Improvements\n\n- Removes the plugin's old Scheduled Tasks interval triggers on startup.\n- Groups the manual sync task under AD Account Sync.\n- Saving settings resets the timer. Manual sync remains available and uses the same task worker.\n- No Jellyfin Web file modifications required.\n\nBuilt against Jellyfin 12.4.0.",
+        "checksum": "5e17e18922555d7da495f0b2d68a7e74",
+        "hash": "sha256-dihrN4cExItZ0holeGn6jBd06FT4DgCiPkelQMmBLQM=",
+        "sourceUrl": "https://raw.githubusercontent.com/aober420/AD-Account-Sync/main/releases/AD%20Account%20Sync_1.0.2.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T00:00:00Z",
+        "version": "1.0.2.0"
+      },
+      {
+        "changelog": "## ✨ New Features\n\n- Jellyfin 12.4.0 support.\n\n## ⚙️ Improvements\n\n- Sync Active Directory account status every 5 minutes instead of every 15 minutes.",
+        "checksum": "d5af665260d96aacf8da0c3ea2140c00",
+        "hash": "sha256-g6jEKNLQyVuaQJyehDW9w87rq6IA+M1wGHGAbHHkZ8k=",
+        "sourceUrl": "https://raw.githubusercontent.com/aober420/AD-Account-Sync/main/releases/AD%20Account%20Sync_1.0.1.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T00:00:00Z",
+        "version": "1.0.1.0"
+      },
       {
         "changelog": "Jellyfin 12.0.0 release of AD Account Sync.",
         "checksum": "dfa2f8d74384bad72e4872731c835bf9",
@@ -1791,79 +1818,6 @@
       }
     ]
   },
-  "Artisan Jelly": {
-    "category": "General",
-    "description": "Scans your library for missing artwork and lets you fix it from one place. GitHub: https://github.com/Hummird/Artisan-Jelly",
-    "guid": "800aa8b6-9226-4069-a99a-4cdfafcdf394",
-    "imageUrl": "https://raw.githubusercontent.com/Hummird/Artisan-Jelly/refs/heads/main/Artisan Jelly.png",
-    "overview": "Finds movies and shows with incomplete images — missing posters, logos, backdrops, discs, and more. Filter by type, search online providers, and upload your own artwork directly from the plugin page.",
-    "owner": "hummird",
-    "versions": [
-      {
-        "changelog": "Added Openverse image search",
-        "checksum": "2be120b1362d01b826ca79c4376ffff7",
-        "hash": "sha256-PHTp+OkB/cl0DI1Ux+S9fnaOqrNTU1bovH7YX/Aa1p4=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.3.0.0/Artisan.Jelly_1.3.0.0.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-20T18:07:13.0000000Z",
-        "version": "1.3.0.0"
-      },
-      {
-        "changelog": "Added hiding of unwanted item types from the filter",
-        "checksum": "ee200a42b058294ea187d0b7c39b3ecd",
-        "hash": "sha256-dwe45nAz+Dqel4kNFoOpdSygwav0bE5akm75cYsQffI=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.2.1.0/Artisan.Jelly_1.2.1.0.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-18T18:46:20.0000000Z",
-        "version": "1.2.1.0"
-      },
-      {
-        "changelog": "Added support for all item types (e.g. Person, Audio). Fixed bugs",
-        "checksum": "d936103680dee55ac74565bdce9f43bc",
-        "hash": "sha256-3JOM7HrCnwTtjS6GWmxjaYzZsd/ES736DTurH1L78es=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.2.0.0/Artisan.Jelly_1.2.0.0.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-18T17:31:32.0000000Z",
-        "version": "1.2.0.0"
-      },
-      {
-        "changelog": "Fixed transparent background on modal",
-        "checksum": "a1ab80e47a4a3c83374e65f682fd1dcc",
-        "hash": "sha256-zC9KvIBSz5i0liJNiAjocDp/mKJ9a5kF8FL+jT9R7iE=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.1.0.3/Artisan.Jelly_1.1.0.3.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-17T21:39:42.0000000Z",
-        "version": "1.1.0.3"
-      },
-      {
-        "changelog": "Fixed issue with logo and configPage not showing if installed from manifest",
-        "checksum": "7c387c05a0f6989930464f8cb010756e",
-        "hash": "sha256-JTtOj4lMyUDSTx7C0ohrJKaJr0Lrvd3sIdYOxbwGjFU=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.1.0.2/Artisan.Jelly_1.1.0.2.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-17T20:23:53.0000000Z",
-        "version": "1.1.0.2"
-      },
-      {
-        "changelog": "Added a logo",
-        "checksum": "5b243c6c3de664da0ddb937366971218",
-        "hash": "sha256-/FpQyAG5HU8oZlL9QnAzr4o3/T7vxb5pXQ316DfI/P0=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.1.0.1/ArtisanJelly_1.1.0.1.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-17T19:45:19.0000000Z",
-        "version": "1.1.0.1"
-      },
-      {
-        "changelog": "Added Web UI",
-        "checksum": "50c43bd4562bc4db38e41b33c457108e",
-        "hash": "sha256-yBOyIjlA8sLO0UzwA1PvOgsZVhEa1EzUKw6e5LzM/hU=",
-        "sourceUrl": "https://github.com/Hummird/Artisan-Jelly/releases/download/1.1.0.0/ArtisanJelly_1.1.0.0.zip",
-        "targetAbi": "10.11.6.0",
-        "timestamp": "2026-03-17T19:25:28.0000000Z",
-        "version": "1.1.0.0"
-      }
-    ]
-  },
   "Artwork": {
     "category": "General",
     "description": "Downloads artwork from a repository for various media types.\n",
@@ -2065,6 +2019,15 @@
     "owner": "NeptuneHub",
     "versions": [
       {
+        "changelog": "- added song alchemy for randomness (5065eb6)\n- ci: Update manifest.json for release v0.3.6 (5027aef)",
+        "checksum": "029dd8fbb35037d4e08fef44e679b8fb",
+        "hash": "sha256-YF0yxts0zXVuf0Fqj32J0QnbGofzJs64lSeSFrc1qWY=",
+        "sourceUrl": "https://github.com/NeptuneHub/audiomuse-ai-plugin/releases/download/v12.0.0/audiomuse-ai_12.0.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-06T09:01:57Z",
+        "version": "12.0.0.0"
+      },
+      {
         "changelog": "- InstantMix provider - adding DCLAP (556efc8)\n- screen update (baf7e7b)\n- Merge branch 'master' of https://github.com/NeptuneHub/audiomuse-ai-plugin (e2d093d)\n- readme.md example fix (7a9de11)\n- ci: Update manifest.json for release v0.3.5 (d03ef66)",
         "checksum": "ba05d3c1b09a910113395e53b4aa79f6",
         "hash": "sha256-23Bsd7kRoNqARoPzWhThZx5NfsaHk4TrhqT2oR0zQFE=",
@@ -2144,15 +2107,6 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-07-09T16:14:46Z",
         "version": "0.2.3.0"
-      },
-      {
-        "changelog": "- LOGO UPDATE (6cb7b5b)\n- Merge branch 'master' of https://github.com/NeptuneHub/audiomuse-ai-plugin (2b264e9)\n- readme.md fix (87f7b22)\n- ci: Update manifest.json for release v0.2.1 (0f53116)",
-        "checksum": "35c522c990f4202694dd05f12f2c1376",
-        "hash": "sha256-V2JF+zyLq679AS1vuw8TXsqg1QKwp6sln8vlOuoML38=",
-        "sourceUrl": "https://github.com/NeptuneHub/audiomuse-ai-plugin/releases/download/v0.2.2/audiomuse-ai_0.2.2.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-07-09T16:04:47Z",
-        "version": "0.2.2.0"
       }
     ]
   },
@@ -2805,6 +2759,24 @@
     "owner": "AHouseOfBards",
     "versions": [
       {
+        "changelog": "**Fixed**\n\n- Picking a profile after restarting the app failed at the session limit and looped back to the picker. (#41)\n- A Roku opened a profile without asking for its PIN. (#40)\n- Bonfire did nothing on servers with a Base URL, or behind an HTTPS proxy with \"Require HTTPS\" on.\n- A configuration file that couldn't be read wiped every household.\n- Typing a long PIN used up its tries before it was finished.\n- A PIN typed after \"Clear PIN\" was dropped.\n- A rejected profile picture deleted the one the profile had.\n- A library removed from a profile in Dashboard → Users came back at its next sign-in.\n- Security and privacy fixes. Updating is recommended.\n\n**Changed**\n\n- On other apps, PIN sign-in is limited to devices your household uses.",
+        "checksum": "9d289fd2d72ae1b686e6adeaa7a9c95b",
+        "hash": "sha256-XCiDjirHQ8OIlBrdNsOdVPy5XFhjcTBAZhq6g9sqKv4=",
+        "sourceUrl": "https://github.com/AHouseOfBards/Bonfire-JellyProfiles/releases/download/v1.7.2/Jellyfin.Profiles.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-07T00:00:00Z",
+        "version": "1.7.2.0"
+      },
+      {
+        "changelog": "**Added**\n\n- Catalan and Spanish.\n\n**Changed**\n\n- Bonfire now uses the language set in Jellyfin (Settings → Display), not the browser's.",
+        "checksum": "a577079562251040249d52362afde82f",
+        "hash": "sha256-XqorOX7pyoT7yUTRpiiaRERNKEClfYtCRKn3TMD7rKA=",
+        "sourceUrl": "https://github.com/AHouseOfBards/Bonfire-JellyProfiles/releases/download/v1.7.1/Jellyfin.Profiles.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-02T00:01:15Z",
+        "version": "1.7.1.0"
+      },
+      {
         "changelog": "**Added**\n\n- Themes for Bonfire's screens: nine looks, three of them seasonal. The server owner picks the default and whether each profile can choose its own.\n- Settings → Theme, where the main account sets each profile's theme.\n- Parental rating choices use your server's country instead of US ratings only.\n\n**Changed**\n\n- A theme change shows straight away, without reloading.\n- The way out of every screen is in the same place, bottom left.\n\n**Fixed**\n\n- Jellyfin's home screen flashed briefly before the profile picker, and after picking a profile.\n- A profile could go missing from a TV's sign-in screen.\n- Saving a profile could remove its rating limit or its allowed devices.\n- Switching into a disabled profile turned it back on.\n- Some translations failed to load on clients that ask for them in lowercase, such as pt-br.\n- \"Settings saved.\" on the admin page showed its title off-centre.",
         "checksum": "61c3bf676a3e6ba74b6197c1fde897bf",
         "hash": "sha256-IO2hPGMfJRxAA2yU8srpzdIKXV5ivCp6gnq5yTl+nBw=",
@@ -2875,24 +2847,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-01T00:00:00Z",
         "version": "1.6.0.0"
-      },
-      {
-        "changelog": "**New**\n\n- Bonfire no longer edits Jellyfin's `index.html`. The client script is added to the page as it is served, so there is nothing to re-apply after a Jellyfin update and no file permissions to grant. Patching the file stays available as a legacy option under **Advanced → Client script**. (#17, #11, #3)\n- The switcher follows your theme's accent colour instead of always drawing Jellyfin blue.\n- Profile screens use the whole window on a desktop instead of one phone-width column.\n- The picker shows which profile you are currently watching as.\n\n**Fixed**\n\n- On Android, picking a profile could bring the picker straight back, over and over, and a PIN-protected profile could drop you at the account login.\n- Picking a profile showed nothing at all for the second or two it takes, so the tap read as missed. The profile you picked now shows a spinner, and the screen no longer goes black while it loads.\n- Opening a profile took several seconds and could drop you back on a screen you had already left.\n- Bonfire rewrote `index.html` on startup even when set never to touch it.\n- The settings page reported the client script as installed whenever the plugin was loaded at all, including on servers where nothing was reaching the page.\n- Add Profile was missing from the Manage Profiles screen.\n- Library names were cut off to \"3D Movi…\" when choosing artwork.\n- **Upload avatars** and **Upload a folder** were unstyled text instead of buttons.\n- \"PIN Protected\" showed in red and \"No PIN\" in green — the wrong way round.\n- The audit log ran the time into the address as \"12:09:28 PMIP\".\n\n**Changed**\n\n- The plugin is called **Bonfire** in the Jellyfin sidebar.\n- Plugin settings are split into tabs — General, Avatars, Accounts, Activity and Advanced — instead of one page five screens tall.\n- Switcher Style and Your Bonfire move out of the profile grid into their own **Settings** screen. Bonfire Grouping is now called Your Bonfire.\n- Add Profile appears on Manage Profiles only. The \"Who's watching?\" screen is people to pick from.\n- Setting a profile picture is one panel rather than six controls. The paste-a-URL box is gone: a linked picture could not be cropped, was never stored on your server, and disappeared without warning when the link died.\n- Libraries and their artwork are one list, with the artwork controls behind a switch.\n- Delete is no longer as prominent as Save.",
-        "checksum": "778f4a3c9923f696f0314be4e6002a9d",
-        "hash": "sha256-w0aDEivkW/a5tUuPcUqMlJJSLJIKCJ++Pc5Yln5hmf8=",
-        "sourceUrl": "https://github.com/AHouseOfBards/Bonfire-JellyProfiles/releases/download/v1.5.0/Jellyfin.Profiles.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-25T00:00:00Z",
-        "version": "1.5.0.0"
-      },
-      {
-        "changelog": "**New**\n\n- Library artwork can be set per profile. Jellyfin builds a library tile from the items inside it, so a Kids profile could see a poster from a film it cannot open; each profile can now be given its own picture for a library, or none at all. (#19)\n- Administrators can set the switcher defaults for the whole server, under Dashboard → Plugins → Bonfire. Anyone who has already chosen keeps their own setting. (#14)\n- Avatars can be uploaded several at a time, or a whole folder at once. Administrators with a prepared set already on the server can point at its folder and import it. (#14)\n- The profile picker has a Cancel button when you opened it yourself, so you can go back to what you were watching.\n\n**Fixed**\n\n- Switching a profile failed with \"Invalid username or password\" on Jellyfin 10.11.11, and signed the master account out. (#15)\n- On Samsung Tizen, picking a profile changed the avatar but left you in the original account. (#15, #16)\n- On a TV, the remote could steer the Jellyfin page hidden behind the Bonfire screen. (#16)\n- The TV Back button raised Samsung’s \"exit application?\" prompt behind the Bonfire screen. Back now steps back one screen instead. (#15)\n- \"Switch Profile\" now appears on the Settings page, not only in the header dropdown. (#14)\n- Profile pictures could be zoomed but not dragged.\n- Save and Cancel are scrolled into view when a remote reaches them, so long profile forms no longer look frozen. (#15)\n- Pictures now load in clients that bundle their own web client, such as Samsung Tizen.\n- A missing script tag in index.html now says which of the three causes it is. (#17)\n\n**Changed**\n\n- The emergency disable link appears only once an administrator has set a code.\n- Error messages, hints and warnings cut down throughout.",
-        "checksum": "ce10d93d6ebcff0ded66a054d37a4895",
-        "hash": "sha256-mwc+ZNyMIw28ld6DA2zjjdGlFycBY3cgty+4ZMO+5Gs=",
-        "sourceUrl": "https://github.com/AHouseOfBards/Bonfire-JellyProfiles/releases/download/v1.4.0/Jellyfin.Profiles.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-21T00:00:00Z",
-        "version": "1.4.0.0"
       }
     ]
   },
@@ -4821,6 +4775,15 @@
     "owner": "jon4hz",
     "versions": [
       {
+        "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-discontinue-watching/releases/tag/v0.6.0)\n",
+        "checksum": "2d8ccf7cc17a2a33ebec51e4cefd7383",
+        "hash": "sha256-KEIpI9Ujc1/MdeYPsHAkK9nJMcCy3Hcp1bSAeocm6QM=",
+        "sourceUrl": "https://github.com/jon4hz/jellyfin-plugin-discontinue-watching/releases/download/v0.6.0/jellyfin-plugin-discontinue-watching-0.6.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-01T21:46:34Z",
+        "version": "0.6.0.0"
+      },
+      {
         "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-discontinue-watching/releases/tag/v0.5.1)\n",
         "checksum": "016ab0e789ba85d60a2f760d85aacd12",
         "hash": "sha256-gUyQlLMccWdbDhUsclgRLP6gs/VOwfPCpugGbf5+4uA=",
@@ -5649,6 +5612,24 @@
     "owner": "lstb1t",
     "versions": [
       {
+        "changelog": "## [0.26.30.2] - 2026-11-06\n\n### 🐛 Bug Fixes\n\n- Find subtitles in more language variants (#364)\n\n### 🚜 Refactor\n\n- One client per outside service (#361)\n- Keep every memo in one size-limited cache (#362)\n",
+        "checksum": "0527e38f1b0f24d4e2eb3fe85b945637",
+        "hash": "sha256-FQAk6jAmm7C3ZYYadR1qnEO44lnBwzcgL0o13/7F6oA=",
+        "sourceUrl": "https://github.com/lostb1t/Gelato/releases/download/v0.26.30.2/gelato_0.26.30.2.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-11-06T21:02:41Z",
+        "version": "0.26.30.2"
+      },
+      {
+        "changelog": "## [0.26.30.1] - 2026-11-02\n\n### 🐛 Bug Fixes\n\n- Remove the unauthenticated subtitles route (#358)\n- Stop the server fetching streams from link-local hosts (#359)\n\n### 📚 Documentation\n\n- Explain RemuxDB and how to turn it off (#357)\n",
+        "checksum": "45299dce1a8a6ac9b2550db68e930446",
+        "hash": "sha256-0NJiO5FxVYMNpHKjeJQwIiNeGRT04Mf6tdqUBLoXpK4=",
+        "sourceUrl": "https://github.com/lostb1t/Gelato/releases/download/v0.26.30.1/gelato_0.26.30.1.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-11-02T20:52:34Z",
+        "version": "0.26.30.1"
+      },
+      {
         "changelog": "## [0.26.30.0] - 2026-10-30\n\n### 🚀 Features\n\n- Show recommended titles that aren't in the library (#349)\n\n### 🐛 Bug Fixes\n\n- Undated watched/resume state migration (#348)\n- Keep the subtitle task from searching every stream (#352)\n\n### ⚙️ Miscellaneous Tasks\n\n- Remove the unused Palco cache API (#353)\n",
         "checksum": "6129acb59341e30fa8fd8d34bc3a0463",
         "hash": "sha256-ieR61EDESMXCTEGNzLfetMiFW6eLJMmnKcjDdiZKm6M=",
@@ -5719,24 +5700,6 @@
         "targetAbi": "12.1.0.0",
         "timestamp": "2026-10-13T20:50:56Z",
         "version": "0.26.23.0"
-      },
-      {
-        "changelog": "## [0.26.22.1] - 2026-10-09\n\n### 🐛 Bug Fixes\n\n- Pre-probe only opened pages and probe a source once (#262)\n- Answer a movie/episode's segments with those of the stream it plays (#263)\n- Order stream sync and reset by a sequence (#268)\n- Share a prepared playback source from the end of its preparation (#267)\n- List a local episode once in an extended series tree (#270)\n- Take search results into the collection or playlist they are added to (#269)\n- Find the stream listed under the item's id by its own id too (#271)\n- Report one search total on every page (#272)\n- Offer a subtitle saved on a movie's or episode's page with its streams (#273)\n\n### ⚡ Performance\n\n- Cache playback source preperation once for its streaming requests (#264)\n- Faster listings, search and opening a movie from search (#274)\n",
-        "checksum": "989d1c62fd788e71a4beb45a9a041ee1",
-        "hash": "sha256-IdIeAEK0w3umk4ewOGBz+d0AfQGMhRFt/7muMrk//iU=",
-        "sourceUrl": "https://github.com/lostb1t/Gelato/releases/download/v0.26.22.1/gelato_0.26.22.1.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-10-09T21:19:49Z",
-        "version": "0.26.22.1"
-      },
-      {
-        "changelog": "## [0.26.22.0] - 2026-10-02\n\n### 🚀 Features\n\n- Probe streams before playback (#257)\n\n### 🐛 Bug Fixes\n\n- Fetch intro segments before the first play of a remuxdb stream (#256)\n\n### ⚡ Performance\n\n- Fetch a movie's tmdb id and release dates in one request (#259)\n- Find stream rows and stremio ids through indexes (#258)\n",
-        "checksum": "d9410d90eb42eaebac87a2b7af78fc14",
-        "hash": "sha256-kZnDNd7AFFz5D60gR+gwE+KuDaHp2gBd71YSLm1kdfE=",
-        "sourceUrl": "https://github.com/lostb1t/Gelato/releases/download/v0.26.22.0/gelato_0.26.22.0.zip",
-        "targetAbi": "12.1.0.0",
-        "timestamp": "2026-10-02T23:45:46Z",
-        "version": "0.26.22.0"
       }
     ]
   },
@@ -5748,6 +5711,15 @@
     "overview": "Allows users to choose avatars from a curated collection.",
     "owner": "cedev-1",
     "versions": [
+      {
+        "changelog": "- New release v1.7.5.0",
+        "checksum": "06a0051c10537a102bb6f6f0792919dd",
+        "hash": "sha256-3uzLLjPMUb+giP2JiZ1pzDpeiuo6P4fVvi50FdxIvyk=",
+        "sourceUrl": "https://github.com/cedev-1/jellyfin-plugin-GetAvatar/releases/download/v1.7.5.0/Jellyfin.Plugin.GetAvatar-v1.7.5.0.zip",
+        "targetAbi": "10.11.5",
+        "timestamp": "2026-11-04T21:28:36Z",
+        "version": "1.7.5.0"
+      },
       {
         "changelog": "- New release v1.7.0.0",
         "checksum": "8351d3c19ee09caf7c961f56740c7e4b",
@@ -5828,15 +5800,6 @@
         "targetAbi": "10.11.5",
         "timestamp": "2026-05-25T11:56:25Z",
         "version": "1.5.9.0"
-      },
-      {
-        "changelog": "- New release v1.5.8.0",
-        "checksum": "65677806be6b2a78f0da2ebeb0ce0f52",
-        "hash": "sha256-gY3F1CsIMk7Eonv4tY2EwWVRsGDFi2NOs6DSyUGR75o=",
-        "sourceUrl": "https://github.com/cedev-1/jellyfin-plugin-GetAvatar/releases/download/v1.5.8.0/Jellyfin.Plugin.GetAvatar-v1.5.8.0.zip",
-        "targetAbi": "10.11.5",
-        "timestamp": "2026-05-24T19:06:50Z",
-        "version": "1.5.8.0"
       }
     ]
   },
@@ -6087,6 +6050,34 @@
       }
     ]
   },
+  "HEIC Photos": {
+    "category": "General",
+    "description": "Shows HEIC/HEIF photos (iPhone) in photo libraries, converted with Jellyfin's own ffmpeg when they're viewed. No converted copies are kept beside your photos.",
+    "guid": "5b0f7c1e-3a6d-4f2b-9e84-2c71d0a9b6e3",
+    "imageUrl": "",
+    "overview": "Shows HEIC/HEIF photos (iPhone) in photo libraries, converted with Jellyfin's own ffmpeg when they're viewed. No converted copies are kept beside your photos.",
+    "owner": "LuckyNoS7evin",
+    "versions": [
+      {
+        "changelog": "Fill in photos Jellyfin's reader missed: TagLib# isn't thread-safe, so in a parallel scan some JPEGs etc. fail (IndexOutOfRangeException in IFDReader) and get no date, camera or GPS. Photos with none of those details are read again with MetadataExtractor (date, camera, settings, GPS, rotation); nothing read is ever cleared. 0.2.0.0",
+        "checksum": "dcbf604bcf5b0afc051a33009f0fa6cd",
+        "hash": "sha256-IeSOwXbr8ssRItDoDIM1DCGiTqYNgwzFyXyjkSAuEwE=",
+        "sourceUrl": "https://luckynos7evin.github.io/jellyfin-heic-plugin/releases/heic-photos_0.2.0.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-05T20:52:37Z",
+        "version": "0.2.0.0"
+      },
+      {
+        "changelog": "HEIC Photos plugin: lists HEIC/HEIF files in photo libraries as photos (and folders of them as albums), reads their date, camera, settings, GPS and size with MetadataExtractor, and converts them with Jellyfin's ffmpeg whenever an image is asked for, through a wrapper around the server's image encoder; nothing is kept beside the photos",
+        "checksum": "a11ad50935fe4e9e31323cbe13d7bcfe",
+        "hash": "sha256-gNtie1taaXGMqyZYCYnL9zJ8GJc84GP3U48eh8JTrmk=",
+        "sourceUrl": "https://luckynos7evin.github.io/jellyfin-heic-plugin/releases/heic-photos_0.1.0.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-05T10:31:26Z",
+        "version": "0.1.0.0"
+      }
+    ]
+  },
   "Harmonie": {
     "category": "Music",
     "description": "Generate Jellyfin playlists from harmonie audio similarity. Name a playlist [RADIO] for similar-track radio, or [DRIFT] for a gradually-evolving mix.",
@@ -6095,6 +6086,24 @@
     "overview": "Build playlists from harmonie audio similarity.",
     "owner": "mxschll",
     "versions": [
+      {
+        "changelog": "\n### Build\n\n- Bump taiki-e/install-action from 2.87.21 to 2.88.0 (#41) (649d023)",
+        "checksum": "fcf078fa71501e1d4a02da2f26f0d260",
+        "hash": "sha256-Xg4YUlf3sIM1vm4BeKrBc41seTwXrhsxDhaTHx+qBHA=",
+        "sourceUrl": "https://github.com/mxschll/jellyfin-harmonie/releases/download/v1.13.5/jellyfin-harmonie_1.13.5.1.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-01T09:57:07Z",
+        "version": "1.13.5.1"
+      },
+      {
+        "changelog": "\n### Build\n\n- Bump taiki-e/install-action from 2.87.21 to 2.88.0 (#41) (649d023)",
+        "checksum": "bcaa8c35516151be061fd17ae971a05c",
+        "hash": "sha256-3g0XnowvkCbqAm4G+kLAl5fZvap6rW+HRd7Z1qVlW2k=",
+        "sourceUrl": "https://github.com/mxschll/jellyfin-harmonie/releases/download/v1.13.5/jellyfin-harmonie_1.13.5.0.zip",
+        "targetAbi": "10.10.0.0",
+        "timestamp": "2026-11-01T09:57:07Z",
+        "version": "1.13.5.0"
+      },
       {
         "changelog": "\n### Other\n\n- Bump SQLitePCLRaw.bundle_e_sqlite3 from 2.1.13 to 2.1.14 (#39) (dc376ac)\n- Bump Microsoft.NET.Test.Sdk from 18.10.1 to 18.11.0 (#38) (b5e4c17)\n- Bump xunit.runner.visualstudio from 4.0.0 to 4.0.1 (#37) (75c1cca)",
         "checksum": "39bd0a6b9c91eb266102000d4247aab9",
@@ -6166,24 +6175,6 @@
         "targetAbi": "10.10.0.0",
         "timestamp": "2026-08-26T11:24:01Z",
         "version": "1.13.1.0"
-      },
-      {
-        "changelog": "\n### Documentation\n\n- Soften the upcoming features heading (ddd3155)\n- List planned playlist types (e0d1863)\n\n### Features\n\n- Extend sonic instant mix (#31) (b4e493d)",
-        "checksum": "e88c18ca668e0711de2b9e2e4cb7e04e",
-        "hash": "sha256-5XGHWXFqwWWBdlgZCPWw54Qkz3M9aKq5YQuSLZKdun0=",
-        "sourceUrl": "https://github.com/mxschll/jellyfin-harmonie/releases/download/v1.13.0/jellyfin-harmonie_1.13.0.1.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-23T17:04:34Z",
-        "version": "1.13.0.1"
-      },
-      {
-        "changelog": "\n### Documentation\n\n- Soften the upcoming features heading (ddd3155)\n- List planned playlist types (e0d1863)\n\n### Features\n\n- Extend sonic instant mix (#31) (b4e493d)",
-        "checksum": "c6099198e5fe874e947079ccb4808476",
-        "hash": "sha256-rIO/UJyF40wuUvJa0hXrOagAUBnr4a/X86YDDn/bazc=",
-        "sourceUrl": "https://github.com/mxschll/jellyfin-harmonie/releases/download/v1.13.0/jellyfin-harmonie_1.13.0.0.zip",
-        "targetAbi": "10.10.0.0",
-        "timestamp": "2026-08-23T17:04:34Z",
-        "version": "1.13.0.0"
       }
     ]
   },
@@ -7269,6 +7260,15 @@
     "owner": "ivenos",
     "versions": [
       {
+        "changelog": "## ✨ Added\r\n\r\n- Pick rows and add them to a collection or playlist, or take them out again (#13).\r\n- Collections and Playlists columns.\r\n\r\n## 🔄 Changed\r\n\r\n- The buttons above and below the table are small icons, and CSV and ODS share one export button.\r\n\r\n**Full changelog:** [v1.2.0...v1.3.0](https://github.com/ivenos/jellyfin_inventory/compare/v1.2.0...v1.3.0)\r\n",
+        "checksum": "d0539120a42a99bd39d9af1fc9f992bc",
+        "hash": "sha256-WIe/bgXmbKF1KkZPzhYJF10oopwOujxHdtOK7J82Zcs=",
+        "sourceUrl": "https://github.com/ivenos/jellyfin_inventory/releases/download/v1.3.0/inventory_1.3.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T13:58:48Z",
+        "version": "1.3.0.0"
+      },
+      {
         "changelog": "## ✨ Added\n\n- A Genres column (#12).\n- Artists, Authors and Narrators columns, with the artists shown for albums and tracks by default.\n- An audiobook kept in several files is one row that opens to its files.\n- Search also finds artists, authors and narrators.\n\n## 🔄 Changed\n\n- Filtering genres, people or languages with = or ≠ checks each value on its own.\n\n## 🐛 Fixed\n\n- An mp4, m4v, mov or webm file showed a list of formats as its container.\n- Names and other text sorted 10 ahead of 2.\n- An audio .strm file took its size per hour from the size of the text file.\n- A frame rate typed as 23.976 found nothing in languages with a decimal comma.\n- A filter read a value such as 0,125 as 125.\n- Right-to-left languages showed sizes, runtimes and paths in the wrong order.\n- Clicking a column header while a tab loaded sorted it by a hidden column.\n- After a first load that failed, buttons could be clicked but did nothing.\n- Search and filters missed names with accents the way macOS stores them.\n- The page title sat lower than on Jellyfin's own dashboard pages.\n- In a narrow window the buttons wrapped one by one instead of together.\n\n**Full changelog:** [v1.1.0...v1.2.0](https://github.com/ivenos/jellyfin_inventory/compare/v1.1.0...v1.2.0)\n",
         "checksum": "2aaf3c0fe047024f85a1763a5ccc5516",
         "hash": "sha256-z65kAlupHH6/wkyNlCJT9W19dhhlUnQdP2Kf8uaL1tI=",
@@ -8343,6 +8343,15 @@
     "owner": "SpeeDFireCZE",
     "versions": [
       {
+        "changelog": "**Rows from your own library, a place for every home row, and fixes for\nthe TV and phones.** New *Jellyfin rows* on the home page: the first kind,\n*New episodes*, lists the series each viewer watches that have an episode\npremiered within the last days they have not seen yet. Every home row -\nSeerr's too - can now go under a section of the home page (Next up,\nContinue watching, one library's Recently added...), wherever each viewer\nhas that section. On the TV a focused button stands out again and the\ntrack selections fit their text; casting from a phone no longer stretches\nthe bar.\n\nUpdating is enough - the plugin brings the CSS in Branding up to date at\nstartup, and open pages pick it up on their own (a browser holding the old\npage in its cache may need one Ctrl+F5). Jellyfin rows start empty: add\none under *Jellyfin rows* in the plugin's settings; Seerr rows keep their\nplace.\n\nHome rows\n\n- **New: Jellyfin rows** - rows on the home page from the library itself (no Seerr needed), in a section of their own beside the Seerr rows, added the same way. First kind: **New episodes** - the series a viewer watches (some of it seen) with an episode premiered within the last days (7 by default, 1-30, the viewer's today counted) that they have not seen yet, one card per series with a \"New episodes\" badge, to the series' page. A series leaves once all its new episodes are watched or the days are over; an old episode added now does not bring it, nor a premiere still to come; a row with nothing to show is not shown. Asked each time the home page shows. Needs the script (not in *CSS only*).\n- **New: a row's place under a section** - Seerr rows and Jellyfin rows go at the top, at the bottom, or under a kind of home section (My media, Continue watching, Next up, Recently added - the whole block or one library's part...), wherever the viewer has that section on their home page; a viewer without it gets the row at the top. Rows under one section come in the lists' order (Jellyfin rows first), and both lists have up / down buttons. Existing Seerr rows keep their place.\n\nTV\n\n- TV: a focused button on the item page (Play, Mark played, More...) and in dialogs is filled with the focus color, its text in the contrasting one. The button look's own fill had taken Jellyfin's focus fill away and left dark text on a dim button. The play button, in the accent already, gets a ring. CSS only too.\n- TV, track selections as chips: each field is as wide as its text again, instead of the whole row - the script measures the text in the TV's own font, and again once a font arrives or the choice changes. In *CSS only* the fields keep the whole row, which an older TV cannot get wrong.\n- Item page, chips (track selections, tags, links): a part the item does not have (a series has no track selections) no longer shows up as an empty block.\n\nToolbar and casting\n\n- Casting to another device: Jellyfin shows the device's name in the bar instead of the cast icon, and a long name wrapped into a column that made the bar several lines tall. The name now stays on one line, cut short with an ellipsis; on a phone and in the sidebar layout, where there is no room for it, the icon alone. The button is marked while casting (the accent with a light fill; the bar's contrasting color on a bar in the accent, as with neo-brutalism) - the bar's button style had taken Jellyfin's own color away. CSS only too.\n- Custom toolbar buttons: a button whose overlay is open now shows it, as the current library's link does - an icon in the accent color, a link as the selected link, an entry in the phone menu as the selected entry - and stops when the overlay closes (a click, Esc, leaving the page). A link-placed button no longer takes the look of the selected link when the page was loaded on it.\n- The mark of an open custom button is no longer put into the CSS in *CSS only* (there are no custom buttons without the script), and on a bar in the accent it takes the bar's contrasting color.\n\nEdit metadata\n\n- Edit metadata: an empty drop-down (Custom rating, 3D format, an unset language or country) no longer shrinks to a sliver with its arrow hanging out of it - in the browsers that draw the list as part of the page (Chrome and Edge 135+).\n- Edit metadata: the overview (and every text field of several lines) no longer cuts its text in the corners when the buttons are rounded a lot. **New setting** *Buttons → Multi-line text field radius*: by default (-1) such a field follows the buttons' radius up to 12 px, so with a pill (999) it now gets 12 px; any other value is used as set.\n\nAdmin pages\n\n- Admin pages on a phone: a user's tabs (Profile, Access, Parental Control, Password) were wider than the screen and Jellyfin cut the row off, so the Password tab could not be reached. The row now scrolls sideways (a Jellyfin bug; fixed wherever the theme reaches the admin pages, so not in *CSS only*).\n- Admin pages: the user cards on the Users page sit apart again. Each card's box hung out of its card, so two rows touched (with a hover effect on) or lost the bottom of their rounded corners (without).\n\nSettings page\n\n- Settings page preview: with \"Remember me\" unticked at sign-in, the preview asked for the password again - and the client starting in it dropped the stored sign-in, so the next page load asked too. The preview now uses the admin's own sign-in and changes nothing the browser keeps. A small guard (put at the top of index.html by File Transformation; run by the settings page itself otherwise) gives the preview's client automatic sign-in, keeps its writes of the stored sign-in to itself, and refuses signing in or out inside the preview, which used to end the admin's own session. Switching preview pages quickly could sign the admin out as well - fixed.\n\nDevelopment\n\n- Development: the local test instance runs on Linux too - `test/start-jellyfin.sh` builds the plugin, installs it and starts a portable Jellyfin 12 with jellyfin-ffmpeg on port 3004, `test/setup-jellyfin.sh` completes the wizard and adds the libraries. See *Development* in the README.",
+        "checksum": "aa1fdefe85d5cd2213d445a3078f6d08",
+        "hash": "sha256-YOb3MMUmVF7cikt8++zRIUjNynwyftjQ+QixXcmgyD0=",
+        "sourceUrl": "https://github.com/SpeeDFireCZE/jellycanvas/releases/download/1.3.4/jellycanvas_1.3.4.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T09:38:31Z",
+        "version": "1.3.4"
+      },
+      {
         "changelog": "**Drop-down menus in the theme's look, and a title over the poster that\nmakes way for the hover buttons.** Jellyfin's drop-down fields - the item\npage's audio and subtitle menus, \"Add to playlist\", the settings - showed\nthe browser's own grey list; in Chrome and Edge they now take the Dialogs &\nmenus look and open downwards. With the title printed over the poster, the\nwatched / favorite / menu buttons were hidden under it and greyed by its\ngradient; the title now fades (or slides) away while the pointer is on the\ncard. All of it is plain CSS, so \"CSS only\" has it too.\n\nUpdating is enough - the plugin brings the CSS in Branding up to date at\nstartup, and open pages pick it up on their own (a browser holding the old\npage in its cache may need one Ctrl+F5).\n\nDrop-down menus\n\n- Dialogs & menus: Jellyfin's drop-down fields take the menus' look - style, color, opacity, blur, corners - with the chosen entry marked in the accent: the item page's version / video / audio / subtitle menus, \"Add to playlist\" (the one music users meet) and \"Add to collection\", the user settings for the home screen, playback and subtitles, the metadata editor. They are native selects, and on a computer or a phone the browser drew their list itself, in its own grey, out of any theme's reach. Chrome and Edge (135 and up) now draw it as part of the page (`appearance: base-select`); other browsers keep their own list, in the theme's colors. The TV opens Jellyfin's own menu, which was themed already. Plain CSS, so \"CSS only\" has it too.\n- The lists open downwards. The browser picks the side with more room, so a field in the lower row of the item page opened upwards; below comes first now, a list that does not fit there gets shorter (it scrolls), and only a field at the very bottom of the window opens upwards.\n\nCards\n\n- Cards: with the title over the image, the hover buttons (watched, favorite, menu) appeared under it - both sit in the bottom corner, and the title lay on top and took their clicks. The title now makes way while the pointer is on the card: it fades out (the default) or slides down as it fades, and comes back when the pointer leaves. The choice is under the title setting (*Cards → The title when the pointer is on the card*, shown for \"Over the image\" while the hover buttons are on); \"Stays\" keeps it as before. Only where the buttons appear - not on the TV or a phone, not on series, seasons and collections whose buttons are hidden, and not on the Seerr rows' cards (their button sits in the middle). Plain CSS, so it works with \"CSS only\" too.\n- Fixed: with the title over the image the hover buttons and the bottom card badges were grey and dull - the dark gradient under the title was painted over them (the same layer, and last in the card). It lies under them now, and while the title makes way the gradient goes with it; Jellyfin's own veil over a hovered card stays.",
         "checksum": "70ae060b0bdb07ccd44c3253c86caebf",
         "hash": "sha256-w5Ja0k5A1cDmNA7dtXl0w1iN6tDtTmNEOByX+E8G9hI=",
@@ -8422,15 +8431,6 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-19T20:08:02Z",
         "version": "1.2.0"
-      },
-      {
-        "changelog": "- Fixed: the Seerr rows made the home page throw \"pause is not a function\"\n  when leaving it (their scroller carried Jellyfin's own itemsContainer\n  class); \"coming soon\" posters always open Seerr, a series partly in the\n  library included.\n- README: screenshots of the designer itself.",
-        "checksum": "b719b8f7240966788867400534facea7",
-        "hash": "sha256-hng0L5c+hMUosMu/a/dclf4kAPdWsY3w+D0UbidvSeg=",
-        "sourceUrl": "https://github.com/SpeeDFireCZE/jellycanvas/releases/download/1.1.1/jellycanvas_1.1.1.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-17T14:50:37Z",
-        "version": "1.1.1"
       }
     ]
   },
@@ -8635,6 +8635,15 @@
     "owner": "n00bcodr",
     "versions": [
       {
+        "changelog": "**Build for Jellyfin 12.**\n\n- Translations update from Hosted Weblate ([#980](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/980))\n - Translations update from Hosted Weblate ([#982](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/982))\n - feat(calendar): group same-day episodes, persist filters, mark finales\n - fix(tags): cache Matroska language reads per file and follow the SeekHead ([#984](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/984))\n - fix(calendar): show finale marker and render the collapse icon\n - Translations update from Hosted Weblate ([#988](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/988))\n - fix(tags): use video width in resolution fallback so cropped 1080p isn't tagged 720p\n - feat(tags): quality badges follow the selected version of a merged movie\n - chore(tags): bump tag cache schema to v9 for [#990](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/990) and [#991](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/991)\n - Translations update from Hosted Weblate ([#994](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/994))\n - chore(ci)(deps): bump step-security/harden-runner from 2.22.2 to 2.22.3 in the github-actions group ([#996](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/996))\n - fix(cdn): bundle fixed logos and icons in the plugin instead of fetching them ([#998](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/998))\n - fix(plugin-pages): skip live page update before Plugin Pages is constructed ([#999](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/999))\n - fix(tags): match priority languages across two- and three-letter codes ([#1005](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1005))\n - fix(seerr): report season and episode issues against the series ([#1007](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1007))\n - test: fix red CI on main (tag cache fixtures, casing parity, issue 55 mutation) ([#1008](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1008))\n - fix: episode preview close, docs theme security bump, long review translations ([#1009](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1009))\n - fix(compat): warn on Jellyfin 13 instead of treating it as 12; document the 10.11 support policy ([#1010](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1010))\n - fix: add comma separator before text-mode Seerr and Arr detail links\n - fix: add comma separator before text-mode Seerr and Arr detail links ([#1006](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1006))\n - feat(seerr): support Seerr's CSRF Protection setting on write requests\n - chore(tests): regenerate production inventory\n - feat(config): rebuild the admin config page from a schema\n - docs: update admin tab names, labels and the apply-to-users flow\n - docs: refresh the admin page screenshots\n - Translations update from Hosted Weblate ([#1002](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1002))\n - chore: merge main into feat/config-page-redesign\n - fix(seerr): send is4k for 4K Radarr servers in auto-movie custom mode ([#1015](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1015))\n - fix(tests): point asset test at the renamed admin stylesheet endpoint\n - fix(config): keep branding preview images inside their dropzone\n - Merge branch 'main' into feat/config-page-redesign\n - feat(config): rebuild the admin config page from a schema ([#1014](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1014))\n - fix(spoiler-guard): keep external links on guarded series and movies ([#1018](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/1018))\n - Media Tags redesign: layouts, rules, colours, a per-item editor, the Media Tags hub and configuration tab ([#992](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/992))\n - feat(player): add keyboard shortcuts for subtitle offset",
+        "checksum": "AA90F70ADD9BF1C1DFC195485B6BB42D",
+        "hash": "sha256-ZA7R+lS+sFVETgjWTwFKf4uw2og2dVAatJ8w4+R/DmA=",
+        "sourceUrl": "https://github.com/n00bcodr/Jellyfin-Enhanced/releases/download/12.15.0.0/Jellyfin.Plugin.JellyfinEnhanced_12.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-07T22:35:45",
+        "version": "12.15.0.0"
+      },
+      {
         "changelog": "**Build for Jellyfin 12.**\n\n- feat(theme-selector): add Liquid Glass Jellyfish palette\n - feat(config): enable 'Expand reviews by default' for any review source\n - fix(seerr): keep focus and Back inside the More Info modal on TV\n - fix(native-tabs): show a backdrop on our Home tabs after an in-app tab switch\n - fix(tags): give the user review chip its own rating-tag-userreview class\n - fix(calendar): hide the Anime legend chip when Shoko is not configured\n - fix(recommendations): make rows scrollable after a reload onto the standalone page\n - feat(ui): shimmer skeletons for loading states on recommendations, requests, calendar, activity and more\n - test(activity): stub the skeleton helper in the activity page harness\n - fix(reviews): render HTML in TMDB review text instead of showing raw tags\n - fix(reviews): stop linked review text from getting button spacing\n - feat(reviews): translate English TMDB and AniList reviews with the browser translator or LibreTranslate\n - docs(reviews): document review translation and the browser translator's limits\n - chore(ci)(deps): bump the github-actions group with 6 updates ([#979](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/979))\n - fix(header): skip unchanged attribute writes in the header launcher ([#978](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/978))",
         "checksum": "660C85181BD853C3FB403AB22DD211BB",
         "hash": "sha256-pnSjffGdlhZobZxTJm36uNxIlQOjr03ADNtkMkeC/MU=",
@@ -8714,15 +8723,6 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-08T21:24:24",
         "version": "12.6.0.0"
-      },
-      {
-        "changelog": "**Build for Jellyfin 12.**\n\n- chore(ci)(deps): bump the github-actions group with 3 updates ([#777](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/777))\n - feat: enable quality tags in Home Videos and Photos libraries ([#778](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/778))\n - Translations update from Hosted Weblate ([#779](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/779))\n - Translations update from Hosted Weblate ([#780](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/780))\n - Translations update from Hosted Weblate ([#782](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/782))\n - Update README.md\n - fix: reliably place Seerr search results after Movies/Series rows\n - fix: hide media tag overlays on small list-row thumbnails\n - fix: prevent tag pipeline from freezing on fast large-library search\n - fix: stop redundant settings.json writes and re-download the full tag cache every load\n - fix(jellyseerr): stop search freeze and cancel superseded requests\n - Update .gitignore\n - fix: search page removeChild crash — stop mutating React-owned no-results message ([#795](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/795))\n - Add opt-in community usage analytics ([#791](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/791))\n - fix(tags): preserve Matroska LanguageBCP47 regions ([#790](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/790))\n - Anime episodes from Shoko in calendar ([#776](https://github.com/n00bcodr/Jellyfin-Enhanced/issues/776))\n - fix: queue tag cache build as its own task and push analytics on startup",
-        "checksum": "399DE61DF5CDBA36295CCC67455A5618",
-        "hash": "sha256-JwMrcm876njmI8HLabHA4QJTp+6OHFpOpoDUA46d/2o=",
-        "sourceUrl": "https://github.com/n00bcodr/Jellyfin-Enhanced/releases/download/12.5.0.0/Jellyfin.Plugin.JellyfinEnhanced_12.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-08-30T17:30:15",
-        "version": "12.5.0.0"
       }
     ]
   },
@@ -8734,6 +8734,15 @@
     "overview": "A Netflix-style featured-content carousel for the Jellyfin Web home page.",
     "owner": "spkesDE",
     "versions": [
+      {
+        "changelog": "- feat(sources): allow custom source names\n- feat(readme): update plugin repository link and add star history section\n- fix(hero): measure against the visible following section\n- fix(config): keep style injection out of the global scope\n- fix(trailer): tolerate key events dispatched on document\n- fix(config): load the settings bundle once per session\n- fix(hero): lift the home tab with a margin instead of a transform\n- fix(runtime): keep the cached carousel when the fresh response is identical\n- fix(runtime): update upcoming slides without rebuilding the carousel\n- deps: Bump the nuget-minor-and-patch group with 3 updates (#28)\n- deps: Bump the nuget-minor-and-patch group with 3 updates (#29)\n- deps(deps-dev): bump the npm-minor-and-patch group across 1 directory with 5 updates (#30)\n- chore(release): bump version to 12.9.1.0\n",
+        "checksum": "4052028f3c811b361fa069c576410211",
+        "hash": "sha256-UIR3J3Loy2bReRKk2VUwXyvoEDFBVvcxibxh7R0TbtA=",
+        "sourceUrl": "https://github.com/spkesDE/jellyfin-featured-plugin/releases/download/v12.9.1.0/Featured.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-05 14:25:24",
+        "version": "12.9.1.0"
+      },
       {
         "changelog": "- feat(hero): add vertical text position and keep text clear of header and controls\n- feat(trailer): resolve media excerpts as trailer candidates\n- feat(trailer): play media excerpts in the banner\n- feat(preferences): let administrators manage another user's preferences\n- feat(trailer): order banner media per source and filter SD YouTube trailers\n- feat(presets): resolve the active preset and schedule state in the editor\n- feat(config): add shared settings components\n- fix(hero): keep controls on the right for right-aligned text\n- refactor(trailer): select media excerpts through the trailer source\n- refactor(config): rebuild the settings tabs on the shared components\n- deps(deps-dev): bump the npm-minor-and-patch group with 4 updates (#18)\n- deps(deps): bump source-map-js from 1.2.1 to 1.2.2 (#19)\n- deps: Bump the nuget-minor-and-patch group with 4 updates (#21)\n- deps(deps-dev): bump the npm-minor-and-patch group with 5 updates (#20)\n- deps: Bump the nuget-minor-and-patch group with 1 update (#23)\n- deps(deps): bump the npm-minor-and-patch group with 6 updates (#22)\n- deps(deps-dev): bump happy-dom from 20.14.6 to 21.0.4 (#24)\n- chore(dev): load Jellyfin Web styles in the config harness\n- chore(gitignore): add .claude to ignore list\n",
         "checksum": "83e5dc718650a711b7fc1aa5ca3f78b0",
@@ -8814,15 +8823,6 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-15 09:28:36",
         "version": "12.4.0.0"
-      },
-      {
-        "changelog": "- fix(release): commit synchronized frontend version\n- chore: update plugin version to 12.3.1.0\n",
-        "checksum": "dda5bc98cd2f9804a28ce77564f5d8cc",
-        "hash": "sha256-CUJ4up7RYrzIe6EAc7xe+wavEqw9a6nrd/kxVNsaw0k=",
-        "sourceUrl": "https://github.com/spkesDE/jellyfin-featured-plugin/releases/download/v12.3.1.1/Featured.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-15 07:55:02",
-        "version": "12.3.1.1"
       }
     ]
   },
@@ -8834,6 +8834,15 @@
     "overview": "Automated cleanup (trickplay, empty folders, subtitles, link repair for .strm & symlinks), Seerr request cleanup, Seerr Discovery (personalized external content recommendations with one-click requests), media statistics with codec/health/dynamic-range analysis and Library Explorer search, ML-powered smart recommendations per user, user activity insights, library insights, trends, trash bin, plugin log viewer, multi-instance Arr integration, unsaved settings alert, and multi-language 8-tab dashboard.",
     "owner": "JellyPlugins",
     "versions": [
+      {
+        "changelog": "v3.1.0.0 - Discovery works without external plugins\n\n- BREAKING: the Custom Tabs and File Transformation plugins are no longer needed; the Discovery Home tab and the script injection are built into the Helper\n- The tab registers natively against Jellyfin's tab strip and keeps a stable jfhTab deep link\n- Script injection happens at request time, so it survives web updates and works on read-only installs\n- Setup instructions removed from Settings because Discovery works out of the box once enabled\n- Tags older versions wrote to index.html are cleaned up on startup\n- Verified by 94% backend unit test coverage, 97% UI test coverage, and 404 end-to-end Docker tests\n- Requires Jellyfin 12.4 - if you are on Jellyfin 10.x, stay on v2.1.0.6",
+        "checksum": "9e39e6b9e31b471c22392c021f36e51c",
+        "hash": "sha256-ofXWbSz3EIpGeXQ9CYUdILrlYvxbWXXvWRaDseqsLG8=",
+        "sourceUrl": "https://github.com/JellyPlugins/jellyfin-helper/releases/download/3.1.0.0/JellyfinHelper_3.1.0.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-02T20:55:16Z",
+        "version": "3.1.0.0"
+      },
       {
         "changelog": "v3.0.1.4 - Updated to Jellyfin 12.4\n\n- Switched from Dependabot to Renovate\n- Updated dependencies and code for compatibility, with no behavior changes\n- Verified by 94% backend unit test coverage, 97% UI test coverage, and 369 end-to-end Docker tests\n- Requires Jellyfin 12.4 - if you are on Jellyfin 10.x, stay on v2.1.0.6",
         "checksum": "e8d1a3fa92178737e68777d791fd136f",
@@ -8914,15 +8923,6 @@
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-09T18:48:52Z",
         "version": "3.0.0.1"
-      },
-      {
-        "changelog": "v3.0.0.0 - Major release for Jellyfin 12.0+\n\n- Books in your library overview: eBook libraries now show their size and file count on the Overview tab and count towards your storage totals, and they're always protected from every cleanup task\n- Smarter recommendations: a much bigger model, fairer suggestions for brand-new users, and more variety in your top picks (no more ten near-identical films in a row)\n- Recommendations now also learn from franchises/collections, country of origin, collection & folder themes, whether a series is finished or ongoing, writers/creators, top-billed cast, and how rare a genre or studio is in your library (each signal is optional per item, so missing metadata never skews a pick)\n- Fresh picks appear between nightly runs, and faster generation on big libraries\n- Redesigned Settings, Health and Arr tabs with a live 'reachable' indicator, plus a sticky save bar and unsaved-changes warning\n- Better on phones\n- Stronger security: API keys are never shown to the browser, backups can leave keys out, and cleanup can never delete or touch anything outside your media libraries\n- Safer trash and cleanup: turning retention off really turns it off, trashing a shortcut never removes the file it points to, and Windows shortcut handling is fixed\n- More accurate library stats and safer Seerr request cleanup\n- More reliable saves and backups (no more rare 'lost save' when antivirus is scanning)\n- New end-to-end test suite runs the plugin inside a real Jellyfin 12 server on every change and proves cleanup stays inside your libraries\n- Note: your recommendation model retrains from scratch after upgrading, so suggestions settle back in over the next scheduled runs\n- Requires Jellyfin 12.0 - if you are on Jellyfin 10.x, stay on v2.1.0.6",
-        "checksum": "da00c2314b5d665c0746041ec5f08323",
-        "hash": "sha256-JTMdR0vl2PSmjg54+4wKUqu9G9yuqjzW0LOKcuYrOl8=",
-        "sourceUrl": "https://github.com/JellyPlugins/jellyfin-helper/releases/download/3.0.0.0/JellyfinHelper_3.0.0.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-08T23:09:52Z",
-        "version": "3.0.0.0"
       }
     ]
   },
@@ -9046,6 +9046,24 @@
     "owner": "ZL154",
     "versions": [
       {
+        "changelog": "# v2.7.0\n\nA large release built mostly from contributor pull requests by @camarigor, with community fixes from @cterence and @Samalbert977. It adds sign-in paths for the clients and proxies that can't show a two-factor challenge, usernameless passkeys, localized emails, and a batch of login, lockout, and passkey correctness fixes. Drop-in from any 2.5.x or 2.6.x, with no config or data migration. Every new sign-in feature is opt-in and off by default.\n\n## Sign-in for limited clients and proxies\n\n- **Send the login page straight to a provider** *(#297, by @camarigor; opt-in).* For an SSO-only server, a web browser can open the configured provider's sign-in without a click, with loop guards and an `?oidcAuto=0` escape so a redirect that returns to the login page can never loop.\n- **Sign in through a trusted reverse proxy that names the user** *(#298, by @camarigor; opt-in, off by default).* Header sign-in for setups where a proxy authenticates people itself (NetBird, Authelia, oauth2-proxy). It is gated on a trusted-proxy CIDR checked against the raw TCP peer, a same-origin `Sec-Fetch-Site`, a single clean header value, a rate limit, and an admin refusal unless explicitly allowed — the username header is believed only after all of those pass.\n- **Accept the authenticator code typed after the password** *(#312, by @camarigor; opt-in).* An app that can't show the challenge signs in with the password immediately followed by the current 6-digit code, no space (`MyPassword123456`); the plugin checks the password, then the code, and only the password goes on to Jellyfin.\n- **Send a sign-in code to apps that can't show the challenge** *(#313, by @camarigor; opt-in).* The challenge also emails, and Telegrams, an 8-digit code, re-entered with the password — or alone, same address only. Complements the one-time device codes from v2.6.5 (#270).\n\n## Passkeys\n\n- **Sign in with a passkey without typing a username** *(#319, by @camarigor).* With the username field empty, the browser offers the passkeys it holds for the site and the server names the account of the one picked.\n- **Keep the bridge token out of the password field** *(#332, by @camarigor).* Stops password managers prompting to \"update saved login\" after a passkey sign-in.\n- **Choose whether a passkey adds a second factor after a password sign-in** *(#339, by @camarigor; on by default).* A passkey registered only for passwordless sign-in no longer forces a 2FA challenge after a password; admin enforcement and a verified authenticator app still take precedence.\n- **A passkey challenge now behaves like a code** *(#327, by @camarigor).* Completing it clears failure state and honours Trust-this-device, and a newly added passkey is offered in the step-up prompt without a reload.\n\n## Correctness and hardening\n\n- **Step-up is now required to change where codes are delivered** *(#305, by @camarigor).* The Email and Telegram link/unlink endpoints are gated like other factor changes, closing a gap where a hijacked session could redirect a user's one-time codes.\n- **A 2FA challenge no longer counts as a failed sign-in**, and an expired lockout clears itself *(#329, by @camarigor).*\n- **A completed password change clears the plugin's temporary lockout** *(by @camarigor)*, leaving 2FA, IP bans, the token blocklist, and Jellyfin's own lockout untouched.\n- **Quick Connect tokens the plugin already approved are no longer blocked** *(#304, by @camarigor).*\n- **Requesting a step-up proof no longer counts as a failed attempt** *(by @camarigor).*\n- **The standard-login-page redirect loop is fixed** *(#295, by @Samalbert977).* A browser holding a blocked token can reach Jellyfin's own login page, with the SSO button, again.\n- **`PW` is accepted as the sign-in password field** *(#316, by @cterence).* go-jellyfin clients such as Supersonic can sign in with an app password again.\n- **OIDC auto-created users never inherit a disabled state** *(#243).* The template-user policy copy no longer carries `IsDisabled`, so a user the identity provider just authenticated can't be born disabled, and removing the plugin can't leave one stranded.\n\n## Settings page and proxies\n\n- **The settings page loads behind Jellyfin's nginx example** *(#309, by @camarigor).* It no longer needs a synchronous request, so a `sync-xhr=()` permissions policy no longer leaves it blank; the README documents the header tweaks.\n- **A reverse proxy or WAF that replaces the plugin's answer is named in the error** *(#320, by @camarigor)*, with a narrow ModSecurity exclusion documented for the passkey endpoints.\n\n## Internationalization\n\n- **Reset and sign-in-code emails, and the reset page, are shown in the recipient's language** *(#318, by @camarigor).*\n\n## Dependencies\n\n- Fido2 4.3.1, QRCoder 1.8.1, MailKit 4.18.2, System.Security.Cryptography.Pkcs 10.0.14, plus analyzer and CI action bumps *(#301 and the folded Dependabot batch).* The Jellyfin runtime references stay pinned.\n\n## Upgrade notes\n\nIn-place from any 2.5.x or 2.6.x, no schema or config migration. Both the 10.11 (.NET 9) and 12 (.NET 10) packages are published; the server selects the right one. Sigstore-signed and SLSA build-provenance attested.",
+        "checksum": "9016D93538AD54BE9CFBD418DFAAE856",
+        "hash": "sha256-f7w5CiXGtd1CFcdIFuDNVZvraS4kKjJX1kvc7HBqH4U=",
+        "sourceUrl": "https://github.com/ZL154/JellyfinSecurity/releases/download/v2.7.0/Jellyfin.Plugin.TwoFactorAuthv2.7.0.0-jf12.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-07T23:23:45Z",
+        "version": "2.7.0.1"
+      },
+      {
+        "changelog": "# v2.7.0\n\nA large release built mostly from contributor pull requests by @camarigor, with community fixes from @cterence and @Samalbert977. It adds sign-in paths for the clients and proxies that can't show a two-factor challenge, usernameless passkeys, localized emails, and a batch of login, lockout, and passkey correctness fixes. Drop-in from any 2.5.x or 2.6.x, with no config or data migration. Every new sign-in feature is opt-in and off by default.\n\n## Sign-in for limited clients and proxies\n\n- **Send the login page straight to a provider** *(#297, by @camarigor; opt-in).* For an SSO-only server, a web browser can open the configured provider's sign-in without a click, with loop guards and an `?oidcAuto=0` escape so a redirect that returns to the login page can never loop.\n- **Sign in through a trusted reverse proxy that names the user** *(#298, by @camarigor; opt-in, off by default).* Header sign-in for setups where a proxy authenticates people itself (NetBird, Authelia, oauth2-proxy). It is gated on a trusted-proxy CIDR checked against the raw TCP peer, a same-origin `Sec-Fetch-Site`, a single clean header value, a rate limit, and an admin refusal unless explicitly allowed — the username header is believed only after all of those pass.\n- **Accept the authenticator code typed after the password** *(#312, by @camarigor; opt-in).* An app that can't show the challenge signs in with the password immediately followed by the current 6-digit code, no space (`MyPassword123456`); the plugin checks the password, then the code, and only the password goes on to Jellyfin.\n- **Send a sign-in code to apps that can't show the challenge** *(#313, by @camarigor; opt-in).* The challenge also emails, and Telegrams, an 8-digit code, re-entered with the password — or alone, same address only. Complements the one-time device codes from v2.6.5 (#270).\n\n## Passkeys\n\n- **Sign in with a passkey without typing a username** *(#319, by @camarigor).* With the username field empty, the browser offers the passkeys it holds for the site and the server names the account of the one picked.\n- **Keep the bridge token out of the password field** *(#332, by @camarigor).* Stops password managers prompting to \"update saved login\" after a passkey sign-in.\n- **Choose whether a passkey adds a second factor after a password sign-in** *(#339, by @camarigor; on by default).* A passkey registered only for passwordless sign-in no longer forces a 2FA challenge after a password; admin enforcement and a verified authenticator app still take precedence.\n- **A passkey challenge now behaves like a code** *(#327, by @camarigor).* Completing it clears failure state and honours Trust-this-device, and a newly added passkey is offered in the step-up prompt without a reload.\n\n## Correctness and hardening\n\n- **Step-up is now required to change where codes are delivered** *(#305, by @camarigor).* The Email and Telegram link/unlink endpoints are gated like other factor changes, closing a gap where a hijacked session could redirect a user's one-time codes.\n- **A 2FA challenge no longer counts as a failed sign-in**, and an expired lockout clears itself *(#329, by @camarigor).*\n- **A completed password change clears the plugin's temporary lockout** *(by @camarigor)*, leaving 2FA, IP bans, the token blocklist, and Jellyfin's own lockout untouched.\n- **Quick Connect tokens the plugin already approved are no longer blocked** *(#304, by @camarigor).*\n- **Requesting a step-up proof no longer counts as a failed attempt** *(by @camarigor).*\n- **The standard-login-page redirect loop is fixed** *(#295, by @Samalbert977).* A browser holding a blocked token can reach Jellyfin's own login page, with the SSO button, again.\n- **`PW` is accepted as the sign-in password field** *(#316, by @cterence).* go-jellyfin clients such as Supersonic can sign in with an app password again.\n- **OIDC auto-created users never inherit a disabled state** *(#243).* The template-user policy copy no longer carries `IsDisabled`, so a user the identity provider just authenticated can't be born disabled, and removing the plugin can't leave one stranded.\n\n## Settings page and proxies\n\n- **The settings page loads behind Jellyfin's nginx example** *(#309, by @camarigor).* It no longer needs a synchronous request, so a `sync-xhr=()` permissions policy no longer leaves it blank; the README documents the header tweaks.\n- **A reverse proxy or WAF that replaces the plugin's answer is named in the error** *(#320, by @camarigor)*, with a narrow ModSecurity exclusion documented for the passkey endpoints.\n\n## Internationalization\n\n- **Reset and sign-in-code emails, and the reset page, are shown in the recipient's language** *(#318, by @camarigor).*\n\n## Dependencies\n\n- Fido2 4.3.1, QRCoder 1.8.1, MailKit 4.18.2, System.Security.Cryptography.Pkcs 10.0.14, plus analyzer and CI action bumps *(#301 and the folded Dependabot batch).* The Jellyfin runtime references stay pinned.\n\n## Upgrade notes\n\nIn-place from any 2.5.x or 2.6.x, no schema or config migration. Both the 10.11 (.NET 9) and 12 (.NET 10) packages are published; the server selects the right one. Sigstore-signed and SLSA build-provenance attested.",
+        "checksum": "2102D41F67898586F8D7416E1973C665",
+        "hash": "sha256-YJ0zUw8gJ7o6+qgu8qHakpP3/f8x0fUzLmdojUppTWo=",
+        "sourceUrl": "https://github.com/ZL154/JellyfinSecurity/releases/download/v2.7.0/Jellyfin.Plugin.TwoFactorAuthv2.7.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-07T23:23:45Z",
+        "version": "2.7.0.0"
+      },
+      {
         "changelog": "# v2.6.5\n\nA feature release aimed at the clients two-factor authentication is hardest on — TVs and streaming boxes that can't show a challenge — plus out-of-band code delivery over Telegram, an OIDC avatar fix, and more admin notifications. Built from the open issue backlog. Drop-in from any 2.5.x or 2.6.x, with no config or data migration.\n\n## Signing in on a limited device\n\n- **One-time device codes** *(#270, by @p1zzm1ssile; #216, by @Heldenkrieger01).* A Fire TV, a TV app that can't render the challenge page, or any client where Quick Connect isn't an option can now be signed in with a single-use code. You generate it from your phone on the Two-Factor Auth page; it is shown there and also sent to your email and your linked Telegram, so you can read it next to the device. It works once, expires in 30 minutes, and is then gone. The existing \"approve on a second screen, trust the device\" Quick Connect flow is unchanged and remains the smoothest path where Quick Connect is available.\n\n## One-time codes over Telegram\n\n- **Receive your sign-in codes on Telegram** *(#285, by @p1zzm1ssile).* Email was a single point of failure for one-time codes — when a mail provider goes down, nobody can get a code. You can now link your own Telegram chat on the Two-Factor Auth page, confirmed by a code the bot sends you, and login and step-up codes are delivered there as well as by email. Each user's codes go only to their own chat, never a shared admin chat.\n\n## OIDC avatars\n\n- **Profile pictures that change at the same URL now refresh** *(#286, by @cydy; follow-up to #66).* Identity providers such as Pocket ID serve an updated avatar at the same per-user URL, so the plugin never picked up the change, and a missing local avatar was never recovered. Sync now revalidates with an ETag (and a content hash where the provider sends none), and re-fetches whenever the local avatar has gone missing.\n\n## Notifications\n\n- **Admin alert on a failed sign-in** *(#272, by @p1zzm1ssile).* A wrong two-factor code now notifies the admin's configured channels (email, Telegram, ntfy, webhook) with the running attempt count, so a brute-force run is visible as it climbs toward lockout.\n- **A welcome email when an MFA email is set** *(#271, by @p1zzm1ssile).* Registering, or changing, an account's two-factor email sends a one-off setup email, which doubles as a check that the address is reachable — a typo surfaces then, not at a locked-out sign-in. On by default; needs SMTP.\n\n## App passwords\n\n- **Optionally refuse app passwords for more clients** *(#244, by @AmperageOverspend).* The web interface is always refused — an app password typed there would sign in with no second factor and reach admin settings. An admin can now also list first-party apps that *can* show the challenge, so an app password is useful only for genuinely limited clients. The default is unchanged.\n\n## Fixes\n\n- **The second-screen-pairing toggle no longer overlaps the rows above it** in the admin Settings tab.\n\n## Upgrade notes\n\nIn-place upgrade from any 2.5.x or 2.6.x, with no schema or configuration migration. Both the 10.11 (.NET 9) and 12 (.NET 10) packages are published and your server selects the right one automatically. Sigstore-signed and SLSA build-provenance attested. 787 tests across both builds; 911 translation keys in 8 languages.",
         "checksum": "669B580B6D1B904C458A1BC57F6AD6A2",
         "hash": "sha256-p4NvkiLWwsvv2gOXBDZhr/svCxsOWr7b+aJoFKCwvyg=",
@@ -9116,24 +9134,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-15T04:23:47Z",
         "version": "2.6.1.0"
-      },
-      {
-        "changelog": "# v2.6.0\n\n**Jellyfin 12 is supported.** This release ships a second build so the plugin loads and runs on Jellyfin 12 (which moved to .NET 10), while the existing build keeps serving Jellyfin 10.11.x exactly as before. Both live in the one plugin catalog under the same entry, so your server downloads the build that matches its version: there is nothing to pick and existing installs update themselves. It also fixes the admin step-up prompt on the settings save path and the OIDC provider form, and makes the GeoIP diagnostics finally explain themselves. Drop-in from any 2.5.x, with no config or data migration.\n\n## Jellyfin 12 support, without dropping 10.11\n\n*(Closes #196 and #172.)*\n\nJellyfin 12 moved to .NET 10, and a plugin compiled against 10.11 (.NET 9) will not load on it, which is why every action returned **401 / \"Unauthorized\"** on 12 (#172). Rather than fork the plugin or abandon 10.11 users, this release builds the **same source twice**:\n\n- a **.NET 9** build for Jellyfin **10.11.x** hosts, and\n- a **.NET 10** build for Jellyfin **12.x** hosts.\n\nBoth are published in the one `manifest.json` under the same plugin, keyed by the Jellyfin version each needs. Jellyfin's own catalog keeps the builds whose target version is at or below your server's and installs the newest, so a 12 server pulls the .NET 10 build, a 10.11 server pulls the .NET 9 build, and neither ever sees the other. **You do not choose a download**: the catalog and auto-update do it for you. If you install manually from the Releases page instead, grab the `-jf12` zip on Jellyfin 12 and the plain zip on 10.11.\n\nEverything was verified end to end on a real Jellyfin 12 server and a Jellyfin 10.11 server: sign-in, refresh persistence, OIDC/SSO, TOTP, email OTP, recovery codes, passkeys, app passwords, admin step-up, the PDF recovery-code export, and the admin dashboard page.\n\n**Related 12 fixes rolled in:**\n\n- **#191** *(camarigor)*: in-app OIDC sign-in on 12 froze on a blank screen. On 12 the router asks for the server connection before the reconnect that 10.11 did first, so the stored credential (which had no resolvable address) left the client pointing at nothing. The sign-in bridge now stores the address it just authenticated against, in the connection mode 12 expects.\n- **#193** *(camarigor)*: 12 changed some web routes, so the plugin's setup link and the way it re-enters the setup page needed updating. 12 users get a working way back to the setup page from the avatar menu.\n- Completes the header work from v2.5.22 (#174/#180): the plugin's pages and endpoints accept Jellyfin's current `Authorization: MediaBrowser Token` header, which 12 requires once legacy authorization is disabled.\n\n## The admin step-up prompt now appears everywhere it should\n\n*(Closes #198 and #194; helps #189 and #148.)*\n\nThe server has gated the sensitive admin actions (creating, editing and deleting OIDC providers, toggling a user's 2FA, \"require password setup\", and reading the audit log) behind a **step-up** re-authentication since v2.5.6. But some of the admin page's own calls sent those requests with a plain `fetch`, so the server's `403 { stepUpRequired: true }` came back as a bare **\"Save failed\"** and, for provider **Delete**, nothing happened at all (#198). Adding an identity provider on a step-up-protected server was simply impossible.\n\n- **#198 / #199** *(camarigor)*: the provider form and the shared admin helpers now go through the step-up-aware fetch that Save Settings has used since v2.5.8. When step-up is required you get the prompt; when something else fails you get the server's actual reason instead of a generic message.\n- **#194 / #195** *(camarigor)*: the admin step-up modal previously accepted only a typed TOTP code, locking out admins whose second factor is an **emailed code** or a **passkey**. It now offers the emailed code and a passkey alongside TOTP, using the same unified proof the rest of the plugin uses.\n\nIf you hit \"valid code rejected at step-up\" on 10.11 (#189), please retest on this build: the step-up verification and the admin-call routing both changed here.\n\n## GeoIP diagnostics that explain themselves\n\n*(#200, camarigor. Refs #51.)*\n\nThree people reported `GeoIP databases loaded = Fail` with the files in place, and none had a log line to go on, because the loader had nothing to say: it fixed the configured path before trying to open it, a file the process could not see was skipped in silence, and a failed load was never retried until the path changed or Jellyfin restarted. Now the loader keeps the reason, retries, and falls back to an in-memory open, and the Diagnostics tab prints what it saw for **each** database. A bad path no longer reads as a blank \"Fail\": it says, for example, `not found at /config/geoip/GeoLite2-ASN.mmdb (its directory is not visible to the Jellyfin process; checked as user root)` or `rejected (not absolute)`, so you can actually fix it.\n\n## Upgrade notes\n\nIn-place upgrade from any 2.5.x, with no schema or configuration migration. 500 tests pass. Sigstore-signed and SLSA build-provenance attested. Both the 10.11 (.NET 9) and 12 (.NET 10) packages are published for this version; your server selects the right one automatically.",
-        "checksum": "39BCAF4703840EAC666EDC7C35CBE3D9",
-        "hash": "sha256-/vXdtLweo2MU5nG9YCkksHqw7MGWwCrl+ZAGoig0bnI=",
-        "sourceUrl": "https://github.com/ZL154/JellyfinSecurity/releases/download/v2.6.0/Jellyfin.Plugin.TwoFactorAuthv2.6.0.0-jf12.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-11T03:45:52Z",
-        "version": "2.6.0.1"
-      },
-      {
-        "changelog": "# v2.6.0\n\n**Jellyfin 12 is supported.** This release ships a second build so the plugin loads and runs on Jellyfin 12 (which moved to .NET 10), while the existing build keeps serving Jellyfin 10.11.x exactly as before. Both live in the one plugin catalog under the same entry, so your server downloads the build that matches its version: there is nothing to pick and existing installs update themselves. It also fixes the admin step-up prompt on the settings save path and the OIDC provider form, and makes the GeoIP diagnostics finally explain themselves. Drop-in from any 2.5.x, with no config or data migration.\n\n## Jellyfin 12 support, without dropping 10.11\n\n*(Closes #196 and #172.)*\n\nJellyfin 12 moved to .NET 10, and a plugin compiled against 10.11 (.NET 9) will not load on it, which is why every action returned **401 / \"Unauthorized\"** on 12 (#172). Rather than fork the plugin or abandon 10.11 users, this release builds the **same source twice**:\n\n- a **.NET 9** build for Jellyfin **10.11.x** hosts, and\n- a **.NET 10** build for Jellyfin **12.x** hosts.\n\nBoth are published in the one `manifest.json` under the same plugin, keyed by the Jellyfin version each needs. Jellyfin's own catalog keeps the builds whose target version is at or below your server's and installs the newest, so a 12 server pulls the .NET 10 build, a 10.11 server pulls the .NET 9 build, and neither ever sees the other. **You do not choose a download**: the catalog and auto-update do it for you. If you install manually from the Releases page instead, grab the `-jf12` zip on Jellyfin 12 and the plain zip on 10.11.\n\nEverything was verified end to end on a real Jellyfin 12 server and a Jellyfin 10.11 server: sign-in, refresh persistence, OIDC/SSO, TOTP, email OTP, recovery codes, passkeys, app passwords, admin step-up, the PDF recovery-code export, and the admin dashboard page.\n\n**Related 12 fixes rolled in:**\n\n- **#191** *(camarigor)*: in-app OIDC sign-in on 12 froze on a blank screen. On 12 the router asks for the server connection before the reconnect that 10.11 did first, so the stored credential (which had no resolvable address) left the client pointing at nothing. The sign-in bridge now stores the address it just authenticated against, in the connection mode 12 expects.\n- **#193** *(camarigor)*: 12 changed some web routes, so the plugin's setup link and the way it re-enters the setup page needed updating. 12 users get a working way back to the setup page from the avatar menu.\n- Completes the header work from v2.5.22 (#174/#180): the plugin's pages and endpoints accept Jellyfin's current `Authorization: MediaBrowser Token` header, which 12 requires once legacy authorization is disabled.\n\n## The admin step-up prompt now appears everywhere it should\n\n*(Closes #198 and #194; helps #189 and #148.)*\n\nThe server has gated the sensitive admin actions (creating, editing and deleting OIDC providers, toggling a user's 2FA, \"require password setup\", and reading the audit log) behind a **step-up** re-authentication since v2.5.6. But some of the admin page's own calls sent those requests with a plain `fetch`, so the server's `403 { stepUpRequired: true }` came back as a bare **\"Save failed\"** and, for provider **Delete**, nothing happened at all (#198). Adding an identity provider on a step-up-protected server was simply impossible.\n\n- **#198 / #199** *(camarigor)*: the provider form and the shared admin helpers now go through the step-up-aware fetch that Save Settings has used since v2.5.8. When step-up is required you get the prompt; when something else fails you get the server's actual reason instead of a generic message.\n- **#194 / #195** *(camarigor)*: the admin step-up modal previously accepted only a typed TOTP code, locking out admins whose second factor is an **emailed code** or a **passkey**. It now offers the emailed code and a passkey alongside TOTP, using the same unified proof the rest of the plugin uses.\n\nIf you hit \"valid code rejected at step-up\" on 10.11 (#189), please retest on this build: the step-up verification and the admin-call routing both changed here.\n\n## GeoIP diagnostics that explain themselves\n\n*(#200, camarigor. Refs #51.)*\n\nThree people reported `GeoIP databases loaded = Fail` with the files in place, and none had a log line to go on, because the loader had nothing to say: it fixed the configured path before trying to open it, a file the process could not see was skipped in silence, and a failed load was never retried until the path changed or Jellyfin restarted. Now the loader keeps the reason, retries, and falls back to an in-memory open, and the Diagnostics tab prints what it saw for **each** database. A bad path no longer reads as a blank \"Fail\": it says, for example, `not found at /config/geoip/GeoLite2-ASN.mmdb (its directory is not visible to the Jellyfin process; checked as user root)` or `rejected (not absolute)`, so you can actually fix it.\n\n## Upgrade notes\n\nIn-place upgrade from any 2.5.x, with no schema or configuration migration. 500 tests pass. Sigstore-signed and SLSA build-provenance attested. Both the 10.11 (.NET 9) and 12 (.NET 10) packages are published for this version; your server selects the right one automatically.",
-        "checksum": "AB50DA12305ED941A98EC9BDA9235F73",
-        "hash": "sha256-RYRIlTiwiTao0QCxMD7I3qd5GSrr3Z+OGUSgiCSc47c=",
-        "sourceUrl": "https://github.com/ZL154/JellyfinSecurity/releases/download/v2.6.0/Jellyfin.Plugin.TwoFactorAuthv2.6.0.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-11T03:45:52Z",
-        "version": "2.6.0.0"
       }
     ]
   },
@@ -9712,6 +9712,15 @@
     "owner": "jon4hz",
     "versions": [
       {
+        "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-jellysleep/releases/tag/v0.9.0)\n",
+        "checksum": "c7b9eb4705a3c87f60390b4e0c90244f",
+        "hash": "sha256-vXf1jZmMuqoo5GPmNRdxSgDTFtC0AvpQVgpd5cdR6mk=",
+        "sourceUrl": "https://github.com/jon4hz/jellyfin-plugin-jellysleep/releases/download/v0.9.0/jellyfin-plugin-jellysleep-0.9.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-01T21:46:43Z",
+        "version": "0.9.0.0"
+      },
+      {
         "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-jellysleep/releases/tag/v0.8.0)\n",
         "checksum": "dbb0d13fcfd72db1fee9df56c8960936",
         "hash": "sha256-jv4LY67QiDqFCEOOxsZNt0zszJ5Iv9Iab0bERnJjFkc=",
@@ -9791,15 +9800,6 @@
         "targetAbi": "10.10.0.0",
         "timestamp": "2025-08-10T22:36:44Z",
         "version": "0.2.1.0"
-      },
-      {
-        "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-jellysleep/releases/tag/v0.2.0)\n",
-        "checksum": "0054ccf959612f6db75b2231947048af",
-        "hash": "sha256-NRZjFtIWBYzlaPWOU5jXGKKCCU+EuuRWMCh7j4sylfs=",
-        "sourceUrl": "https://github.com/jon4hz/jellyfin-plugin-jellysleep/releases/download/v0.2.0/jellyfin-plugin-jellysleep-0.2.0.zip",
-        "targetAbi": "10.10.0.0",
-        "timestamp": "2025-08-10T21:43:53Z",
-        "version": "0.2.0"
       }
     ]
   },
@@ -9811,6 +9811,15 @@
     "overview": "Companion plugin for Jellysweep",
     "owner": "jon4hz",
     "versions": [
+      {
+        "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-jellysweep/releases/tag/v0.3.0)\n",
+        "checksum": "e52062dbec284d7320d11291016fc926",
+        "hash": "sha256-NJmS43E/Pb9V4orWWgq5gRBFA7zsm1+H1DVxSjPrbwM=",
+        "sourceUrl": "https://github.com/jon4hz/jellyfin-plugin-jellysweep/releases/download/v0.3.0/jellyfin-plugin-jellysweep-0.3.0.zip",
+        "targetAbi": "12.4.0.0",
+        "timestamp": "2026-11-01T21:44:29Z",
+        "version": "0.3.0.0"
+      },
       {
         "changelog": "- See the full changelog at [GitHub](https://github.com/jon4hz/jellyfin-plugin-jellysweep/releases/tag/v0.2.0)\n",
         "checksum": "fdbe55c3da4ad0bf3a7014bd24fab06d",
@@ -10219,10 +10228,19 @@
     "category": "General",
     "description": "Lines up subtitles against a film or episode's audio, or against another subtitle file, using the LAPSE alignment engine. Adds a Sync Subtitles button to the item context menu, a dashboard for bulk syncing and engine setup, auto sync for newly added media, and manual fine tuning for when a sync lands close but not perfect. After installing, open the plugin from Dashboard, Plugins, LAPSE to install the engine and configure it. Nothing syncs until you do.",
     "guid": "486090e1-ca92-46e1-8549-9f6bb914a1d0",
-    "imageUrl": "https://raw.githubusercontent.com/rs-jensen/lapse-jellyfin-plugin/v2.1.2/Jellyfin.Plugin.Lapse/Configuration/LAPSE.png",
+    "imageUrl": "https://raw.githubusercontent.com/rs-jensen/lapse-jellyfin-plugin/v2.1.3/Jellyfin.Plugin.Lapse/Configuration/LAPSE.png",
     "overview": "Sync subtitles that have drifted out of time. Open Settings after installing to set it up.",
     "owner": "rs-jensen",
     "versions": [
+      {
+        "changelog": "See the release notes on GitHub.",
+        "checksum": "99d8109b51dceb7e88f61c731bc42165",
+        "hash": "sha256-cyw017kDNA5p/qU/DSe2o/nAmiTfFexPRQDx5X5EuT8=",
+        "sourceUrl": "https://github.com/rs-jensen/lapse-jellyfin-plugin/releases/download/v2.1.3/lapse-jellyfin-plugin-v2.1.3.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-02T09:16:29Z",
+        "version": "2.1.3.0"
+      },
       {
         "changelog": "See the release notes on GitHub.",
         "checksum": "175961041b793c199669e634cbedc6ef",
@@ -10303,15 +10321,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-09T09:50:11Z",
         "version": "1.5.5.0"
-      },
-      {
-        "changelog": "See the release notes on GitHub.",
-        "checksum": "50e9368bfb5902e47ff0cd8aed196332",
-        "hash": "sha256-X4yuRvowccc2GvJ3KjBEjTqSBb/4M1caVVVptDFU1vM=",
-        "sourceUrl": "https://github.com/rs-jensen/lapse-jellyfin-plugin/releases/download/v1.5.4/lapse-jellyfin-plugin-v1.5.4.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-29T08:52:26Z",
-        "version": "1.5.4.0"
       }
     ]
   },
@@ -10523,6 +10532,24 @@
     "owner": "superuser404notfound",
     "versions": [
       {
+        "changelog": "Release 1.1.0.1",
+        "checksum": "92c1f7e5dfe258c655aade70974ff6de",
+        "hash": "sha256-D0+zSAjzFnEuGbKCwv1tI+B6OJznsVbM5O0Bie5Y99w=",
+        "sourceUrl": "https://github.com/superuser404notfound/jellyfin-plugin-language-aware-images/releases/download/v1.1.0/language-aware-images_1.1.0.1.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T14:21:09Z",
+        "version": "1.1.0.1"
+      },
+      {
+        "changelog": "Release 1.1.0.0",
+        "checksum": "abefc897ef62b13956a5fe6fd9be716b",
+        "hash": "sha256-RNQJkVpV50WQawK16Cfv++O3E4VYsowGCuZgCSyDDQU=",
+        "sourceUrl": "https://github.com/superuser404notfound/jellyfin-plugin-language-aware-images/releases/download/v1.1.0/language-aware-images_1.1.0.0.zip",
+        "targetAbi": "10.10.0.0",
+        "timestamp": "2026-11-01T14:21:09Z",
+        "version": "1.1.0.0"
+      },
+      {
         "changelog": "Release 1.0.0.1",
         "checksum": "9f45d97fd7ee3a3084342f85823350bf",
         "hash": "sha256-zu+wavkmVcNoJpayqT2gQQclb8rUS86gcWYTdG0wGF0=",
@@ -10593,24 +10620,6 @@
         "targetAbi": "10.10.0.0",
         "timestamp": "2026-05-11T16:08:27Z",
         "version": "0.7.2.0"
-      },
-      {
-        "changelog": "Release 0.7.1.0",
-        "checksum": "84e3734c34b8f748596390ceb05f66ee",
-        "hash": "sha256-V4z8pZVNj7wJgNDWkwaIPkLq1e7sAjdHhfCHAEYwfuk=",
-        "sourceUrl": "https://github.com/superuser404notfound/jellyfin-plugin-language-aware-images/releases/download/v0.7.1/language-aware-images_0.7.1.0.zip",
-        "targetAbi": "10.10.0.0",
-        "timestamp": "2026-05-05T10:11:02Z",
-        "version": "0.7.1.0"
-      },
-      {
-        "changelog": "Release 0.7.0.0",
-        "checksum": "f2bc8b83ab67784ce7cb96d9574b80ff",
-        "hash": "sha256-44GlH2KFPee2ruCDaEMH4cuI1uFQMntz7fE4lW4TnW8=",
-        "sourceUrl": "https://github.com/superuser404notfound/jellyfin-plugin-language-aware-images/releases/download/v0.7.0/language-aware-images_0.7.0.0.zip",
-        "targetAbi": "10.10.0.0",
-        "timestamp": "2026-05-05T03:23:16Z",
-        "version": "0.7.0.0"
       }
     ]
   },
@@ -10622,6 +10631,33 @@
     "overview": "A plugin that scrobbles your Jellyfin music to Last.fm",
     "owner": "danielfariati",
     "versions": [
+      {
+        "changelog": "Improve configuration page compatibility by loading its JavaScript through Jellyfin's external controller mechanism instead of an inline script.",
+        "checksum": "791d0bb758c4c233874b47234c5bd30f",
+        "hash": "sha256-thnPV8pZkmVmXrMH1ngmKQk26I5o8a85UL7Kk0rcboc=",
+        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.16/lastfm_10.11.0.16.zip",
+        "targetAbi": "10.11.9.0",
+        "timestamp": "2026-11-05T16:17:04Z",
+        "version": "10.11.0.16"
+      },
+      {
+        "changelog": "Improve configuration page reliability by preventing duplicate event handlers and reporting loading, authentication, and save failures instead of failing silently.",
+        "checksum": "06a8a50d8dfb6d023f1c95d9e8a615a1",
+        "hash": "sha256-8Ol9cadj9cf23ovsop7W9NJ+YbrI/1Lviqzc2KdJ9yo=",
+        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.15/lastfm_10.11.0.15.zip",
+        "targetAbi": "10.11.9.0",
+        "timestamp": "2026-11-05T01:10:51Z",
+        "version": "10.11.0.15"
+      },
+      {
+        "changelog": "Prevent duplicate scrobbles when Jellyfin reports multiple stop events for the same playback, while still allowing intentionally repeated tracks to scrobble normally.",
+        "checksum": "300bc47b28aab7b5606bf9cf248c7629",
+        "hash": "sha256-vy5cVrSo6dHtitdqQ7CPMhA8Gr1NW7ApIo79bx9T7nQ=",
+        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.14/lastfm_10.11.0.14.zip",
+        "targetAbi": "10.11.9.0",
+        "timestamp": "2026-11-05T00:48:47Z",
+        "version": "10.11.0.14"
+      },
       {
         "changelog": "Consider artist id when syncing favourites",
         "checksum": "5809c1962041da88fc860282fce974cb",
@@ -10684,33 +10720,6 @@
         "targetAbi": "10.11.9.0",
         "timestamp": "2026-07-19T04:04:44Z",
         "version": "10.11.0.7"
-      },
-      {
-        "changelog": "New API key and secret, since the previous one was blocked or deleted by the original project owner. After upgrading, every user will need to re-enter their credentials for the plugin to work again. There's no way to migrate the old credentials since the API key is different and we don't store the actual user password (we just use it to create a session key). This is a necessary change to keep the plugin working, since the stored session keys were generated with the previous API key that is not valid anymore.",
-        "checksum": "846b430a3782e7d3ad50d8a398ece2b9",
-        "hash": "sha256-wS25O57VA1O94Y4kmc1ObsPPIHqFF/ZGSAZo1xjA3hg=",
-        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.6/lastfm_10.11.0.6.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-05-11T20:31:10Z",
-        "version": "10.11.0.6"
-      },
-      {
-        "changelog": "Allowing to change the API Host (Libre.fm support) + Masking password in config page",
-        "checksum": "bf42c455fdd9f385e97e63b426b8ecdc",
-        "hash": "sha256-8u/c8GNHUYTQr805Ub4ra4szgL20/CDNMVP983V51Tc=",
-        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.5/lastfm_10.11.0.5.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-03-03T17:57:04Z",
-        "version": "10.11.0.5"
-      },
-      {
-        "changelog": "Naming convention fixes",
-        "checksum": "e51d7fd951daf76ae897a2a4bd1d9381",
-        "hash": "sha256-o/TGCcVnuTqrhNA0QyLzbPC9AYOmV1uWYhNZ7GCNiqw=",
-        "sourceUrl": "https://github.com/danielfariati/jellyfin-plugin-lastfm/releases/download/10.11.0.4/lastfm_10.11.0.4.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-01-30T02:01:11Z",
-        "version": "10.11.0.4"
       }
     ]
   },
@@ -10722,6 +10731,15 @@
     "overview": "Track your music habits with ListenBrainz.",
     "owner": "lyarenei",
     "versions": [
+      {
+        "changelog": "This version contains the following changes:\n  - Migration system for plugin configuration file\n  - Re-matching playlists after a set time\n  - Improvements to playlist sync mechanism\n  - Other under-the-hood fixes\n",
+        "checksum": "b15d9ce5fedaabab5efdd685b87487ea",
+        "hash": "sha256-pP8o79X6gwrtTzubLLRmDYRftc9NNIUerYqreWyDec4=",
+        "sourceUrl": "https://repo.xkrivo.net/jellyfin/listenbrainz/listenbrainz_6.6.2.1.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-07T17:44:19Z",
+        "version": "6.6.2.1"
+      },
       {
         "changelog": "This version contains the following changes:\n  - Fix plugin configration wipe after installing version 6.5.1.1 (or .2.1)\n  - Fix config loading for selected user on initial config page load\n",
         "checksum": "9751e7fad2e7f6ea09c191bb1209ee16",
@@ -10802,15 +10820,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2025-10-20T16:50:32Z",
         "version": "6.0.1.1"
-      },
-      {
-        "changelog": "This version contains the following changes:\n  - Provide UA header for ListenBrainz API calls\n",
-        "checksum": "987f8c25cb7f57a9f7bc27bfa49125bc",
-        "hash": "sha256-KBIjj1/bUlSBZtcQu14rG82dxGwYa2WUTKJjX0iFPd0=",
-        "sourceUrl": "https://repo.xkrivo.net/jellyfin/listenbrainz/listenbrainz_5.5.2.1.zip",
-        "targetAbi": "10.10.0.0",
-        "timestamp": "2026-08-25T20:44:36Z",
-        "version": "5.5.2.1"
       }
     ]
   },
@@ -10822,6 +10831,15 @@
     "overview": "Synchronizes client settings, layout choices, and color themes.",
     "owner": "MoazSalem",
     "versions": [
+      {
+        "changelog": "Release 1.12.0.7",
+        "checksum": "883a1d6e2e5c4f11e7a2df09e888d8c1",
+        "hash": "sha256-Qyn+yIMj2JDE0eSQDnUhzFxV0KYgY0l9K1rahnNJgNY=",
+        "sourceUrl": "https://github.com/MoazSalem/litefin-plugin/releases/download/v1.12.0.7/Litefin.Plugin_1.12.0.7.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-04T14:34:10Z",
+        "version": "1.12.0.7"
+      },
       {
         "changelog": "Release 1.12.0.6",
         "checksum": "2bdfff0b037adc167f98078040109f75",
@@ -10902,15 +10920,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-07T09:23:07Z",
         "version": "1.6.0.0"
-      },
-      {
-        "changelog": "Release 1.5.0.0",
-        "checksum": "4de7657f29b02ee51059f0754d4b0e7a",
-        "hash": "sha256-BBA8QZd3fnR+bS+Zu18FyZ4hIzhiLpS0leFES3zIpc4=",
-        "sourceUrl": "https://github.com/MoazSalem/litefin-plugin/releases/download/v1.5.0.0/Litefin.Plugin_1.5.0.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-31T15:31:38Z",
-        "version": "1.5.0.0"
       }
     ]
   },
@@ -11585,6 +11594,24 @@
     "owner": "linaspurinis",
     "versions": [
       {
+        "changelog": "1.0.0.21: Fixed the scrobble start not being sent when a client starts playback from the beginning without reporting a position, which left MDBList unaware of the playback for up to 15 minutes. Pre-rolls (cinema mode intros), trailers and other extras are no longer scrobbled. Failed scrobbles are now logged as warnings, and one user's failure no longer stops the scrobble for others on the same session. An item that can't be saved no longer leaves Jellyfin showing the unsaved change until restart. Thanks to mattsigal for the scrobbling report and fixes (PR #3).\n\n1.0.0.20: Fixed watched sync failing every run (and \"Sync failed to start\") when Jellyfin can't save one item's user data, e.g. an episode whose metadata gives it the same user data key twice. That item is now skipped with a warning in the log and the rest of the sync carries on.\n\n1.0.0.19: A movie or episode played to the end is now marked watched on MDBList at the time playback finished, instead of when it started.\n\n1.0.0.18: Playback progress is now sent to MDBList every 15 minutes instead of every 15 seconds, which could use up the daily API limit. Pause, resume, seek and stop are still sent right away.\n\n1.0.0.17: New: optionally send your files' media info (resolution, HDR, audio, channels, 3D) with collection sync, per user and off by default. Progress scrobbles now pause when MDBList's rate limit is hit, until it resets, and stop for a playback whose title MDBList doesn't recognize. Fixed every sync failing once the plugin hadn't synced for 30 days; it now runs a full sync instead.\n\n1.0.0.16: Fixed the first watched sync sending the whole Jellyfin history to MDBList if something was marked watched before it ran, and watched changes made during a sync (e.g. marking a whole season) being pushed only on the next full sync.\n\n1.0.0.15: Fixed every activity-triggered sync running a slow full watched sync after a sync that held back unwatching items, and full watched syncs rewriting every already-synced item. The debug log now names each held-back item and each live watched change sent to MDBList.\n\n1.0.0.14: Fixed the first watched sync sending the whole Jellyfin watch history to MDBList, which re-dated watches and could un-drop dropped shows. It now pulls MDBList's history first and only sends what MDBList doesn't have.\n\n1.0.0.13: Fixed a watch then unwatch (or rating then removal) pulled from MDBList in the same sync only applying the first change, and changes pulled before a failed sync being pushed back on the next sync.\n\n1.0.0.12: Fixed ratings changed or removed in MDBList being pushed back: after a sync pulled a rating from MDBList, the next sync sent it back as a new local rating, which could undo a later change there. Pulled ratings are now recorded as synced.\n\n1.0.0.11: Fixed an item unwatched in MDBList staying watched: after a sync pulled a watched state from MDBList, the next sync pushed it back as a new local watch, undoing a later unwatch in MDBList. Pulled changes are now recorded as synced.\n\n1.0.0.10: Scrobbles and watched sync now send each episode's own tvdb/tmdb id, so MDBList records the exact episode even when the library numbers it differently from TMDb (common for anime with TheTVDB metadata). Season/episode numbers remain the fallback.\n\n1.0.0.9: Fixes watched/ratings sync missing episodes for shows where a different season/episode numbering is used than MDBList's own data (a common mismatch for anime, e.g. between TheTVDB and TMDb). Episodes are now matched by their own tmdb/tvdb id first, before falling back to season/episode number.\n\n1.0.0.8: Disconnecting an MDBList account now wipes that user's sync bookkeeping, so reconnecting (same or a different account) does a clean full resync instead of diffing against a stale or foreign baseline. Adds Debug-level logging of the full-vs-incremental pull decision, cursor value, and fetched/skipped item counts for watched and ratings pulls, to make sync behavior easier to diagnose.\n\n1.0.0.7: Fixes a rare failure mode where a sync running right after Jellyfin starts, during a library scan, or against a temporarily unreadable library could be misread as \"everything was removed\" and push that as a mass removal to MDBList (or, in the reverse direction, mark a batch of items unwatched locally). Removals are now only ever applied on a deliberate sync (the 24h scheduled sync or manual \"Sync now\"), and a suspiciously empty or oversized removal batch is held and retried on the next sync instead of applied.\n\n1.0.0.6: Fixes hitting MDBList's rate limit on a large first sync -- requests are now paced under the server's short-window write budget, and a 429 is retried using the server's own requested wait instead of aborting the whole sync. Also fixes losing sync progress if a run is interrupted: push progress is now saved per-batch instead of only at the end, so a later failure no longer forces redoing already-pushed items.\n\n1.0.0.5: Fixes watched-status sync: a rewatch that only updated the watch date (without changing watched/unwatched membership) could be silently dropped by the scheduled full sync, and would only reach MDBList via the immediate live-playback push.\n\n1.0.0.4: Fixes a build issue where the plugin was compiled against a newer Jellyfin ABI (10.11.11) than the declared minimum (10.11.0), causing installs to fail with \"Status: NotSupported\" on Jellyfin 10.11.1 through 10.11.10.\n\n1.0.0.3: Fixes \"Disconnect\" always showing a failure alert even though it always succeeded. Updates the plugin catalog icon to a full-bleed 16:9 image instead of a square logo that Jellyfin's plugin page was cropping.\n\n1.0.0.2: Fixes the plugin catalog icon's URL -- 1.0.0.1 published one with no host, which Jellyfin couldn't fetch at all.\n\n1.0.0.1: Fixes scheduled syncs, \"Sync now\", and live scrobbling only ever acting on the first linked user when multiple Jellyfin users each have their own MDBList account connected. Adds a plugin catalog icon.\n\n1.0.0.0: Initial release. Two-way sync of watched status and ratings, push-only collection sync, live playback scrobbling to MDBList's /scrobble endpoints, OAuth device-code authentication, incremental cursor-based pulls with automatic full-reconciliation fallback, a 24h scheduled full sync plus a 15-minute activity-gated cheap poll, and a config page for connecting your account and choosing what to sync.\n",
+        "checksum": "582dd83f493b9406157c9e5aeb47b7f7",
+        "hash": "sha256-PT3u7Ckytw4mXpOYTlk3LOUOLz/Ad7MAPHgK4er3+bc=",
+        "sourceUrl": "https://github.com/MDBList/jellyfin-plugin-mdblist/releases/download/v1.0.0.21/mdblist_1.0.0.21.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-06T10:26:20Z",
+        "version": "1.0.0.21"
+      },
+      {
+        "changelog": "1.0.0.20: Fixed watched sync failing every run (and \"Sync failed to start\") when Jellyfin can't save one item's user data, e.g. an episode whose metadata gives it the same user data key twice. That item is now skipped with a warning in the log and the rest of the sync carries on.\n\n1.0.0.19: A movie or episode played to the end is now marked watched on MDBList at the time playback finished, instead of when it started.\n\n1.0.0.18: Playback progress is now sent to MDBList every 15 minutes instead of every 15 seconds, which could use up the daily API limit. Pause, resume, seek and stop are still sent right away.\n\n1.0.0.17: New: optionally send your files' media info (resolution, HDR, audio, channels, 3D) with collection sync, per user and off by default. Progress scrobbles now pause when MDBList's rate limit is hit, until it resets, and stop for a playback whose title MDBList doesn't recognize. Fixed every sync failing once the plugin hadn't synced for 30 days; it now runs a full sync instead.\n\n1.0.0.16: Fixed the first watched sync sending the whole Jellyfin history to MDBList if something was marked watched before it ran, and watched changes made during a sync (e.g. marking a whole season) being pushed only on the next full sync.\n\n1.0.0.15: Fixed every activity-triggered sync running a slow full watched sync after a sync that held back unwatching items, and full watched syncs rewriting every already-synced item. The debug log now names each held-back item and each live watched change sent to MDBList.\n\n1.0.0.14: Fixed the first watched sync sending the whole Jellyfin watch history to MDBList, which re-dated watches and could un-drop dropped shows. It now pulls MDBList's history first and only sends what MDBList doesn't have.\n\n1.0.0.13: Fixed a watch then unwatch (or rating then removal) pulled from MDBList in the same sync only applying the first change, and changes pulled before a failed sync being pushed back on the next sync.\n\n1.0.0.12: Fixed ratings changed or removed in MDBList being pushed back: after a sync pulled a rating from MDBList, the next sync sent it back as a new local rating, which could undo a later change there. Pulled ratings are now recorded as synced.\n\n1.0.0.11: Fixed an item unwatched in MDBList staying watched: after a sync pulled a watched state from MDBList, the next sync pushed it back as a new local watch, undoing a later unwatch in MDBList. Pulled changes are now recorded as synced.\n\n1.0.0.10: Scrobbles and watched sync now send each episode's own tvdb/tmdb id, so MDBList records the exact episode even when the library numbers it differently from TMDb (common for anime with TheTVDB metadata). Season/episode numbers remain the fallback.\n\n1.0.0.9: Fixes watched/ratings sync missing episodes for shows where a different season/episode numbering is used than MDBList's own data (a common mismatch for anime, e.g. between TheTVDB and TMDb). Episodes are now matched by their own tmdb/tvdb id first, before falling back to season/episode number.\n\n1.0.0.8: Disconnecting an MDBList account now wipes that user's sync bookkeeping, so reconnecting (same or a different account) does a clean full resync instead of diffing against a stale or foreign baseline. Adds Debug-level logging of the full-vs-incremental pull decision, cursor value, and fetched/skipped item counts for watched and ratings pulls, to make sync behavior easier to diagnose.\n\n1.0.0.7: Fixes a rare failure mode where a sync running right after Jellyfin starts, during a library scan, or against a temporarily unreadable library could be misread as \"everything was removed\" and push that as a mass removal to MDBList (or, in the reverse direction, mark a batch of items unwatched locally). Removals are now only ever applied on a deliberate sync (the 24h scheduled sync or manual \"Sync now\"), and a suspiciously empty or oversized removal batch is held and retried on the next sync instead of applied.\n\n1.0.0.6: Fixes hitting MDBList's rate limit on a large first sync -- requests are now paced under the server's short-window write budget, and a 429 is retried using the server's own requested wait instead of aborting the whole sync. Also fixes losing sync progress if a run is interrupted: push progress is now saved per-batch instead of only at the end, so a later failure no longer forces redoing already-pushed items.\n\n1.0.0.5: Fixes watched-status sync: a rewatch that only updated the watch date (without changing watched/unwatched membership) could be silently dropped by the scheduled full sync, and would only reach MDBList via the immediate live-playback push.\n\n1.0.0.4: Fixes a build issue where the plugin was compiled against a newer Jellyfin ABI (10.11.11) than the declared minimum (10.11.0), causing installs to fail with \"Status: NotSupported\" on Jellyfin 10.11.1 through 10.11.10.\n\n1.0.0.3: Fixes \"Disconnect\" always showing a failure alert even though it always succeeded. Updates the plugin catalog icon to a full-bleed 16:9 image instead of a square logo that Jellyfin's plugin page was cropping.\n\n1.0.0.2: Fixes the plugin catalog icon's URL -- 1.0.0.1 published one with no host, which Jellyfin couldn't fetch at all.\n\n1.0.0.1: Fixes scheduled syncs, \"Sync now\", and live scrobbling only ever acting on the first linked user when multiple Jellyfin users each have their own MDBList account connected. Adds a plugin catalog icon.\n\n1.0.0.0: Initial release. Two-way sync of watched status and ratings, push-only collection sync, live playback scrobbling to MDBList's /scrobble endpoints, OAuth device-code authentication, incremental cursor-based pulls with automatic full-reconciliation fallback, a 24h scheduled full sync plus a 15-minute activity-gated cheap poll, and a config page for connecting your account and choosing what to sync.\n",
+        "checksum": "cd65be7175729d138b824b345b9ea7e1",
+        "hash": "sha256-ydRn3iXjwZS8LAX2Gml7Ca4naO2YHAbttqVYfqBiqjM=",
+        "sourceUrl": "https://github.com/MDBList/jellyfin-plugin-mdblist/releases/download/v1.0.0.20/mdblist_1.0.0.20.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-06T09:55:17Z",
+        "version": "1.0.0.20"
+      },
+      {
         "changelog": "1.0.0.19: A movie or episode played to the end is now marked watched on MDBList at the time playback finished, instead of when it started.\n\n1.0.0.18: Playback progress is now sent to MDBList every 15 minutes instead of every 15 seconds, which could use up the daily API limit. Pause, resume, seek and stop are still sent right away.\n\n1.0.0.17: New: optionally send your files' media info (resolution, HDR, audio, channels, 3D) with collection sync, per user and off by default. Progress scrobbles now pause when MDBList's rate limit is hit, until it resets, and stop for a playback whose title MDBList doesn't recognize. Fixed every sync failing once the plugin hadn't synced for 30 days; it now runs a full sync instead.\n\n1.0.0.16: Fixed the first watched sync sending the whole Jellyfin history to MDBList if something was marked watched before it ran, and watched changes made during a sync (e.g. marking a whole season) being pushed only on the next full sync.\n\n1.0.0.15: Fixed every activity-triggered sync running a slow full watched sync after a sync that held back unwatching items, and full watched syncs rewriting every already-synced item. The debug log now names each held-back item and each live watched change sent to MDBList.\n\n1.0.0.14: Fixed the first watched sync sending the whole Jellyfin watch history to MDBList, which re-dated watches and could un-drop dropped shows. It now pulls MDBList's history first and only sends what MDBList doesn't have.\n\n1.0.0.13: Fixed a watch then unwatch (or rating then removal) pulled from MDBList in the same sync only applying the first change, and changes pulled before a failed sync being pushed back on the next sync.\n\n1.0.0.12: Fixed ratings changed or removed in MDBList being pushed back: after a sync pulled a rating from MDBList, the next sync sent it back as a new local rating, which could undo a later change there. Pulled ratings are now recorded as synced.\n\n1.0.0.11: Fixed an item unwatched in MDBList staying watched: after a sync pulled a watched state from MDBList, the next sync pushed it back as a new local watch, undoing a later unwatch in MDBList. Pulled changes are now recorded as synced.\n\n1.0.0.10: Scrobbles and watched sync now send each episode's own tvdb/tmdb id, so MDBList records the exact episode even when the library numbers it differently from TMDb (common for anime with TheTVDB metadata). Season/episode numbers remain the fallback.\n\n1.0.0.9: Fixes watched/ratings sync missing episodes for shows where a different season/episode numbering is used than MDBList's own data (a common mismatch for anime, e.g. between TheTVDB and TMDb). Episodes are now matched by their own tmdb/tvdb id first, before falling back to season/episode number.\n\n1.0.0.8: Disconnecting an MDBList account now wipes that user's sync bookkeeping, so reconnecting (same or a different account) does a clean full resync instead of diffing against a stale or foreign baseline. Adds Debug-level logging of the full-vs-incremental pull decision, cursor value, and fetched/skipped item counts for watched and ratings pulls, to make sync behavior easier to diagnose.\n\n1.0.0.7: Fixes a rare failure mode where a sync running right after Jellyfin starts, during a library scan, or against a temporarily unreadable library could be misread as \"everything was removed\" and push that as a mass removal to MDBList (or, in the reverse direction, mark a batch of items unwatched locally). Removals are now only ever applied on a deliberate sync (the 24h scheduled sync or manual \"Sync now\"), and a suspiciously empty or oversized removal batch is held and retried on the next sync instead of applied.\n\n1.0.0.6: Fixes hitting MDBList's rate limit on a large first sync -- requests are now paced under the server's short-window write budget, and a 429 is retried using the server's own requested wait instead of aborting the whole sync. Also fixes losing sync progress if a run is interrupted: push progress is now saved per-batch instead of only at the end, so a later failure no longer forces redoing already-pushed items.\n\n1.0.0.5: Fixes watched-status sync: a rewatch that only updated the watch date (without changing watched/unwatched membership) could be silently dropped by the scheduled full sync, and would only reach MDBList via the immediate live-playback push.\n\n1.0.0.4: Fixes a build issue where the plugin was compiled against a newer Jellyfin ABI (10.11.11) than the declared minimum (10.11.0), causing installs to fail with \"Status: NotSupported\" on Jellyfin 10.11.1 through 10.11.10.\n\n1.0.0.3: Fixes \"Disconnect\" always showing a failure alert even though it always succeeded. Updates the plugin catalog icon to a full-bleed 16:9 image instead of a square logo that Jellyfin's plugin page was cropping.\n\n1.0.0.2: Fixes the plugin catalog icon's URL -- 1.0.0.1 published one with no host, which Jellyfin couldn't fetch at all.\n\n1.0.0.1: Fixes scheduled syncs, \"Sync now\", and live scrobbling only ever acting on the first linked user when multiple Jellyfin users each have their own MDBList account connected. Adds a plugin catalog icon.\n\n1.0.0.0: Initial release. Two-way sync of watched status and ratings, push-only collection sync, live playback scrobbling to MDBList's /scrobble endpoints, OAuth device-code authentication, incremental cursor-based pulls with automatic full-reconciliation fallback, a 24h scheduled full sync plus a 15-minute activity-gated cheap poll, and a config page for connecting your account and choosing what to sync.\n",
         "checksum": "fdc7cd08d214d66361566309170c557b",
         "hash": "sha256-9TlrMQzJ1zYT4UX/YeFLQNkulzJr/VM5YRDGCHa4HTo=",
@@ -11655,24 +11682,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-29T08:14:15Z",
         "version": "1.0.0.12"
-      },
-      {
-        "changelog": "1.0.0.11: Fixed an item unwatched in MDBList staying watched: after a sync pulled a watched state from MDBList, the next sync pushed it back as a new local watch, undoing a later unwatch in MDBList. Pulled changes are now recorded as synced.\n\n1.0.0.10: Scrobbles and watched sync now send each episode's own tvdb/tmdb id, so MDBList records the exact episode even when the library numbers it differently from TMDb (common for anime with TheTVDB metadata). Season/episode numbers remain the fallback.\n\n1.0.0.9: Fixes watched/ratings sync missing episodes for shows where a different season/episode numbering is used than MDBList's own data (a common mismatch for anime, e.g. between TheTVDB and TMDb). Episodes are now matched by their own tmdb/tvdb id first, before falling back to season/episode number.\n\n1.0.0.8: Disconnecting an MDBList account now wipes that user's sync bookkeeping, so reconnecting (same or a different account) does a clean full resync instead of diffing against a stale or foreign baseline. Adds Debug-level logging of the full-vs-incremental pull decision, cursor value, and fetched/skipped item counts for watched and ratings pulls, to make sync behavior easier to diagnose.\n\n1.0.0.7: Fixes a rare failure mode where a sync running right after Jellyfin starts, during a library scan, or against a temporarily unreadable library could be misread as \"everything was removed\" and push that as a mass removal to MDBList (or, in the reverse direction, mark a batch of items unwatched locally). Removals are now only ever applied on a deliberate sync (the 24h scheduled sync or manual \"Sync now\"), and a suspiciously empty or oversized removal batch is held and retried on the next sync instead of applied.\n\n1.0.0.6: Fixes hitting MDBList's rate limit on a large first sync -- requests are now paced under the server's short-window write budget, and a 429 is retried using the server's own requested wait instead of aborting the whole sync. Also fixes losing sync progress if a run is interrupted: push progress is now saved per-batch instead of only at the end, so a later failure no longer forces redoing already-pushed items.\n\n1.0.0.5: Fixes watched-status sync: a rewatch that only updated the watch date (without changing watched/unwatched membership) could be silently dropped by the scheduled full sync, and would only reach MDBList via the immediate live-playback push.\n\n1.0.0.4: Fixes a build issue where the plugin was compiled against a newer Jellyfin ABI (10.11.11) than the declared minimum (10.11.0), causing installs to fail with \"Status: NotSupported\" on Jellyfin 10.11.1 through 10.11.10.\n\n1.0.0.3: Fixes \"Disconnect\" always showing a failure alert even though it always succeeded. Updates the plugin catalog icon to a full-bleed 16:9 image instead of a square logo that Jellyfin's plugin page was cropping.\n\n1.0.0.2: Fixes the plugin catalog icon's URL -- 1.0.0.1 published one with no host, which Jellyfin couldn't fetch at all.\n\n1.0.0.1: Fixes scheduled syncs, \"Sync now\", and live scrobbling only ever acting on the first linked user when multiple Jellyfin users each have their own MDBList account connected. Adds a plugin catalog icon.\n\n1.0.0.0: Initial release. Two-way sync of watched status and ratings, push-only collection sync, live playback scrobbling to MDBList's /scrobble endpoints, OAuth device-code authentication, incremental cursor-based pulls with automatic full-reconciliation fallback, a 24h scheduled full sync plus a 15-minute activity-gated cheap poll, and a config page for connecting your account and choosing what to sync.\n",
-        "checksum": "c706986b1a407e7a447c1c7d84feccf9",
-        "hash": "sha256-NsMCwsW1dur3us325xJO/K/2PYjCt3ZLRVjdcxfAge8=",
-        "sourceUrl": "https://github.com/MDBList/jellyfin-plugin-mdblist/releases/download/v1.0.0.11/mdblist_1.0.0.11.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-29T08:10:18Z",
-        "version": "1.0.0.11"
-      },
-      {
-        "changelog": "1.0.0.10: Scrobbles and watched sync now send each episode's own tvdb/tmdb id, so MDBList records the exact episode even when the library numbers it differently from TMDb (common for anime with TheTVDB metadata). Season/episode numbers remain the fallback.\n\n1.0.0.9: Fixes watched/ratings sync missing episodes for shows where a different season/episode numbering is used than MDBList's own data (a common mismatch for anime, e.g. between TheTVDB and TMDb). Episodes are now matched by their own tmdb/tvdb id first, before falling back to season/episode number.\n\n1.0.0.8: Disconnecting an MDBList account now wipes that user's sync bookkeeping, so reconnecting (same or a different account) does a clean full resync instead of diffing against a stale or foreign baseline. Adds Debug-level logging of the full-vs-incremental pull decision, cursor value, and fetched/skipped item counts for watched and ratings pulls, to make sync behavior easier to diagnose.\n\n1.0.0.7: Fixes a rare failure mode where a sync running right after Jellyfin starts, during a library scan, or against a temporarily unreadable library could be misread as \"everything was removed\" and push that as a mass removal to MDBList (or, in the reverse direction, mark a batch of items unwatched locally). Removals are now only ever applied on a deliberate sync (the 24h scheduled sync or manual \"Sync now\"), and a suspiciously empty or oversized removal batch is held and retried on the next sync instead of applied.\n\n1.0.0.6: Fixes hitting MDBList's rate limit on a large first sync -- requests are now paced under the server's short-window write budget, and a 429 is retried using the server's own requested wait instead of aborting the whole sync. Also fixes losing sync progress if a run is interrupted: push progress is now saved per-batch instead of only at the end, so a later failure no longer forces redoing already-pushed items.\n\n1.0.0.5: Fixes watched-status sync: a rewatch that only updated the watch date (without changing watched/unwatched membership) could be silently dropped by the scheduled full sync, and would only reach MDBList via the immediate live-playback push.\n\n1.0.0.4: Fixes a build issue where the plugin was compiled against a newer Jellyfin ABI (10.11.11) than the declared minimum (10.11.0), causing installs to fail with \"Status: NotSupported\" on Jellyfin 10.11.1 through 10.11.10.\n\n1.0.0.3: Fixes \"Disconnect\" always showing a failure alert even though it always succeeded. Updates the plugin catalog icon to a full-bleed 16:9 image instead of a square logo that Jellyfin's plugin page was cropping.\n\n1.0.0.2: Fixes the plugin catalog icon's URL -- 1.0.0.1 published one with no host, which Jellyfin couldn't fetch at all.\n\n1.0.0.1: Fixes scheduled syncs, \"Sync now\", and live scrobbling only ever acting on the first linked user when multiple Jellyfin users each have their own MDBList account connected. Adds a plugin catalog icon.\n\n1.0.0.0: Initial release. Two-way sync of watched status and ratings, push-only collection sync, live playback scrobbling to MDBList's /scrobble endpoints, OAuth device-code authentication, incremental cursor-based pulls with automatic full-reconciliation fallback, a 24h scheduled full sync plus a 15-minute activity-gated cheap poll, and a config page for connecting your account and choosing what to sync.\n",
-        "checksum": "843221f036538497f8261fc9ffb11976",
-        "hash": "sha256-n/jgW8nvoMS9qvVsPbl5UP7CIWhYShSC01iXJQaMGPg=",
-        "sourceUrl": "https://github.com/MDBList/jellyfin-plugin-mdblist/releases/download/v1.0.0.10/mdblist_1.0.0.10.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-29T06:52:24Z",
-        "version": "1.0.0.10"
       }
     ]
   },
@@ -12084,6 +12093,15 @@
     "owner": "CodeDevMLH",
     "versions": [
       {
+        "changelog": "- feat: Add option to pause slideshow and trailers during external media playback (Cast / MPV Shim)\n- feat: Add option to randomize background images when multiple are available",
+        "checksum": "859710393e7fb3178e182953810883e6",
+        "hash": "sha256-JUJRaPEULF3ilm5ngy2kB6StK2OLZZwJwSWS0t5RYuk=",
+        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v3.12.0.0/Jellyfin.Plugin.MediaBarEnhanced_v3.12.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-02T01:19:23Z",
+        "version": "3.12.0.0"
+      },
+      {
         "changelog": "- fix: Persist trailer volume in localStorage\n- fix: Tear down loading screen immediately when navigating away from the home page\n- fix: Dynamically offset config page sticky footer to prevent overlapping the dashboard sidebar\n- fix: Replace info_outline icon with info in config page save notice",
         "checksum": "954309ba71abbbbefc91b948a92fe623",
         "hash": "sha256-cBJ+DWU9hAFmrC2NgFhw8Qb2iSIO9NyL3uqo+9Dp+ZI=",
@@ -12163,15 +12181,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-08-24T23:58:56Z",
         "version": "3.6.0.0"
-      },
-      {
-        "changelog": "- feat: Add Sync Page Backdrop option to mirror active slide background in Jellyfin's page background (from upstream with fixes)\n- feat: Add parent series backdrop image fallback for Season and Episode slides\n- fix: Prevent TV mode autofocus from stealing focus when returning from details pages\n- fix: Prevent unintended close events in client settings popup",
-        "checksum": "344e806cbcddde9e41927b9dd9fec8bd",
-        "hash": "sha256-CBFuthZ9skDOqWPnexfC/ZP01KyzX625RtEWn3eQ8bQ=",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v3.5.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-08-17T00:04:01Z",
-        "version": "3.5.2.0"
       }
     ]
   },
@@ -12183,6 +12192,42 @@
     "overview": "Delete played media after specified time",
     "owner": "shemanaev",
     "versions": [
+      {
+        "changelog": "- fix: ignore partial watches when keeping the latest watched episode - chore: bump plugin base version to 3.8.0\n",
+        "checksum": "96e0bf0be520bbaee35c7596018f923c",
+        "hash": "sha256-FJL90KjO9A06vwAQ38iKjF/phxJBuB6u+2E5gxwsrfU=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.8.0/MediaCleaner-12.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T07:54:19Z",
+        "version": "3.8.0.120000"
+      },
+      {
+        "changelog": "- fix: ignore partial watches when keeping the latest watched episode - chore: bump plugin base version to 3.8.0\n",
+        "checksum": "a2e3ca1725dd08b8dcae50fe39896bf6",
+        "hash": "sha256-iSSD+5+Lw3uJJ8GZbx05L0l0jdgiM58J4dy9HxRkFV8=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.8.0/MediaCleaner-10.11.9.zip",
+        "targetAbi": "10.11.9.0",
+        "timestamp": "2026-11-01T07:54:19Z",
+        "version": "3.8.0.101109"
+      },
+      {
+        "changelog": "- fix: ignore partial watches when keeping the latest watched episode - chore: bump plugin base version to 3.8.0\n",
+        "checksum": "cb0c25c57df32fb7f13b86b8a93cd53f",
+        "hash": "sha256-PXRodL077lW/9+rywvzuw3q+mB9Y7uopxUy7XnetMlE=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.8.0/MediaCleaner-10.11.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-01T07:54:19Z",
+        "version": "3.8.0.101100"
+      },
+      {
+        "changelog": "- fix: ignore partial watches when keeping the latest watched episode - chore: bump plugin base version to 3.8.0\n",
+        "checksum": "421c4ec3301a1b526355369cfdb3dbcf",
+        "hash": "sha256-df41k8xMrQhsUthHdzwJ4BUoq5h8uEqW/gjK/yKFkJI=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.8.0/MediaCleaner-10.10.7.zip",
+        "targetAbi": "10.10.7.0",
+        "timestamp": "2026-11-01T07:54:23Z",
+        "version": "3.8.0.101007"
+      },
       {
         "changelog": "- Don't announce complete seasons blocked by a protected episode - chore: bump plugin base version to 3.7.0\n",
         "checksum": "32176dca2cc3e0787902e0d34f9746ef",
@@ -12236,42 +12281,6 @@
         "targetAbi": "10.11.9.0",
         "timestamp": "2026-09-25T16:54:59Z",
         "version": "3.6.0.101109"
-      },
-      {
-        "changelog": "- Fix Leaving Soon sync on Jellyfin 12 when the collection has seasons - test: cover linked season membership in Leaving Soon publisher - chore: bump plugin base version to 3.6.0\n",
-        "checksum": "a19675263daceac9e1fd90c809e49193",
-        "hash": "sha256-hiI/G8OoIBta4VqLK4dBE2CcIHeOvE8uI18/BQwTEPc=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.6.0/MediaCleaner-10.11.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-25T16:55:01Z",
-        "version": "3.6.0.101100"
-      },
-      {
-        "changelog": "- Fix Leaving Soon sync on Jellyfin 12 when the collection has seasons - test: cover linked season membership in Leaving Soon publisher - chore: bump plugin base version to 3.6.0\n",
-        "checksum": "6b1592dc25c5afc31962389133d400dc",
-        "hash": "sha256-n76+ip6UAyxU1YvfgmLvNICKRI9Sl5A2glOP2KqbYO4=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.6.0/MediaCleaner-10.10.7.zip",
-        "targetAbi": "10.10.7.0",
-        "timestamp": "2026-09-25T16:55:03Z",
-        "version": "3.6.0.101007"
-      },
-      {
-        "changelog": "- Add layered web script injection for Leaving Soon\n",
-        "checksum": "48692610e2916002f5124a22fc6df3d6",
-        "hash": "sha256-YBsZ5H/7D8lvhbLwTZvZcijqwojWtrkv52a8tJKTL5g=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.5.0/MediaCleaner-12.0.zip",
-        "targetAbi": "12.0.0.0",
-        "timestamp": "2026-09-21T17:20:25Z",
-        "version": "3.5.0.120000"
-      },
-      {
-        "changelog": "- Add layered web script injection for Leaving Soon\n",
-        "checksum": "f35b8ce342f7b91fc003462e9fabf304",
-        "hash": "sha256-0D6iVWbgib7jYzTSTgS4yGip2+R6+SGLSQ4461XPEWc=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-media-cleaner/releases/download/v3.5.0/MediaCleaner-10.11.9.zip",
-        "targetAbi": "10.11.9.0",
-        "timestamp": "2026-09-21T17:20:36Z",
-        "version": "3.5.0.101109"
       }
     ]
   },
@@ -12520,6 +12529,15 @@
     "owner": "CatNoir2006",
     "versions": [
       {
+        "changelog": "## Neue Funktionen\r\n### Virtuelle Abos\r\nEs können Abos erstellte werden welche keine Medien herunterladen sondern sie in Jellyfin mittels dem `Channels` Feature bereitstellen\r\n### Download Qualität Festlegen\r\nDie Download Qualität kann jetzt festgelegt werden. Dafür  kann die Minimale und Maximale Bildqualität die für den Download zulässig ist eingestellt werden. Sowie ob höhere oder niedrigere Auflösung bevorzugt wird.\r\n<img width=\"821\" height=\"350\" alt=\"image\" src=\"https://github.com/user-attachments/assets/4adceb5f-4c3e-4389-b077-8117e96b5032\" />\r\n### Parallele Downloads\r\nDas Update erlaubt außerdem Parallele Downloads. Standermässig sind diese Deaktiviert aber es kann auf bis zu 10 gleichzeitige Downloads gesetzt werden.\r\n<img width=\"836\" height=\"458\" alt=\"image\" src=\"https://github.com/user-attachments/assets/b35bf784-a08a-435e-b7b6-4702bbe4a11b\" />\r\n\r\n\r\n## What's Changed\r\n* Restrict release trigger types to 'published' only by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/173\r\n* Feldbeschreibungen für Abonnement-Einstellungen auf der Seite \"Abo-Standardwerte\" anzeigen by @CuriousApe2020 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/175\r\n* Fix download history deduplication for re-published/non-series items by @CatNoirBot in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/177\r\n* Feature: Virtuelle Abos via Jellyfin Kanal (ohne Download) by @CatNoirBot in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/179\r\n* build(deps): bump @vitest/mocker from 4.1.10 to 4.1.11 in /Jellyfin.Plugin.MediathekViewDL/Configuration/Web/VueJS in the npm_and_yarn group across 1 directory by @dependabot[bot] in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/189\r\n* Cleanup Things by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/196\r\n* build(deps): bump the npm_and_yarn group across 1 directory with 3 updates by @dependabot[bot] in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/198\r\n* build(deps-dev): bump vite from 8.1.5 to 8.3.5 in /Jellyfin.Plugin.MediathekViewDL/Configuration/Web/VueJS in the npm_and_yarn group across 1 directory by @dependabot[bot] in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/203\r\n* Refactor MediathekView API into standalone project MediathekView.Api by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/204\r\n* build(deps): bump the npm_and_yarn group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/205\r\n* #202 improvement downloadqualitaet festlegen by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/206\r\n* feat: Parallele Downloads by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/210\r\n* Bump version to 0.8.4.0 in build.yaml by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/212\r\n\r\n## New Contributors\r\n* @CuriousApe2020 made their first contribution in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/175\r\n\r\n**Full Changelog**: https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/compare/v0.8.3.0...v0.8.4.0",
+        "checksum": "42eb23a6d39a104c5817a1a735cd688d",
+        "hash": "sha256-2dssohPlvQdNGKrjwf/QddE3Y+NGzLWde3MrqGCyJUA=",
+        "sourceUrl": "https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/releases/download/v0.8.4.0/mediathek-downloader_0.8.4.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-06T15:15:32Z",
+        "version": "0.8.4.0"
+      },
+      {
         "changelog": "## What's Changed\r\n* build(deps): bump postcss from 8.5.19 to 8.5.26 in /Jellyfin.Plugin.MediathekViewDL/Configuration/Web/VueJS in the npm_and_yarn group across 1 directory by @dependabot[bot] in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/168\r\n* [Feature]: Einrichtungs-Assistent hinzufügen (#165) by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/170\r\n* Letze Anpassung in Readme auf v8.0.3 gesetzt by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/171\r\n\r\n\r\n**Full Changelog**: https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/compare/v0.8.2.0...v0.8.3.0",
         "checksum": "003f5c46f520e0b0d523b6eade8963c6",
         "hash": "sha256-gjLprDfZ8a+R2LZ1sIqqathzrobUsyaWu0z+UQbFD4I=",
@@ -12599,15 +12617,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-01-07T13:50:44Z",
         "version": "0.7.1.0"
-      },
-      {
-        "changelog": "## Release Notes (v0.6.1.0 -> v0.7.0.0)\r\n\r\n #### Dieses Update verbessert die Stabilität und erweitert die Download-Möglichkeiten.\r\n\r\n  ### 🚀 Neue Funktionen\r\n\r\n   * M3U8-Support: Das Plugin lädt nun M3U8-Streams direkt herunter. Das erhöht die Kompatibilität mit vielen Sendern.\r\n   * Audio-Extraktion: Tonspuren werden jetzt direkt aus dem Web extrahiert. Das spart Zeit und Datenvolumen.\r\n   * OV-Sprache: In Abos kannst du eine Standardsprache für OV-Inhalte festlegen (z. B. 'eng').\r\n   * Temp-Pfad: Der Pfad für temporäre Dateien ist nun frei konfigurierbar.\r\n   * Bereinigung: Ein neuer Task löscht beim Start automatisch alte temporäre Dateien.\r\n   * HTTP-Option: Downloads über HTTP können nun explizit erlaubt werden.\r\n\r\n ### 🛠️ Verbesserungen\r\n\r\n   * Neues System: Die Download-Logik wurde für mehr Stabilität komplett modernisiert.\r\n   * FFmpeg-Anzeige: Vorgänge wie M3U8-Downloads zeigen nun genaue Prozentwerte an.\r\n   * Fehlerschutz: Automatische Wiederholungen (via Polly) machen Downloads zuverlässiger.\r\n   * Jellyfin 10.11: Das Plugin wurde auf die neueste Jellyfin-Version aktualisiert.\r\n   * Speicherprüfung: Die Prüfung des freien Speicherplatzes arbeitet nun genauer.\r\n   * Doku: Die README wurde überarbeitet und enthält nun Bilder und neue Anleitungen.\r\n\r\n ### 🐞 Fehlerbehebungen\r\n\r\n   * Gebärdensprache: Diese Inhalte werden nun korrekt immer als Video geladen.\r\n   * Task-Trigger: Die Zeitpläne wurden an aktuelle API-Standards angepasst.\r\n\r\n## What's Changed\r\n* Implement resilience patterns polly by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/64\r\n* Configurable Temporary Download Path & Improve Disc Space Check by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/66\r\n* Fix: SignLanguage should alwas be downloaded as Video never as Audio by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/69\r\n* Docs: Add GitHub issue templates by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/70\r\n* feat: Add subscription setting for Original Language (OV) override by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/72\r\n* feat: Streaming audio extraction by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/74\r\n* Implement TempFileCleanup scheduled task by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/75\r\n* Add support for m3u files for download by @CatNoir2006 in https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/pull/76\r\n\r\n\r\n**Full Changelog**: https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/compare/v0.6.1.0.0...v0.7.0.0",
-        "checksum": "f18abf9542e54ce33a3f316af381c8ed",
-        "hash": "sha256-wwWnPFXOwCXIK4WzoT8a59v60/viXX6LLU1RTVr25XE=",
-        "sourceUrl": "https://github.com/CatNoir2006/jellyfin-plugin-MediathekViewDL/releases/download/v0.7.0.0/mediathek-downloader_0.7.0.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-01-05T21:28:07Z",
-        "version": "0.7.0.0"
       }
     ]
   },
@@ -12619,6 +12628,15 @@
     "overview": "A Meilisearch Plugin for Jellyfin",
     "owner": "a.sac.",
     "versions": [
+      {
+        "changelog": "\n- [44518d7] fix: tag API controller for OpenAPI generation (#143)",
+        "checksum": "60bce3f0c93e8e06beb0580c344fea49",
+        "hash": "sha256-D3hy7iTVWIQn/DioHfTuytwBA1cYT7ZheHqLmCiCYLQ=",
+        "sourceUrl": "https://github.com/arnesacnussem/jellyfin-plugin-meilisearch/releases/download/1.12.1.6/meilisearch_1.12.1.6.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-02T22:16:29Z",
+        "version": "1.12.1.6"
+      },
       {
         "changelog": "\n- [13faf4b] fix: remove documents of deleted items from the index (#142)\n- [f1ab9fa] ci(deps): bump actions/download-artifact from 8.0.1 to 8.0.2 (#139)\n- [1955481] ci(deps): bump actions/upload-artifact from 7.0.1 to 7.0.2 (#140)\n- [85ae32d] ci(deps): bump actions/checkout from 7.0.0 to 7.0.1 (#135)\n- [531da07] ci(deps): bump actions/setup-dotnet from 5.4.0 to 6.0.0 (#136)\n- [1dd1a59] update README",
         "checksum": "4efd0b1c543da292a9f7c46f720cb98a",
@@ -12699,15 +12717,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-01-30T18:39:21Z",
         "version": "1.11.1.10"
-      },
-      {
-        "changelog": "- [438b910] feat: enhance Meilisearch client with reconnect logic and health checks\n- [0a0ce10] chore: Bump MeiliSearch from 0.17.1 to 0.18.0 (#82)\n- [ad6a7e1] ci(deps): bump actions/download-artifact from 6.0.0 to 7.0.0 (#80)\n- [c90ce69] ci(deps): bump actions/upload-artifact from 5.0.0 to 6.0.0 (#81)\n- [6083528] ci(deps): bump actions/checkout from 6.0.0 to 6.0.1 (#78)\n- [8acd7de] ci(deps): bump actions/checkout from 5.0.1 to 6.0.0 (#75)\n- [e446305] ci(deps): bump actions/setup-dotnet from 5.0.0 to 5.0.1 (#76)\n- [d7ac2ea] ci(deps): bump actions/checkout from 5.0.0 to 5.0.1 (#74)\n- [e5a30dc] Update Jellyfin version in README",
-        "checksum": "87d8eaf161489c6775364f0c3f9429c1",
-        "hash": "sha256-//bRNtin0W2vk8TumJe8dCg9aKC6rViOwvaISG8EOfg=",
-        "sourceUrl": "https://github.com/arnesacnussem/jellyfin-plugin-meilisearch/releases/download/1.11.1.9/meilisearch_1.11.1.9.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2025-12-14T22:14:21Z",
-        "version": "1.11.1.9"
       }
     ]
   },
@@ -13486,6 +13495,15 @@
     "owner": "Ryan Dash",
     "versions": [
       {
+        "changelog": "https://github.com/ryandash/jellyfin-plugin-myanimelist/releases/tag/v12.4.1.0",
+        "checksum": "0b47989866d637ac2360e7344c691e7c",
+        "hash": "sha256-Xxx8lODhGh4ylgW2MfRdDzMb3CVJ6ttfhRGolHZTY9c=",
+        "sourceUrl": "https://github.com/ryandash/jellyfin-plugin-myanimelist/releases/download/v12.4.1.0/myanimelist_12.4.1.0.zip",
+        "targetAbi": "12.4.0",
+        "timestamp": "2026-11-02T22:21:09Z",
+        "version": "12.4.1.0"
+      },
+      {
         "changelog": "https://github.com/ryandash/jellyfin-plugin-myanimelist/releases/tag/v12.4.0.0",
         "checksum": "8a8e3e239e65171f6852fb0b333eb88e",
         "hash": "sha256-Yj6xmLMJzDv0TToXxFq8F/BZj+OlDhXR2iBvnLWPN0Y=",
@@ -13565,15 +13583,6 @@
         "targetAbi": "10.11.11",
         "timestamp": "2026-08-14T22:38:22Z",
         "version": "11.11.6.2"
-      },
-      {
-        "changelog": "https://github.com/ryandash/jellyfin-plugin-myanimelist/releases/tag/v11.11.6.1",
-        "checksum": "f06239fcc74f30ed0aa53d9cd2cc963a",
-        "hash": "sha256-93QE3XtEso2OQKUdzL/zsHIstCUUz9eRwlKe/1ZzGP0=",
-        "sourceUrl": "https://github.com/ryandash/jellyfin-plugin-myanimelist/releases/download/v11.11.6.1/myanimelist_11.11.6.1.zip",
-        "targetAbi": "10.11.11",
-        "timestamp": "2026-08-14T20:47:31Z",
-        "version": "11.11.6.1"
       }
     ]
   },
@@ -17396,6 +17405,15 @@
     "owner": "CodeDevMLH",
     "versions": [
       {
+        "changelog": "- feat: Offset configuration page sticky footer when dashboard sidebar drawer is visible\n- fix: Update configuration refresh notice icon to solid info variant",
+        "checksum": "9dc00724112fe79aa170df98b2041bbf",
+        "hash": "sha256-DZfFVsdttto+K6vfEkyqYRkXM2lFTgpqQRMVTImVCXs=",
+        "sourceUrl": "https://github.com/CodeDevMLH/Jellyfin-Seasonals/releases/download/v3.4.1.0/Jellyfin.Plugin.Seasonals.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-02T01:40:36Z",
+        "version": "3.4.1.0"
+      },
+      {
         "changelog": "- feat: Add configurable seasonal effect play duration timeout with automatic fade-out\n- feat: Add client-side play duration override\n- feat: Add Jellyfin v12 MUI AppBar gradient support to Pride theme\n- fix: Ensure immediate suppression of seasonal effects during video playback route navigation (additional fallback)\n- fix: Increase Film Noir overlay z-index to properly cover Jellyfin v12 UI layers",
         "checksum": "631e41c973a11a0c24b17bb795a0c21e",
         "hash": "sha256-njlCmXbC303TE1Hqx9LlhSGBEnKMgAFI1xsFiHzVut0=",
@@ -17475,15 +17493,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-06-28T16:22:20Z",
         "version": "3.0.3.0"
-      },
-      {
-        "changelog": "feat: Add new styling for client-side settings and admin page\n- feat: Add localization support for client-side settings (English, German, Spanish, French, Italian)\n- feat: Add option to move client-side settings to the sidebar",
-        "checksum": "0d2022d92c6a72cfc4216caeeb11eee4",
-        "hash": "sha256-rkW+4bhT928y/i/Q22Y8gylLZcFnx2hlPu92GJxTLKw=",
-        "sourceUrl": "https://github.com/CodeDevMLH/Jellyfin-Seasonals/releases/download/v3.0.2.0/Jellyfin.Plugin.Seasonals.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-06-27T17:20:11Z",
-        "version": "3.0.2.0"
       }
     ]
   },
@@ -17924,6 +17933,15 @@
     "owner": "Franciskid",
     "versions": [
       {
+        "changelog": "The share popup now uses your settings right after you sign in, instead of ignoring them until a reload. Watch-party guests see Jellyfin's \"SyncPlay enabled\" notice and ours stacked instead of overlapping. The links table on the settings page is easier to read.",
+        "checksum": "26b29779bc99557526bf1694deb5bff7",
+        "hash": "sha256-Ajv8tKHUUrAEa8BSElCvsm22pgyoo7TRAtmUwqi8374=",
+        "sourceUrl": "https://github.com/Franciskid/jellyfin-plugin-sharelinks/releases/download/v1.1.2.0/sharelinks_1.1.2.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-06T16:35:30Z",
+        "version": "1.1.2.0"
+      },
+      {
         "changelog": "Watch-party guests now join the group on their own on Jellyfin 12 too. Adds a bitrate limit for guests watching from outside your local network (#24): streams above it are transcoded down, and 0 keeps the server's own Internet streaming limit.",
         "checksum": "f8664c865f9c97cee4eaef7d9c74e056",
         "hash": "sha256-wGCBsQIWY7/NKElz68OKNOe0jbQSVWs0IeXwXigurQA=",
@@ -18003,15 +18021,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-07-26T18:45:00Z",
         "version": "1.0.2.0"
-      },
-      {
-        "changelog": "Series and seasons can now be shared, not just single movies and episodes: the share tags the whole tree so the guest can browse and play everything inside it, and cleanup strips it all again. Expired or invalid links now show a friendly page that redirects to the Jellyfin home instead of raw JSON. The guest hidden selectors setting now defaults to empty.",
-        "checksum": "7ea5363ee59c41a0daac7283c12c2d40",
-        "hash": "sha256-FmGfNluodnRJ6VUmDt+Y1vXkDMZ8jQSdtoX2LFzLhXU=",
-        "sourceUrl": "https://github.com/Franciskid/jellyfin-plugin-sharelinks/releases/download/v1.0.1.0/sharelinks_1.0.1.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-07-08T00:15:00Z",
-        "version": "1.0.1.0"
       }
     ]
   },
@@ -18022,6 +18031,15 @@
     "overview": "Metadata provider for Shikimori",
     "owner": "te9c",
     "versions": [
+      {
+        "changelog": "Update to jellyfin 12.0\n",
+        "checksum": "4e7ea7dcc009329d68d0e6d2526443bb",
+        "hash": "sha256-NL4Mh9bcTlUmNHq6s1/Vi3UQ8Ch04Md94E17m8RC8Lc=",
+        "sourceUrl": "https://github.com/te9c/jellyfin-plugin-shikimori/releases/download/5.1.0.0/shikimori_5.1.0.0.zip",
+        "targetAbi": "10.12.0.0",
+        "timestamp": "2026-11-03T19:04:33Z",
+        "version": "5.1.0.0"
+      },
       {
         "changelog": "Fixed bugs\n",
         "checksum": "eebe29ba8f32a6357beca58b7fc84b69",
@@ -18102,15 +18120,6 @@
         "targetAbi": "10.9.0",
         "timestamp": "2024-06-16T08:59:12Z",
         "version": "3.2.0.0"
-      },
-      {
-        "changelog": "Add cancellation tokens support\n change html description to plain text description.\n",
-        "checksum": "78f9b479ed82410e3da1756bb0262a9b",
-        "hash": "sha256-A06SD5xHQBes0Csd9rLqR8LsWtJ2kKJEcX33c4t2YL8=",
-        "sourceUrl": "https://github.com/te9c/jellyfin-shikimori-plugin/releases/download/3.1.0.0/shikimori_3.1.0.0.zip",
-        "targetAbi": "10.9.0",
-        "timestamp": "2024-06-15T18:29:00Z",
-        "version": "3.1.0.0"
       }
     ]
   },
@@ -18624,6 +18633,42 @@
     "owner": "johnpc",
     "versions": [
       {
+        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.30",
+        "checksum": "5278781453c9388e9efb9fe050b7924e",
+        "hash": "sha256-4gvweVbsXcnQ0MlurIwTM1MD9F7TZoBDD3panj+SbGU=",
+        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.30/jellyfin-plugin-smart-collections-0.0.0.30.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-08T01:40:26Z",
+        "version": "0.0.0.30"
+      },
+      {
+        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.29",
+        "checksum": "621c3c90382038dad9ccfad936ef4c28",
+        "hash": "sha256-BnAVS9SLOGYEt9x9AmpSfPBQifClbJvHyt4JUYVmx+8=",
+        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.29/jellyfin-plugin-smart-collections-0.0.0.29.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-08T01:37:45Z",
+        "version": "0.0.0.29"
+      },
+      {
+        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.27",
+        "checksum": "0d5f7e189f56b5092ff3eaea006ce610",
+        "hash": "sha256-41nYAevNB60ulTxCVyfeJbdiPOp1BblXjx4tXf4NIZc=",
+        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.27/jellyfin-plugin-smart-collections-0.0.0.27.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-07T23:18:39Z",
+        "version": "0.0.0.27"
+      },
+      {
+        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.26",
+        "checksum": "21547926a01e92cfd09f8f0c5b3c2389",
+        "hash": "sha256-gXhSvhh8Wx80/IRP06xjfyeKYtdRyzuwNTQ+2IwiEsw=",
+        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.26/jellyfin-plugin-smart-collections-0.0.0.26.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-07T14:10:25Z",
+        "version": "0.0.0.26"
+      },
+      {
         "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.25",
         "checksum": "1cbcd5756722a17328b90188c60fafc5",
         "hash": "sha256-iajt3dIb8UkIZzn+TLUJO4Die4PG8OF82odA0tTNL80=",
@@ -18676,42 +18721,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-05-25T16:29:55Z",
         "version": "0.0.0.19"
-      },
-      {
-        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.18",
-        "checksum": "22a7b4d8f935a082ced9b2b594ffb1f8",
-        "hash": "sha256-ebKmcNz+BHZFoZxviC216kN7bchn7oweyflgNXEALwM=",
-        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.18/jellyfin-plugin-smart-collections-0.0.0.18.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-05-25T16:26:59Z",
-        "version": "0.0.0.18"
-      },
-      {
-        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.17",
-        "checksum": "36f3c8a08fb487eea0626fb6a1e6c7e2",
-        "hash": "sha256-sydlaaqALOJ7Bzq858+Hbk2/Idsnz5M/1szvIHcttZ8=",
-        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.17/jellyfin-plugin-smart-collections-0.0.0.17.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-05-08T12:38:53Z",
-        "version": "0.0.0.17"
-      },
-      {
-        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.16",
-        "checksum": "8fd61bd7a2c77ae20e9538359ca0e435",
-        "hash": "sha256-Nfj9tcp4Jdnzl5bhhQ04tBSM0HUvYoxsR8lDUytfHXU=",
-        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.16/jellyfin-plugin-smart-collections-0.0.0.16.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-04-24T05:31:43Z",
-        "version": "0.0.0.16"
-      },
-      {
-        "changelog": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/tag/0.0.0.15",
-        "checksum": "5363c12506669f67705140f47d7f4f28",
-        "hash": "sha256-kMonVHVzfk4PAvV4eK//bsQL9r6TS3DABpZaD9DD0Rc=",
-        "sourceUrl": "https://github.com/johnpc/jellyfin-plugin-smart-collections/releases/download/0.0.0.15/jellyfin-plugin-smart-collections-0.0.0.15.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-04-24T04:09:53Z",
-        "version": "0.0.0.15"
       }
     ]
   },
@@ -18750,6 +18759,24 @@
     "overview": "Cover extraction for books, audiobooks, comics, and music — with online fallback via Open Library & Google Books.",
     "owner": "GeiserX",
     "versions": [
+      {
+        "changelog": "Google Books can no longer give a book a wrong cover: its \"image not available\" placeholder and thin title-page strips are recognised by their content and rejected, any image more than 1.5 times wider than tall is refused, and a Google result must name the book's author, the same rule Open Library free text follows. When the full-size Google image is rejected, the thumbnail the API listed is tried. A rejected image falls through to the next source or the drawn cover.",
+        "checksum": "806251d527de71f71aced6e7b32dc0d9",
+        "hash": "sha256-SDq0gDzqTH8M2yiX8I5/HVUCNe5OxCAb/6a3IoIJP6U=",
+        "sourceUrl": "https://github.com/GeiserX/smart-covers/releases/download/v7.5.1.0/smart-covers_7.5.1.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-03T03:19:21Z",
+        "version": "7.5.1.0"
+      },
+      {
+        "changelog": "Tracks of a folder audiobook take the cover Jellyfin already holds for the folder. Books are looked up by their own metadata first (EPUB title, author and ISBN; track Album and Artist tags), Anna's Archive file names are read field by field, ISBN and OCLC lookups go first, and Open Library free-text search finds translated titles, accepted only when the hit names the author. Open Library and Google Books back off after a refusal, with one warning; Google Books takes an optional API key. New optional drawn title-and-author cover, off by default, for books no catalogue knows. Plain folders are only looked up in book libraries. The nightly task logs one reason per book.",
+        "checksum": "02b20950ce2e0bba2503b30846b08902",
+        "hash": "sha256-1FZDeGWO1sP2wg17fj+o8/cHTFrGY5jDBKwvHHaRHJY=",
+        "sourceUrl": "https://github.com/GeiserX/smart-covers/releases/download/v7.5.0.0/smart-covers_7.5.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-11-02T22:46:43Z",
+        "version": "7.5.0.0"
+      },
       {
         "changelog": "Audiobooks that are a folder of tracks get a cover: the book identity now comes from the folder (climbing out of disc folders), covers already on disk are found under any name, folder items get a cover, and one lookup serves a whole book. MOBI/AZW covers. A daily scheduled task retries items that never got a cover. Edition and narration tags are stripped before searching. A crafted MOBI header can no longer index past the record.",
         "checksum": "c10efe880a8ede9d037d86a274307c72",
@@ -20783,6 +20810,15 @@
     "owner": "TheIntroDB",
     "versions": [
       {
+        "changelog": "## What's New\r\n\r\n### :bug: Bug fixes\r\n\r\n* fix: handle year-based season numbers as a final answer instead of retrying (#41) @Pasithea0\r\n\r\n### :gear: Maintenance\r\n\r\n* chore: add FUNDING.yml so the Sponsor button resolves from this repo (#40) @Pasithea0\r\n* test: drop the duplicate case in the existing-segments theory (#37) @Pasithea0\r\n\n",
+        "checksum": "c0dd9ab89f31d9e59af57835d27399fe",
+        "hash": "sha256-fVjrAuQEpDDgc6nstdy7HqOEeTWML2MykwaMi/9/HDo=",
+        "sourceUrl": "https://github.com/TheIntroDB/jellyfin-plugin/releases/download/v1.3.1.0/theintrodb_1.3.1.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-03T16:58:42Z",
+        "version": "1.3.1.0"
+      },
+      {
         "changelog": "## What's New\r\n\r\n### :tada: New features\r\n\r\n* feat: refresh own segments after a configurable interval, ignore unserved segments (#36) @ojsef39, @claude, @Pasithea0\r\n\r\n### :bug: Bug fixes\r\n\r\n* fix: defer on-demand fetch of episodes until their series has a TVDB or TMDB id (#34) @ojsef39, @claude, @Pasithea0\r\n* fix: treat a 0/0 credits or preview timestamp as absent (#35) @ojsef39, @claude, @Pasithea0\r\n\n",
         "checksum": "916be0f9ac9d13119f7b9c42802b60c7",
         "hash": "sha256-z/mpXm430YMANlIixHS+kqw6GyOTuPTZpkx3fjDVUaU=",
@@ -20862,15 +20898,6 @@
         "targetAbi": "10.9.0.0",
         "timestamp": "2026-08-17T18:42:56Z",
         "version": "1.0.7.3"
-      },
-      {
-        "changelog": "## Changes made\r\n- Fix on demand fetching ignoring selected items filters \n",
-        "checksum": "304dfeaa4c4021652a8a3fbe743407bf",
-        "hash": "sha256-tQzUCM16x1q5M1E74rA7u4mK4ugtGFYAB+ipCtwcct8=",
-        "sourceUrl": "https://github.com/TheIntroDB/jellyfin-plugin/releases/download/v1.0.7.2/theintrodb_1.0.7.2.zip",
-        "targetAbi": "10.9.0.0",
-        "timestamp": "2026-07-01T05:48:04Z",
-        "version": "1.0.7.2"
       }
     ]
   },
@@ -21553,6 +21580,15 @@
     "overview": "Real-time playback, session, library, download, task, and server stat events over Server-Sent Events.",
     "owner": "Connor Gallopo - Tracearr",
     "versions": [
+      {
+        "changelog": "- Emby plugin failed to start on Emby's macOS builds with `Could not load file or assembly 'System.Threading.Channels, Version=8.0.0.0'`, and `/emby/sse/events` returned 500. Those builds run on .NET 6 and bundle Channels 6.0; the plugin now references 6.0 ([#5](https://github.com/Tracearr/Media-Server-SSE/issues/5)).",
+        "checksum": "6401808324a88dc65422ee19ce3e3417",
+        "hash": "sha256-OJeqr0WTRIIXYjFngJkFYdpz84MFRG1waeFsiTqV8r0=",
+        "sourceUrl": "https://github.com/Tracearr/Media-Server-SSE/releases/download/v0.6.1/Tracearr.Sse.Jellyfin_0.6.1.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-02T17:07:22Z",
+        "version": "0.6.1.0"
+      },
       {
         "changelog": "- `library.item.downloaded` event on Jellyfin and Emby when a user downloads an item, from the server's activity log. Payload carries `userId`, `itemId` (absent on Emby, whose entry has none), `itemName` (the activity entry's name), and `app` and `device` parsed from the entry's overview.\n- On Emby, the activity entry names the user by numeric internal id, so `library.item.downloaded` looks the user up and sends the same 32-character GUID that playback events carry. `userId` is omitted when no user matches.\n- `download.transcoded` event on Jellyfin for clients that download at reduced quality through the stream endpoint, which logs no activity. A device session that transcodes without reporting playback for 20 seconds emits `phase: \"started\"`, and `phase: \"ended\"` when the transcode goes away. Payload carries `userId`, `deviceId`, `itemId`, `bitrate`, `width`, `height`, `videoCodec`, `audioCodec`, `container`, `bytesTranscoded`, and `completionPercentage`. `itemId` and `bytesTranscoded` are read from Jellyfin's internal transcoding job list and are omitted if that read fails.",
         "checksum": "677f3bc04aedc338fbb5252b81d710b6",
@@ -22482,8 +22518,8 @@
     "versions": [
       {
         "changelog": "Release for Jellyfin 12.0+",
-        "checksum": "52c1f5289283f7bf8b74611067ced1e8",
-        "hash": "sha256-ahFUSe5OsNdcAKJT8SiRMr7SMILJxOBQ5t86DM4Amj0=",
+        "checksum": "87d7a87d3f7358c0b56a1b5b77a517d8",
+        "hash": "sha256-Olib6BLDso+fL0Z+N4nZcC76WgOb7xunnRgJONh0I6s=",
         "sourceUrl": "https://github.com/chrissix666/Jellyfin-VideoOSD-Tweaks-Candy/releases/download/v2.0.0.0/VideoOSD.Tweaks.Candy_2.0.0.0_jellyfin-12.x.zip",
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-10-03T00:00:00Z",
@@ -22491,8 +22527,8 @@
       },
       {
         "changelog": "Release for Jellyfin 10.10.7",
-        "checksum": "3e6a8a930c85df060d32ccd0bcec992b",
-        "hash": "sha256-+BluGYp9TGXYsJhBVIz2S8sojE9I0vDsBX4ZNntDd2U=",
+        "checksum": "e61fde8d5750ead7e83f4cae5f856121",
+        "hash": "sha256-pQFP8w2xUvx/To41PYu88CXSDah2U07l8Iv1VXuU7Jg=",
         "sourceUrl": "https://github.com/chrissix666/Jellyfin-VideoOSD-Tweaks-Candy/releases/download/v1.1.0.0/VideoOSD.Tweaks.Candy_1.1.0.0_jellyfin-10.10.7.zip",
         "targetAbi": "10.10.7.0",
         "timestamp": "2026-10-03T00:00:00Z",
@@ -22656,6 +22692,42 @@
     "versions": [
       {
         "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
+        "checksum": "9836069131297d064eb50c07d102af1a",
+        "hash": "sha256-0qEGF/5Z5dTq8reDjYdd246lPXIl/SEZcg4MYX9m2eE=",
+        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.2.0.1_net10.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-07T22:11:23Z",
+        "version": "0.2.0.1"
+      },
+      {
+        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
+        "checksum": "ee7a8c124cdccfef4d9050c0e5db9c1f",
+        "hash": "sha256-0uRlsByOVpfovQbuTP6MFvuLpu05NzV8qbXmAM/qioc=",
+        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.2.0.0_net9.zip",
+        "targetAbi": "10.11.8.0",
+        "timestamp": "2026-11-07T22:11:23Z",
+        "version": "0.2.0.0"
+      },
+      {
+        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
+        "checksum": "54787fca226ffa8238e18abe33a9278e",
+        "hash": "sha256-Eml/Tjqa74USKX32w0poBsqFUez/EXilIrst92OSnmE=",
+        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.25.1_net10.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T17:46:08Z",
+        "version": "0.1.25.1"
+      },
+      {
+        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
+        "checksum": "7d78ef726b7b1fb2d74494d1c6c5a473",
+        "hash": "sha256-znl/4kKXYeKLylp6d75SlN0mdYfZTjsVCc/vksOrF4c=",
+        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.25.0_net9.zip",
+        "targetAbi": "10.11.8.0",
+        "timestamp": "2026-11-01T17:46:08Z",
+        "version": "0.1.25.0"
+      },
+      {
+        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
         "checksum": "868e408f01734d759094a0079daff2ac",
         "hash": "sha256-NwarDxFegkmhBvczc+SB9k5dbYpqAej4H8eoZx+0wTg=",
         "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.24.1_net10.zip",
@@ -22707,42 +22779,6 @@
         "targetAbi": "10.11.8.0",
         "timestamp": "2026-08-04T12:24:54Z",
         "version": "0.1.20.0"
-      },
-      {
-        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
-        "checksum": "5fff93b0e89fc6f7fb995ad51266568d",
-        "hash": "sha256-70upM+Ur9jwITaI+5/CPNFYZonPY1DDsd3zV6YAqw+Y=",
-        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.19.0_net9.zip",
-        "targetAbi": "10.11.8.0",
-        "timestamp": "2026-08-04T11:51:17Z",
-        "version": "0.1.19.0"
-      },
-      {
-        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
-        "checksum": "ea239f82af71748086f25726e6d92773",
-        "hash": "sha256-T4ZMX6/ElfP4D+QxB57xvx46e5TPjpI1W/LN8gUqhnU=",
-        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.18.0_net9.zip",
-        "targetAbi": "10.11.8.0",
-        "timestamp": "2026-05-19T09:26:26Z",
-        "version": "0.1.18.0"
-      },
-      {
-        "changelog": "Jellyfin 10.11+ Stable build — See https://github.com/wetrakr/wetrakr-jf/releases",
-        "checksum": "05c130d056e6846363fea4d7c0eea61c",
-        "hash": "sha256-RgctOE/js+2DwxLFeWzwj6T5DBiWFSyKf7dE2O2A0yg=",
-        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.17.0_net9.zip",
-        "targetAbi": "10.11.8.0",
-        "timestamp": "2026-05-19T08:55:26Z",
-        "version": "0.1.17.0"
-      },
-      {
-        "changelog": "See https://github.com/wetrakr/wetrakr-jf/releases",
-        "checksum": "e4f31f0f52225f04b6a523992ff06057",
-        "hash": "sha256-ouayafHeOfMxV7va5zKOvsDP39t7K2mO5kls03vdirY=",
-        "sourceUrl": "https://wetrakr.github.io/wetrakr-jf/wetrakr/wetrakr_0.1.16.0_net9.zip",
-        "targetAbi": "10.11.8.0",
-        "timestamp": "2026-05-19T00:23:07Z",
-        "version": "0.1.16.0"
       }
     ]
   },
@@ -22849,11 +22885,29 @@
   "Webhooks": {
     "category": "General",
     "description": "Supports couple of webhook types including Plex one.\n",
-    "guid": "eb5d7894-8eef-4b36-aa6f-5d124e828ce1",
+    "guid": "d8ca599b-ab3c-41b0-a4ea-6de1d52b9996",
     "imageUrl": "https://raw.githubusercontent.com/shemanaev/jellyfin-plugin-repo/master/images/webhooks.png",
     "overview": "Webhooks. Flexible and robust",
     "owner": "shemanaev",
     "versions": [
+      {
+        "changelog": "Fix plugin identity, repository details and automatic update discovery. Preserve existing webhook settings.",
+        "checksum": "7e7be9666528496424a3dfb010997be9",
+        "hash": "sha256-tmFGy6sZEKU4lpkDVPB1HsbQ3HfiWZeNJiqvHmQF/g0=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-webhooks/releases/download/v3.10.1.0/Webhooks-12.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-01T08:35:26Z",
+        "version": "3.10.1.120000"
+      },
+      {
+        "changelog": "Fix plugin identity, repository details and automatic update discovery. Preserve existing webhook settings.",
+        "checksum": "170d86bc8ff1b2d0f55631d50f563b40",
+        "hash": "sha256-siKP06kOq7Izsi9x4tX/f+kUJkE/Mw0IT56FtEt5UkI=",
+        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-webhooks/releases/download/v3.10.1.0/Webhooks-10.11.11.zip",
+        "targetAbi": "10.11.11.0",
+        "timestamp": "2026-11-01T08:35:29Z",
+        "version": "3.10.1.101111"
+      },
       {
         "changelog": "Jellyfin 12.0 compatibility",
         "checksum": "86837a72190060220d3ddbc4c9e10c67",
@@ -22925,24 +22979,6 @@
         "targetAbi": "10.8.0.0",
         "timestamp": "2023-08-02T16:57:48Z",
         "version": "3.6.0.0"
-      },
-      {
-        "changelog": "Add session playstate to payload\n",
-        "checksum": "90be1df1316beccda23fdcf499985368",
-        "hash": "sha256-H9u4nf+6+3p7tClC4anoOWLWxl5yHzmIS/xu/7NuRWQ=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-webhooks/releases/download/v3.5.0.0/webhooks_3.5.0.0.zip",
-        "targetAbi": "10.8.0.0",
-        "timestamp": "2023-07-18T19:01:43Z",
-        "version": "3.5.0.0"
-      },
-      {
-        "changelog": "Add optional series field for episode events\n",
-        "checksum": "cc738b2689e6e37d5ee00ca34c990ea1",
-        "hash": "sha256-XbBtM8FeZt9t9AzQPMh4JlyWa4lPJ//S5lO2OT9x1bw=",
-        "sourceUrl": "https://github.com/shemanaev/jellyfin-plugin-webhooks/releases/download/v3.4.0.0/webhooks_3.4.0.0.zip",
-        "targetAbi": "10.8.0.0",
-        "timestamp": "2023-07-18T08:07:36Z",
-        "version": "3.4.0.0"
       }
     ]
   },
@@ -23064,6 +23100,15 @@
     "owner": "firestaerter3",
     "versions": [
       {
+        "changelog": "This update brings together 2.0.18.0 to 2.0.21.0 from the beta channel.\n\nMovies and series no longer disappear and come back when the provider has a bad moment. An empty answer is asked again a few times before it is accepted, and a category that fails to load or comes back empty although it had items keeps its files until it answers again, or for up to the Full Sync Interval. Before, those items were deleted and added back on the next sync, losing watched status and artwork in between. The last sync on the settings page says how many items were kept (contributed by andreadegiovine).\n\nFixed: with Smart Skip on (the default), every other full sync asked the provider for the details of almost every series again, thousands of requests on a large catalogue. The episode count of an unchanged series is now kept, which matters most for providers that allow one connection or block on bursts (contributed by luisgsluis).\n\nFixed: after switching Dispatcharr Mode off, Live TV kept using Dispatcharr's addresses until the stored channel list was deleted by hand. It now uses the provider addresses again at once.\n\nLive TV with the native tuner: the programme guide now sets itself up. With Live TV, Native Tuner and EPG on, the plugin adds its EPG URL under Dashboard > Live TV > TV Guide Data Providers; a guide source you added yourself is kept (suggested by aanyberg). The settings page also warns when an M3U tuner reads the plugin's playlist next to the native tuner, which shows every channel twice.\n\nLive TV with Dispatcharr: channels now tell apps their real video profile and level and the number of audio channels. Before, Jellyfin announced every H.264 channel as Baseline and re-encoded stereo audio to 5.1.\n\nCatch-up: older days now show the real programme titles instead of half-hour blocks, without extra requests (contributed by dillardblom).\n\nArtwork: a host that does not answer no longer holds up the sync. Downloads give up after 3 seconds without a connection or 15 seconds in total, and after five failures in a row the rest of that host's images are skipped for that sync (thanks to wikidone).",
+        "checksum": "53661b675d0686bfe3e80bcc922cc746",
+        "hash": "sha256-F1zJuMQdWPmdOXkjQ1HEBLOAC+dHms1+32RhpVWdKcM=",
+        "sourceUrl": "https://github.com/firestaerter3/Jellyfin-Xtream-Library/releases/download/v2.0.21.0/jellyfin-xtream-library_2.0.21.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-10-25T16:20:06Z",
+        "version": "2.0.21.0"
+      },
+      {
         "changelog": "This update brings together 2.0.14.0 to 2.0.17.0 from the beta channel.\n\nIf your provider address ends in /live, /movie or /series and you posted a Jellyfin log from an earlier version somewhere public: it may contain your provider password. Consider asking your provider for a new one. The log no longer shows it.\n\nSecurity: text and files from the provider are checked more carefully. A movie or series title, category name or error message could contain code that ran in your browser, with your admin session, while the plugin's settings page was open; it is now shown as plain text. Poster and cover addresses are only written into NFO files when they are http or https, because Jellyfin reads a file path there as a local image (NFO files that already exist are not rewritten). Artwork downloads stop at 20 MB and after 30 seconds, and a page that is not an image is no longer saved as a poster. Odd control characters in a title or programme no longer make an NFO file or the guide unreadable, a title of only dots such as \"..\" is named Unknown instead of ending up next to the Movies or Series folder, and very long titles no longer slow the sync down. With Dispatcharr, an id that is not a valid uuid is ignored.\n\nSettings page reorganised. A new Provider tab holds everything for one provider: login, library path, title cleaning, Dispatcharr and the Delete buttons. General keeps the settings all providers share, and options few people need are folded away. Your settings are kept as they are. The Enable Native Tuner checkbox is now a choice between the native tuner and your own M3U tuner, and the Delete buttons now say which folder goes and that watched status, favourites and resume points are lost. The Full Sync Change Threshold setting has been removed.\n\nLive TV with the native tuner and Dispatcharr starts channels faster: the plugin reads the stream details Dispatcharr already recorded, so Jellyfin no longer analyses each channel first. This needs Stream Format TS. Channels matched to Dispatcharr now play from Dispatcharr's own channel address, which carries no login, so apps that open the stream themselves (Swiftfin with the VLC player, Moonfin) no longer receive your provider username and password.\n\nFixed: saving while the Movies or Series category list had not loaded yet cleared your category selection, so the next sync fetched every category.\n\nFixed: a daily sync set to midnight was moved to 03:00 on every save.\n\nFixed: Retry did nothing after Delete Movies/Series Library, while reporting success. A second sync can no longer start while one is running.\n\nFixed: on iOS, a channel could stop with error -1100 right after starting.\n\nFixed: some channels showed every programme twice in the guide when the provider listed the channel twice.",
         "checksum": "9141163e12b6551b714513d738d1aae9",
         "hash": "sha256-9mozLh5A2KHBcPMGu3A5wzp06Vj9ca8mapTqhBTC8zc=",
@@ -23109,6 +23154,15 @@
         "version": "2.0.1.0"
       },
       {
+        "changelog": "For Jellyfin 10.11. Security fixes from the 2.x line.\n\nIf you posted a Jellyfin log from an earlier version somewhere public: it may contain your provider username and password, which were in the stream address logged each time a channel was opened and in provider errors and retries. Consider asking your provider for a new password. The log no longer contains them.\n\nFixed: a movie or series title, category name or error message from the provider could contain code that ran in your browser, with your admin session, while the plugin's settings page was open. Such text is now shown as plain text.\n\nFixed: a poster or cover address from the provider was written into the NFO files as is. Jellyfin reads a file path there as a local image, so a provider could have a file from your server shown as an item's image. Only http and https addresses are written now.\n\nArtwork downloads stop at 20 MB and after 30 seconds, and a page that is not an image is no longer saved as a poster. A title of only dots, such as \"..\", is now named Unknown, and very long titles no longer slow the sync down. Control characters in a title no longer make an NFO file or the Epg.xml guide unreadable. With Dispatcharr, a channel or movie id that is not a valid uuid is ignored.",
+        "checksum": "ec2eccb340823745d379bcd6adb406f4",
+        "hash": "sha256-FHLFQ3ic2GFQc4XM4Jrrha+7luEhO817bsesXwCHJpw=",
+        "sourceUrl": "https://github.com/firestaerter3/Jellyfin-Xtream-Library/releases/download/v1.55.4.0/jellyfin-xtream-library_1.55.4.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-10-25T07:29:46Z",
+        "version": "1.55.4.0"
+      },
+      {
         "changelog": "This update brings together 1.55.1.0 to 1.55.3.0 from the beta channel.\n\nFixed: Request Delay now limits how fast the plugin talks to your provider in total. Each parallel worker used to apply it separately, so with Sync Parallelism at 10 and the default of 50 ms up to 200 requests a second could go out, enough for some providers to block your IP. It is now one shared gap per provider: 50 ms means at most 20 a second. When the provider says it is getting too many requests, every request to it waits. A first sync of a large library takes longer as a result; if your provider allows more, lower Request Delay. Setting it to 0 is no longer saved as 50 (reported by dillardblom).\n\nFixed: with \"Group movies with the same TMDB id\" on, a film whose request the provider missed no longer ends up in a folder of its own. It is held back and picked up on the next sync. Films already split this way stay split; to fix them, use Delete Movies Library in the Danger Zone and sync again (reported by andreadegiovine).\n\nFixed: a Live TV category, channel or logo address with & in it no longer shows as &amp; or breaks (reported by TheBazeman).",
         "checksum": "6479ccccd1d4679222780282babb8cdc",
         "hash": "sha256-KrA7jNsc5QB4Xgj4iGdUWpJ0ti3GcB9Fw3EIk+bFuqs=",
@@ -23134,24 +23188,6 @@
         "targetAbi": "10.11.0.0",
         "timestamp": "2026-09-13T16:11:15Z",
         "version": "1.54.0.0"
-      },
-      {
-        "changelog": "Your provider password is no longer in the Live TV playlist.\n\nIf you run Dispatcharr in front of your provider, the M3U the plugin serves now points at Dispatcharr's own channel addresses instead of building URLs with your Xtream username and password in them. Those URLs have always been reachable without a Jellyfin login, on purpose, because Jellyfin's own tuner cannot send one, which meant anyone who had one of those links also had your provider account. Measured on a real setup: 720 of 720 channels, every stream address credential free, where before every single line carried the password.\n\nA channel Dispatcharr does not recognise keeps its old address rather than disappearing from your guide, and the log says how many did and that those lines still carry credentials. Without Dispatcharr nothing changes at all.\n\nOne part is not done yet. Channels with a catch-up archive carry a separate address for replaying past programmes, and that one is a template other apps fill in themselves, so it still has your credentials in it. On the setup this was measured against that is 63 lines out of 720. Finishing it needs checking how Dispatcharr expects a time to be expressed, which has not been verified, so it was left rather than guessed at.\n\nAlso fixed: with Dispatcharr on a different address than your provider, movie links were pointed at the wrong one of the two.",
-        "checksum": "0cb962794f4710a7e6a68f850356173b",
-        "hash": "sha256-+5++5cA+cKB0gmGFU+YIfbIhi05bpKQ+fCtkhzCPG+4=",
-        "sourceUrl": "https://github.com/firestaerter3/Jellyfin-Xtream-Library/releases/download/v1.53.0.0/jellyfin-xtream-library_1.53.0.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-13T15:04:35Z",
-        "version": "1.53.0.0"
-      },
-      {
-        "changelog": "Channels that would not direct play, and quicker metadata behind Dispatcharr.\n\nFixed: if your provider does not send stream statistics, every channel arrived at your player with nothing to say what it actually was. Players refused them as an unsupported format, and the server re-encoded pictures they could have shown as they were, without graphics acceleration because it did not know what it was decoding either. Jellyfin can work this out by looking at the stream, and the plugin was accidentally stopping it from looking. Channels from providers that do send statistics are unchanged. One trade-off worth knowing: if the inspection fails, Jellyfin now assumes the picture is interlaced and smooths it, which is slower than before, where the plugin simply asserted it was not (diagnosed by pemontto).\n\nChanged: with Dispatcharr Mode on, film and series descriptions, cast, ratings and artwork now come from Dispatcharr directly instead of going the long way round through its Xtream compatibility layer. Series episodes had no Dispatcharr route at all until now. Anything that does not answer falls back to the old route, so a Dispatcharr too old to have these endpoints keeps working exactly as before, and with Dispatcharr Mode off nothing changes at all (contributed by dillardblom).",
-        "checksum": "76e7ceecf1eab05ad9a776eb7bc9695b",
-        "hash": "sha256-JoOzm4p1pVK7WPnckoyenxZkHlXzt4ZRJSoVPuVKzIg=",
-        "sourceUrl": "https://github.com/firestaerter3/Jellyfin-Xtream-Library/releases/download/v1.52.0.0/jellyfin-xtream-library_1.52.0.0.zip",
-        "targetAbi": "10.11.0.0",
-        "timestamp": "2026-09-13T12:05:14Z",
-        "version": "1.52.0.0"
       }
     ]
   },
@@ -23461,6 +23497,15 @@
     "overview": "Builds a local STRM/NFO library from YummyAnime and plays episodes via Alloha, CVH, and Kodik-backed sources.",
     "owner": "queukat",
     "versions": [
+      {
+        "changelog": "- Added a second YummyAnime list with its own library folder and refresh schedule.\n- Added explicit account sign-in and clearer authentication errors while preserving unsaved settings.\n- Fixed Kodik and CVH playback failures with FFmpeg 8 when providers return an incorrect playlist content type.\n- Improved playback startup, seeking, and selected-voice consistency in Jellyfin 12.\n- Improved Alloha recovery and same-voice fallback; canceled recovery attempts can be retried immediately.\n- Made the voice selector load from local library files without waiting for providers. Native version choices affect only the current playback.\n- Improved refresh isolation between libraries and safe cleanup of removed releases.\n- Added English settings-page text and kept long series titles available on hover.\n\nRequires Jellyfin 12.",
+        "checksum": "73a2abdb471bd885be9165226dbce28c",
+        "hash": "sha256-mRp4X+EgeHNX6z2PiVM8rJqUtnRmNTB0Gz7yf8ErpzI=",
+        "sourceUrl": "https://github.com/queukat/YummyKodik/releases/download/2.1.0.0/YummyKodik_2.1.0.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-11-02T12:24:04Z",
+        "version": "2.1.0.0"
+      },
       {
         "changelog": "- Reduced unnecessary CPU and disk activity during library refreshes.\n- Fixed selected voice tracks changing after a library scan.\n- Fixed episodes ending a few seconds early when playback switches to a backup source.\n- Fixed cleanup of releases removed from your YummyAnime list when automatic removal is enabled.\n- Improved borrowed intro and outro timings by comparing available voice tracks. Existing fallback behavior is preserved when timings disagree.\n\nRequires Jellyfin 12.",
         "checksum": "9e3862d60a80a3dfee9844a093d28df3",
