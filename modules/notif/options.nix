@@ -2,306 +2,81 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
-  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
+  notifLib = import ./lib.nix { inherit lib secrets; };
 
-  navidromeAdmin =
-    (getFirstAdmin {
-      inherit (config.nixflix.navidrome) users;
-      isAdmin = user: user.isAdmin;
-    }).user;
-
-  notifTriggers = import ./triggers.nix;
-
-  mkTriggersOption =
-    serviceTriggers:
-    mkOption {
-      type = types.listOf (types.enum serviceTriggers.valid);
-      inherit (serviceTriggers) default;
-      description = "Starr trigger events that enable this notification.";
+  importType =
+    name:
+    import (./types + "/${name}.nix") {
+      inherit
+        config
+        lib
+        secrets
+        notifLib
+        ;
     };
 
-  mkNotificationType =
-    {
-      implementationName,
-      enable ? { },
-      dependencies ? { },
-      services ? { },
-      triggers ? { },
-      extraOptions ? { },
-    }:
-    types.submodule {
-      freeformType = types.attrsOf types.anything;
-      options = {
-        enable = mkOption (
-          {
-            type = types.bool;
-            default = false;
-            description = "Whether or not this notification is enabled.";
-          }
-          // enable
-        );
-
-        dependencies = mkOption (
-          {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "systemd services that this integration depends on";
-          }
-          // dependencies
-        );
-
-        services = mkOption (
-          {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Which Starr services to configure this notification on.";
-          }
-          // services
-        );
-
-        triggers = mkOption (
-          {
-            type = types.attrsOf (types.listOf types.str);
-            default = { };
-            description = "Starr trigger events that enable this notification, per service.";
-          }
-          // triggers
-        );
-
-        name = mkOption {
-          type = types.str;
-          default = implementationName;
-          description = "User-defined name for the notification instance.";
-        };
-
-        implementationName = mkOption {
-          type = types.str;
-          readOnly = true;
-          default = implementationName;
-          description = "Type of notification to configure (matches schema implementationName).";
-        };
-      }
-      // extraOptions;
-    };
-
-  jellyfinType = mkNotificationType {
-    implementationName = "Emby / Jellyfin";
-
-    enable = {
-      default = config.nixflix.jellyfin.enable;
-      defaultText = literalExpression "config.nixflix.jellyfin.enable";
-    };
-
-    dependencies.default = [ "jellyfin-api-key.service" ];
-
-    services = {
-      default = optionals config.nixflix.jellyfin.enable (
-        [
-          "sonarr"
-          "sonarr-anime"
-          "radarr"
-        ]
-        ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-      );
-      defaultText = literalExpression ''
-        optionals config.nixflix.jellyfin.enable (
-          [ "sonarr" "sonarr-anime" "radarr" ]
-          ++ optional (config.nixflix.jellyfin.libraries.Music or null != null) "lidarr"
-        )
-      '';
-    };
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          sonarr = mkTriggersOption notifTriggers.jellyfin.sonarr;
-          radarr = mkTriggersOption notifTriggers.jellyfin.radarr;
-          lidarr = mkTriggersOption notifTriggers.jellyfin.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      host = mkOption {
-        type = types.str;
-        description = "Host of the Jellyfin server.";
-        default = config.nixflix.jellyfin.connectionAddress;
-        defaultText = literalExpression "config.nixflix.jellyfin.connectionAddress";
-      };
-
-      port = mkOption {
-        type = types.port;
-        description = "Port of the Jellyfin server.";
-        default = config.nixflix.jellyfin.network.internalHttpPort;
-        defaultText = literalExpression "config.nixflix.jellyfin.network.internalHttpPort";
-      };
-
-      apiKey = secrets.mkSecretOption {
-        description = "API key for Jellyfin.";
-        default = config.nixflix.jellyfin.apiKey;
-        defaultText = literalExpression "config.nixflix.jellyfin.apiKey";
-        nullable = true;
-      };
-    };
-  };
-
-  subsonicType = mkNotificationType {
-    implementationName = "Subsonic";
-
-    enable = {
-      default = config.nixflix.navidrome.enable;
-      defaultText = literalExpression "config.nixflix.navidrome.enable";
-    };
-
-    dependencies.default = [ "navidrome.service" ];
-
-    services.default = [ "lidarr" ];
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          lidarr = mkTriggersOption notifTriggers.subsonic.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      host = mkOption {
-        type = types.str;
-        description = "Host of the Navidrome (Subsonic) server.";
-        default = config.nixflix.navidrome.connectionAddress;
-        defaultText = literalExpression "config.nixflix.navidrome.connectionAddress";
-      };
-
-      port = mkOption {
-        type = types.port;
-        description = "Port of the Navidrome (Subsonic) server.";
-        default = config.nixflix.navidrome.settings.Port;
-        defaultText = literalExpression "config.nixflix.navidrome.settings.Port";
-      };
-
-      username = secrets.mkSecretOption {
-        description = "Username for the Navidrome (Subsonic) server.";
-        default = navidromeAdmin.userName or null;
-        defaultText = literalExpression "(getFirstAdmin { inherit (config.nixflix.navidrome) users; isAdmin = user: user.isAdmin; }).user.userName";
-        nullable = true;
-      };
-
-      password = secrets.mkSecretOption {
-        description = "Password for the Navidrome (Subsonic) server.";
-        default = navidromeAdmin.password or null;
-        defaultText = literalExpression "(getFirstAdmin { inherit (config.nixflix.navidrome) users; isAdmin = user: user.isAdmin; }).user.password";
-        nullable = true;
-      };
-    };
-  };
-
-  ntfyType = mkNotificationType {
-    implementationName = "ntfy.sh";
-
-    services.default = [
-      "sonarr"
-      "sonarr-anime"
-      "radarr"
-      "lidarr"
-    ];
-
-    triggers = {
-      type = types.submodule {
-        options = {
-          sonarr = mkTriggersOption notifTriggers.ntfy.sonarr;
-          radarr = mkTriggersOption notifTriggers.ntfy.radarr;
-          lidarr = mkTriggersOption notifTriggers.ntfy.lidarr;
-        };
-      };
-      default = { };
-    };
-
-    extraOptions = {
-      serverUrl = mkOption {
-        type = types.str;
-        default = "https://ntfy.sh";
-        description = "ntfy server URL.";
-      };
-
-      topics = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "Topics to publish notifications to.";
-      };
-
-      accessToken = secrets.mkSecretOption {
-        description = "Access token for the ntfy server.";
-        nullable = true;
-      };
-
-      username = secrets.mkSecretOption {
-        description = "Username for the ntfy server.";
-        nullable = true;
-      };
-
-      password = secrets.mkSecretOption {
-        description = "Password for the ntfy server.";
-        nullable = true;
-      };
-
-      priority = mkOption {
-        type = types.ints.between 1 5;
-        default = 3;
-        description = "Priority of the notification.";
-      };
-
-      tags = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "Tags/emojis to include on the notification.";
-      };
-
-      clickUrl = mkOption {
-        type = types.str;
-        default = "";
-        description = "URL to open when the notification is clicked.";
-      };
-    };
-  };
+  notificationTypes = map (removeSuffix ".nix") (
+    builtins.attrNames (
+      lib.filterAttrs (n: t: t == "regular" && hasSuffix ".nix" n) (builtins.readDir ./types)
+    )
+  );
 in
 {
   options.nixflix.notif = mkOption {
     type = types.submodule {
-      options = {
+      options = genAttrs notificationTypes importType // {
         enable = mkOption {
           type = types.bool;
           default = true;
           description = "Whether to enable Notif.";
         };
 
-        jellyfin = mkOption {
-          type = jellyfinType;
-          default = { };
-          description = "Emby/Jellyfin notification definition for Starr services.";
-        };
-
-        subsonic = mkOption {
-          type = subsonicType;
-          default = { };
-          description = "Subsonic notification definition for Starr services.";
-        };
-
-        ntfy = mkOption {
-          type = ntfyType;
-          default = { };
-          description = "ntfy notification definition for Starr services.";
-        };
-
         extraNotifications = mkOption {
           type = types.listOf (types.attrsOf types.anything);
           default = [ ];
+          example = literalExpression ''
+            [
+              {
+                name = "Discord (anime)";
+                implementationName = "Discord";
+                webHookUrl = { _secret = "/run/secrets/discord-anime-webhook"; };
+                username = "Anime";
+                tags = [ "anime" ];
+                sonarr-anime = {
+                  enable = true;
+                  onGrab = true;
+                  onDownload = true;
+                  onUpgrade = true;
+                };
+                radarr = {
+                  enable = true;
+                  onDownload = true;
+                  onHealthIssue = true;
+                  includeHealthWarnings = true;
+                  username = "Anime Movies";
+                };
+              }
+            ]
+          '';
           description = ''
             For more notification types, or if you have more than one instance of a specific type.
-            Follows the same general schema as the other options. `implementationName` and `services` are required fields.
+            Each entry follows the same schema as the typed connectors, but is not type checked:
+
+            - `name` (required): name of the connection in Starr. It must be unique, because it is how nixflix
+              finds the connection to update, and connections whose name is not configured are deleted.
+            - `implementationName` (required): the Starr notification type, for example `Discord`.
+            - `sonarr`, `sonarr-anime`, `radarr` and `lidarr`: one block per Starr service. An entry is only
+              configured on the services whose block sets `enable = true`. Triggers are booleans in the block (for
+              example `radarr.onGrab = true`), and any trigger not set to `true` is turned off. Any other field set
+              in a block overrides the value set on the entry, for that service only.
+            - `tags`: Starr tag labels that restrict the connection to tagged items. Missing tags are created.
+            - `dependencies`: systemd services to start before the entry is configured.
+            - Any other attribute, on the entry or in a service block, is sent to Starr. If the Starr schema for
+              `implementationName` has a field with that name (for example `webHookUrl`), it sets that field;
+              otherwise it sets the connection property of that name (for example `includeHealthWarnings`).
+
             Any field may be set to `{ _secret = /path/to/file; }` to read its value from a file at runtime.
+            Seerr cannot be targeted from here; use the `seerr` block of a typed connector instead.
 
             A list of implementation names can be acquired with:
 
@@ -323,11 +98,49 @@ in
       Notif is a service that is responsible for configuring Starr services with "Connect" notifications.
       When you enable the service for a target that it applies to, Notif integrates it automatically with each applicable Starr service.
 
-      Unlike Downloadarr, not every notification type applies to every Starr service. Each notification type
-      declares a `services` list controlling which Starr services it gets configured on.
+      Unlike Downloadarr, not every notification type applies to every Starr service. Each notification type has
+      a block for each service it supports (`sonarr`, `sonarr-anime`, `radarr`, `lidarr` and, where Seerr supports
+      it, `seerr`), and is configured only on the services whose block is enabled.
 
-      Each module is currently only a subset of the options available. You can add more options represented
-      in the UI if you know their keys, or add an entirely new type via `extraNotifications`.
+      Each notification type exposes the fields of its Starr schema as typed options. Fields that every
+      applicable Starr service supports are set on the type itself; ones that only some services support are set
+      in that service's block (for example `nixflix.notif.gotify.sonarr.includeSeriesPoster`). Triggers are always
+      set in the service block (for example `nixflix.notif.gotify.sonarr.onGrab`), because not every trigger
+      applies to every service.
+
+      Every service block (`sonarr`, `sonarr-anime`, `radarr` and `lidarr`) can also override any field set on
+      the type itself, for that service only. A value set in the service block takes precedence
+      over the type-level value; leaving it `null` uses the type-level value. For example, this posts Sonarr Anime
+      notifications to a different Discord channel:
+
+      ```nix
+      nixflix.notif.discord = {
+        webHookUrl = { _secret = "/run/secrets/discord-webhook"; };
+        sonarr.enable = true;
+        sonarr-anime = {
+          enable = true;
+          webHookUrl = { _secret = "/run/secrets/discord-anime-webhook"; };
+        };
+      };
+      ```
+
+      `sonarr-anime` has its own block, separate from `sonarr`, so settings in `sonarr` do not apply to it.
+
+      Each service block has an `enable` option, and there is no connector-level `enable`: a connector is used
+      only by the services whose block is enabled (for example `nixflix.notif.discord.radarr.enable = true`).
+      Service blocks are opt-in and default to `false`, so services added to nixflix later stay off until you turn
+      them on. The exceptions are `jellyfin` and `subsonic`, whose blocks default to whether Jellyfin or Navidrome
+      is enabled so their libraries keep refreshing automatically (`jellyfin.lidarr` only when a Jellyfin `Music`
+      library exists).
+
+      Seerr is also a target, through the `seerr` block of a connector. When `seerr.enable` is set (for
+      example `nixflix.notif.discord.seerr.enable = true`). The `seerr` block uses the same
+      option names as the type (for example `nixflix.notif.discord.seerr.username`), but only offers the fields
+      Seerr supports. Seerr has a single configuration per agent, so `extraNotifications`
+      cannot target it. When `nixflix.seerr` is enabled, any Seerr agent that no enabled `seerr` block targets is
+      disabled, keeping its other settings.
+
+      Anything not modeled here can be configured through `extraNotifications`.
     '';
   };
 }

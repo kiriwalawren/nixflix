@@ -30,7 +30,7 @@ let
     lib.mapAttrsToList (name: value: ''--header "${name}: ${value}"'') headers
   );
 
-  dataHandling = lib.optionalString (data != null || !(lib.hasPrefix "@" data)) ''
+  dataHandling = lib.optionalString (data != null && !(lib.hasPrefix "@" data)) ''
     CURL_DATA_FILE=$(mktemp)
     _CURL_CLEANUP_FILES="''${_CURL_CLEANUP_FILES:-} $CURL_DATA_FILE"
     trap 'rm -f $_CURL_CLEANUP_FILES' EXIT
