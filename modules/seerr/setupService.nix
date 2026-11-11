@@ -10,7 +10,7 @@ let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
 
-  authUtil = import ./authUtil.nix { inherit lib pkgs cfg; };
+  cookieFile = "/run/seerr/auth-cookie";
   librarySync = import ./librarySync.nix { inherit lib pkgs cfg; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
   jqSetupSecrets = secrets.mkJqSecretArgs { password = cfg.jellyfin.adminPassword; };
@@ -59,7 +59,6 @@ in
 
         if [ "$IS_INITIALIZED" = "true" ]; then
           echo "Seerr is already initialized"
-          source ${authUtil.authScript}
           exit 0
         fi
 
@@ -88,7 +87,7 @@ in
 
         echo "Connecting to Jellyfin..."
         SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -c "${authUtil.cookieFile}" \
+          -c "${cookieFile}" \
           -H "Content-Type: application/json" \
           -d "$SETUP_PAYLOAD" \
           -w "\n%{http_code}" \
@@ -106,7 +105,7 @@ in
             RETRY_PAYLOAD=$(echo "$SETUP_PAYLOAD" | ${pkgs.jq}/bin/jq 'del(.hostname)')
 
             SETUP_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-              -c "${authUtil.cookieFile}" \
+              -c "${cookieFile}" \
               -H "Content-Type: application/json" \
               -d "$RETRY_PAYLOAD" \
               -w "\n%{http_code}" \
@@ -123,16 +122,16 @@ in
           exit 1
         fi
 
-        chmod 600 "${authUtil.cookieFile}"
+        chmod 600 "${cookieFile}"
         echo "Successfully connected to Jellyfin"
 
         # Step 2: Fetch and enable libraries BEFORE sync
-        source ${librarySync ''-b "${authUtil.cookieFile}"''}
+        source ${librarySync { extraArgs = ''-b "${cookieFile}"''; }}
 
         # Step 3: Complete initialization steps
         echo "Initializing settings..."
         INIT_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          -b "${cookieFile}" \
           -H "Content-Type: application/json" \
           -w "\n%{http_code}" \
           "$BASE_URL/api/v1/settings/initialize")
@@ -146,7 +145,7 @@ in
 
         echo "Setting locale..."
         LOCALE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          -b "${cookieFile}" \
           -H "Content-Type: application/json" \
           -d '{"locale":"en"}' \
           -w "\n%{http_code}" \
@@ -161,7 +160,7 @@ in
 
         echo "Syncing with Jellyfin..."
         SYNC_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -b "${authUtil.cookieFile}" \
+          -b "${cookieFile}" \
           -H "Content-Type: application/json" \
           -w "\n%{http_code}" \
           "$BASE_URL/api/v1/settings/jellyfin/sync")
@@ -174,7 +173,6 @@ in
           echo "$SYNC_RESPONSE" | head -n-1
         fi
 
-        source ${authUtil.authScript}
         echo "Seerr setup completed successfully"
       '';
     };

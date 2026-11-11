@@ -11,13 +11,10 @@ let
   inherit (config) nixflix;
   cfg = nixflix.notif;
   seerrCfg = nixflix.seerr;
-  authUtil = import ../seerr/authUtil.nix {
-    inherit lib pkgs;
-    cfg = seerrCfg;
-  };
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   jq = "${pkgs.jq}/bin/jq";
   curl = "${pkgs.curl}/bin/curl";
-  baseUrl = "http://${seerrCfg.connectionAddress}:${toString seerrCfg.port}";
+  baseUrl = "http://${seerrCfg.connectionAddress}:${toString seerrCfg.port}/api/v1/settings/notifications";
 
   connectors = filterAttrs (_: n: (n._seerr or null) != null) (
     removeAttrs cfg [
@@ -103,20 +100,27 @@ in
         set -euo pipefail
 
         BASE_URL="${baseUrl}"
-        source ${authUtil.authScript}
 
         get_agent() {
-          ${curl} -sf --max-time 30 ${authUtil.curlAuthArgs} "$BASE_URL/api/v1/settings/notifications/$1"
+          ${mkSecureCurl seerrCfg.apiKey {
+            url = "$BASE_URL/$1";
+            extraArgs = "-f --max-time 30";
+          }}
         }
 
         post_agent() {
           local response code
-          response=$(printf '%s' "$2" | ${curl} -s -X POST --max-time 30 \
-            ${authUtil.curlAuthArgs} \
-            -H "Content-Type: application/json" \
-            --data-binary @- \
-            -w "\n%{http_code}" \
-            "$BASE_URL/api/v1/settings/notifications/$1")
+          response=$(
+            printf '%s' "$2" | ${
+              mkSecureCurl seerrCfg.apiKey {
+                url = "$BASE_URL/$1";
+                method = "POST";
+                headers."Content-Type" = "application/json";
+                data = "@-";
+                extraArgs = ''--max-time 30 -w "\n%{http_code}"'';
+              }
+            }
+          )
           code=$(echo "$response" | tail -n1)
           if [ "$code" != "200" ]; then
             echo "Failed to configure Seerr $1 notifications (HTTP $code)" >&2
