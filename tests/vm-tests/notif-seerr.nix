@@ -70,11 +70,10 @@ pkgs.testers.runNixOSTest {
 
       notif = {
         discord = {
-          enable = true;
-          radarr.enable = false;
           webHookUrl = secret "discord" s.discordWebhook;
           avatar = "https://example.com/avatar.png";
           seerr = {
+            enable = true;
             webhookRoleId = "222222222222222222";
             webhookThreadId = "333333333333333333";
             enableMentions = false;
@@ -86,55 +85,50 @@ pkgs.testers.runNixOSTest {
         };
 
         slack = {
-          enable = true;
-          radarr.enable = false;
           webHookUrl = "https://hooks.slack.com/services/connector";
           seerr = {
+            enable = true;
             webHookUrl = "https://hooks.slack.com/services/seerr";
             locale = "es";
           };
         };
 
         telegram = {
-          enable = true;
-          radarr.enable = false;
           botToken = secret "telegram" s.telegramBotToken;
           chatId = "-1001234567890";
           topicId = "42";
           sendSilently = true;
-          seerr.botUsername = "nixflix_bot";
+          seerr = {
+            enable = true;
+            botUsername = "nixflix_bot";
+          };
         };
 
         pushbullet = {
-          enable = true;
-          radarr.enable = false;
           apiKey = secret "pushbullet" s.pushbulletToken;
           channelTags = [ "nixflix" ];
+          seerr.enable = true;
         };
 
         pushover = {
-          enable = true;
-          radarr.enable = false;
           apiKey = "pushover-api-token";
           userKey = secret "pushover" s.pushoverUserKey;
           sound = "cosmic";
+          seerr.enable = true;
         };
 
         gotify = {
-          enable = true;
-          radarr.enable = false;
           server = "https://gotify.example.com";
           appToken = secret "gotify" s.gotifyToken;
           priority = 8;
           seerr = {
+            enable = true;
             locale = "fr";
             onMediaPending = false;
           };
         };
 
         ntfy = {
-          enable = true;
-          radarr.enable = false;
           serverUrl = "https://ntfy.example.com";
           topics = [ "media" ];
           ntfyTags = [
@@ -144,11 +138,10 @@ pkgs.testers.runNixOSTest {
           userName = "ntfy-user";
           password = secret "ntfy" s.ntfyPassword;
           priority = 4;
+          seerr.enable = true;
         };
 
         webhook = {
-          enable = true;
-          radarr.enable = false;
           url = "https://webhook.example.com/seerr";
           username = "bob";
           password = secret "webhook-password" s.webhookPassword;
@@ -159,20 +152,20 @@ pkgs.testers.runNixOSTest {
             }
           ];
           seerr = {
+            enable = true;
             inherit jsonPayload;
             supportVariables = true;
           };
         };
 
         email = {
-          enable = true;
-          radarr.enable = false;
           server = "smtp.example.com";
           port = 465;
           from = "seerr@example.com";
           username = "mailer";
           password = secret "email" s.emailPassword;
           seerr = {
+            enable = true;
             useEncryption = 1;
             senderName = "Nixflix";
             allowSelfSigned = true;
@@ -183,15 +176,15 @@ pkgs.testers.runNixOSTest {
           };
         };
 
-        webpush.enable = true;
+        webpush.seerr.enable = true;
       };
     };
 
     systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
 
     specialisation.disabled.configuration.nixflix.notif = {
-      discord.seerr.enable = false;
-      slack.enable = lib.mkForce false;
+      discord.seerr.enable = lib.mkForce false;
+      slack.seerr.enable = lib.mkForce false;
     };
   };
 

@@ -80,12 +80,11 @@ pkgs.testers.runNixOSTest {
       };
 
       notif.discord = {
-        enable = true;
-        sonarr.enable = false;
-        sonarr-anime.enable = false;
-        radarr.enable = false;
         webHookUrl = "https://discord.example/api/webhooks/1/nixflix";
-        seerr.onIssueComment = false;
+        seerr = {
+          enable = true;
+          onIssueComment = false;
+        };
       };
     };
 

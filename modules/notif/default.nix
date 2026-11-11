@@ -12,15 +12,14 @@ let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   cfg = config.nixflix.notif;
 
-  allNotifications = filter (n: n.enable) (
+  allNotifications =
     builtins.attrValues (
       builtins.removeAttrs cfg [
         "extraNotifications"
         "enable"
       ]
     )
-    ++ cfg.extraNotifications
-  );
+    ++ cfg.extraNotifications;
 
   arrServices = [
     "sonarr"
@@ -29,18 +28,10 @@ let
     "lidarr"
   ];
 
-  notificationsFor =
-    serviceName:
-    filter (
-      n:
-      if (n.services or null) != null then
-        elem serviceName n.services
-      else
-        n.${serviceName}.enable or false
-    ) allNotifications;
+  notificationsFor = serviceName: filter (n: n.${serviceName}.enable or false) allNotifications;
 
   notificationDependencies =
-    serviceName: unique (concatMap (n: n.dependencies) (notificationsFor serviceName));
+    serviceName: unique (concatMap (n: n.dependencies or [ ]) (notificationsFor serviceName));
 
   mkNotificationsService =
     serviceName:
@@ -52,8 +43,8 @@ let
       notifications = map (
         n:
         builtins.removeAttrs (resolveFor serviceName n) [
-          "services"
           "dependencies"
+          "enable"
         ]
       ) (notificationsFor serviceName);
     in
@@ -176,7 +167,11 @@ let
               notificationName = notificationConfig.name;
               inherit (notificationConfig) implementationName;
               supportedTriggers = notificationConfig._supportedTriggers or { };
-              triggerNames = concatLists (attrValues supportedTriggers);
+              triggerNames =
+                if notificationConfig ? _supportedTriggers then
+                  concatLists (attrValues supportedTriggers)
+                else
+                  filter (name: match "on[A-Z].*" name != null) (attrNames notificationConfig);
               allOverrides = builtins.removeAttrs notificationConfig (
                 [
                   "implementationName"
@@ -195,8 +190,11 @@ let
               fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
               jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
-              enabledTriggers = filter (t: notificationConfig.${t} or false) (
-                supportedTriggers.${serviceName} or [ ]
+              enabledTriggers = filter (t: notificationConfig.${t} or false == true) (
+                if notificationConfig ? _supportedTriggers then
+                  supportedTriggers.${serviceName} or [ ]
+                else
+                  triggerNames
               );
             in
             ''
@@ -331,31 +329,57 @@ in
 
   config = mkMerge [
     {
-      assertions = concatLists (
-        mapAttrsToList
-          (
-            connector: n:
-            mapAttrsToList (opt: instructions: {
-              assertion = n.${opt} == null;
-              message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${
-                replaceStrings [ "<connector>" ] [ connector ] instructions
-              }";
-            }) n._removedOptions
-          )
-          (
-            removeAttrs cfg [
-              "enable"
-              "extraNotifications"
-            ]
-          )
-      );
+      assertions =
+        concatMap (
+          n:
+          let
+            entry = "`nixflix.notif.extraNotifications` entry `${n.name or n.implementationName or "unnamed"}`";
+            useBlocks = "Set `enable = true` and the triggers in the block of each service to target instead, for example `radarr = { enable = true; onGrab = true; };`.";
+          in
+          [
+            {
+              assertion = !(n ? enable);
+              message = "`enable` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? services);
+              message = "`services` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? triggers);
+              message = "`triggers` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? seerr);
+              message = "Seerr supports one configuration per notification agent, so ${entry} cannot target Seerr. Use `nixflix.notif.<connector>.seerr` instead.";
+            }
+          ]
+        ) cfg.extraNotifications
+        ++ concatLists (
+          mapAttrsToList
+            (
+              connector: n:
+              mapAttrsToList (opt: instructions: {
+                assertion = n.${opt} == null;
+                message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${
+                  replaceStrings [ "<connector>" ] [ connector ] instructions
+                }";
+              }) n._removedOptions
+            )
+            (
+              removeAttrs cfg [
+                "enable"
+                "extraNotifications"
+              ]
+            )
+        );
     }
 
     (mkIf (config.nixflix.enable && cfg.enable) {
       assertions = [
         {
-          assertion = !cfg.ntfy.enable || cfg.ntfy.topics != [ ];
-          message = "nixflix.notif.ntfy.enable requires at least one nixflix.notif.ntfy.topics entry.";
+          assertion = !any (s: cfg.ntfy.${s}.enable) arrServices || cfg.ntfy.topics != [ ];
+          message = "nixflix.notif.ntfy needs at least one nixflix.notif.ntfy.topics entry when a Starr service block is enabled.";
         }
       ];
 

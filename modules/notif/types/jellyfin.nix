@@ -91,23 +91,23 @@ mkOption {
   type = notifLib.mkNotificationType {
     implementationName = "Emby / Jellyfin";
 
-    enable = {
-      default = config.nixflix.jellyfin.enable;
-      defaultText = literalExpression "config.nixflix.jellyfin.enable";
-    };
-
     dependencies.default = [ "jellyfin-api-key.service" ];
 
     perService = mapAttrs (
       svc: t:
       {
         triggers = t;
-      }
-      // optionalAttrs (svc == "lidarr") {
-        enable = {
-          default = config.nixflix.jellyfin.libraries.Music or null != null;
-          defaultText = literalExpression "config.nixflix.jellyfin.libraries.Music or null != null";
-        };
+        enable =
+          if svc == "lidarr" then
+            {
+              default = config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null;
+              defaultText = literalExpression "config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null";
+            }
+          else
+            {
+              default = config.nixflix.jellyfin.enable;
+              defaultText = literalExpression "config.nixflix.jellyfin.enable";
+            };
       }
       // optionalAttrs (svc != "lidarr") {
         fields = {

@@ -42,14 +42,15 @@ mkOption {
   type = notifLib.mkNotificationType {
     implementationName = "Subsonic";
 
-    enable = {
-      default = config.nixflix.navidrome.enable;
-      defaultText = literalExpression "config.nixflix.navidrome.enable";
-    };
-
     dependencies.default = [ "navidrome.service" ];
 
-    perService = mapAttrs (_: t: { triggers = t; }) triggers;
+    perService = mapAttrs (_: t: {
+      triggers = t;
+      enable = {
+        default = config.nixflix.navidrome.enable;
+        defaultText = literalExpression "config.nixflix.navidrome.enable";
+      };
+    }) triggers;
     removedOptions = {
       triggers = "Use the boolean trigger options in each service block instead, for example `nixflix.notif.subsonic.lidarr.onGrab = false;`.";
     };

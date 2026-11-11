@@ -25,7 +25,7 @@ let
       "extraNotifications"
     ]
   );
-  targets = filterAttrs (_: n: n.enable && n.seerr.enable) connectors;
+  targets = filterAttrs (_: n: n.seerr.enable) connectors;
   resolved = mapAttrs (_: notifLib.resolveFor "seerr") targets;
   untargetedAgents = subtractLists (mapAttrsToList (
     _: n: n._seerr.agent
@@ -85,13 +85,7 @@ in
   config = mkIf (nixflix.enable && cfg.enable && seerrCfg.enable) {
     assertions =
       concatLists (mapAttrsToList requiredAssertions targets)
-      ++ concatLists (mapAttrsToList checkAssertions targets)
-      ++ [
-        {
-          assertion = all (n: !(elem "seerr" (n.services or [ ]))) cfg.extraNotifications;
-          message = "Seerr supports one configuration per notification agent, so `nixflix.notif.extraNotifications` cannot target Seerr. Use `nixflix.notif.<connector>.seerr` instead.";
-        }
-      ];
+      ++ concatLists (mapAttrsToList checkAssertions targets);
 
     systemd.services.seerr-notifications = {
       description = "Configure Seerr notification agents via API";

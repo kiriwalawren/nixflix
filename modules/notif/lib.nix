@@ -231,7 +231,6 @@ rec {
     {
       implementationName,
       perService,
-      enable ? { },
       dependencies ? { },
       extraOptions ? { },
       imports ? [ ],
@@ -243,8 +242,10 @@ rec {
     let
       allPerService = withSonarrAnime perService;
       seerrHasTypes = seerr.hasTypes or true;
+      perServiceEnable = "Set `enable = true` in the block of each service to target instead, for example `nixflix.notif.<connector>.radarr.enable = true;`.";
       allRemovedOptions = removedOptions // {
-        services = "Use the `enable` option in each service block instead, for example `nixflix.notif.<connector>.radarr.enable = false;`.";
+        enable = perServiceEnable;
+        services = perServiceEnable;
       };
       resolve = opts: cfg: if isFunction opts then opts cfg else opts;
     in
@@ -297,7 +298,7 @@ rec {
                     enable = mkOption (
                       {
                         type = types.bool;
-                        default = true;
+                        default = false;
                         description = "Whether to configure this notification on ${svc}.";
                       }
                       // (spec.enable or { })
@@ -326,11 +327,14 @@ rec {
                 )
                 // {
                   embedPoster = field types.bool "Whether to include the media poster in notifications from Seerr. Null keeps Seerr's current value.";
-                  enable = mkOption {
-                    type = types.bool;
-                    default = true;
-                    description = "Whether to configure this notification on Seerr.";
-                  };
+                  enable = mkOption (
+                    {
+                      type = types.bool;
+                      default = false;
+                      description = "Whether to configure this notification on Seerr.";
+                    }
+                    // (seerr.enable or { })
+                  );
                 };
             };
             default = { };
@@ -344,15 +348,6 @@ rec {
       {
         inherit imports;
         options = {
-          enable = mkOption (
-            {
-              type = types.bool;
-              default = false;
-              description = "Whether or not this notification is enabled.";
-            }
-            // enable
-          );
-
           dependencies = mkOption (
             {
               type = types.listOf types.str;

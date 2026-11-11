@@ -169,16 +169,15 @@
 
             notif = {
               ntfy = {
-                enable = true;
+                sonarr.enable = true;
                 topics = [ "media" ];
                 password._secret = ntfyPasswordFile;
               };
               extraNotifications = [
                 {
-                  enable = true;
                   name = "Gotify";
                   implementationName = "Gotify";
-                  services = [ "sonarr" ];
+                  sonarr.enable = true;
                   dependencies = [ ];
                   server = "https://gotify.example";
                   appToken._secret = tokenFile;
@@ -314,9 +313,15 @@
             };
             notif = lib.mapAttrs (
               name: c:
-              {
-                enable = true;
-              }
+              lib.genAttrs
+                (lib.filter (expectedOn name) [
+                  "sonarr"
+                  "radarr"
+                  "lidarr"
+                ])
+                (_: {
+                  enable = true;
+                })
               // lib.optionalAttrs (c.secret != null) { ${c.secret}._secret = secretPath name; }
             ) connectors;
           };
@@ -443,11 +448,11 @@
             };
             notif = {
               notifiarr = {
-                enable = true;
+                radarr.enable = true;
                 apiKey = "plain-notifiarr-key";
               };
               ntfy = {
-                enable = true;
+                radarr.enable = true;
                 topics = [ "media" ];
                 userName = "ntfy-user";
               };
@@ -492,6 +497,18 @@
         );
       ntfyUsername = removedAssertions { ntfy.username = "old-user"; };
       gotifyServices = removedAssertions { gotify.services = [ "sonarr" ]; };
+      discordEnable = removedAssertions { discord.enable = true; };
+      extraEnable = removedAssertions {
+        extraNotifications = [
+          {
+            name = "Extra Gotify";
+            implementationName = "Gotify";
+            enable = false;
+            services = [ "sonarr" ];
+            triggers.sonarr = [ "onGrab" ];
+          }
+        ];
+      };
       jellyfinTriggers = removedAssertions {
         jellyfin = {
           apiKey = "test-jellyfin-key";
@@ -508,8 +525,22 @@
       ${check "services fails on a named connector and points to the per-service enable options" (
         lib.length gotifyServices == 1
         && lib.hasInfix "nixflix.notif.gotify.services" (lib.head gotifyServices)
-        && lib.hasInfix "nixflix.notif.gotify.radarr.enable = false;" (lib.head gotifyServices)
+        && lib.hasInfix "nixflix.notif.gotify.radarr.enable = true;" (lib.head gotifyServices)
       )}
+      ${check "a connector-level enable fails and points to the per-service enable options" (
+        lib.length discordEnable == 1
+        && lib.hasInfix "nixflix.notif.discord.enable" (lib.head discordEnable)
+        && lib.hasInfix "nixflix.notif.discord.radarr.enable = true;" (lib.head discordEnable)
+      )}
+      ${check
+        "enable, services and triggers on an extraNotifications entry fail and point to the service blocks"
+        (
+          lib.length extraEnable == 3
+          && lib.all (
+            m: lib.hasInfix "Extra Gotify" m && lib.hasInfix "radarr = { enable = true; onGrab = true; };" m
+          ) extraEnable
+        )
+      }
       ${check "ntfy.username fails and points to ntfy.userName" (
         lib.length ntfyUsername == 1
         && lib.hasInfix "nixflix.notif.ntfy.username" (lib.head ntfyUsername)
@@ -535,7 +566,7 @@
               config.apiKey._secret = "/run/secrets/sonarr-api";
             };
             notif.webhook = {
-              enable = true;
+              sonarr.enable = true;
               url = "https://hooks.example/notify";
               headers = [
                 {
@@ -578,13 +609,12 @@
                 enable = true;
                 config.apiKey._secret = "/run/secrets/sonarr-api";
               };
-              inherit notif;
+              notif = lib.mapAttrs (_: c: c // { sonarr.enable = true; }) notif;
             };
           }
         ]).config.systemd.services."sonarr-notifications".script;
       gotify = scriptFor {
         gotify = {
-          enable = true;
           tags = [
             "anime"
             "4k"
@@ -593,7 +623,6 @@
       };
       ntfy = scriptFor {
         ntfy = {
-          enable = true;
           topics = [ "media" ];
           ntfyTags = [ "warning" ];
           tags = [ "anime" ];
@@ -601,11 +630,10 @@
       };
       apprise = scriptFor {
         apprise = {
-          enable = true;
           appriseTags = [ "family" ];
         };
       };
-      untagged = scriptFor { gotify.enable = true; };
+      untagged = scriptFor { gotify = { }; };
       rejects =
         notif:
         !(builtins.tryEval (
@@ -668,17 +696,24 @@
               config.apiKey._secret = "/run/secrets/lidarr-api";
             };
             notif.gotify = {
-              enable = true;
               sonarr = {
+                enable = true;
                 onGrab = false;
                 onSeriesAdd = false;
               };
-              sonarr-anime.onGrab = false;
+              sonarr-anime = {
+                enable = true;
+                onGrab = false;
+              };
               radarr = {
+                enable = true;
                 onGrab = false;
                 onHealthIssue = true;
               };
-              lidarr.onGrab = false;
+              lidarr = {
+                enable = true;
+                onGrab = false;
+              };
             };
           };
         }
@@ -736,13 +771,22 @@
             };
             notif = {
               gotify = {
-                enable = true;
-                sonarr.includeSeriesPoster = true;
-                radarr.metadataLinks = [ 0 ];
+                sonarr = {
+                  enable = true;
+                  includeSeriesPoster = true;
+                };
+                radarr = {
+                  enable = true;
+                  metadataLinks = [ 0 ];
+                };
+                lidarr.enable = true;
               };
               email = {
-                enable = true;
-                lidarr.requireEncryption = true;
+                sonarr.enable = true;
+                lidarr = {
+                  enable = true;
+                  requireEncryption = true;
+                };
               };
             };
           };
@@ -815,21 +859,24 @@
             };
           }
         ]).config.systemd.services;
-      defaults = eval {
-        discord = {
+      on =
+        svcs:
+        lib.genAttrs svcs (_: {
           enable = true;
+        });
+      allOn = on (lib.attrNames services);
+      defaults = eval {
+        discord = allOn // {
           webHookUrl = "https://discord.example/hook";
         };
       };
       overridden = eval {
-        discord = {
-          enable = true;
+        discord = lib.recursiveUpdate allOn {
           webHookUrl = "https://discord.example/hook";
           username = "Bot";
           lidarr.username = "Music Bot";
         };
-        slack = {
-          enable = true;
+        slack = lib.recursiveUpdate allOn {
           channel = "media";
           radarr.channel = "movies";
           sonarr.onGrab = true;
@@ -839,10 +886,7 @@
             tags = [ "anime" ];
           };
         };
-        gotify = {
-          enable = true;
-          sonarr-anime.enable = false;
-        };
+        gotify = on [ "sonarr" ];
       };
       script = svcs: s: svcs."${s}-notifications".script;
       username =
@@ -882,11 +926,71 @@
         lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr-anime")
         && !lib.hasInfix "resolve_tag_id anime" (script overridden "sonarr")
       )}
-      ${check "a service block with enable = false skips that service only" (
+      ${check "a service block is skipped unless it is enabled" (
         !lib.hasInfix "Processing notification: Gotify" (script overridden "sonarr-anime")
         && lib.hasInfix "Processing notification: Gotify" (script overridden "sonarr")
       )}
       echo 'PASS: notif-per-service-overrides' > $out
+    '';
+
+  notif-extra-notifications =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/sonarr-api";
+            };
+            radarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/radarr-api";
+            };
+            lidarr = {
+              enable = true;
+              config.apiKey._secret = "/run/secrets/lidarr-api";
+            };
+            notif.extraNotifications = [
+              {
+                name = "Extra Discord";
+                implementationName = "Discord";
+                username = "Extra";
+                sonarr = {
+                  enable = true;
+                  onGrab = true;
+                  onDownload = true;
+                  onUpgrade = false;
+                };
+                radarr = {
+                  enable = true;
+                  onHealthIssue = true;
+                  username = "Extra Movies";
+                };
+                lidarr.onGrab = true;
+              }
+            ];
+          };
+        }
+      ];
+      script = s: config.config.systemd.services."${s}-notifications".script;
+    in
+    pkgs.runCommand "unit-test-notif-extra-notifications" { } ''
+      ${check "triggers set to true in a service block are enabled on that service" (
+        lib.hasInfix ''--argjson enabledTriggers '["onDownload","onGrab"]' '' (script "sonarr")
+        && lib.hasInfix ''--argjson enabledTriggers '["onHealthIssue"]' '' (script "radarr")
+      )}
+      ${check "triggers are not sent as field overrides" (
+        !lib.hasInfix ''"onGrab":'' (script "sonarr") && !lib.hasInfix ''"enable":'' (script "sonarr")
+      )}
+      ${check "a field in a service block overrides the top-level value for that service only" (
+        lib.hasInfix ''"username":"Extra Movies"'' (script "radarr")
+        && lib.hasInfix ''"username":"Extra"'' (script "sonarr")
+      )}
+      ${check "an entry is skipped on a service whose block is not enabled" (
+        !(config.config.systemd.services ? lidarr-notifications)
+      )}
+      echo 'PASS: notif-extra-notifications' > $out
     '';
 
   notif-seerr =
@@ -921,77 +1025,81 @@
       seerrFailures =
         c: map (a: a.message) (lib.filter (a: !a.assertion && lib.hasInfix "eerr" a.message) c.assertions);
       discord = {
-        enable = true;
         webHookUrl = "https://discord.example/starr";
+        sonarr.enable = true;
+        seerr.enable = true;
       };
       defaults = eval { inherit discord; };
       tuned = eval {
-        discord = discord // {
+        discord = lib.recursiveUpdate discord {
           seerr = {
             webHookUrl = "https://discord.example/seerr";
             onIssueComment = false;
           };
         };
         email = {
-          enable = true;
           server = "smtp.example";
           port = 587;
           from = "seerr@example.com";
           username = "mailer";
-          seerr.useEncryption = 1;
+          seerr = {
+            enable = true;
+            useEncryption = 1;
+          };
         };
         ntfy = {
-          enable = true;
           topics = [ "media" ];
           ntfyTags = [
             "tv"
             "warning"
           ];
           accessToken = "ntfy-token";
+          seerr.enable = true;
         };
         webhook = {
-          enable = true;
           url = "https://hook.example";
           username = "bob";
           password = "pw";
+          seerr.enable = true;
         };
       };
-      disabledDiscord = eval {
-        discord = discord // {
-          seerr.enable = false;
-        };
-      };
+      disabledDiscord = eval { discord = removeAttrs discord [ "seerr" ]; };
       failures = seerrFailures (eval {
-        discord.enable = true;
+        discord = {
+          seerr.enable = true;
+        };
         telegram = {
-          enable = true;
           botToken = "t";
+          seerr.enable = true;
         };
         ntfy = {
-          enable = true;
           topics = [
             "a"
             "b"
           ];
+          seerr.enable = true;
         };
         email = {
-          enable = true;
           server = "smtp.example";
           from = "a@example.com";
-          seerr.pgpPassword = "x";
+          seerr = {
+            enable = true;
+            pgpPassword = "x";
+          };
         };
         webhook = {
-          enable = true;
           url = "https://hook.example";
           username = "a";
-          seerr.authHeader = "Bearer x";
+          seerr = {
+            enable = true;
+            authHeader = "Bearer x";
+          };
         };
         extraNotifications = [
           {
             implementationName = "Discord";
             name = "extra";
-            enable = true;
-            services = [ "seerr" ];
+            seerr.onMediaPending = true;
           }
         ];
       });
@@ -1034,8 +1142,12 @@
           scriptOf defaults
         )
       )}
-      ${check "a seerr block with enable = false disables that agent" (
+      ${check "a connector does not target Seerr unless its seerr block is enabled" (
         lib.hasInfix "for agent in discord email" (scriptOf disabledDiscord)
+        &&
+          seerrFailures (eval {
+            telegram.botToken = "t";
+          }) == [ ]
       )}
       ${check "a missing required field names both option paths" (
         hasFailure "Set `nixflix.notif.discord.webHookUrl` or `nixflix.notif.discord.seerr.webHookUrl`."
@@ -1051,7 +1163,13 @@
         hasFailure "sends a single Authorization header"
       )}
       ${check "extraNotifications cannot target Seerr" (
-        hasFailure "`nixflix.notif.extraNotifications` cannot target Seerr"
+        hasFailure "`nixflix.notif.extraNotifications` entry `extra` cannot target Seerr"
+      )}
+      ${check "service blocks are opt-in except the jellyfin ones" (
+        !options.discord.seerr.enable
+        && !options.gotify.sonarr.enable
+        && !options.webpush.seerr.enable
+        && options.jellyfin.sonarr.enable
       )}
       ${check "Starr triggers are only in service blocks" (
         !(options.gotify ? onGrab) && options.gotify.sonarr ? onGrab
@@ -1092,8 +1210,10 @@
             notif = {
               jellyfin.lidarr.enable = true;
               ntfy = {
-                enable = true;
                 topics = [ "media" ];
+                sonarr.enable = true;
+                radarr.enable = true;
+                lidarr.enable = true;
               };
             };
           };
