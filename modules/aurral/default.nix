@@ -210,6 +210,11 @@ in
           assertion = options ? services.aurral;
           message = "nixflix.aurral requires a nixpkgs that provides `services.aurral` (added to nixpkgs on 2026-09-09).";
         }
+        {
+          assertion =
+            !(options ? services.aurral) || versionAtLeast config.services.aurral.package.version "2.13.0";
+          message = "nixflix.aurral requires Aurral 2.13.0 or newer, but the Aurral package in use is ${config.services.aurral.package.version}. `nixflix.aurral.package` defaults to `pkgs.aurral` from your own nixpkgs rather than the nixpkgs nixflix pins. Update your nixpkgs, or set `nixflix.aurral.package` to a 2.13.0+ build.";
+        }
       ];
 
       users = {

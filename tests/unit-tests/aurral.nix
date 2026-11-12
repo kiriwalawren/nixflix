@@ -94,6 +94,14 @@ in
       aurralFailures { aurral.oidc = completeOidc; } == [ ]
     )}
 
+    ${check "an aurral package below 2.13.0 trips the version assertion" (
+      lib.length (
+        failuresMatching {
+          aurral.package = pkgs.aurral.overrideAttrs { version = "2.12.0"; };
+        } "requires Aurral 2.13.0 or newer"
+      ) == 1
+    )}
+
     echo 'PASS: aurral-assertions' > $out
   '';
 
