@@ -8,6 +8,7 @@ with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   cfg = config.nixflix.downloadarr;
 
   allClients = filter (c: c.enable) (
@@ -61,6 +62,38 @@ let
         toUpper (builtins.substring 0 1 serviceName) + builtins.substring 1 (-1) serviceName;
 
       clients = map (transformClient serviceName) allClients;
+
+      downloadClientsSync = syncMode.mkPrune {
+        mode = config.nixflix.${serviceName}.syncMode.downloadClients;
+        unit = "${serviceName}-downloadclients";
+        what = "download clients";
+        option = "nixflix.${serviceName}.syncMode.downloadClients";
+        live = "DOWNLOAD_CLIENTS";
+        declared = map (d: d.name) clients;
+        onDelete = ''
+          # Delete download clients that are not in the configuration
+          echo "Removing download clients not in configuration..."
+          echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r downloadClient; do
+            CLIENT_NAME=$(echo "$downloadClient" | ${pkgs.jq}/bin/jq -r '.name')
+            CLIENT_ID=$(echo "$downloadClient" | ${pkgs.jq}/bin/jq -r '.id')
+
+            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$CLIENT_NAME" 'index($name)' >/dev/null 2>&1; then
+              echo "Deleting download client not in config: $CLIENT_NAME (ID: $CLIENT_ID)"
+              ${
+                mkSecureCurl serviceConfig.apiKey {
+                  url = "$BASE_URL/downloadclient/$CLIENT_ID";
+                  method = "DELETE";
+                  extraArgs = "-Sf";
+                }
+              } >/dev/null || echo "Warning: Failed to delete download client $CLIENT_NAME"
+            fi
+          done
+        '';
+      };
+      # Empty outside refuse mode, so the delete-mode script is unchanged.
+      downloadClientsGuard = optionalString (
+        config.nixflix.${serviceName}.syncMode.downloadClients == "refuse"
+      ) "${downloadClientsSync.guard}${syncMode.refuseCheckpoint}\n";
     in
     {
       "${serviceName}-downloadclients" = {
@@ -118,24 +151,7 @@ let
           EOF
           )
 
-          # Delete download clients that are not in the configuration
-          echo "Removing download clients not in configuration..."
-          echo "$DOWNLOAD_CLIENTS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r downloadClient; do
-            CLIENT_NAME=$(echo "$downloadClient" | ${pkgs.jq}/bin/jq -r '.name')
-            CLIENT_ID=$(echo "$downloadClient" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$CLIENT_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting download client not in config: $CLIENT_NAME (ID: $CLIENT_ID)"
-              ${
-                mkSecureCurl serviceConfig.apiKey {
-                  url = "$BASE_URL/downloadclient/$CLIENT_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null || echo "Warning: Failed to delete download client $CLIENT_NAME"
-            fi
-          done
-
+          ${downloadClientsGuard}${downloadClientsSync.prune}
           ${concatMapStringsSep "\n" (
             clientConfig:
             let
@@ -274,6 +290,16 @@ let
   ) arrServices;
 in
 {
+  # Declared per *arr service rather than under nixflix.downloadarr, whose
+  # attributes are all treated as download clients.
+  options.nixflix = genAttrs arrServices (_serviceName: {
+    syncMode.downloadClients = syncMode.mkModeOption {
+      inherit config;
+      what = "download clients";
+      collectionOption = "nixflix.downloadarr";
+    };
+  });
+
   config = mkIf (config.nixflix.enable && cfg.enable && allClients != [ ]) {
     systemd.services = mkMerge (map mkDownloadClientsService enabledArrServices);
   };

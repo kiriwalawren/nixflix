@@ -10,8 +10,46 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
 
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+
+  indexerProxiesPrune = syncMode.mkPrune {
+    mode = cfg.syncMode.indexerProxies;
+    unit = "prowlarr-indexer-proxies";
+    what = "indexer proxies";
+    option = "nixflix.prowlarr.syncMode.indexerProxies";
+    live = "INDEXERS";
+    declared = map (i: i.name) cfg.config.indexerProxies;
+    onDelete = ''
+      # Delete indexers that are not in the configuration
+      echo "Removing indexer proxies not in configuration..."
+      echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
+        INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
+        INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
+          echo "Deleting indexer proxy not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/indexerProxy/$INDEXER_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete indexer proxy $INDEXER_NAME"
+        fi
+      done
+    '';
+  };
+  indexerProxiesCheckpoint = optionalString (
+    cfg.syncMode.indexerProxies == "refuse"
+  ) "${syncMode.refuseCheckpoint}\n";
 in
 {
+  options.nixflix.prowlarr.syncMode.indexerProxies = syncMode.mkModeOption {
+    inherit config;
+    what = "indexer proxies";
+    collectionOption = "nixflix.prowlarr.config.indexerProxies";
+  };
+
   options.nixflix.prowlarr.config.indexerProxies = mkOption {
     type = types.listOf (
       types.submodule {
@@ -89,6 +127,10 @@ in
           RemainAfterExit = true;
           Restart = "on-failure";
           RestartSec = 30;
+        }
+        # A refusal needs a config change, not a retry.
+        // optionalAttrs (cfg.syncMode.indexerProxies == "refuse") {
+          RestartPreventExitStatus = syncMode.refuseExitCode;
         };
 
         script = ''
@@ -129,24 +171,7 @@ in
           EOF
           )
 
-          # Delete indexers that are not in the configuration
-          echo "Removing indexer proxies not in configuration..."
-          echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
-            INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
-            INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting indexer proxy not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/indexerProxy/$INDEXER_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null || echo "Warning: Failed to delete indexer proxy $INDEXER_NAME"
-            fi
-          done
-
+          ${indexerProxiesPrune.guard}${indexerProxiesCheckpoint}${indexerProxiesPrune.prune}
           ${concatMapStringsSep "\n" (
             indexerConfig:
             let

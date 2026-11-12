@@ -173,4 +173,5 @@ Here's a minimal configuration to get started:
 ## Next Steps
 
 - Review the [Basic Setup Example](../examples/basic-setup.md) for a complete configuration
+- Moving an existing install to nixflix? By default nixflix deletes anything you have not declared. Set `nixflix.syncMode = "refuse";` first and follow [Adopting an Existing Install](../examples/adopting-existing-install.md)
 - See the [Options Reference](../reference/index.md) for all available settings

@@ -10,8 +10,46 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
 
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+
+  indexersPrune = syncMode.mkPrune {
+    mode = cfg.syncMode.indexers;
+    unit = "prowlarr-indexers";
+    what = "indexers";
+    option = "nixflix.prowlarr.syncMode.indexers";
+    live = "INDEXERS";
+    declared = map (i: i.name) cfg.config.indexers;
+    onDelete = ''
+      # Delete indexers that are not in the configuration
+      echo "Removing indexers not in configuration..."
+      echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
+        INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
+        INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
+          echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/indexer/$INDEXER_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
+        fi
+      done
+    '';
+  };
+  indexersCheckpoint = optionalString (
+    cfg.syncMode.indexers == "refuse"
+  ) "${syncMode.refuseCheckpoint}\n";
 in
 {
+  options.nixflix.prowlarr.syncMode.indexers = syncMode.mkModeOption {
+    inherit config;
+    what = "indexers";
+    collectionOption = "nixflix.prowlarr.config.indexers";
+  };
+
   options.nixflix.prowlarr.config.indexers = mkOption {
     type = types.listOf (
       types.submodule (
@@ -167,24 +205,7 @@ in
           EOF
           )
 
-          # Delete indexers that are not in the configuration
-          echo "Removing indexers not in configuration..."
-          echo "$INDEXERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r indexer; do
-            INDEXER_NAME=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.name')
-            INDEXER_ID=$(echo "$indexer" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$INDEXER_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting indexer not in config: $INDEXER_NAME (ID: $INDEXER_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/indexer/$INDEXER_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null || echo "Warning: Failed to delete indexer $INDEXER_NAME"
-            fi
-          done
-
+          ${indexersPrune.guard}${indexersCheckpoint}${indexersPrune.prune}
           # Run each indexer in its own subshell and fold its exit status into RC, so a
           # single failing indexer doesn't abort the rest of the batch; exit non-zero at
           # the end if any failed, so Restart=on-failure can retry the stragglers.

@@ -7,7 +7,57 @@
 with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
   cfg = config.nixflix.usenetClients.sabnzbd;
+
+  # The existing delete loop. Names are read one per line and URL-encoded: a
+  # `for` over the unquoted list split names with spaces and glob-expanded "*",
+  # and curl's config file ends an unquoted url at the first space. "*" is
+  # SABnzbd's built-in catch-all and is never deleted. SABnzbd lowercases
+  # category names when it stores them, so names compare case-insensitively,
+  # as fixed strings; LC_ALL=C folds ASCII only, exactly like the guard's
+  # ascii_downcase below.
+  deleteCategories = ''
+    # Delete categories not in configuration
+    echo "Removing categories not in configuration..."
+    while IFS= read -r existing_cat; do
+      [ -n "$existing_cat" ] && [ "$existing_cat" != "*" ] || continue
+      if ! echo "$CONFIGURED_NAMES" | LC_ALL=C grep -qixF -- "$existing_cat"; then
+        echo "Deleting category not in config: $existing_cat"
+        api_call "del_config" "section=categories" "keyword=$(jq -rn --arg c "$existing_cat" '$c | @uri')" >/dev/null 2>&1 || true
+      fi
+    done <<< "$EXISTING_CATEGORIES"
+  '';
+
+  categories = syncMode.mkPrune {
+    mode = cfg.syncMode.categories;
+    unit = "sabnzbd-categories";
+    what = "categories";
+    option = "nixflix.usenetClients.sabnzbd.syncMode.categories";
+    live = "LIVE_CATEGORIES";
+    # Same match as deleteCategories: ASCII case-insensitive, and an empty
+    # name is skipped. `tostring` mirrors `jq -r` printing a non-string name.
+    declared = map (c: toLower c.name) cfg.settings.categories;
+    key = ".name | tostring | ascii_downcase";
+    label = ".name";
+    select = "(.name | tostring) != \"\"";
+    id = ".order";
+    ignore = [ "*" ];
+    onDelete = deleteCategories;
+  };
+
+  # Ends with a newline, like deleteCategories, so delete mode renders the
+  # script exactly as before.
+  pruneCategories =
+    if cfg.syncMode.categories == "delete" then
+      categories.prune
+    else
+      ''
+        LIVE_CATEGORIES=$(echo "$CURRENT_CONFIG" | jq -c '.config.categories')
+        ${categories.guard}
+        ${syncMode.refuseCheckpoint}
+        ${categories.prune}
+      '';
 in
 {
   config = mkIf (config.nixflix.enable && cfg.enable && cfg.settings.categories != [ ]) {
@@ -71,15 +121,7 @@ in
         # Build list of configured category names
         CONFIGURED_NAMES=$(echo "$CATEGORIES_JSON" | jq -r '.[].name')
 
-        # Delete categories not in configuration
-        echo "Removing categories not in configuration..."
-        for existing_cat in $EXISTING_CATEGORIES; do
-          if ! echo "$CONFIGURED_NAMES" | grep -qx "$existing_cat"; then
-            echo "Deleting category not in config: $existing_cat"
-            api_call "del_config" "section=categories" "keyword=$existing_cat" >/dev/null 2>&1 || true
-          fi
-        done
-
+        ${pruneCategories}
         # Add/update configured categories
         echo "$CATEGORIES_JSON" | jq -c '.[]' | while IFS= read -r category; do
           name=$(echo "$category" | jq -r '.name')

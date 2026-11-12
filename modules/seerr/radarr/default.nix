@@ -14,6 +14,47 @@ let
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
 
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.radarr;
+
+  getServers = ''
+    EXISTING_SERVERS=$(${
+      mkSecureCurl cfg.apiKey {
+        url = "$BASE_URL/api/v1/settings/radarr";
+        extraArgs = "--max-time 30";
+      }
+    })
+  '';
+
+  servers = syncMode.mkPrune {
+    inherit mode;
+    unit = "seerr-radarr";
+    what = "Radarr servers";
+    option = "nixflix.seerr.syncMode.radarr";
+    live = "EXISTING_SERVERS";
+    declared = attrNames cfg.radarr;
+    # The delete loop's `[.name] | inside($configured[0])` is jq containment,
+    # which matches strings by SUBSTRING: a live "Radarr" or "4K" survives when
+    # "Radarr 4K" is declared. refuse and keep flag the same servers it deletes.
+    select = "[.name] | inside($declared) | not";
+    onDelete = ''
+      SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
+        --slurpfile configured "$CONFIGURED_NAMES" \
+        '.[] | select([.name] | inside($configured[0]) | not) | .id')
+
+      for server_id in $SERVERS_TO_DELETE; do
+        echo "Deleting Radarr server (ID: $server_id)..."
+        ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/radarr/$server_id";
+            method = "DELETE";
+            extraArgs = "-f --max-time 30";
+          }
+        } >/dev/null
+      done
+    '';
+  };
+
   mkRadarrConfigScript =
     radarrName: radarrCfg:
     let
@@ -220,35 +261,20 @@ in
         set -euo pipefail
 
         BASE_URL="${baseUrl}"
-
+        ${optionalString (mode == "refuse") ''
+          # Read the live servers before any change so a refused sync changes nothing
+          ${getServers}
+          ${servers.guard}
+          ${syncMode.refuseCheckpoint}
+        ''}
         # Configure each Radarr instance
         ${concatStringsSep "\n" (mapAttrsToList mkRadarrConfigScript cfg.radarr)}
 
         # Delete servers not in configuration
         CONFIGURED_NAMES="${pkgs.writeText "radarr-names.json" (builtins.toJSON (attrNames cfg.radarr))}"
 
-        EXISTING_SERVERS=$(${
-          mkSecureCurl cfg.apiKey {
-            url = "$BASE_URL/api/v1/settings/radarr";
-            extraArgs = "--max-time 30";
-          }
-        })
-
-        SERVERS_TO_DELETE=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
-          --slurpfile configured "$CONFIGURED_NAMES" \
-          '.[] | select([.name] | inside($configured[0]) | not) | .id')
-
-        for server_id in $SERVERS_TO_DELETE; do
-          echo "Deleting Radarr server (ID: $server_id)..."
-          ${
-            mkSecureCurl cfg.apiKey {
-              url = "$BASE_URL/api/v1/settings/radarr/$server_id";
-              method = "DELETE";
-              extraArgs = "-f --max-time 30";
-            }
-          } >/dev/null
-        done
-
+        ${getServers}
+        ${servers.prune}
         echo "Radarr configuration completed"
       '';
     };

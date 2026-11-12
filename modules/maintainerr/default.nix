@@ -8,6 +8,7 @@ with lib;
 let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   cfg = config.nixflix.maintainerr;
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
@@ -90,6 +91,56 @@ in
         default = config.nixflix.vpn.namespace;
         defaultText = literalExpression "config.nixflix.vpn.namespace";
         description = "Name of the VPN network namespace to confine Maintainerr to when `vpn.enable = true`.";
+      };
+    };
+
+    syncMode = {
+      radarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Radarr servers";
+        collectionOption = "nixflix.maintainerr.settings.radarr";
+      };
+
+      sonarr = syncMode.mkModeOption {
+        inherit config;
+        what = "Sonarr servers";
+        collectionOption = "nixflix.maintainerr.settings.sonarr";
+      };
+
+      rules = syncMode.mkModeOption {
+        inherit config;
+        what = "rule groups";
+        collectionOption = "nixflix.maintainerr.rules";
+      };
+
+      overlayTemplates = syncMode.mkModeOption {
+        inherit config;
+        what = "overlay templates (presets are never touched)";
+        collectionOption = "nixflix.maintainerr.overlays.templates";
+      };
+
+      mediaServer = mkOption {
+        type = types.enum syncMode.modes;
+        default = config.nixflix.syncMode;
+        defaultText = literalExpression "config.nixflix.syncMode";
+        description = ''
+          What `maintainerr-settings` does when Maintainerr is set up for
+          another media server (Plex, Emby). Switching it to Jellyfin makes
+          Maintainerr clear every rule group and its rules, collection,
+          collection media item and log, and exclusion. Defaults to
+          `nixflix.syncMode` (`"delete"` unless set); setting this overrides it
+          for the switch only.
+
+          - `"delete"`: switch to Jellyfin, clearing that data.
+          - `"keep"`: switch only when it clears nothing; otherwise stay on the
+            current media server and log what a switch would clear. Staying
+            means the Jellyfin connection is not set up, and
+            `maintainerr-rules`, which asks Maintainerr which media server it
+            uses, skips its rule groups with a log line until Maintainerr is on
+            Jellyfin.
+          - `"refuse"`: if a switch would clear anything, fail the unit before
+            changing anything and list the counts.
+        '';
       };
     };
 

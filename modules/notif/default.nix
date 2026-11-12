@@ -10,6 +10,7 @@ let
   notifLib = import ./lib.nix { inherit lib secrets; };
   inherit (notifLib) resolveFor;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   cfg = config.nixflix.notif;
 
   allNotifications =
@@ -47,6 +48,38 @@ let
           "enable"
         ]
       ) (notificationsFor serviceName);
+
+      notificationsSync = syncMode.mkPrune {
+        mode = config.nixflix.${serviceName}.syncMode.notifications;
+        unit = "${serviceName}-notifications";
+        what = "notifications";
+        option = "nixflix.${serviceName}.syncMode.notifications";
+        live = "NOTIFICATIONS";
+        declared = map (n: n.name) notifications;
+        onDelete = ''
+          # Delete notifications that are not in the configuration
+          echo "Removing notifications not in configuration..."
+          echo "$NOTIFICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r notification; do
+            NOTIFICATION_NAME=$(echo "$notification" | ${pkgs.jq}/bin/jq -r '.name')
+            NOTIFICATION_ID=$(echo "$notification" | ${pkgs.jq}/bin/jq -r '.id')
+
+            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$NOTIFICATION_NAME" 'index($name)' >/dev/null 2>&1; then
+              echo "Deleting notification not in config: $NOTIFICATION_NAME (ID: $NOTIFICATION_ID)"
+              ${
+                mkSecureCurl serviceConfig.apiKey {
+                  url = "$BASE_URL/notification/$NOTIFICATION_ID";
+                  method = "DELETE";
+                  extraArgs = "-Sf";
+                }
+              } >/dev/null || echo "Warning: Failed to delete notification $NOTIFICATION_NAME"
+            fi
+          done
+        '';
+      };
+      # Empty outside refuse mode, so the delete-mode script is unchanged.
+      notificationsGuard = optionalString (
+        config.nixflix.${serviceName}.syncMode.notifications == "refuse"
+      ) "${notificationsSync.guard}${syncMode.refuseCheckpoint}\n";
     in
     {
       "${serviceName}-notifications" = {
@@ -98,7 +131,7 @@ let
             }
           })
 
-          TAGS_FILE=$(mktemp)
+          ${notificationsGuard}TAGS_FILE=$(mktemp)
           trap 'rm -f "$TAGS_FILE"' EXIT
           ${optionalString (concatMap (n: n.tags or [ ]) notifications != [ ]) ''
             echo "Fetching tags..."
@@ -143,24 +176,7 @@ let
           EOF
           )
 
-          # Delete notifications that are not in the configuration
-          echo "Removing notifications not in configuration..."
-          echo "$NOTIFICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r notification; do
-            NOTIFICATION_NAME=$(echo "$notification" | ${pkgs.jq}/bin/jq -r '.name')
-            NOTIFICATION_ID=$(echo "$notification" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$NOTIFICATION_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting notification not in config: $NOTIFICATION_NAME (ID: $NOTIFICATION_ID)"
-              ${
-                mkSecureCurl serviceConfig.apiKey {
-                  url = "$BASE_URL/notification/$NOTIFICATION_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null || echo "Warning: Failed to delete notification $NOTIFICATION_NAME"
-            fi
-          done
-
+          ${notificationsSync.prune}
           ${concatMapStringsSep "\n" (
             notificationConfig:
             let
@@ -325,6 +341,16 @@ in
     ./options.nix
     ./seerr.nix
   ];
+
+  # Declared per *arr service rather than under nixflix.notif, whose
+  # attributes are all treated as notifications.
+  options.nixflix = genAttrs arrServices (_serviceName: {
+    syncMode.notifications = syncMode.mkModeOption {
+      inherit config;
+      what = "notifications";
+      collectionOption = "nixflix.notif";
+    };
+  });
 
   config = mkMerge [
     {

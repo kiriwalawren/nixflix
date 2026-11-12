@@ -9,8 +9,46 @@ let
   cfg = config.nixflix.prowlarr;
   secrets = import ../../lib/secrets { inherit lib; };
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+
+  applicationsPrune = syncMode.mkPrune {
+    mode = cfg.syncMode.applications;
+    unit = "prowlarr-applications";
+    what = "applications";
+    option = "nixflix.prowlarr.syncMode.applications";
+    live = "APPLICATIONS";
+    declared = map (a: a.name) cfg.config.applications;
+    onDelete = ''
+      # Delete applications that are not in the configuration
+      echo "Removing applications not in configuration..."
+      echo "$APPLICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r application; do
+        APPLICATION_NAME=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.name')
+        APPLICATION_ID=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null; then
+          echo "Deleting application not in config: $APPLICATION_NAME (ID: $APPLICATION_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/applications/$APPLICATION_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null || echo "Warning: Failed to delete application $APPLICATION_NAME"
+        fi
+      done
+    '';
+  };
+  applicationsCheckpoint = optionalString (
+    cfg.syncMode.applications == "refuse"
+  ) "${syncMode.refuseCheckpoint}\n";
 in
 {
+  options.nixflix.prowlarr.syncMode.applications = syncMode.mkModeOption {
+    inherit config;
+    what = "applications";
+    collectionOption = "nixflix.prowlarr.config.applications";
+  };
+
   options.nixflix.prowlarr.config.applications = mkOption {
     type = types.listOf (
       types.submodule {
@@ -105,24 +143,7 @@ in
           EOF
           )
 
-          # Delete applications that are not in the configuration
-          echo "Removing applications not in configuration..."
-          echo "$APPLICATIONS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r application; do
-            APPLICATION_NAME=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.name')
-            APPLICATION_ID=$(echo "$application" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$APPLICATION_NAME" 'index($name)' >/dev/null; then
-              echo "Deleting application not in config: $APPLICATION_NAME (ID: $APPLICATION_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/applications/$APPLICATION_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null || echo "Warning: Failed to delete application $APPLICATION_NAME"
-            fi
-          done
-
+          ${applicationsPrune.guard}${applicationsCheckpoint}${applicationsPrune.prune}
           ${concatMapStringsSep "\n" (
             applicationConfig:
             let

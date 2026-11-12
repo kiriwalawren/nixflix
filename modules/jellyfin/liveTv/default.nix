@@ -76,6 +76,150 @@ let
       applyProvider ${escapeShellArg name} "$resolved"
     '') liveTv.listingProviders
   );
+
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
+  liveTvMode = cfg.syncMode.liveTv;
+
+  removeUndeclared =
+    if liveTvMode == "delete" then
+      ''
+        # Remove what this unit created before and is no longer declared. The
+        # state holds hashes, so a secret URL never lands in it.
+        for row in $(jq -r '.TunerHosts[] | [.Id, .Url] | @base64' <<<"$cfg"); do
+          id=$(base64 -d <<<"$row" | jq -r '.[0]')
+          url=$(base64 -d <<<"$row" | jq -r '.[1]')
+          jq -e --arg u "$url" 'index($u)' >/dev/null <<<"$want_t" && continue
+          if jq -e --arg h "$(sha "$url")" '.tuners | index($h)' >/dev/null <<<"$prev"; then
+            api DELETE "LiveTv/TunerHosts?id=$id" >/dev/null
+            changed=1
+            echo "tuner $id: removed (no longer declared)"
+          else
+            echo "tuner $id: not managed by nixflix, left alone"
+          fi
+        done
+        for row in $(jq -r '.ListingProviders[] | [.Id, .Type, (.Path // "")] | @base64' <<<"$cfg"); do
+          id=$(base64 -d <<<"$row" | jq -r '.[0]')
+          type=$(base64 -d <<<"$row" | jq -r '.[1]')
+          path=$(base64 -d <<<"$row" | jq -r '.[2]')
+          [ "$type" = xmltv ] && jq -e --arg p "$path" 'index($p)' >/dev/null <<<"$want_p" && continue
+          if [ "$type" = xmltv ] && jq -e --arg h "$(sha "$path")" '.providers | index($h)' >/dev/null <<<"$prev"; then
+            api DELETE "LiveTv/ListingProviders?id=$id" >/dev/null
+            changed=1
+            echo "guide $id: removed (no longer declared)"
+          else
+            echo "guide $id ($type): not managed by nixflix, left alone"
+          fi
+        done
+      ''
+    else
+      ''
+        # Nothing is removed (nixflix.jellyfin.syncMode.liveTv = "${liveTvMode}").
+        ${tunersPrune.prune}
+        ${guidesPrune.prune}
+      '';
+
+  writeState =
+    if liveTvMode == "keep" then
+      ''
+        # keep: kept tuners/guides stay in the state, so a later switch to
+        # delete still removes them.
+        kept_th=$(jq -c 'map(.hash)' <<<"$managed_t")
+        kept_ph=$(jq -c 'map(.hash)' <<<"$managed_p")
+        if [ "$want_t" = '[]' ] && [ "$want_p" = '[]' ] && [ "$kept_th" = '[]' ] && [ "$kept_ph" = '[]' ]; then
+          rm -f "$STATE"
+        else
+          tmp=$(mktemp "$STATE.XXXXXX")
+          jq -cn --argjson t "$(hashes "$want_t")" --argjson p "$(hashes "$want_p")" \
+            --argjson kt "$kept_th" --argjson kp "$kept_ph" '{tuners: ($t + $kt), providers: ($p + $kp)}' >"$tmp"
+          mv "$tmp" "$STATE"
+        fi
+      ''
+    else
+      ''
+        if [ "$want_t" = '[]' ] && [ "$want_p" = '[]' ]; then
+          # Nothing left to manage: without the state file the unit stops
+          # running (ConditionPathExists in the unit definition).
+          rm -f "$STATE"
+        else
+          tmp=$(mktemp "$STATE.XXXXXX")
+          jq -cn --argjson t "$(hashes "$want_t")" --argjson p "$(hashes "$want_p")" '{tuners: $t, providers: $p}' >"$tmp"
+          mv "$tmp" "$STATE"
+        fi
+      '';
+
+  # Undeclared tuners/guides are only those this unit created before (their
+  # hash is in the state) whose Url/Path is no longer declared, as in delete
+  # mode. Labels are Ids and names only: a Url/Path may carry a secret.
+  tunersPrune = syncMode.mkPrune {
+    mode = liveTvMode;
+    unit = "jellyfin-livetv";
+    what = "nixflix-managed Live TV tuners";
+    option = "nixflix.jellyfin.syncMode.liveTv";
+    live = "managed_t";
+    declared = [ ];
+    key = ".Id";
+    id = ".Id";
+    label = ".FriendlyName";
+    onDelete = "";
+  };
+
+  guidesPrune = syncMode.mkPrune {
+    mode = liveTvMode;
+    unit = "jellyfin-livetv";
+    what = "nixflix-managed Live TV guides";
+    option = "nixflix.jellyfin.syncMode.liveTv";
+    live = "managed_p";
+    declared = [ ];
+    key = ".Id";
+    id = ".Id";
+    label = ".Type";
+    onDelete = "";
+  };
+
+  # Resolves every declared Url/Path up front, so the undeclared ones are known
+  # before anything is created.
+  undeclaredCheck = ''
+    declared_t='[]'
+    declared_p='[]'
+    ${concatStringsSep "\n" (
+      mapAttrsToList (name: t: ''
+        resolved=$(${jqTuner name t})
+        declared_t=$(jq -c --argjson t "$resolved" '. + [$t.url]' <<<"$declared_t")
+      '') liveTv.tuners
+    )}
+    ${concatStringsSep "\n" (
+      mapAttrsToList (name: p: ''
+        resolved=$(${jqProvider name p})
+        declared_p=$(jq -c --argjson p "$resolved" '. + [$p.path]' <<<"$declared_p")
+      '') liveTv.listingProviders
+    )}
+    managed_t='[]'
+    for row in $(jq -r '.TunerHosts[] | [.Id, .Url, (.FriendlyName // "")] | @base64' <<<"$cfg"); do
+      url=$(base64 -d <<<"$row" | jq -r '.[1]')
+      jq -e --arg u "$url" 'index($u)' >/dev/null <<<"$declared_t" && continue
+      h=$(sha "$url")
+      if jq -e --arg h "$h" '.tuners | index($h)' >/dev/null <<<"$prev"; then
+        managed_t=$(base64 -d <<<"$row" | jq -c --argjson m "$managed_t" --arg h "$h" '$m + [{Id: .[0], FriendlyName: .[2], hash: $h}]')
+      fi
+    done
+    managed_p='[]'
+    for row in $(jq -r '.ListingProviders[] | [.Id, .Type, (.Path // "")] | @base64' <<<"$cfg"); do
+      type=$(base64 -d <<<"$row" | jq -r '.[1]')
+      path=$(base64 -d <<<"$row" | jq -r '.[2]')
+      [ "$type" = xmltv ] || continue
+      jq -e --arg p "$path" 'index($p)' >/dev/null <<<"$declared_p" && continue
+      h=$(sha "$path")
+      if jq -e --arg h "$h" '.providers | index($h)' >/dev/null <<<"$prev"; then
+        managed_p=$(base64 -d <<<"$row" | jq -c --argjson m "$managed_p" --arg h "$h" '$m + [{Id: .[0], Type: .[1], hash: $h}]')
+      fi
+    done
+    unset url path type h row resolved
+
+    ${tunersPrune.guard}
+    ${guidesPrune.guard}
+    ${syncMode.refuseCheckpoint}
+
+  '';
 in
 {
   imports = [ ./options.nix ];
@@ -159,7 +303,7 @@ in
         jq -e '(.TunerHosts | type == "array") and (.ListingProviders | type == "array")' >/dev/null <<<"$cfg" \
           || { echo "liveTv: unexpected Live TV configuration from Jellyfin: $(head -c 200 <<<"$cfg")" >&2; exit 1; }
 
-        changed=0
+        ${optionalString (liveTvMode != "delete") undeclaredCheck}changed=0
         usable_id='.[0].Id | select(type == "string" and length > 0)'
         same() { # BODY STORED-ARRAY -> 0 equal, 1 differs; any jq error aborts
           local rc=0
@@ -230,34 +374,7 @@ in
 
         ${providerCalls}
 
-        # Remove what this unit created before and is no longer declared. The
-        # state holds hashes, so a secret URL never lands in it.
-        for row in $(jq -r '.TunerHosts[] | [.Id, .Url] | @base64' <<<"$cfg"); do
-          id=$(base64 -d <<<"$row" | jq -r '.[0]')
-          url=$(base64 -d <<<"$row" | jq -r '.[1]')
-          jq -e --arg u "$url" 'index($u)' >/dev/null <<<"$want_t" && continue
-          if jq -e --arg h "$(sha "$url")" '.tuners | index($h)' >/dev/null <<<"$prev"; then
-            api DELETE "LiveTv/TunerHosts?id=$id" >/dev/null
-            changed=1
-            echo "tuner $id: removed (no longer declared)"
-          else
-            echo "tuner $id: not managed by nixflix, left alone"
-          fi
-        done
-        for row in $(jq -r '.ListingProviders[] | [.Id, .Type, (.Path // "")] | @base64' <<<"$cfg"); do
-          id=$(base64 -d <<<"$row" | jq -r '.[0]')
-          type=$(base64 -d <<<"$row" | jq -r '.[1]')
-          path=$(base64 -d <<<"$row" | jq -r '.[2]')
-          [ "$type" = xmltv ] && jq -e --arg p "$path" 'index($p)' >/dev/null <<<"$want_p" && continue
-          if [ "$type" = xmltv ] && jq -e --arg h "$(sha "$path")" '.providers | index($h)' >/dev/null <<<"$prev"; then
-            api DELETE "LiveTv/ListingProviders?id=$id" >/dev/null
-            changed=1
-            echo "guide $id: removed (no longer declared)"
-          else
-            echo "guide $id ($type): not managed by nixflix, left alone"
-          fi
-        done
-
+        ${removeUndeclared}
         hashes() { # JSON-ARRAY-OF-STRINGS -> JSON array of their sha256
           local out='[]' k n
           n=$(jq length <<<"$1")
@@ -266,16 +383,7 @@ in
           done
           printf '%s' "$out"
         }
-        if [ "$want_t" = '[]' ] && [ "$want_p" = '[]' ]; then
-          # Nothing left to manage: without the state file the unit stops
-          # running (ConditionPathExists in the unit definition).
-          rm -f "$STATE"
-        else
-          tmp=$(mktemp "$STATE.XXXXXX")
-          jq -cn --argjson t "$(hashes "$want_t")" --argjson p "$(hashes "$want_p")" '{tuners: $t, providers: $p}' >"$tmp"
-          mv "$tmp" "$STATE"
-        fi
-
+        ${writeState}
         if [ "$changed" = 1 ]; then
           task=$(api GET ScheduledTasks | jq -er '[.[] | select(.Key == "RefreshGuide")][0].Id')
           api POST "ScheduledTasks/Running/$task" >/dev/null

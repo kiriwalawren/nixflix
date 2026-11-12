@@ -9,7 +9,9 @@
   nixflix.recyclarr.config.sonarr.sonarr_anime = lib.mkIf config.nixflix.sonarr-anime.enable {
     base_url = lib.mkDefault "http://${config.nixflix.sonarr-anime.connectionAddress}:${toString config.nixflix.sonarr-anime.config.hostConfig.port}${toString config.nixflix.sonarr-anime.config.hostConfig.urlBase}";
     api_key = lib.mkDefault config.nixflix.sonarr-anime.config.apiKey;
-    delete_old_custom_formats = lib.mkDefault true;
+    delete_old_custom_formats = lib.mkDefault (
+      config.nixflix.recyclarr.syncMode.customFormats == "delete"
+    );
 
     quality_definition = {
       type = lib.mkDefault "anime";

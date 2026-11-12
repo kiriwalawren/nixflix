@@ -1,7 +1,13 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
   secrets = import ../../../lib/secrets { inherit lib; };
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
 
   # Tuner/provider fields Jellyfin stores as plain values. No nulls: Jellyfin
   # omits null fields from what it returns, so a declared null would never
@@ -94,6 +100,12 @@ let
   };
 in
 {
+  options.nixflix.jellyfin.syncMode.liveTv = syncMode.mkModeOption {
+    inherit config;
+    what = "Live TV tuners and guides that nixflix created earlier (its state file)";
+    collectionOption = "nixflix.jellyfin.liveTv";
+  };
+
   options.nixflix.jellyfin.liveTv = mkOption {
     type = types.submodule {
       options = {

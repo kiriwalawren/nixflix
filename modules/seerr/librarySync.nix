@@ -9,6 +9,84 @@
 }:
 let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.jellyfinLibraries;
+
+  # Libraries the delete-mode loop below would switch from enabled to disabled.
+  toDisable = syncMode.mkPrune {
+    inherit mode;
+    unit = "seerr-libraries";
+    what = "enabled Jellyfin libraries";
+    option = "nixflix.seerr.syncMode.jellyfinLibraries";
+    live = "LIBRARIES_TO_DISABLE";
+    declared = [ ];
+    key = ".id";
+    label = ".name";
+    onDelete = "";
+  };
+
+  enableLibraries =
+    if mode == "delete" || cfg.jellyfin.enableAllLibraries then
+      ''
+        if [ -n "$LIBRARY_IDS" ]; then
+          echo "Enabling libraries: $LIBRARY_IDS"
+          echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
+            --arg enableIds "$LIBRARY_IDS" \
+            '($enableIds | split(",")) as $enabled | .[] | .id as $id | "\($id) \($enabled | index($id) != null)"' |
+          while read -r LIB_ID LIB_ENABLED; do
+            BODY=$(${pkgs.jq}/bin/jq -n --argjson enabled "$LIB_ENABLED" '{enabled: $enabled}')
+            ENABLE_HTTP_CODE=$(printf '%s' "$BODY" | ${
+              mkSecureCurl apiKey {
+                url = "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID";
+                method = "PUT";
+                headers."Content-Type" = "application/json";
+                data = "@-";
+                extraArgs = ''${extraArgs} -o /dev/null -w "%{http_code}"'';
+              }
+            })
+            checkResponse "enable" "$ENABLE_HTTP_CODE"
+          done
+          echo "Libraries enabled successfully"
+        else
+          echo "Warning: No libraries matched the filter criteria"
+        fi
+      ''
+    else
+      # keep/refuse: only switch matching libraries on, never switch any off.
+      ''
+        if [ -n "$LIBRARY_IDS" ]; then
+          LIBRARIES_TO_DISABLE=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -c \
+            --arg enableIds "$LIBRARY_IDS" \
+            '($enableIds | split(",")) as $enabled | [ .[] | select(.enabled == true) | select(.id as $id | $enabled | any(. == $id) | not) ]')
+        else
+          LIBRARIES_TO_DISABLE='[]'
+        fi
+
+        ${toDisable.guard}
+        ${syncMode.refuseCheckpoint}
+        ${toDisable.prune}
+        if [ -n "$LIBRARY_IDS" ]; then
+          echo "Enabling libraries: $LIBRARY_IDS"
+          echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
+            --arg enableIds "$LIBRARY_IDS" \
+            '($enableIds | split(",")) as $enabled | .[] | select(.id as $id | $enabled | any(. == $id)) | .id' |
+          while read -r LIB_ID; do
+            ENABLE_HTTP_CODE=$(printf '%s' '{"enabled":true}' | ${
+              mkSecureCurl apiKey {
+                url = "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID";
+                method = "PUT";
+                headers."Content-Type" = "application/json";
+                data = "@-";
+                extraArgs = ''${extraArgs} -o /dev/null -w "%{http_code}"'';
+              }
+            })
+            checkResponse "enable" "$ENABLE_HTTP_CODE"
+          done
+          echo "Libraries enabled successfully"
+        else
+          echo "Warning: No libraries matched the filter criteria"
+        fi
+      '';
 in
 pkgs.writeShellScript "seerr-library-sync" ''
   # Report the endpoint's status rather than exiting on a bare `curl -f` code.
@@ -56,26 +134,4 @@ pkgs.writeShellScript "seerr-library-sync" ''
       ''
   }
 
-  if [ -n "$LIBRARY_IDS" ]; then
-    echo "Enabling libraries: $LIBRARY_IDS"
-    echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-      --arg enableIds "$LIBRARY_IDS" \
-      '($enableIds | split(",")) as $enabled | .[] | .id as $id | "\($id) \($enabled | index($id) != null)"' |
-    while read -r LIB_ID LIB_ENABLED; do
-      BODY=$(${pkgs.jq}/bin/jq -n --argjson enabled "$LIB_ENABLED" '{enabled: $enabled}')
-      ENABLE_HTTP_CODE=$(printf '%s' "$BODY" | ${
-        mkSecureCurl apiKey {
-          url = "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID";
-          method = "PUT";
-          headers."Content-Type" = "application/json";
-          data = "@-";
-          extraArgs = ''${extraArgs} -o /dev/null -w "%{http_code}"'';
-        }
-      })
-      checkResponse "enable" "$ENABLE_HTTP_CODE"
-    done
-    echo "Libraries enabled successfully"
-  else
-    echo "Warning: No libraries matched the filter criteria"
-  fi
-''
+  ${enableLibraries}''

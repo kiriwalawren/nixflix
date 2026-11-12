@@ -13,6 +13,7 @@ let
     capitalizedName
     mkSecureCurl
     ;
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
 
   defaultDelayProfile = {
     enableUsenet = true;
@@ -29,95 +30,105 @@ let
   };
 in
 {
-  options.nixflix.${serviceName}.config = optionalAttrs usesMediaDirs {
-    delayProfiles = mkOption {
-      type = types.listOf (
-        types.submodule {
-          options = {
-            id = mkOption {
-              type = types.int;
-              description = "Unique identifier for the delay profile";
-            };
-            enableUsenet = mkOption {
-              type = types.bool;
-              default = true;
-              description = "Enable Usenet protocol for this profile";
-            };
-            enableTorrent = mkOption {
-              type = types.bool;
-              default = true;
-              description = "Enable Torrent protocol for this profile";
-            };
-            preferredProtocol = mkOption {
-              type = types.enum [
-                "usenet"
-                "torrent"
-              ];
-              default = "usenet";
-              description = "Preferred download protocol when both are available";
-            };
-            usenetDelay = mkOption {
-              type = types.int;
-              default = 0;
-              description = "Delay in minutes before grabbing a Usenet release";
-            };
-            torrentDelay = mkOption {
-              type = types.int;
-              default = 0;
-              description = "Delay in minutes before grabbing a Torrent release";
-            };
-            bypassIfHighestQuality = mkOption {
-              type = types.bool;
-              default = true;
-              description = "Bypass delay if release is the highest quality available";
-            };
-            bypassIfAboveCustomFormatScore = mkOption {
-              type = types.bool;
-              default = false;
-              description = "Bypass delay if custom format score is above minimum";
-            };
-            minimumCustomFormatScore = mkOption {
-              type = types.int;
-              default = 0;
-              description = "Minimum custom format score to bypass delay";
-            };
-            order = mkOption {
-              type = types.int;
-              default = 50;
-              description = "Order/priority of this delay profile (lower values = higher priority)";
-            };
-            tags = mkOption {
-              type = types.listOf types.int;
-              default = [ ];
-              description = "List of tag IDs this delay profile applies to (empty = applies to all)";
-            };
-          };
-        }
-      );
-      default = [ defaultDelayProfile ];
-      defaultText = literalExpression ''
-        [
-          {
-            enableUsenet = true;
-            enableTorrent = true;
-            preferredProtocol = "usenet";
-            usenetDelay = 0;
-            torrentDelay = 0;
-            bypassIfHighestQuality = true;
-            bypassIfAboveCustomFormatScore = false;
-            minimumCustomFormatScore = 0;
-            order = 2147483647;
-            tags = [];
-            id = 1;
-          };
-        ]
-      '';
-      description = ''
-        List of delay profiles to configure via the API /delayprofile endpoint.
+  options.nixflix.${serviceName} = optionalAttrs usesMediaDirs {
+    syncMode = {
+      delayProfiles = syncMode.mkModeOption {
+        inherit config;
+        what = "delay profiles";
+        collectionOption = "nixflix.${serviceName}.config.delayProfiles";
+      };
+    };
 
-        Profiles are created/updated in id order. If no profile with id=1 is provided,
-        a default profile will be added automatically.
-      '';
+    config = {
+      delayProfiles = mkOption {
+        type = types.listOf (
+          types.submodule {
+            options = {
+              id = mkOption {
+                type = types.int;
+                description = "Unique identifier for the delay profile";
+              };
+              enableUsenet = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Usenet protocol for this profile";
+              };
+              enableTorrent = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Torrent protocol for this profile";
+              };
+              preferredProtocol = mkOption {
+                type = types.enum [
+                  "usenet"
+                  "torrent"
+                ];
+                default = "usenet";
+                description = "Preferred download protocol when both are available";
+              };
+              usenetDelay = mkOption {
+                type = types.int;
+                default = 0;
+                description = "Delay in minutes before grabbing a Usenet release";
+              };
+              torrentDelay = mkOption {
+                type = types.int;
+                default = 0;
+                description = "Delay in minutes before grabbing a Torrent release";
+              };
+              bypassIfHighestQuality = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Bypass delay if release is the highest quality available";
+              };
+              bypassIfAboveCustomFormatScore = mkOption {
+                type = types.bool;
+                default = false;
+                description = "Bypass delay if custom format score is above minimum";
+              };
+              minimumCustomFormatScore = mkOption {
+                type = types.int;
+                default = 0;
+                description = "Minimum custom format score to bypass delay";
+              };
+              order = mkOption {
+                type = types.int;
+                default = 50;
+                description = "Order/priority of this delay profile (lower values = higher priority)";
+              };
+              tags = mkOption {
+                type = types.listOf types.int;
+                default = [ ];
+                description = "List of tag IDs this delay profile applies to (empty = applies to all)";
+              };
+            };
+          }
+        );
+        default = [ defaultDelayProfile ];
+        defaultText = literalExpression ''
+          [
+            {
+              enableUsenet = true;
+              enableTorrent = true;
+              preferredProtocol = "usenet";
+              usenetDelay = 0;
+              torrentDelay = 0;
+              bypassIfHighestQuality = true;
+              bypassIfAboveCustomFormatScore = false;
+              minimumCustomFormatScore = 0;
+              order = 2147483647;
+              tags = [];
+              id = 1;
+            };
+          ]
+        '';
+        description = ''
+          List of delay profiles to configure via the API /delayprofile endpoint.
+
+          Profiles are created/updated in id order. If no profile with id=1 is provided,
+          a default profile will be added automatically.
+        '';
+      };
     };
   };
 
@@ -172,6 +183,40 @@ in
             }
           else
             p;
+        delayProfilesSync = syncMode.mkPrune {
+          mode = cfg.syncMode.delayProfiles;
+          unit = "${serviceName}-delayprofiles";
+          what = "delay profiles";
+          option = "nixflix.${serviceName}.syncMode.delayProfiles";
+          live = "DELAY_PROFILES";
+          declared = map (p: p.id) sortedProfiles;
+          # Keyed by id: a live profile whose id is declared counts as declared
+          # (and is PUT over). The *arr's undeletable default profile, id 1, is
+          # always in sortedProfiles (mergedProfiles adds it), so it is never
+          # a candidate.
+          key = ".id";
+          onDelete = ''
+            echo "Removing delay profiles not in configuration..."
+            echo "$DELAY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
+              PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
+
+              if ! echo "$CONFIGURED_IDS" | ${pkgs.jq}/bin/jq -e --argjson id "$PROFILE_ID" 'index($id)' >/dev/null 2>&1; then
+                echo "Deleting delay profile not in config (ID: $PROFILE_ID)"
+                ${
+                  mkSecureCurl cfg.config.apiKey {
+                    url = "$BASE_URL/delayprofile/$PROFILE_ID";
+                    method = "DELETE";
+                    extraArgs = "-Sf";
+                  }
+                } >/dev/null 2>&1 || echo "Warning: Failed to delete delay profile $PROFILE_ID (may be in use)"
+              fi
+            done
+          '';
+        };
+        # Empty outside refuse mode, so the delete-mode script is unchanged.
+        delayProfilesGuard = optionalString (
+          cfg.syncMode.delayProfiles == "refuse"
+        ) "${delayProfilesSync.guard}${syncMode.refuseCheckpoint}\n";
       in
       {
         description = "Configure ${serviceName} delay profiles via API";
@@ -202,22 +247,7 @@ in
           EOF
           )
 
-          echo "Removing delay profiles not in configuration..."
-          echo "$DELAY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
-            PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_IDS" | ${pkgs.jq}/bin/jq -e --argjson id "$PROFILE_ID" 'index($id)' >/dev/null 2>&1; then
-              echo "Deleting delay profile not in config (ID: $PROFILE_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/delayprofile/$PROFILE_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null 2>&1 || echo "Warning: Failed to delete delay profile $PROFILE_ID (may be in use)"
-            fi
-          done
-
+          ${delayProfilesGuard}${delayProfilesSync.prune}
           ${concatMapStringsSep "\n" (
             profileConfig:
             let

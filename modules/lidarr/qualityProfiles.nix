@@ -419,8 +419,59 @@ let
       };
     };
   };
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  mode = cfg.syncMode.qualityProfiles;
+  prune = syncMode.mkPrune {
+    inherit mode;
+    unit = "lidarr-qualityprofiles";
+    what = "quality profiles";
+    option = "nixflix.lidarr.syncMode.qualityProfiles";
+    live = "QUALITY_PROFILES";
+    declared = map (p: p.name) cfg.config.qualityProfiles;
+    onDelete = ''
+      echo "Removing quality profiles not in configuration..."
+      echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
+        PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
+        PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
+          echo "Deleting quality profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/qualityprofile/$PROFILE_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null 2>&1 || echo "Warning: Failed to delete quality profile $PROFILE_NAME (may be in use)"
+        fi
+      done
+    '';
+  };
+  # Empty in "delete" mode so the unit script stays exactly as it was.
+  pre = optionalString (mode == "refuse") ''
+    ${prune.guard}
+    ${syncMode.refuseCheckpoint}
+
+  '';
 in
 {
+  options.nixflix.lidarr.syncMode.qualityProfiles =
+    let
+      opt = syncMode.mkModeOption {
+        inherit config;
+        what = "quality profiles";
+        collectionOption = "nixflix.lidarr.config.qualityProfiles";
+      };
+    in
+    opt
+    // {
+      description = opt.description + ''
+
+        `lidarr-rootfolders.service` requires `lidarr-qualityprofiles.service`, so
+        a `"refuse"` failure here also stops Lidarr's root folders from syncing.
+      '';
+    };
+
   options.nixflix.lidarr.config.qualityProfiles = mkOption {
     type = types.listOf qualityProfileType;
     default = [ defaultQualityProfile ];
@@ -431,7 +482,8 @@ in
 
       Defaults to a single "Any" profile. At least one quality profile must be present
       (enforced via assertion) — Lidarr requires one to assign to root folders and artists.
-      Profiles not declared here (by name) are deleted.
+      Profiles not declared here (by name) are deleted, unless
+      `nixflix.lidarr.syncMode.qualityProfiles` says otherwise.
     '';
   };
 
@@ -477,23 +529,7 @@ in
           EOF
           )
 
-          echo "Removing quality profiles not in configuration..."
-          echo "$QUALITY_PROFILES" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r profile; do
-            PROFILE_NAME=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.name')
-            PROFILE_ID=$(echo "$profile" | ${pkgs.jq}/bin/jq -r '.id')
-
-            if ! echo "$CONFIGURED_NAMES" | ${pkgs.jq}/bin/jq -e --arg name "$PROFILE_NAME" 'index($name)' >/dev/null 2>&1; then
-              echo "Deleting quality profile not in config: $PROFILE_NAME (ID: $PROFILE_ID)"
-              ${
-                mkSecureCurl cfg.config.apiKey {
-                  url = "$BASE_URL/qualityprofile/$PROFILE_ID";
-                  method = "DELETE";
-                  extraArgs = "-Sf";
-                }
-              } >/dev/null 2>&1 || echo "Warning: Failed to delete quality profile $PROFILE_NAME (may be in use)"
-            fi
-          done
-
+          ${pre}${prune.prune}
           ${concatMapStringsSep "\n" (
             profileConfig:
             let

@@ -28,6 +28,46 @@ let
     _: n: n._seerr.agent
   ) targets) notifLib.seerrAgents;
 
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  agentsMode = seerrCfg.syncMode.notifications;
+
+  # The delete-mode loop: switch off every enabled agent nixflix.notif does
+  # not target.
+  disableUntargeted = ''
+    for agent in ${concatStringsSep " " untargetedAgents}; do
+      CURRENT=$(get_agent "$agent")
+      if [ "$(echo "$CURRENT" | ${jq} -r '.enabled')" = "true" ]; then
+        echo "Disabling Seerr $agent notifications, which nixflix does not manage..."
+        post_agent "$agent" "$(echo "$CURRENT" | ${jq} -c '.enabled = false')"
+      fi
+    done
+  '';
+
+  agentsPrune = syncMode.mkPrune {
+    mode = agentsMode;
+    unit = "seerr-notifications";
+    what = "enabled Seerr notification agents";
+    option = "nixflix.seerr.syncMode.notifications";
+    live = "ENABLED_UNTARGETED_AGENTS";
+    declared = [ ];
+    key = ".agent";
+    id = ".agent";
+    label = ".agent";
+    onDelete = disableUntargeted;
+  };
+
+  # keep/refuse read the untargeted agents first. Only the agent names are
+  # kept: an agent's options can hold tokens and webhook URLs.
+  readUntargeted = ''
+    ENABLED_UNTARGETED_AGENTS='[]'
+    for agent in ${concatStringsSep " " untargetedAgents}; do
+      CURRENT=$(get_agent "$agent")
+      if [ "$(echo "$CURRENT" | ${jq} -r '.enabled')" = "true" ]; then
+        ENABLED_UNTARGETED_AGENTS=$(echo "$ENABLED_UNTARGETED_AGENTS" | ${jq} -c --arg a "$agent" '. + [{agent: $a}]')
+      fi
+    done
+  '';
+
   overridesFor =
     name: n:
     let
@@ -129,16 +169,11 @@ in
           fi
         }
 
-        ${concatStringsSep "\n" (mapAttrsToList configureAgent targets)}
+        ${optionalString (agentsMode != "delete") readUntargeted}${agentsPrune.guard}${
+          optionalString (agentsMode == "refuse") "${syncMode.refuseCheckpoint}\n"
+        }${concatStringsSep "\n" (mapAttrsToList configureAgent targets)}
 
-        for agent in ${concatStringsSep " " untargetedAgents}; do
-          CURRENT=$(get_agent "$agent")
-          if [ "$(echo "$CURRENT" | ${jq} -r '.enabled')" = "true" ]; then
-            echo "Disabling Seerr $agent notifications, which nixflix does not manage..."
-            post_agent "$agent" "$(echo "$CURRENT" | ${jq} -c '.enabled = false')"
-          fi
-        done
-
+        ${agentsPrune.prune}
         echo "Seerr notifications configuration complete"
       '';
     };

@@ -1,6 +1,12 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
+  syncMode = import ../../../lib/sync-mode.nix { inherit lib pkgs; };
   typeOptionsModule = types.submodule {
     options = {
       type = mkOption {
@@ -394,6 +400,19 @@ let
   };
 in
 {
+  options.nixflix.jellyfin.syncMode = {
+    libraries = syncMode.mkModeOption {
+      inherit config;
+      what = "libraries that nixflix created earlier (its state file)";
+      collectionOption = "nixflix.jellyfin.libraries";
+    };
+    libraryPaths = syncMode.mkModeOption {
+      inherit config;
+      what = "paths of declared libraries";
+      collectionOption = "nixflix.jellyfin.libraries.<name>.paths";
+    };
+  };
+
   options.nixflix.jellyfin.libraries = mkOption {
     description = ''
       Jellyfin media libraries to manage declaratively.

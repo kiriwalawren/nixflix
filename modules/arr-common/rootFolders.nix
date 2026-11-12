@@ -14,21 +14,63 @@ let
     mkSecureCurl
     mkWaitForApiScript
     ;
+  syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
+  rootFoldersSync = syncMode.mkPrune {
+    mode = cfg.syncMode.rootFolders;
+    unit = "${serviceName}-rootfolders";
+    what = "root folders";
+    option = "nixflix.${serviceName}.syncMode.rootFolders";
+    live = "ROOT_FOLDERS";
+    declared = map (f: f.path) cfg.config.rootFolders;
+    key = ".path";
+    onDelete = ''
+      echo "Removing root folders not in configuration..."
+      echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r folder; do
+        FOLDER_PATH=$(echo "$folder" | ${pkgs.jq}/bin/jq -r '.path')
+        FOLDER_ID=$(echo "$folder" | ${pkgs.jq}/bin/jq -r '.id')
+
+        if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$FOLDER_PATH" 'index($path)' >/dev/null 2>&1; then
+          echo "Deleting root folder not in config: $FOLDER_PATH (ID: $FOLDER_ID)"
+          ${
+            mkSecureCurl cfg.config.apiKey {
+              url = "$BASE_URL/rootfolder/$FOLDER_ID";
+              method = "DELETE";
+              extraArgs = "-Sf";
+            }
+          } >/dev/null 2>&1 || echo "Warning: Failed to delete root folder $FOLDER_PATH"
+        fi
+      done
+    '';
+  };
+  # Empty outside refuse mode, so the delete-mode script is unchanged.
+  rootFoldersGuard = optionalString (
+    cfg.syncMode.rootFolders == "refuse"
+  ) "${rootFoldersSync.guard}${syncMode.refuseCheckpoint}\n";
 in
 {
-  options.nixflix.${serviceName}.config = optionalAttrs usesMediaDirs {
-    rootFolders = mkOption {
-      type = types.listOf types.attrs;
-      default = [ ];
-      defaultText = literalExpression "map (mediaDir: {path = mediaDir;}) nixflix.${serviceName}.mediaDirs";
-      description = ''
-        List of root folders to create via the API /rootfolder endpoint.
-        Each folder is an attribute set that will be converted to JSON and sent to the API.
+  options.nixflix.${serviceName} = optionalAttrs usesMediaDirs {
+    syncMode = {
+      rootFolders = syncMode.mkModeOption {
+        inherit config;
+        what = "root folders";
+        collectionOption = "nixflix.${serviceName}.config.rootFolders";
+      };
+    };
 
-        For Sonarr/Radarr, a simple path is sufficient: `{path = "/path/to/folder";}`
+    config = {
+      rootFolders = mkOption {
+        type = types.listOf types.attrs;
+        default = [ ];
+        defaultText = literalExpression "map (mediaDir: {path = mediaDir;}) nixflix.${serviceName}.mediaDirs";
+        description = ''
+          List of root folders to create via the API /rootfolder endpoint.
+          Each folder is an attribute set that will be converted to JSON and sent to the API.
 
-        For Lidarr, additional fields are required like defaultQualityProfileId, etc.
-      '';
+          For Sonarr/Radarr, a simple path is sufficient: `{path = "/path/to/folder";}`
+
+          For Lidarr, additional fields are required like defaultQualityProfileId, etc.
+        '';
+      };
     };
   };
 
@@ -72,23 +114,7 @@ in
             EOF
             )
 
-            echo "Removing root folders not in configuration..."
-            echo "$ROOT_FOLDERS" | ${pkgs.jq}/bin/jq -r '.[] | @json' | while IFS= read -r folder; do
-              FOLDER_PATH=$(echo "$folder" | ${pkgs.jq}/bin/jq -r '.path')
-              FOLDER_ID=$(echo "$folder" | ${pkgs.jq}/bin/jq -r '.id')
-
-              if ! echo "$CONFIGURED_PATHS" | ${pkgs.jq}/bin/jq -e --arg path "$FOLDER_PATH" 'index($path)' >/dev/null 2>&1; then
-                echo "Deleting root folder not in config: $FOLDER_PATH (ID: $FOLDER_ID)"
-                ${
-                  mkSecureCurl cfg.config.apiKey {
-                    url = "$BASE_URL/rootfolder/$FOLDER_ID";
-                    method = "DELETE";
-                    extraArgs = "-Sf";
-                  }
-                } >/dev/null 2>&1 || echo "Warning: Failed to delete root folder $FOLDER_PATH"
-              fi
-            done
-
+            ${rootFoldersGuard}${rootFoldersSync.prune}
             ${concatMapStringsSep "\n" (
               folderConfig:
               let
