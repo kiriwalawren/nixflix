@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - `nixflix.notif.ntfy.topics` accepts `{ _secret = ...; }` entries ([#418](https://github.com/kiriwalawren/nixflix/issues/418))
+- `nixflix.pinchflat` module for [Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX), a self-hosted YouTube media manager, with reverse proxy and VPN support. Videos download to `<nixflix.mediaDir>/youtube` by default, and enabling it with Jellyfin creates a `nixflix.jellyfin.libraries.YouTube` TV shows library on `nixflix.pinchflat.showsDir` (default `<nixflix.pinchflat.mediaDir>/shows`, where Pinchflat's stock "Media Center" preset puts each channel) that reads Pinchflat's NFO metadata, with no remote metadata or image fetchers for series, seasons and episodes. The new `nixflix.seerr.jellyfin.excludeLibraries` option (default `[ "YouTube" ]` when Pinchflat is enabled) keeps that library out of Seerr, with both `enableAllLibraries` and `libraryFilter` ([#412](https://github.com/kiriwalawren/nixflix/pull/412))
+
+### Fixed
+
+- Documentation only: the `nixflix.jellyfin.libraries` option description now says to remove a default library with `lib.mkForce null`. The `lib.mkForce {}` it showed before fails evaluation because `collectionType` and `paths` have no default. No module behavior changed
 
 ## [5.0.0] - 2026-11-11
 
