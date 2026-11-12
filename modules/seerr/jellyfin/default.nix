@@ -8,7 +8,7 @@ with lib;
 let
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 in
 {
@@ -31,9 +31,6 @@ in
 
         BASE_URL="${baseUrl}"
 
-        # Authenticate
-        source ${authUtil.authScript}
-
         echo "Configuring default user settings..."
 
         # POST user settings (endpoint accepts partial documents)
@@ -51,12 +48,15 @@ in
             externalHostname: $externalHostname
           }')
 
-        SETTINGS_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          ${authUtil.curlAuthArgs} \
-          -H "Content-Type: application/json" \
-          -d "$SETUP_PAYLOAD" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/settings/jellyfin")
+        SETTINGS_RESPONSE=$(printf '%s' "$SETUP_PAYLOAD" | ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/jellyfin";
+            method = "POST";
+            headers."Content-Type" = "application/json";
+            data = "@-";
+            extraArgs = ''-w "\n%{http_code}"'';
+          }
+        })
 
         SETTINGS_HTTP_CODE=$(echo "$SETTINGS_RESPONSE" | tail -n1)
         if [ "$SETTINGS_HTTP_CODE" != "200" ] && [ "$SETTINGS_HTTP_CODE" != "201" ] && [ "$SETTINGS_HTTP_CODE" != "204" ]; then

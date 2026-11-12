@@ -61,6 +61,7 @@ let
       "seerr.syncMode.radarr"
       "seerr.syncMode.sonarr"
       "seerr.syncMode.jellyfinLibraries"
+      "seerr.syncMode.notifications"
       "jellyfin.syncMode.libraries"
       "jellyfin.syncMode.libraryPaths"
       "jellyfin.syncMode.plugins"
@@ -114,6 +115,7 @@ let
       "seerr-radarr"
       "seerr-sonarr"
       "seerr-libraries"
+      "seerr-notifications"
       "jellyfin-libraries"
       "jellyfin-plugins"
       "jellyfin-livetv"
@@ -153,6 +155,8 @@ let
     "Deleting removed library"
     "Removing path:"
     "Removed managed plugin directory"
+    # seerr-notifications switching an untargeted Seerr agent off.
+    "'.enabled = false'"
     ''"\($id) \($enabled | index($id) != null)"''
   ];
 
@@ -279,7 +283,25 @@ let
     && count syncMode.refuseCheckpoint text == 1
     && lib.all (m: m == "-X POST" || !lib.hasInfix m early) mutations;
 
-  refuseShapeOf = unit: if unit == "seerr-libraries" then seerrLibrariesShape else refuseShape;
+  # seerr-notifications defines get_agent/post_agent before its guard; the
+  # definition holds the POST, so only calls count (guardPrecedesMutations
+  # treats a call of a mutating function as a mutation).
+  seerrNotificationsShape =
+    text:
+    guardPrecedesMutations text
+    && count syncMode.refuseCheckpoint text == 1
+    && !lib.any (l: lib.hasPrefix "post_agent " (lib.trim l)) (
+      lib.splitString "\n" (beforeCheckpoint text)
+    );
+
+  refuseShapeOf =
+    unit:
+    if unit == "seerr-libraries" then
+      seerrLibrariesShape
+    else if unit == "seerr-notifications" then
+      seerrNotificationsShape
+    else
+      refuseShape;
 
   recyclarrInstances =
     r:

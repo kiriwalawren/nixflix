@@ -92,20 +92,25 @@ in
         };
       }
     ];
-    notif.extraNotifications = [
-      {
-        enable = true;
-        name = "Ntfy";
-        implementationName = "ntfy.sh";
-        services = [
-          "radarr"
-          "sonarr"
-          "sonarr-anime"
-          "lidarr"
-        ];
-        dependencies = [ ];
-      }
-    ];
+    notif = {
+      extraNotifications = [
+        {
+          name = "Ntfy";
+          implementationName = "ntfy.sh";
+          radarr.enable = true;
+          sonarr.enable = true;
+          sonarr-anime.enable = true;
+          lidarr.enable = true;
+          dependencies = [ ];
+        }
+      ];
+      # Seerr notification agents (seerr-notifications): one targeted, the
+      # rest are the undeclared collection.
+      discord = {
+        webHookUrl = "https://discord.example/hook";
+        seerr.enable = true;
+      };
+    };
     seerr = {
       enable = true;
       apiKey._secret = "/run/secrets/seerr-api";

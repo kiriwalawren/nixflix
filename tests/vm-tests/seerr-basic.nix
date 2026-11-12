@@ -78,6 +78,14 @@ pkgs.testers.runNixOSTest {
         enable = true;
         apiKey._secret = pkgs.writeText "seerr-apikey" "seerr555555555555555555";
       };
+
+      notif.discord = {
+        webHookUrl = "https://discord.example/api/webhooks/1/nixflix";
+        seerr = {
+          enable = true;
+          onIssueComment = false;
+        };
+      };
     };
 
     systemd.services.jellyfin.serviceConfig.TimeoutStartSec = lib.mkForce 300;
@@ -89,6 +97,7 @@ pkgs.testers.runNixOSTest {
     systemd.services.seerr-libraries.wantedBy = lib.mkForce [ ];
     systemd.services.seerr-radarr.wantedBy = lib.mkForce [ ];
     systemd.services.seerr-sonarr.wantedBy = lib.mkForce [ ];
+    systemd.services.seerr-notifications.wantedBy = lib.mkForce [ ];
   };
 
   testScript = ''
@@ -201,5 +210,21 @@ pkgs.testers.runNixOSTest {
     assert anime['syncEnabled'] == False, f"Expected syncEnabled False, got {anime.get('syncEnabled')}"
     assert anime['preventSearch'] == False, f"Expected preventSearch False, got {anime.get('preventSearch')}"
     assert anime['activeDirectory'] == '/media/anime', f"Expected activeDirectory '/media/anime', got {anime.get('activeDirectory')}"
+
+    # Notif: a UI-made Slack agent is disabled, and Discord is configured from nixflix.notif.discord
+    slack_payload = json.dumps({"enabled": True, "embedPoster": True, "types": 2, "options": {"webhookUrl": "https://slack.example/ui", "locale": "en"}})
+    machine.succeed(f"curl -sf -b {cookie_file} -X POST -H 'Content-Type: application/json' -d '{slack_payload}' {base_url}/settings/notifications/slack")
+
+    machine.succeed("systemctl start seerr-notifications.service")
+
+    discord = json.loads(machine.succeed(f"curl -sf -b {cookie_file} {base_url}/settings/notifications/discord"))
+    assert discord["enabled"] == True, f"Expected discord enabled, got {discord}"
+    assert discord["types"] == 7646, f"Expected discord types 7646, got {discord.get('types')}"
+    assert discord["options"]["webhookUrl"] == "https://discord.example/api/webhooks/1/nixflix", f"Unexpected discord options {discord['options']}"
+    assert discord["options"]["botUsername"] == "Seerr", f"Expected botUsername Seerr, got {discord['options']}"
+
+    slack = json.loads(machine.succeed(f"curl -sf -b {cookie_file} {base_url}/settings/notifications/slack"))
+    assert slack["enabled"] == False, f"Expected slack disabled, got {slack}"
+    assert slack["options"]["webhookUrl"] == "https://slack.example/ui", f"Expected slack settings kept, got {slack}"
   '';
 }

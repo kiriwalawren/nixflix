@@ -9,7 +9,7 @@ let
   secrets = import ../../../lib/secrets { inherit lib; };
   inherit (config) nixflix;
   cfg = nixflix.seerr;
-  authUtil = import ../authUtil.nix { inherit lib pkgs cfg; };
+  mkSecureCurl = import ../../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
 
   sanitizeName = name: builtins.replaceStrings [ " " "-" ] [ "_" "_" ] name;
@@ -18,9 +18,7 @@ let
   mode = cfg.syncMode.sonarr;
 
   getServers = ''
-    EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-      ${authUtil.curlAuthArgs} \
-      "$BASE_URL/api/v1/settings/sonarr")
+    EXISTING_SERVERS=$(${mkSecureCurl cfg.apiKey { url = "$BASE_URL/api/v1/settings/sonarr"; }})
   '';
 
   servers = syncMode.mkPrune {
@@ -41,9 +39,13 @@ let
 
       for server_id in $SERVERS_TO_DELETE; do
         echo "Deleting Sonarr server (ID: $server_id)..."
-        ${pkgs.curl}/bin/curl -sf -X DELETE \
-          ${authUtil.curlAuthArgs} \
-          "$BASE_URL/api/v1/settings/sonarr/$server_id" >/dev/null
+        ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/sonarr/$server_id";
+            method = "DELETE";
+            extraArgs = "-f";
+          }
+        } >/dev/null
       done
     '';
   };
@@ -74,13 +76,15 @@ let
         }')
 
       echo "Testing Sonarr connection..."
-      TEST_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-        --max-time 30 \
-        ${authUtil.curlAuthArgs} \
-        -H "Content-Type: application/json" \
-        -d "$TEST_PAYLOAD" \
-        -w "\n%{http_code}" \
-        "$BASE_URL/api/v1/settings/sonarr/test")
+      TEST_RESPONSE=$(printf '%s' "$TEST_PAYLOAD" | ${
+        mkSecureCurl cfg.apiKey {
+          url = "$BASE_URL/api/v1/settings/sonarr/test";
+          method = "POST";
+          headers."Content-Type" = "application/json";
+          data = "@-";
+          extraArgs = ''--max-time 30 -w "\n%{http_code}"'';
+        }
+      })
 
       TEST_HTTP_CODE=$(echo "$TEST_RESPONSE" | tail -n1)
       TEST_BODY=$(echo "$TEST_RESPONSE" | sed '$d')
@@ -145,9 +149,7 @@ let
       }
 
       # Check if server already exists
-      EXISTING_SERVERS=$(${pkgs.curl}/bin/curl -s \
-        ${authUtil.curlAuthArgs} \
-        "$BASE_URL/api/v1/settings/sonarr")
+      EXISTING_SERVERS=$(${mkSecureCurl cfg.apiKey { url = "$BASE_URL/api/v1/settings/sonarr"; }})
 
       EXISTING_ID=$(echo "$EXISTING_SERVERS" | ${pkgs.jq}/bin/jq -r \
         --arg name ${escapeShellArg sonarrName} '.[] | select(.name == $name) | .id')
@@ -199,12 +201,15 @@ let
 
       if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
         echo "Updating existing Sonarr instance (ID: $EXISTING_ID)..."
-        UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X PUT \
-          ${authUtil.curlAuthArgs} \
-          -H "Content-Type: application/json" \
-          -d "$SERVER_CONFIG" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/settings/sonarr/$EXISTING_ID")
+        UPDATE_RESPONSE=$(printf '%s' "$SERVER_CONFIG" | ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/sonarr/$EXISTING_ID";
+            method = "PUT";
+            headers."Content-Type" = "application/json";
+            data = "@-";
+            extraArgs = ''-w "\n%{http_code}"'';
+          }
+        })
 
         UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
         if [ "$UPDATE_HTTP_CODE" != "200" ] && [ "$UPDATE_HTTP_CODE" != "201" ]; then
@@ -215,12 +220,15 @@ let
         echo "Sonarr instance updated"
       else
         echo "Creating new Sonarr instance..."
-        CREATE_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          ${authUtil.curlAuthArgs} \
-          -H "Content-Type: application/json" \
-          -d "$SERVER_CONFIG" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/v1/settings/sonarr")
+        CREATE_RESPONSE=$(printf '%s' "$SERVER_CONFIG" | ${
+          mkSecureCurl cfg.apiKey {
+            url = "$BASE_URL/api/v1/settings/sonarr";
+            method = "POST";
+            headers."Content-Type" = "application/json";
+            data = "@-";
+            extraArgs = ''-w "\n%{http_code}"'';
+          }
+        })
 
         CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
         if [ "$CREATE_HTTP_CODE" != "200" ] && [ "$CREATE_HTTP_CODE" != "201" ]; then
@@ -279,11 +287,7 @@ in
         set -euo pipefail
 
         BASE_URL="${baseUrl}"
-
-        # Authenticate
-        source ${authUtil.authScript}
         ${optionalString (mode == "refuse") ''
-
           # Read the live servers before any change so a refused sync changes nothing
           ${getServers}
           ${servers.guard}

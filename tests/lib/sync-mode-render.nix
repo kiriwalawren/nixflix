@@ -79,16 +79,12 @@ let
     evaluated:
     let
       cfg = evaluated.config.nixflix.seerr;
-      authUtil = import (src + "/modules/seerr/authUtil.nix") {
-        inherit lib cfg;
-        inherit (evaluated) pkgs;
-      };
     in
     plain
       (import (src + "/modules/seerr/librarySync.nix") {
         inherit lib cfg;
         inherit (evaluated) pkgs;
-      } authUtil.curlAuthArgs).text;
+      } { inherit (cfg) apiKey; }).text;
 
   render =
     modules:

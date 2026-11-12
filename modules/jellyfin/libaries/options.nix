@@ -126,7 +126,13 @@ let
 
       enableRealtimeMonitor = mkOption {
         type = types.bool;
-        default = !config.nixflix.notif.jellyfin.enable;
+        default =
+          !any (s: config.nixflix.notif.jellyfin.${s}.enable) [
+            "sonarr"
+            "sonarr-anime"
+            "radarr"
+            "lidarr"
+          ];
         description = "Monitor the library folders for file changes in real-time";
       };
 

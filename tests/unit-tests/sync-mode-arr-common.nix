@@ -45,6 +45,11 @@ let
       deleteUrl = "/downloadclient/$CLIENT_ID";
     }) (arrs ++ [ "prowlarr" ]);
 
+  # Notif's per-service blocks (#415): the connection is set up on every *arr.
+  allArrBlocks = lib.genAttrs arrs (_: {
+    enable = true;
+  });
+
   arrConfig = svc: port: {
     enable = true;
     config = {
@@ -95,13 +100,14 @@ let
       }
     ];
     notif.extraNotifications = [
-      {
-        enable = true;
-        name = "Ntfy";
-        implementationName = "ntfy.sh";
-        services = arrs;
-        dependencies = [ ];
-      }
+      (
+        {
+          name = "Ntfy";
+          implementationName = "ntfy.sh";
+          dependencies = [ ];
+        }
+        // allArrBlocks
+      )
     ];
   };
 
@@ -391,14 +397,15 @@ let
     scriptsOf (eval {
       syncMode = mode;
       notif.extraNotifications = [
-        {
-          enable = true;
-          name = "Ntfy";
-          implementationName = "ntfy.sh";
-          services = arrs;
-          dependencies = [ ];
-          serverUrl._secret = ntfySecret;
-        }
+        (
+          {
+            name = "Ntfy";
+            implementationName = "ntfy.sh";
+            dependencies = [ ];
+            serverUrl._secret = ntfySecret;
+          }
+          // allArrBlocks
+        )
       ];
     });
   secretNotificationFixtures = notificationFixtures // {
@@ -420,6 +427,42 @@ let
   };
   noSecretInLog = ''
     ! grep -q NTFY-SECRET out.txt err.txt || fail "declared secret leaked into the log"
+  '';
+
+  # #419: the typed ntfy connector's topics can be `_secret` files.
+  ntfyTopicSecret = pkgs.writeText "ntfy-topic" "NTFY-TOPIC-SECRET";
+  ntfyTopicScripts =
+    mode:
+    scriptsOf (eval {
+      syncMode = mode;
+      notif = {
+        extraNotifications = [ ];
+        ntfy = {
+          name = "Ntfy";
+          topics = [ { _secret = ntfyTopicSecret; } ];
+          radarr.enable = true;
+        };
+      };
+    });
+  ntfyTopicFixtures = notificationFixtures // {
+    notification = map (
+      n:
+      if n.id == 1 then
+        n
+        // {
+          fields = [
+            {
+              name = "topics";
+              value = [ ];
+            }
+          ];
+        }
+      else
+        n
+    ) notificationFixtures.notification;
+  };
+  noTopicSecretInLog = ''
+    ! grep -q NTFY-TOPIC-SECRET out.txt err.txt || fail "ntfy topic secret leaked into the log"
   '';
 
   # Live delay profiles holding only the built-in id 1 must never block refuse.
@@ -612,6 +655,38 @@ lib.listToAttrs scenarioTests
           expectLine err.txt 'nixflix:   - Injected Hook (id 3)'
           ${noLeak}
           ${noSecretInLog}
+        '';
+      };
+
+  sync-mode-arr-common-run-notifications-ntfy-topic-secret-keep =
+    runUnit "sync-mode-arr-common-run-notifications-ntfy-topic-secret-keep"
+      {
+        script = (ntfyTopicScripts "keep").radarr-notifications;
+        fixtures = ntfyTopicFixtures;
+        checks = ''
+          [ "$rc" = 0 ] || fail "rc=$rc"
+          ! grep -q '^DELETE' mutated.log || fail "keep deleted something"
+          grep -qFx 'PUT notification/1' mutated.log || fail "declared notification not updated"
+          sed -n '/^PUT notification\/1$/,$p' bodies.log | tail -n +2 \
+            | ${pkgs.jq}/bin/jq -e '.fields[] | select(.name == "topics") | .value | tostring | contains("NTFY-TOPIC-SECRET")' >/dev/null \
+            || fail "topic secret not resolved into the PUT body"
+          expectLine out.txt 'nixflix: radarr-notifications: keeping 1 undeclared notifications (nixflix.radarr.syncMode.notifications = "keep"): Injected Hook'
+          ${noLeak}
+          ${noTopicSecretInLog}
+        '';
+      };
+
+  sync-mode-arr-common-run-notifications-ntfy-topic-secret-refuse =
+    runUnit "sync-mode-arr-common-run-notifications-ntfy-topic-secret-refuse"
+      {
+        script = (ntfyTopicScripts "refuse").radarr-notifications;
+        fixtures = ntfyTopicFixtures;
+        checks = ''
+          [ "$rc" = 78 ] || fail "expected rc 78, got $rc"
+          [ ! -s mutated.log ] || fail "refuse mutated the service"
+          expectLine err.txt 'nixflix:   - Injected Hook (id 3)'
+          ${noLeak}
+          ${noTopicSecretInLog}
         '';
       };
 }

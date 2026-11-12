@@ -114,6 +114,25 @@ in
         collectionOption = "nixflix.seerr.sonarr";
       };
 
+      notifications =
+        syncMode.mkModeOption {
+          inherit config;
+          what = "enabled Seerr notification agents";
+          collectionOption = "nixflix.notif.<connector>.seerr";
+        }
+        // {
+          description = ''
+            What `seerr-notifications` does with Seerr notification agents
+            (discord, email, ntfy, ...) that are enabled in Seerr but not
+            targeted by any `nixflix.notif.<connector>.seerr` block. Agents are
+            disabled rather than deleted. Defaults to `nixflix.syncMode`
+            (`"delete"` unless set); setting this overrides it for these agents
+            only.
+
+            ${syncMode.modesDescription}
+          '';
+        };
+
       jellyfinLibraries =
         syncMode.mkModeOption {
           inherit config;

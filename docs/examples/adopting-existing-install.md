@@ -156,6 +156,7 @@ the global for that collection only. `<arr>` is `radarr`, `sonarr`,
 | `nixflix.seerr.syncMode.radarr` | Radarr servers (see the name-matching caveat) | `seerr-radarr` |
 | `nixflix.seerr.syncMode.sonarr` | Sonarr servers (see the name-matching caveat) | `seerr-sonarr` |
 | `nixflix.seerr.syncMode.jellyfinLibraries` | enabled Jellyfin libraries that do not match `nixflix.seerr.jellyfin.libraryFilter` (disabled, not deleted; only with `enableAllLibraries = false`) | `seerr-libraries` |
+| `nixflix.seerr.syncMode.notifications` | Seerr notification agents (Discord, email, ntfy, ...) that are enabled in Seerr but not targeted by a `nixflix.notif.<connector>.seerr` block (disabled, not deleted) | `seerr-notifications` |
 | `nixflix.jellyfin.syncMode.libraries` | libraries nixflix created earlier (tracked in its state file), and the recreate of a declared library whose `collectionType` differs | `jellyfin-libraries` |
 | `nixflix.jellyfin.syncMode.libraryPaths` | paths of declared libraries | `jellyfin-libraries` |
 | `nixflix.jellyfin.syncMode.plugins` | plugin directories nixflix installed earlier (state file) | `jellyfin-plugins` |

@@ -7,19 +7,20 @@
 with lib;
 let
   secrets = import ../../lib/secrets { inherit lib; };
+  notifLib = import ./lib.nix { inherit lib secrets; };
+  inherit (notifLib) resolveFor;
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   cfg = config.nixflix.notif;
 
-  allNotifications = filter (n: n.enable) (
+  allNotifications =
     builtins.attrValues (
       builtins.removeAttrs cfg [
         "extraNotifications"
         "enable"
       ]
     )
-    ++ cfg.extraNotifications
-  );
+    ++ cfg.extraNotifications;
 
   arrServices = [
     "sonarr"
@@ -28,18 +29,10 @@ let
     "lidarr"
   ];
 
-  triggerServiceKey = serviceName: if serviceName == "sonarr-anime" then "sonarr" else serviceName;
-
-  notifTriggers = import ./triggers.nix;
-
-  allTriggerKeys = unique (
-    concatMap (t: t.valid) (collect (x: x ? valid && x ? default) notifTriggers)
-  );
-
-  notificationsFor = serviceName: filter (n: elem serviceName n.services) allNotifications;
+  notificationsFor = serviceName: filter (n: n.${serviceName}.enable or false) allNotifications;
 
   notificationDependencies =
-    serviceName: unique (concatMap (n: n.dependencies) (notificationsFor serviceName));
+    serviceName: unique (concatMap (n: n.dependencies or [ ]) (notificationsFor serviceName));
 
   mkNotificationsService =
     serviceName:
@@ -50,9 +43,9 @@ let
 
       notifications = map (
         n:
-        builtins.removeAttrs n [
-          "services"
+        builtins.removeAttrs (resolveFor serviceName n) [
           "dependencies"
+          "enable"
         ]
       ) (notificationsFor serviceName);
 
@@ -138,27 +131,86 @@ let
             }
           })
 
+          ${notificationsGuard}TAGS_FILE=$(mktemp)
+          trap 'rm -f "$TAGS_FILE"' EXIT
+          ${optionalString (concatMap (n: n.tags or [ ]) notifications != [ ]) ''
+            echo "Fetching tags..."
+            ${
+              mkSecureCurl serviceConfig.apiKey {
+                url = "$BASE_URL/tag";
+                extraArgs = "-S";
+              }
+            } > "$TAGS_FILE"
+          ''}
+
+          resolve_tag_id() {
+            local label="$1"
+            local id
+            id=$(${pkgs.jq}/bin/jq -r --arg label "$label" '.[] | select(.label == $label) | .id' "$TAGS_FILE")
+            if [ -z "$id" ]; then
+              echo "Creating tag $label..." >&2
+              local payload
+              payload=$(${pkgs.jq}/bin/jq -n --arg label "$label" '{label: $label}')
+              local created
+              created=$(${
+                mkSecureCurl serviceConfig.apiKey {
+                  url = "$BASE_URL/tag";
+                  method = "POST";
+                  headers = {
+                    "Content-Type" = "application/json";
+                  };
+                  data = "$payload";
+                  extraArgs = "-Sf";
+                }
+              })
+              id=$(echo "$created" | ${pkgs.jq}/bin/jq -r '.id')
+              ${pkgs.jq}/bin/jq --argjson tag "$created" '. + [$tag]' "$TAGS_FILE" > "$TAGS_FILE.new"
+              mv "$TAGS_FILE.new" "$TAGS_FILE"
+            fi
+            echo "$id"
+          }
+
           # Build list of configured notification names
           CONFIGURED_NAMES=$(cat <<'EOF'
           ${builtins.toJSON (map (n: n.name) notifications)}
           EOF
           )
 
-          ${notificationsGuard}${notificationsSync.prune}
+          ${notificationsSync.prune}
           ${concatMapStringsSep "\n" (
             notificationConfig:
             let
               notificationName = notificationConfig.name;
               inherit (notificationConfig) implementationName;
-              allOverrides = builtins.removeAttrs notificationConfig [
-                "implementationName"
-                "triggers"
-              ];
-              fieldOverrides = filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides;
+              supportedTriggers = notificationConfig._supportedTriggers or { };
+              triggerNames =
+                if notificationConfig ? _supportedTriggers then
+                  concatLists (attrValues supportedTriggers)
+                else
+                  filter (name: match "on[A-Z].*" name != null) (attrNames notificationConfig);
+              allOverrides = builtins.removeAttrs notificationConfig (
+                [
+                  "implementationName"
+                  "triggers"
+                  "tags"
+                ]
+                ++ triggerNames
+                ++ notificationConfig._omitFields or [ ]
+              );
+              fieldRenames = notificationConfig._fieldRenames or { };
+              fieldOverrides = mapAttrs' (name: nameValuePair (fieldRenames.${name} or name)) (
+                filterAttrs (name: value: value != null && !hasPrefix "_" name) allOverrides
+              );
+              tagLabels = notificationConfig.tags or [ ];
               fieldOverridesJson = builtins.toJSON (secrets.stripSecretRefs fieldOverrides);
               jqSecrets = secrets.mkNestedJqSecretArgs fieldOverrides;
 
-              enabledTriggers = notificationConfig.triggers.${triggerServiceKey serviceName} or [ ];
+              enabledTriggers = filter (t: notificationConfig.${t} or false == true) (
+                if notificationConfig ? _supportedTriggers then
+                  supportedTriggers.${serviceName} or [ ]
+                else
+                  triggerNames
+              );
             in
             ''
               echo "Processing notification: ${notificationName}"
@@ -170,11 +222,19 @@ let
                 echo "$notification_json" | ${pkgs.jq}/bin/jq \
                   ${jqSecrets.flagsString} \
                   --argjson overrides "$overrides" \
-                  --argjson triggerKeys ${escapeShellArg (builtins.toJSON allTriggerKeys)} \
+                  --argjson tagIds "$TAG_IDS" \
                   --argjson enabledTriggers ${escapeShellArg (builtins.toJSON enabledTriggers)} '
                     ${optionalString jqSecrets.hasSecrets "($overrides | ${concatStringsSep " | " jqSecrets.assignments}) as $overrides |"}
-                    . + $overrides
-                    | reduce $triggerKeys[] as $t (.; .[$t] = ($enabledTriggers | index($t) != null))
+                    [.fields[].name] as $fieldNames
+                    | . + ($overrides | with_entries(select(.key as $k | $fieldNames | index($k) == null)))
+                    | with_entries(
+                        if (.key | test("^on[A-Z]")) then
+                          .value = (.key as $k | $enabledTriggers | index($k) != null)
+                        else
+                          .
+                        end
+                      )
+                    | .tags = $tagIds
                     | .fields[] |= (
                         . as $field |
                         if $overrides[$field.name] != null then
@@ -187,6 +247,11 @@ let
               }
 
               FIELD_OVERRIDES=${escapeShellArg fieldOverridesJson}
+
+              TAG_IDS='[]'
+              ${concatMapStringsSep "\n" (label: ''
+                TAG_IDS=$(echo "$TAG_IDS" | ${pkgs.jq}/bin/jq -c --argjson id "$(resolve_tag_id ${escapeShellArg label})" '. + [$id]')
+              '') tagLabels}
 
               EXISTING_NOTIFICATION=$(echo "$NOTIFICATIONS" | ${pkgs.jq}/bin/jq -r --arg name ${escapeShellArg notificationName} '.[] | select(.name == $name) | @json' || echo "")
 
@@ -272,7 +337,10 @@ let
   ) arrServices;
 in
 {
-  imports = [ ./options.nix ];
+  imports = [
+    ./options.nix
+    ./seerr.nix
+  ];
 
   # Declared per *arr service rather than under nixflix.notif, whose
   # attributes are all treated as notifications.
@@ -284,14 +352,63 @@ in
     };
   });
 
-  config = mkIf (config.nixflix.enable && cfg.enable) {
-    assertions = [
-      {
-        assertion = !cfg.ntfy.enable || cfg.ntfy.topics != [ ];
-        message = "nixflix.notif.ntfy.enable requires at least one nixflix.notif.ntfy.topics entry.";
-      }
-    ];
+  config = mkMerge [
+    {
+      assertions =
+        concatMap (
+          n:
+          let
+            entry = "`nixflix.notif.extraNotifications` entry `${n.name or n.implementationName or "unnamed"}`";
+            useBlocks = "Set `enable = true` and the triggers in the block of each service to target instead, for example `radarr = { enable = true; onGrab = true; };`.";
+          in
+          [
+            {
+              assertion = !(n ? enable);
+              message = "`enable` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? services);
+              message = "`services` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? triggers);
+              message = "`triggers` has been removed from ${entry}. ${useBlocks}";
+            }
+            {
+              assertion = !(n ? seerr);
+              message = "Seerr supports one configuration per notification agent, so ${entry} cannot target Seerr. Use `nixflix.notif.<connector>.seerr` instead.";
+            }
+          ]
+        ) cfg.extraNotifications
+        ++ concatLists (
+          mapAttrsToList
+            (
+              connector: n:
+              mapAttrsToList (opt: instructions: {
+                assertion = n.${opt} == null;
+                message = "The option `nixflix.notif.${connector}.${opt}' has been removed. ${
+                  replaceStrings [ "<connector>" ] [ connector ] instructions
+                }";
+              }) n._removedOptions
+            )
+            (
+              removeAttrs cfg [
+                "enable"
+                "extraNotifications"
+              ]
+            )
+        );
+    }
 
-    systemd.services = mkMerge (map mkNotificationsService enabledArrServices);
-  };
+    (mkIf (config.nixflix.enable && cfg.enable) {
+      assertions = [
+        {
+          assertion = !any (s: cfg.ntfy.${s}.enable) arrServices || cfg.ntfy.topics != [ ];
+          message = "nixflix.notif.ntfy needs at least one nixflix.notif.ntfy.topics entry when a Starr service block is enabled.";
+        }
+      ];
+
+      systemd.services = mkMerge (map mkNotificationsService enabledArrServices);
+    })
+  ];
 }

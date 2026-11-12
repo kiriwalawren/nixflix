@@ -3,8 +3,12 @@
   pkgs,
   cfg,
 }:
-curlAuthArgs:
+{
+  apiKey ? null,
+  extraArgs ? "",
+}:
 let
+  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
   syncMode = import ../../lib/sync-mode.nix { inherit lib pkgs; };
   mode = cfg.syncMode.jellyfinLibraries;
 
@@ -31,11 +35,15 @@ let
             '($enableIds | split(",")) as $enabled | .[] | .id as $id | "\($id) \($enabled | index($id) != null)"' |
           while read -r LIB_ID LIB_ENABLED; do
             BODY=$(${pkgs.jq}/bin/jq -n --argjson enabled "$LIB_ENABLED" '{enabled: $enabled}')
-            ENABLE_HTTP_CODE=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" -X PUT \
-              ${curlAuthArgs} \
-              -H "Content-Type: application/json" \
-              -d "$BODY" \
-              "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID")
+            ENABLE_HTTP_CODE=$(printf '%s' "$BODY" | ${
+              mkSecureCurl apiKey {
+                url = "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID";
+                method = "PUT";
+                headers."Content-Type" = "application/json";
+                data = "@-";
+                extraArgs = ''${extraArgs} -o /dev/null -w "%{http_code}"'';
+              }
+            })
             checkResponse "enable" "$ENABLE_HTTP_CODE"
           done
           echo "Libraries enabled successfully"
@@ -63,12 +71,15 @@ let
             --arg enableIds "$LIBRARY_IDS" \
             '($enableIds | split(",")) as $enabled | .[] | select(.id as $id | $enabled | any(. == $id)) | .id' |
           while read -r LIB_ID; do
-            BODY=$(${pkgs.jq}/bin/jq -n '{enabled: true}')
-            ENABLE_HTTP_CODE=$(${pkgs.curl}/bin/curl -s -o /dev/null -w "%{http_code}" -X PUT \
-              ${curlAuthArgs} \
-              -H "Content-Type: application/json" \
-              -d "$BODY" \
-              "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID")
+            ENABLE_HTTP_CODE=$(printf '%s' '{"enabled":true}' | ${
+              mkSecureCurl apiKey {
+                url = "$BASE_URL/api/v1/settings/jellyfin/library/$LIB_ID";
+                method = "PUT";
+                headers."Content-Type" = "application/json";
+                data = "@-";
+                extraArgs = ''${extraArgs} -o /dev/null -w "%{http_code}"'';
+              }
+            })
             checkResponse "enable" "$ENABLE_HTTP_CODE"
           done
           echo "Libraries enabled successfully"
@@ -90,9 +101,13 @@ pkgs.writeShellScript "seerr-library-sync" ''
   }
 
   echo "Fetching library list from Jellyfin..."
-  FETCH_RESPONSE=$(${pkgs.curl}/bin/curl -s -w "\n%{http_code}" -X POST \
-    ${curlAuthArgs} \
-    "$BASE_URL/api/v1/settings/jellyfin/library/sync")
+  FETCH_RESPONSE=$(${
+    mkSecureCurl apiKey {
+      url = "$BASE_URL/api/v1/settings/jellyfin/library/sync";
+      method = "POST";
+      extraArgs = ''${extraArgs} -w "\n%{http_code}"'';
+    }
+  })
 
   FETCH_HTTP_CODE=$(echo "$FETCH_RESPONSE" | tail -n1)
   LIBRARIES_RESPONSE=$(echo "$FETCH_RESPONSE" | head -n-1)

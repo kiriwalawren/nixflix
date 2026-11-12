@@ -54,17 +54,13 @@ let
       cfg = config.nixflix.seerr;
       evalPkgs = evaluated.pkgs;
       svcs = config.systemd.services;
-      authUtil = import ../../modules/seerr/authUtil.nix {
-        inherit lib cfg;
-        pkgs = evalPkgs;
-      };
       librarySync = import ../../modules/seerr/librarySync.nix {
         inherit lib cfg;
         pkgs = evalPkgs;
-      } authUtil.curlAuthArgs;
+      } { inherit (cfg) apiKey; };
     in
     {
-      inherit cfg evalPkgs authUtil;
+      inherit cfg evalPkgs;
       radarr = svcs.seerr-radarr.script;
       sonarr = svcs.seerr-sonarr.script;
       librariesUnit = svcs.seerr-libraries.script;
@@ -123,11 +119,13 @@ let
         -o) out=$2; shift 2 ;;
         -w) wfmt=$2; shift 2 ;;
         -d) data=$2; shift 2 ;;
-        -H | --header | --max-time) shift 2 ;;
+        -H | --header | --max-time | --variable | --expand-header) shift 2 ;;
         -*) shift ;;
         *) url=$1; shift ;;
       esac
     done
+    # mkSecureCurl sends bodies as `-d @-` on stdin.
+    if [ "$data" = "@-" ]; then data=$(cat); fi
     path=''${url#"$BASE_URL"}
     printf '%s %s %s\n' "$method" "$path" "$(printf '%s' "$data" | ${pkgs.jq}/bin/jq -cS . 2>/dev/null)" >> "$CURL_LOG"
     case "$method $path" in
@@ -166,11 +164,10 @@ let
         lib.replaceStrings
           [
             "${r.evalPkgs.curl}/bin/curl"
-            "source ${r.authUtil.authScript}"
             "/run/credentials/seerr-radarr.service"
             "/run/credentials/seerr-sonarr.service"
           ]
-          [ "${fakeCurl}" ":" "${credentials}" "${credentials}" ]
+          [ "${fakeCurl}" "${credentials}" "${credentials}" ]
           script;
       scriptFile = pkgs.writeText "${name}.sh" ''
         set -euo pipefail
@@ -255,18 +252,21 @@ in
       radarr = "delete";
       sonarr = "delete";
       jellyfinLibraries = "delete";
+      notifications = "delete";
     }
     &&
       globalKeep.cfg.syncMode == {
         radarr = "keep";
         sonarr = "keep";
         jellyfinLibraries = "keep";
+        notifications = "keep";
       }
     &&
       globalRefuse.cfg.syncMode == {
         radarr = "refuse";
         sonarr = "refuse";
         jellyfinLibraries = "refuse";
+        notifications = "refuse";
       }
   );
 
@@ -306,7 +306,7 @@ in
     && !lib.hasInfix "-X DELETE" globalKeep.sonarr
     && !lib.hasInfix libraryDeleteLoop globalKeep.libraries
     && !lib.hasInfix "LIB_ENABLED" globalKeep.libraries
-    && lib.hasInfix "{enabled: true}" globalKeep.libraries
+    && lib.hasInfix "'{\"enabled\":true}'" globalKeep.libraries
     && !lib.hasInfix "nixflix-sync-guard" globalKeep.radarr
   );
 
