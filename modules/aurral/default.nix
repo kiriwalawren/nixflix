@@ -13,6 +13,7 @@ let
 in
 {
   imports = [
+    ./lidarr.nix
     ./oidc.nix
     ./setupService.nix
     ./users
@@ -67,6 +68,13 @@ in
           description = "Directory where completed downloads are stored.";
         };
 
+        apiKey = secrets.mkSecretOption {
+          description = ''
+            API key for the Aurral API, passed to Aurral as `AURRAL_API_KEY`.
+            Must be at least 32 characters.
+          '';
+        };
+
         subdomain = mkOption {
           type = types.str;
           default = "aurral";
@@ -109,13 +117,13 @@ in
               defaultText = literalExpression ''
                 "http://''${config.nixflix.lidarr.connectionAddress}:''${toString config.nixflix.lidarr.config.hostConfig.port}''${config.nixflix.lidarr.config.hostConfig.urlBase}"
               '';
-              description = "URL Aurral uses to connect to Lidarr during onboarding.";
+              description = "URL Aurral uses to connect to Lidarr. Only used when `nixflix.lidarr.enable = true`.";
             };
 
             apiKey = secrets.mkSecretOption {
               default = config.nixflix.lidarr.config.apiKey;
               defaultText = literalExpression "config.nixflix.lidarr.config.apiKey";
-              description = "Lidarr API key used by Aurral during onboarding.";
+              description = "Lidarr API key used by Aurral. Only used when `nixflix.lidarr.enable = true`.";
             };
 
             defaultMonitorOption = mkOption {
@@ -180,6 +188,7 @@ in
     (optionalAttrs (options ? services.aurral) {
       services.aurral =
         (builtins.removeAttrs cfg [
+          "apiKey"
           "connectionAddress"
           "downloadsDir"
           "oidc"
@@ -203,8 +212,8 @@ in
           message = "At least one Aurral user must have role = \"admin\".";
         }
         {
-          assertion = config.nixflix.lidarr.enable;
-          message = "Aurral requires Lidarr. Set `nixflix.lidarr.enable = true`.";
+          assertion = secrets.isSecretRef cfg.apiKey || stringLength (trim cfg.apiKey) >= 32;
+          message = "`nixflix.aurral.apiKey` must be at least 32 characters; Aurral refuses to start otherwise.";
         }
         {
           assertion = options ? services.aurral;
@@ -237,14 +246,14 @@ in
         };
       };
     }
-    (mkIf cfg.oidc.enable {
+    {
       systemd.tmpfiles.settings."10-aurral"."/run/aurral".d = {
         mode = "0755";
         inherit (cfg) user group;
       };
 
       systemd.services.aurral-env = {
-        description = "Create Aurral OIDC environment file";
+        description = "Create Aurral API key environment file";
         after = [ "nixflix-setup-dirs.service" ];
         requires = [ "nixflix-setup-dirs.service" ];
 
@@ -255,19 +264,19 @@ in
 
         script = ''
           set -euo pipefail
-          cat > /run/aurral/env <<EOF
-          OIDC_CLIENT_ID=${secrets.toShellValue cfg.oidc.clientId}
-          OIDC_CLIENT_SECRET=${secrets.toShellValue cfg.oidc.clientSecret}
+          cat > /run/aurral/api-key.env <<EOF
+          AURRAL_API_KEY=${secrets.toShellValue cfg.apiKey}
           EOF
-          chown ${cfg.user}:${cfg.group} /run/aurral/env
-          chmod 0400 /run/aurral/env
+          chown ${cfg.user}:${cfg.group} /run/aurral/api-key.env
+          chmod 0400 /run/aurral/api-key.env
         '';
       };
 
       systemd.services.aurral = {
         after = [ "aurral-env.service" ];
         requires = [ "aurral-env.service" ];
+        serviceConfig.EnvironmentFile = [ "/run/aurral/api-key.env" ];
       };
-    })
+    }
   ]);
 }

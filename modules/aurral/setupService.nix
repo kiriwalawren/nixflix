@@ -26,7 +26,6 @@ let
 
   jqSecrets = secrets.mkJqSecretArgs {
     authPassword = if firstAdminUser != null then firstAdminUser.password else null;
-    lidarrApiKey = cfg.settings.lidarr.apiKey;
   };
 in
 {
@@ -42,14 +41,8 @@ in
 
     systemd.services.aurral-setup = {
       description = "Complete Aurral onboarding";
-      after = [
-        "aurral.service"
-        "lidarr-config.service"
-      ];
-      requires = [
-        "aurral.service"
-        "lidarr-config.service"
-      ];
+      after = [ "aurral.service" ];
+      requires = [ "aurral.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -82,53 +75,14 @@ in
           exit 0
         fi
 
-        echo "Fetching Lidarr profiles..."
-        PROFILES_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
-          ${jqSecrets.flagsString} \
-          --arg url ${escapeShellArg cfg.settings.lidarr.url} \
-          '{ url: $url, apiKey: ${jqSecrets.refs.lidarrApiKey} }')
-
-        PROFILES_RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -d "$PROFILES_PAYLOAD" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/onboarding/lidarr/profiles")
-
-        PROFILES_HTTP_CODE=$(echo "$PROFILES_RESPONSE" | tail -n1)
-        PROFILES_BODY=$(echo "$PROFILES_RESPONSE" | sed '$d')
-
-        if [ "$PROFILES_HTTP_CODE" != "200" ]; then
-          echo "Failed to fetch Lidarr profiles (HTTP $PROFILES_HTTP_CODE)" >&2
-          echo "$PROFILES_BODY" >&2
-          exit 1
-        fi
-
-        PROFILE_ID=$(echo "$PROFILES_BODY" | ${pkgs.jq}/bin/jq -r '.[0].id')
-        if [ -z "$PROFILE_ID" ] || [ "$PROFILE_ID" = "null" ]; then
-          echo "Could not determine a Lidarr profile ID from the response" >&2
-          exit 1
-        fi
-        echo "Using Lidarr profile ID: $PROFILE_ID"
-
         echo "Completing Aurral onboarding..."
         ONBOARDING_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
           ${jqSecrets.flagsString} \
           --arg authUser ${escapeShellArg firstAdminUser.username} \
-          --arg lidarrUrl ${escapeShellArg cfg.settings.lidarr.url} \
-          --arg defaultMonitorOption ${escapeShellArg cfg.settings.lidarr.defaultMonitorOption} \
-          --argjson profileId "$PROFILE_ID" \
           '{
             authUser: $authUser,
             authPassword: ${jqSecrets.refs.authPassword},
-            security: { localNetworkBypass: { enabled: ${boolToString cfg.settings.security.localNetworkBypass.enabled} } },
-            lidarr: {
-              url: $lidarrUrl,
-              apiKey: ${jqSecrets.refs.lidarrApiKey},
-              qualityProfileId: $profileId,
-              metadataProfileId: $profileId,
-              defaultMonitorOption: $defaultMonitorOption,
-              searchOnAdd: ${boolToString cfg.settings.lidarr.searchOnAdd}
-            }
+            security: { localNetworkBypass: { enabled: ${boolToString cfg.settings.security.localNetworkBypass.enabled} } }
           }')
 
         RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \

@@ -6,6 +6,7 @@
 let
   testUsername = "admin";
   testPassword = "TestPassword!@#$%^&*";
+  testApiKey = "abcd1234abcd1234abcd1234abcd1234";
 in
 pkgs.testers.runNixOSTest {
   name = "aurral-basic-test";
@@ -36,6 +37,7 @@ pkgs.testers.runNixOSTest {
 
       aurral = {
         enable = true;
+        apiKey._secret = pkgs.writeText "aurral-apikey" testApiKey;
 
         settings.users.admin = {
           username = testUsername;
@@ -57,6 +59,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("aurral.service", timeout=180)
     machine.wait_for_open_port(port, timeout=180)
     machine.wait_for_unit("aurral-setup.service", timeout=180)
+    machine.wait_for_unit("aurral-lidarr.service", timeout=180)
 
     base_url = f"http://127.0.0.1:{port}"
 
@@ -73,6 +76,23 @@ pkgs.testers.runNixOSTest {
         f"-d '{login_payload}' {base_url}/api/auth/login"
     )
     print(f"Login response: {login_response}")
+
+    print("Checking the declarative API key authenticates and is env-managed...")
+    api_key_json = machine.succeed(
+        f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/auth/api-key"
+    )
+    api_key = json.loads(api_key_json)
+    assert api_key == {"apiKey": "${testApiKey}", "managedByEnv": True}, \
+        f"Expected AURRAL_API_KEY to be in use, got {api_key}"
+
+    print("Checking aurral-lidarr configured Lidarr through the settings API...")
+    settings = json.loads(machine.succeed(
+        f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/settings"
+    ))
+    lidarr = settings["integrations"]["lidarr"]
+    assert lidarr.get("enabled") is not False, f"Expected Lidarr enabled, got {lidarr}"
+    assert lidarr.get("qualityProfileId"), f"Expected a quality profile ID, got {lidarr}"
+    assert lidarr.get("metadataProfileId"), f"Expected a metadata profile ID, got {lidarr}"
 
     print("All Aurral login assertions passed!")
   '';

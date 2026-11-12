@@ -129,7 +129,7 @@ in
         inherit (cfg) user group;
       };
 
-      systemd.services.aurral-env = {
+      systemd.services.aurral-oidc-env = {
         description = "Create Aurral OIDC environment file";
         after = [ "nixflix-setup-dirs.service" ];
         requires = [ "nixflix-setup-dirs.service" ];
@@ -151,8 +151,8 @@ in
       };
 
       systemd.services.aurral = {
-        after = [ "aurral-env.service" ];
-        requires = [ "aurral-env.service" ];
+        after = [ "aurral-oidc-env.service" ];
+        requires = [ "aurral-oidc-env.service" ];
       };
     }
     // optionalAttrs (options ? services.aurral) {
