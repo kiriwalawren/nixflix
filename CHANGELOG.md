@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `nixflix.notif.ntfy.topics` accepts `{ _secret = ...; }` entries ([#418](https://github.com/kiriwalawren/nixflix/issues/418))
+
 ## [5.0.0] - 2026-11-11
 
 ### Breaking
