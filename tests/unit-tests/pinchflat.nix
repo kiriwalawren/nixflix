@@ -256,14 +256,16 @@ in
         "The Open Movie Database"
       ];
       noRemote = o: o.metadataFetchers == [ ] && !(lib.any (f: builtins.elem f remote) o.imageFetchers);
-      mediaDirRule =
-        config.config.systemd.tmpfiles.settings."10-pinchflat".${config.config.nixflix.pinchflat.mediaDir}.d;
+      rules = config.config.systemd.tmpfiles.settings."10-pinchflat";
+      mediaDirRule = rules."/data/media/youtube".d;
+      showsDirRule = rules."/data/media/youtube/shows".d;
+      inherit (config.config.nixflix.globals) libraryOwner;
     in
     pkgs.runCommand "unit-test-pinchflat-jellyfin-youtube-library" { } ''
       ${check "YouTube library exists" (libraries ? YouTube)}
       ${check "YouTube library is a TV shows library" (youtube.collectionType == "tvshows")}
-      ${check "YouTube library points at the Pinchflat media dir" (
-        youtube.paths == [ "/data/media/youtube" ]
+      ${check "YouTube library points at the Media Center preset's /shows folder" (
+        youtube.paths == [ "/data/media/youtube/shows" ]
       )}
       ${check "YouTube library watches the folder for new downloads" youtube.enableRealtimeMonitor}
       # A type with no typeOptions entry falls back to Jellyfin's defaults,
@@ -284,6 +286,13 @@ in
         config.config.users.users.jellyfin.group == config.config.nixflix.pinchflat.group
         && mediaDirRule.group == config.config.users.users.jellyfin.group
         && mediaDirRule.mode == "0775"
+      )}
+      # Otherwise jellyfin-libraries' `mkdir -p` creates it root-owned and Pinchflat can't write there
+      ${check "tmpfiles creates the /shows folder like the media dir" (
+        showsDirRule.user == libraryOwner.user
+        && showsDirRule.group == libraryOwner.group
+        && showsDirRule.mode == "0775"
+        && showsDirRule == mediaDirRule
       )}
       echo 'PASS: pinchflat-jellyfin-youtube-library' > $out
     '';
@@ -329,7 +338,25 @@ in
       };
     in
     assertTest "pinchflat-jellyfin-youtube-library-custom-media-dir" (
+      config.config.nixflix.jellyfin.libraries.YouTube.paths == [ "/srv/youtube/shows" ]
+      && config.config.nixflix.pinchflat.showsDir == "/srv/youtube/shows"
+      && config.config.systemd.tmpfiles.settings."10-pinchflat" ? "/srv/youtube/shows"
+    );
+
+  # A template without the /shows prefix: showsDir == mediaDir must not define the rule twice
+  pinchflat-jellyfin-youtube-library-shows-dir-override =
+    let
+      config = jellyfinWithPinchflat {
+        enable = true;
+        mediaDir = "/srv/youtube";
+        showsDir = "/srv/youtube";
+      };
+      rules = config.config.systemd.tmpfiles.settings."10-pinchflat";
+    in
+    assertTest "pinchflat-jellyfin-youtube-library-shows-dir-override" (
       config.config.nixflix.jellyfin.libraries.YouTube.paths == [ "/srv/youtube" ]
+      && builtins.attrNames rules == [ "/srv/youtube" ]
+      && rules."/srv/youtube".d.mode == "0775"
     );
 
   pinchflat-jellyfin-youtube-library-realtime-monitor-overridable =

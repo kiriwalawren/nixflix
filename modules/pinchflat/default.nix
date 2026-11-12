@@ -73,6 +73,20 @@ in
           description = "Directory into which Pinchflat downloads videos.";
         };
 
+        showsDir = lib.mkOption {
+          type = lib.types.str;
+          default = "${config.nixflix.pinchflat.mediaDir}/shows";
+          defaultText = lib.literalExpression ''"''${config.nixflix.pinchflat.mediaDir}/shows"'';
+          example = "/data/media/youtube";
+          description = ''
+            Folder that holds one subfolder per channel, which the Jellyfin
+            `YouTube` library points at. The default matches the output path
+            template of Pinchflat's "Media Center" media profile preset
+            (`/shows/<channel>/...`), so that preset works unchanged. Set it to
+            `nixflix.pinchflat.mediaDir` if your template has no `/shows` prefix.
+          '';
+        };
+
         selfhosted = lib.mkOption {
           type = lib.types.bool;
           default = false;
@@ -168,6 +182,7 @@ in
           [
             "connectionAddress"
             "reverseProxy"
+            "showsDir"
             "subdomain"
             "vpn"
           ]
@@ -186,10 +201,19 @@ in
             };
           };
 
-          tmpfiles.settings."10-pinchflat"."${cfg.mediaDir}".d = {
-            inherit (globals.libraryOwner) user group;
-            mode = "0775";
-          };
+          # showsDir too, or jellyfin-libraries' `mkdir -p` would create it root-owned 0755
+          tmpfiles.settings."10-pinchflat" =
+            lib.genAttrs
+              (lib.unique [
+                cfg.mediaDir
+                cfg.showsDir
+              ])
+              (_: {
+                d = {
+                  inherit (globals.libraryOwner) user group;
+                  mode = "0775";
+                };
+              });
         };
 
         users = {

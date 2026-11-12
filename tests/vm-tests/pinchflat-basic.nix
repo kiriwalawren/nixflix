@@ -10,8 +10,9 @@ pkgs.testers.runNixOSTest {
     imports = [ nixosModules ];
 
     virtualisation = {
-      diskSize = 2 * 1024;
-      memorySize = 2048;
+      diskSize = 3 * 1024;
+      memorySize = 4096;
+      cores = 4;
     };
 
     nixflix = {
@@ -26,6 +27,16 @@ pkgs.testers.runNixOSTest {
       pinchflat = {
         enable = true;
         selfhosted = true;
+      };
+
+      # Exercises the YouTube library: jellyfin-libraries `mkdir -p`s its path as root
+      jellyfin = {
+        enable = true;
+        apiKey._secret = pkgs.writeText "jellyfin-apikey" "jellyfinApiKey1111111111111111111";
+        users.admin = {
+          password._secret = pkgs.writeText "admin_password" "321password";
+          policy.isAdministrator = true;
+        };
       };
     };
   };
@@ -58,6 +69,26 @@ pkgs.testers.runNixOSTest {
 
     print("Checking the media directory is writable by the service user...")
     machine.succeed("runuser -u pinchflat -- touch /data/media/youtube/.write-test")
+
+    print("Checking the Media Center /shows folder ownership...")
+    shows_owner = machine.succeed("stat -c '%U:%G %a' /data/media/youtube/shows").strip()
+    assert shows_owner == "root:media 775", f"Expected /data/media/youtube/shows to be root:media 775, got {shows_owner}"
+    machine.succeed("runuser -u pinchflat -- mkdir -p '/data/media/youtube/shows/Some Channel/Season 2026'")
+
+    print("Checking the Jellyfin YouTube library points at /shows...")
+    machine.wait_for_unit("jellyfin-libraries.service", timeout=600)
+    machine.succeed("systemctl is-active jellyfin-libraries.service")
+    import json
+    api_token = machine.succeed("cat /run/jellyfin/auth-token").strip()
+    libraries = json.loads(machine.succeed(
+        f'curl -sf -H "Authorization: {api_token}" http://127.0.0.1:8096/Library/VirtualFolders'
+    ))
+    youtube = [lib for lib in libraries if lib["Name"] == "YouTube"]
+    assert len(youtube) == 1, f"Expected one YouTube library, got {libraries}"
+    assert youtube[0]["Locations"] == ["/data/media/youtube/shows"], f"Unexpected YouTube locations: {youtube[0]['Locations']}"
+    assert youtube[0]["CollectionType"] == "tvshows", f"Unexpected CollectionType: {youtube[0].get('CollectionType')}"
+    shows_owner = machine.succeed("stat -c '%U:%G %a' /data/media/youtube/shows").strip()
+    assert shows_owner == "root:media 775", f"jellyfin-libraries changed /shows to {shows_owner}"
 
     print("Checking Pinchflat via the reverse proxy...")
     machine.wait_for_unit("nginx.service", timeout=120)

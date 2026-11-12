@@ -225,16 +225,17 @@ This example shows a working media server configuration based on a real producti
 - "Shows" library pointing to Sonarr's media directories
 - "Movies" library pointing to Radarr's media directory
 - "Music" library pointing to Lidarr's media directory
-- "YouTube" library pointing to Pinchflat's media directory. It is a TV shows library
-  that reads the NFO files and posters Pinchflat writes, with no remote metadata or image
-  fetchers for series, seasons and episodes, so give your Pinchflat sources the "Media Center" media profile preset and remove the
-  leading `/shows` from its output path template. Each channel then lands in its own
-  top-level folder, which Jellyfin shows as one series with a season per year. The
-  preset's "Create NFO data" toggle sits behind Pinchflat's free "Pro" switch; without
+- "YouTube" library pointing to `<nixflix.pinchflat.mediaDir>/shows`
+  (`nixflix.pinchflat.showsDir`). It is a TV shows library that reads the NFO files and
+  posters Pinchflat writes, with no remote metadata or image fetchers for series, seasons
+  and episodes. Give your Pinchflat sources the "Media Center" media profile preset and
+  leave its output path template as it is: it writes `/shows/<channel>/...`, which
+  Jellyfin shows as one series per channel with a season per year. Turn on the preset's
+  "Create NFO data" toggle, which sits behind Pinchflat's free "Pro" switch; without
   NFOs, episodes are still listed but get their titles from the file alone.
-  Pinchflat's "Music" preset writes `<mediaDir>/music/...`, which this library would
-  show as a bogus series called "music", so keep music sources out of
-  `nixflix.pinchflat.mediaDir` (or give them their own library). To change the YouTube
+  Pinchflat's "Music" preset writes `<mediaDir>/music/...`, which this library does not
+  pick up. If your template has no `/shows` prefix, set `nixflix.pinchflat.showsDir` to
+  `nixflix.pinchflat.mediaDir`. To change the YouTube
   fetchers, set `nixflix.jellyfin.libraries.YouTube.typeOptions = lib.mkForce [ ... ];`:
   `typeOptions` is a list, so without `lib.mkForce` your entries are appended to the
   defaults and Series appears twice. Seerr leaves this library out (and disables it on
