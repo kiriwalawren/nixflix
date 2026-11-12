@@ -116,7 +116,7 @@ mkOption {
           locale = "locale";
         }
         // {
-          topic = if (r.topics or [ ]) == [ ] then null else head r.topics;
+          topic = head r.topics;
           tags = concatStringsSep "," (r.ntfyTags or [ ]);
           authMethodUsernamePassword = (r.userName or null) != null;
           authMethodToken = (r.accessToken or null) != null;
@@ -124,7 +124,7 @@ mkOption {
       required = _: [ "serverUrl" ];
       checks = r: [
         {
-          assertion = length (r.topics or [ ]) == 1;
+          assertion = length r.topics == 1;
           message = "Seerr's ntfy agent publishes to a single topic; set `nixflix.notif.ntfy.seerr.topics` to exactly one topic.";
         }
       ];
@@ -144,11 +144,7 @@ mkOption {
         description = "ntfy server URL.";
       };
 
-      topics = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "Topics to publish notifications to.";
-      };
+      topics = secrets.mkOneOrMoreSecretsOption { description = "Topics to publish notifications to."; };
 
       accessToken = secrets.mkSecretOption {
         description = "Access token for the ntfy server.";
