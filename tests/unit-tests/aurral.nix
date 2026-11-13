@@ -76,6 +76,32 @@ let
 
   lidarrService = overrides: (aurralConfig overrides).systemd.services.aurral-lidarr;
 
+  withJellyfin =
+    overrides:
+    lib.recursiveUpdate {
+      jellyfin = {
+        enable = true;
+        apiKey._secret = "/run/secrets/jellyfin-api";
+        users.jfadmin = {
+          password._secret = "/run/secrets/jellyfin-admin";
+          policy.isAdministrator = true;
+        };
+      };
+    } overrides;
+
+  withNavidrome =
+    overrides:
+    lib.recursiveUpdate {
+      navidrome = {
+        enable = true;
+        users.ndadmin = {
+          userName = "ndadmin";
+          isAdmin = true;
+          password._secret = "/run/secrets/navidrome-admin";
+        };
+      };
+    } overrides;
+
   withoutApiKey =
     (evalConfig [
       {
@@ -232,6 +258,82 @@ in
     )}
 
     echo 'PASS: aurral-lidarr' > $out
+  '';
+
+  aurral-media-servers = pkgs.runCommand "unit-test-aurral-media-servers" { } ''
+    ${check
+      "jellyfin integration defaults on with a jellyfin Music library and uses the jellyfin config"
+      (
+        let
+          cfg = aurralConfig (withJellyfin { });
+          jf = cfg.nixflix.aurral.settings.jellyfin;
+          svc = cfg.systemd.services.aurral-jellyfin;
+        in
+        jf.enable
+        && jf.url == "http://127.0.0.1:8096"
+        && jf.apiKey == { _secret = "/run/secrets/jellyfin-api"; }
+        && jf.userName == "jfadmin"
+        && lib.hasInfix "http://127.0.0.1:8096/Users" svc.script
+        && lib.hasInfix "/run/secrets/jellyfin-api" svc.script
+        && lib.elem "jellyfin-users-config.service" svc.requires
+      )
+    }
+
+    ${check "jellyfin integration defaults off when jellyfin has no Music library" (
+      !(aurralConfig (withJellyfin {
+        jellyfin.libraries.Music = lib.mkForce null;
+      })).nixflix.aurral.settings.jellyfin.enable
+    )}
+
+    ${check "jellyfin integration defaults off without jellyfin and clears the integration" (
+      let
+        cfg = aurralConfig { };
+        svc = cfg.systemd.services.aurral-jellyfin;
+      in
+      !cfg.nixflix.aurral.settings.jellyfin.enable
+      && lib.hasInfix ''"jellyfin":{"url":"","apiKey":"","userId":""}'' svc.script
+      && !(lib.elem "jellyfin-users-config.service" svc.requires)
+    )}
+
+    ${check "jellyfin integration can be turned off explicitly" (
+      lib.hasInfix ''"jellyfin":{"url":"","apiKey":"","userId":""}''
+        (aurralConfig (withJellyfin {
+          aurral.settings.jellyfin.enable = false;
+        })).systemd.services.aurral-jellyfin.script
+    )}
+
+    ${check "navidrome integration defaults on with navidrome and uses its first admin" (
+      let
+        cfg = aurralConfig (withNavidrome { });
+        nd = cfg.nixflix.aurral.settings.navidrome;
+        svc = cfg.systemd.services.aurral-navidrome;
+      in
+      nd.enable
+      && nd.url == "http://127.0.0.1:4533"
+      && nd.username == "ndadmin"
+      && nd.password == { _secret = "/run/secrets/navidrome-admin"; }
+      && lib.hasInfix "/run/secrets/navidrome-admin" svc.script
+      && lib.elem "navidrome-libraries.service" svc.requires
+    )}
+
+    ${check "navidrome integration defaults off without navidrome and clears the integration" (
+      let
+        cfg = aurralConfig { };
+        svc = cfg.systemd.services.aurral-navidrome;
+      in
+      !cfg.nixflix.aurral.settings.navidrome.enable
+      && lib.hasInfix ''"navidrome":{"url":"","username":"","password":""}'' svc.script
+      && !(lib.elem "navidrome-libraries.service" svc.requires)
+    )}
+
+    ${check "navidrome integration can be turned off explicitly" (
+      lib.hasInfix ''"navidrome":{"url":"","username":"","password":""}''
+        (aurralConfig (withNavidrome {
+          aurral.settings.navidrome.enable = false;
+        })).systemd.services.aurral-navidrome.script
+    )}
+
+    echo 'PASS: aurral-media-servers' > $out
   '';
 
   # nixflix must keep evaluating on a nixpkgs that predates services.aurral

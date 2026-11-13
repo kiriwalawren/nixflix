@@ -28,7 +28,7 @@ in
 
       config.libraries = lib.mkIf (
         aurral.enable && navidrome.config.settings.MusicFolder != aurral.libraryDir
-      ) { Aurral.path = lib.mkDefault aurral.libraryDir; };
+      ) { "Aurral Playlists".path = lib.mkDefault aurral.libraryDir; };
 
       options = {
         enable = lib.mkOption {
@@ -126,7 +126,7 @@ in
           default = { };
           example = lib.literalExpression ''
             {
-              Aurral.path = "/data/media/aurral";
+              Extra.path = "/data/media/extra";
             }
           '';
           description = ''
@@ -136,8 +136,10 @@ in
             Libraries nixflix created are deleted from Navidrome when removed from this option
             (the music files are left alone).
 
-            When Aurral is enabled and isn't already `settings.MusicFolder`, an `Aurral`
-            library pointing at `nixflix.aurral.libraryDir` is added by default.
+            When Aurral is enabled and isn't already `settings.MusicFolder`, an `Aurral Playlists`
+            library pointing at `nixflix.aurral.libraryDir` is added by default. Aurral's Navidrome
+            integration renames the library at that path to `Aurral Playlists`, so don't give it
+            another name.
           '';
         };
 

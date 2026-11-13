@@ -47,10 +47,13 @@ let
 in
 {
   navidrome-libraries = pkgs.runCommand "unit-test-navidrome-libraries" { } ''
-    ${check "lidarr and aurral keep the lidarr folder as MusicFolder and add an Aurral library" (
-      withLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
-      && withLidarr.nixflix.navidrome.libraries.Aurral.path == "/data/media/aurral"
-    )}
+    ${check
+      "lidarr and aurral keep the lidarr folder as MusicFolder and add an Aurral Playlists library"
+      (
+        withLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
+        && withLidarr.nixflix.navidrome.libraries."Aurral Playlists".path == "/data/media/aurral"
+      )
+    }
 
     ${check "extra library paths are bind-mounted into the navidrome sandbox" (
       lib.elem "/data/media/aurral" (bindPaths withLidarr)
@@ -61,9 +64,9 @@ in
       && withoutLidarr.nixflix.navidrome.libraries == { }
     )}
 
-    ${check "user-declared libraries merge with the Aurral default" (
+    ${check "user-declared libraries merge with the Aurral Playlists default" (
       lib.attrNames withExtra.nixflix.navidrome.libraries == [
-        "Aurral"
+        "Aurral Playlists"
         "Extra"
       ]
     )}

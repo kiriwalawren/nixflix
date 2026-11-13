@@ -10,23 +10,8 @@ let
   inherit (config) nixflix;
   cfg = nixflix.aurral;
 
-  baseUrl = "http://${cfg.connectionAddress}:${toString cfg.port}";
-
-  mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
-
-  apiCall =
-    method: path: data:
-    mkSecureCurl cfg.apiKey (
-      {
-        url = "$BASE_URL/api${path}";
-        inherit method;
-        extraArgs = ''-w "\n%{http_code}"'';
-      }
-      // optionalAttrs (data != null) {
-        headers."Content-Type" = "application/json";
-        inherit data;
-      }
-    );
+  apiUtil = import ./apiUtil.nix { inherit lib pkgs cfg; };
+  inherit (apiUtil) apiCall;
 
   lidarrJq = secrets.mkJqSecretArgs { lidarrApiKey = cfg.settings.lidarr.apiKey; };
 
@@ -95,17 +80,7 @@ in
       script = ''
         set -euo pipefail
 
-        BASE_URL="${baseUrl}"
-
-        check_response() {
-          local code
-          code=$(echo "$2" | tail -n1)
-          BODY=$(echo "$2" | sed '$d')
-          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-            echo "Failed to $1 (HTTP $code): $BODY" >&2
-            exit 1
-          fi
-        }
+        ${apiUtil.preamble}
 
         ${if nixflix.lidarr.enable then configureLidarr else disableLidarr}
       '';

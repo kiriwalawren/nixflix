@@ -8,12 +8,22 @@ with lib;
 let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   secrets = import ../../lib/secrets { inherit lib; };
+  getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
+  inherit (config.nixflix) jellyfin navidrome;
   cfg = config.nixflix.aurral;
+
+  firstNavidromeAdmin =
+    (getFirstAdmin {
+      inherit (navidrome) users;
+      isAdmin = user: user.isAdmin;
+    }).user;
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 in
 {
   imports = [
+    ./jellyfin.nix
     ./lidarr.nix
+    ./navidrome.nix
     ./oidc.nix
     ./setupService.nix
     ./users
@@ -139,6 +149,85 @@ in
               type = types.bool;
               default = false;
               description = "Whether Aurral should trigger a search when adding items to Lidarr.";
+            };
+          };
+
+          jellyfin = {
+            enable = mkOption {
+              type = types.bool;
+              default = jellyfin.enable && jellyfin.libraries.Music or null != null;
+              defaultText = literalExpression "config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null";
+              description = ''
+                Whether to configure Aurral's Jellyfin integration, which tells Jellyfin to rescan
+                the folders Aurral changes. Aurral only reports folders inside Jellyfin music libraries.
+              '';
+            };
+
+            url = mkOption {
+              type = types.str;
+              default =
+                "http://${jellyfin.connectionAddress}:${toString jellyfin.network.internalHttpPort}"
+                + optionalString (jellyfin.network.baseUrl != "") "/${jellyfin.network.baseUrl}";
+              defaultText = literalExpression ''
+                "http://''${config.nixflix.jellyfin.connectionAddress}:''${toString config.nixflix.jellyfin.network.internalHttpPort}"
+                + optionalString (config.nixflix.jellyfin.network.baseUrl != "") "/''${config.nixflix.jellyfin.network.baseUrl}"
+              '';
+              description = "URL Aurral uses to connect to Jellyfin. Only used when `enable = true`.";
+            };
+
+            apiKey = secrets.mkSecretOption {
+              default = jellyfin.apiKey;
+              defaultText = literalExpression "config.nixflix.jellyfin.apiKey";
+              description = "Jellyfin API key used by Aurral. Only used when `enable = true`.";
+            };
+
+            userName = mkOption {
+              type = types.str;
+              default =
+                (getFirstAdmin {
+                  inherit (jellyfin) users;
+                  isAdmin = user: user.policy.isAdministrator;
+                }).name;
+              defaultText = literalExpression "the alphabetically first user in config.nixflix.jellyfin.users with policy.isAdministrator = true";
+              description = ''
+                Jellyfin user Aurral acts as. Resolved to the user's ID at runtime.
+                Only used when `enable = true`.
+              '';
+            };
+          };
+
+          navidrome = {
+            enable = mkOption {
+              type = types.bool;
+              default = navidrome.enable;
+              defaultText = literalExpression "config.nixflix.navidrome.enable";
+              description = ''
+                Whether to configure Aurral's Navidrome integration, which tells Navidrome to rescan
+                the folders Aurral changes.
+              '';
+            };
+
+            url = mkOption {
+              type = types.str;
+              default = "http://${navidrome.connectionAddress}:${toString navidrome.settings.Port}";
+              defaultText = literalExpression ''"http://''${config.nixflix.navidrome.connectionAddress}:''${toString config.nixflix.navidrome.settings.Port}"'';
+              description = "URL Aurral uses to connect to Navidrome. Only used when `enable = true`.";
+            };
+
+            username = mkOption {
+              type = types.str;
+              default = firstNavidromeAdmin.userName;
+              defaultText = literalExpression "userName of the alphabetically first user in config.nixflix.navidrome.users with isAdmin = true";
+              description = ''
+                Navidrome user Aurral logs in as. Must be an admin, because only admins can start scans.
+                Only used when `enable = true`.
+              '';
+            };
+
+            password = secrets.mkSecretOption {
+              default = firstNavidromeAdmin.password;
+              defaultText = literalExpression "password of the alphabetically first user in config.nixflix.navidrome.users with isAdmin = true";
+              description = "Password of `username`. Only used when `enable = true`.";
             };
           };
 
