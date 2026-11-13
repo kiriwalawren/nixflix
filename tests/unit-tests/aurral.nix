@@ -178,6 +178,39 @@ in
     echo 'PASS: aurral-env-file' > $out
   '';
 
+  aurral-library-dir = pkgs.runCommand "unit-test-aurral-library-dir" { } ''
+    ${check "aurral library root defaults to mediaDir/aurral" (
+      (aurralConfig { }).services.aurral.environment.DOWNLOAD_FOLDER == "/data/media/aurral"
+    )}
+
+    ${check "jellyfin Music covers lidarr and aurral folders in one library" (
+      let
+        cfg = aurralConfig { jellyfin.enable = true; };
+      in
+      cfg.nixflix.jellyfin.libraries.Music.paths == [
+        "/data/media/music"
+        "/data/media/aurral"
+      ]
+      && lib.attrNames (lib.filterAttrs (_: v: v != null) cfg.nixflix.jellyfin.libraries) == [ "Music" ]
+    )}
+
+    ${check "jellyfin Music is just the aurral folder without lidarr" (
+      (aurralConfig {
+        jellyfin.enable = true;
+        lidarr.enable = false;
+      }).nixflix.jellyfin.libraries.Music.paths == [ "/data/media/aurral" ]
+    )}
+
+    ${check "aurral without lidarr leaves the lidarr jellyfin notification off" (
+      !(aurralConfig {
+        jellyfin.enable = true;
+        lidarr.enable = false;
+      }).nixflix.notif.jellyfin.lidarr.enable
+    )}
+
+    echo 'PASS: aurral-library-dir' > $out
+  '';
+
   aurral-lidarr = pkgs.runCommand "unit-test-aurral-lidarr" { } ''
     ${check "enabled lidarr configures lidarr profiles after lidarr-config" (
       let

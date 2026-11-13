@@ -402,7 +402,7 @@ in
 
       - Shows: Created when Sonarr is enabled
       - Movies: Created when Radarr is enabled
-      - Music: Created when Lidarr is enabled
+      - Music: Created when Lidarr or Aurral is enabled, covering both of their folders
       - Anime: Created when either Sonarr anime or Radarr anime is enabled
 
       Default libraries can be removed with the following: `nixflix.jellyfin.libraries.Movies = lib.mkForce {};`
@@ -592,9 +592,11 @@ in
       ];
     };
 
-    Music = mkIf (config.nixflix.lidarr.enable or false) {
+    Music = mkIf ((config.nixflix.lidarr.enable or false) || (config.nixflix.aurral.enable or false)) {
       collectionType = "music";
-      paths = config.nixflix.lidarr.mediaDirs;
+      paths =
+        optionals (config.nixflix.lidarr.enable or false) config.nixflix.lidarr.mediaDirs
+        ++ optional (config.nixflix.aurral.enable or false) config.nixflix.aurral.libraryDir;
     };
   };
 }

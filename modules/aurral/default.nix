@@ -61,11 +61,14 @@ in
           description = "Directory holding Aurral's data and configuration.";
         };
 
-        downloadsDir = mkOption {
+        libraryDir = mkOption {
           type = types.path;
-          default = "${config.nixflix.downloadsDir}/aurral";
-          defaultText = literalExpression ''"''${nixflix.downloadsDir}/aurral"'';
-          description = "Directory where completed downloads are stored.";
+          default = "${config.nixflix.mediaDir}/aurral";
+          defaultText = literalExpression ''"''${config.nixflix.mediaDir}/aurral"'';
+          description = ''
+            Aurral's library root (its "Downloads Folder"). Downloads and imports land here,
+            and it is added to the Navidrome and Jellyfin music libraries.
+          '';
         };
 
         apiKey = secrets.mkSecretOption {
@@ -190,7 +193,7 @@ in
         (builtins.removeAttrs cfg [
           "apiKey"
           "connectionAddress"
-          "downloadsDir"
+          "libraryDir"
           "oidc"
           "publicUrl"
           "reverseProxy"
@@ -200,7 +203,7 @@ in
         ])
         // {
           environment = {
-            DOWNLOAD_FOLDER = cfg.downloadsDir;
+            DOWNLOAD_FOLDER = cfg.libraryDir;
           }
           // optionalAttrs config.nixflix.reverseProxy.enable { AURRAL_PUBLIC_URL = cfg.publicUrl; };
         };

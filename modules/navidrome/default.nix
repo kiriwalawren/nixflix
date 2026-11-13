@@ -11,17 +11,25 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
 
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
+
+  inherit (config.nixflix) lidarr aurral;
 in
 {
   imports = [
+    ./librariesService.nix
     ./setupService.nix
     ./usersService.nix
     ./plugins
   ];
 
   options.nixflix.navidrome = lib.mkOption {
-    type = lib.types.submodule {
+    type = lib.types.submodule (navidrome: {
       freeformType = lib.types.attrsOf lib.types.anything;
+
+      config.libraries = lib.mkIf (
+        aurral.enable && navidrome.config.settings.MusicFolder != aurral.libraryDir
+      ) { Aurral.path = lib.mkDefault aurral.libraryDir; };
+
       options = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -97,6 +105,42 @@ in
           );
         };
 
+        libraries = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                path = lib.mkOption {
+                  type = lib.types.str;
+                  example = "/data/media/aurral";
+                  description = "Absolute path of the library's music folder.";
+                };
+
+                defaultNewUsers = lib.mkOption {
+                  type = lib.types.bool;
+                  default = true;
+                  description = "Whether newly created users get access to this library.";
+                };
+              };
+            }
+          );
+          default = { };
+          example = lib.literalExpression ''
+            {
+              Aurral.path = "/data/media/aurral";
+            }
+          '';
+          description = ''
+            Navidrome libraries in addition to `settings.MusicFolder`, which is always library 1.
+            Keyed by library name. When a library is first created, every existing non-admin
+            user is given access to it; admins always have access to every library.
+            Libraries nixflix created are deleted from Navidrome when removed from this option
+            (the music files are left alone).
+
+            When Aurral is enabled and isn't already `settings.MusicFolder`, an `Aurral`
+            library pointing at `nixflix.aurral.libraryDir` is added by default.
+          '';
+        };
+
         settings = lib.mkOption {
           type = lib.types.submodule {
             freeformType = (pkgs.formats.json { }).type;
@@ -125,8 +169,13 @@ in
 
               MusicFolder = lib.mkOption {
                 type = lib.types.str;
-                default = builtins.head config.nixflix.lidarr.mediaDirs;
-                defaultText = lib.literalExpression "builtins.head config.nixflix.lidarr.mediaDirs";
+                default =
+                  if !lidarr.enable && aurral.enable then aurral.libraryDir else builtins.head lidarr.mediaDirs;
+                defaultText = lib.literalExpression ''
+                  if !config.nixflix.lidarr.enable && config.nixflix.aurral.enable
+                  then config.nixflix.aurral.libraryDir
+                  else builtins.head config.nixflix.lidarr.mediaDirs
+                '';
                 example = "/data/media/music";
                 description = ''
                   Folder where your music library is stored. Can be read-only.
@@ -227,7 +276,7 @@ in
           };
         };
       };
-    };
+    });
   };
 
   config = lib.mkIf (config.nixflix.enable && cfg != null && cfg.enable) (
@@ -249,6 +298,7 @@ in
       {
         services.navidrome = builtins.removeAttrs cfg [
           "connectionAddress"
+          "libraries"
           "plugins"
           "reverseProxy"
           "subdomain"
@@ -260,6 +310,7 @@ in
           services.navidrome = {
             after = config.nixflix.serviceDependencies;
             requires = config.nixflix.serviceDependencies;
+            serviceConfig.BindReadOnlyPaths = lib.mapAttrsToList (_: library: library.path) cfg.libraries;
           };
 
           tmpfiles.settings.navidromeDirs = {
@@ -272,7 +323,10 @@ in
               inherit (cfg) user group;
             };
             "${cfg.settings.MusicFolder}"."d" = lib.mkForce { group = ":${cfg.group}"; };
-          };
+          }
+          // lib.mapAttrs' (
+            _: library: lib.nameValuePair library.path { "d" = lib.mkForce { group = ":${cfg.group}"; }; }
+          ) cfg.libraries;
         };
 
         users = {

@@ -20,6 +20,8 @@ pkgs.testers.runNixOSTest {
       navidrome = {
         enable = true;
 
+        libraries.Extra.path = "/data/media/extra";
+
         plugins = {
           "lyrics".enable = true;
           "apple-music" = {
@@ -103,6 +105,40 @@ pkgs.testers.runNixOSTest {
     assert bob["email"] == "bob@example.com", f"bob email mismatch, got {bob['email']}"
 
     print("All Navidrome user assertions passed!")
+
+    machine.wait_for_unit("navidrome-libraries.service", timeout=180)
+
+    print("Checking the Extra library was created...")
+    libraries = json.loads(machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' "
+        f"'{base_url}/api/library?_start=0&_end=100&_sort=id&_order=ASC'"
+    ))
+    extra = [lib for lib in libraries if lib["path"] == "/data/media/extra"]
+    assert len(extra) == 1, f"Expected one /data/media/extra library, got {libraries}"
+    assert extra[0]["name"] == "Extra", f"Expected library named Extra, got {extra[0]}"
+
+    print("Checking non-admin bob was granted the Extra library...")
+    bob_libraries = json.loads(machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' {base_url}/api/user/{bob['id']}/library"
+    ))
+    assert extra[0]["id"] in [lib["id"] for lib in bob_libraries], \
+        f"Expected bob to have library {extra[0]['id']}, got {bob_libraries}"
+
+    print("Checking a scan was started for the new library...")
+    machine.succeed(
+        "journalctl -u navidrome-libraries.service | grep -q 'Started a Navidrome scan for new libraries'"
+    )
+
+    print("Checking the libraries service is idempotent...")
+    machine.succeed("systemctl restart navidrome-libraries.service")
+    libraries_after = json.loads(machine.succeed(
+        f"curl -sf -H 'x-nd-authorization: Bearer {token}' "
+        f"'{base_url}/api/library?_start=0&_end=100&_sort=id&_order=ASC'"
+    ))
+    assert len(libraries_after) == len(libraries), \
+        f"Expected {len(libraries)} libraries after rerun, got {libraries_after}"
+
+    print("All Navidrome library assertions passed!")
 
     print("Checking lyrics plugin was installed...")
     machine.succeed("ls /nix/store/*-navidrome-*/share/plugins/nd-lyrics.ndp")
