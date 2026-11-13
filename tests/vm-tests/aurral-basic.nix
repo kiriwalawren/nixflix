@@ -9,6 +9,7 @@ let
   testApiKey = "abcd1234abcd1234abcd1234abcd1234";
   jellyfinApiKey = "jellyfinApiKey1111111111111111111";
   navidromePassword = "navidromepassword";
+  listenerPassword = "listenerpassword";
 in
 pkgs.testers.runNixOSTest {
   name = "aurral-basic-test";
@@ -59,10 +60,18 @@ pkgs.testers.runNixOSTest {
         enable = true;
         apiKey._secret = pkgs.writeText "aurral-apikey" testApiKey;
 
-        settings.users.admin = {
-          username = testUsername;
-          role = "admin";
-          password._secret = pkgs.writeText "aurral-admin-password" testPassword;
+        settings.users = {
+          admin = {
+            username = testUsername;
+            role = "admin";
+            password._secret = pkgs.writeText "aurral-admin-password" testPassword;
+          };
+
+          listener = {
+            mutable = false;
+            password._secret = pkgs.writeText "aurral-listener-password" listenerPassword;
+            permissions.accessFlow = true;
+          };
         };
       };
     };
@@ -82,6 +91,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("aurral-lidarr.service", timeout=180)
     machine.wait_for_unit("aurral-jellyfin.service", timeout=300)
     machine.wait_for_unit("aurral-navidrome.service", timeout=180)
+    machine.wait_for_unit("aurral-users-config.service", timeout=180)
 
     base_url = f"http://127.0.0.1:{port}"
 
@@ -156,6 +166,35 @@ pkgs.testers.runNixOSTest {
     machine.succeed("systemctl restart navidrome-libraries.service")
     assert aurral_library_names() == ["Aurral Playlists"], aurral_library_names()
     machine.fail("journalctl -u navidrome-libraries.service | grep -q 'Updated library'")
+
+    print("Checking aurral-users-config created the declared listener user...")
+    def get_listener():
+        users = json.loads(machine.succeed(
+            f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/users"
+        ))
+        return next(u for u in users if u["username"] == "listener")
+
+    listener = get_listener()
+    assert listener["role"] == "user", f"Unexpected listener role: {listener}"
+    assert listener["permissions"]["accessFlow"] is True, f"Unexpected listener permissions: {listener}"
+
+    listener_login = json.dumps({"username": "listener", "password": "${listenerPassword}"})
+    machine.succeed(
+        f"curl -sf -X POST -H 'Content-Type: application/json' "
+        f"-d '{listener_login}' {base_url}/api/auth/login"
+    )
+
+    print("Checking mutable = false restores the listener's role and permissions...")
+    drift = json.dumps({"role": "admin", "permissions": {"accessFlow": False}})
+    machine.succeed(
+        f"curl -sf -X PATCH -H 'X-Api-Key: ${testApiKey}' -H 'Content-Type: application/json' "
+        f"-d '{drift}' {base_url}/api/users/{listener['id']}"
+    )
+    assert get_listener()["role"] == "admin", "PATCH did not change the listener"
+    machine.succeed("systemctl restart aurral-users-config.service")
+    listener = get_listener()
+    assert listener["role"] == "user", f"Listener role was not restored: {listener}"
+    assert listener["permissions"]["accessFlow"] is True, f"Listener permissions were not restored: {listener}"
 
     print("All Aurral login assertions passed!")
   '';

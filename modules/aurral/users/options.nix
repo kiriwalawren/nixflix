@@ -31,13 +31,21 @@ in
               default = true;
               description = ''
                 Functions like mutableUsers in NixOS users.users."user".
+                If true, `role` and `permissions` are only applied when the user is created,
+                and later changes from the Aurral UI take priority.
+                If false, `role` and `permissions` are enforced on every rebuild.
+
+                Note: Passwords are only set during user creation and are never updated
+                declaratively, regardless of the mutable setting, because Aurral requires an
+                interactive re-authentication to change another user's password. To change a
+                user's password, use the Aurral web interface.
               '';
             };
 
             password = secrets.mkSecretOption {
               nullable = true;
               default = null;
-              description = "User's password. Must be at least 8 characters.";
+              description = "User's password. Must be at least 8 characters. Required to create the user.";
             };
 
             permissions = mkOption {

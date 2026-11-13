@@ -76,6 +76,8 @@ let
 
   lidarrService = overrides: (aurralConfig overrides).systemd.services.aurral-lidarr;
 
+  usersService = overrides: (aurralConfig overrides).systemd.services.aurral-users-config;
+
   withJellyfin =
     overrides:
     lib.recursiveUpdate {
@@ -258,6 +260,34 @@ in
     )}
 
     echo 'PASS: aurral-lidarr' > $out
+  '';
+
+  aurral-users = pkgs.runCommand "unit-test-aurral-users" { } ''
+    ${check "users service runs after aurral-setup and creates users" (
+      let
+        svc = usersService { };
+      in
+      lib.elem "aurral-setup.service" svc.after
+      && lib.elem "aurral-setup.service" svc.requires
+      && lib.hasInfix "/api/users" svc.script
+      && lib.hasInfix "-X POST" svc.script
+    )}
+
+    ${check "mutable users are never patched" (!(lib.hasInfix "-X PATCH" (usersService { }).script))}
+
+    ${check "immutable users are patched" (
+      lib.hasInfix "-X PATCH" (usersService { aurral.settings.users.admin.mutable = false; }).script
+    )}
+
+    ${check "a user without a password trips the password assertion" (
+      lib.length (
+        failuresMatching {
+          aurral.settings.users.listener.role = "user";
+        } "Missing: listener"
+      ) == 1
+    )}
+
+    echo 'PASS: aurral-users' > $out
   '';
 
   aurral-media-servers = pkgs.runCommand "unit-test-aurral-media-servers" { } ''
