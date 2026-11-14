@@ -11,17 +11,35 @@ let
   secrets = import ../../lib/secrets { inherit lib; };
 
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
+
+  inherit (config.nixflix) lidarr aurral;
+
+  defaultLibraryPaths = lib.unique (
+    lib.optionals lidarr.enable (map (folder: folder.path) lidarr.config.rootFolders)
+    ++ lib.optional aurral.enable aurral.libraryDir
+  );
+
+  libraryName =
+    path: if aurral.enable && path == aurral.libraryDir then "Aurral Playlists" else baseNameOf path;
 in
 {
   imports = [
+    ./librariesService.nix
     ./setupService.nix
     ./usersService.nix
     ./plugins
   ];
 
   options.nixflix.navidrome = lib.mkOption {
-    type = lib.types.submodule {
+    type = lib.types.submodule (navidrome: {
       freeformType = lib.types.attrsOf lib.types.anything;
+
+      config.libraries = lib.listToAttrs (
+        map (path: lib.nameValuePair (libraryName path) { path = lib.mkDefault path; }) (
+          lib.filter (path: path != navidrome.config.settings.MusicFolder) defaultLibraryPaths
+        )
+      );
+
       options = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -97,6 +115,44 @@ in
           );
         };
 
+        libraries = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                path = lib.mkOption {
+                  type = lib.types.str;
+                  example = "/data/media/aurral";
+                  description = "Absolute path of the library's music folder.";
+                };
+
+                defaultNewUsers = lib.mkOption {
+                  type = lib.types.bool;
+                  default = true;
+                  description = "Whether newly created users get access to this library.";
+                };
+              };
+            }
+          );
+          default = { };
+          example = lib.literalExpression ''
+            {
+              Extra.path = "/data/media/extra";
+            }
+          '';
+          description = ''
+            Navidrome libraries in addition to `settings.MusicFolder`, which is always library 1.
+            Keyed by library name. When a library is first created, every existing non-admin
+            user is given access to it; admins always have access to every library.
+            Libraries nixflix created are deleted from Navidrome when removed from this option
+            (the music files are left alone).
+
+            By default, every Lidarr root folder and `nixflix.aurral.libraryDir` that isn't
+            `settings.MusicFolder` becomes a library, each path once. Lidarr folders are named
+            after their last path component. The Aurral folder is named `Aurral Playlists`, because
+            Aurral's Navidrome integration renames the library at that path to it.
+          '';
+        };
+
         settings = lib.mkOption {
           type = lib.types.submodule {
             freeformType = (pkgs.formats.json { }).type;
@@ -125,8 +181,16 @@ in
 
               MusicFolder = lib.mkOption {
                 type = lib.types.str;
-                default = builtins.head config.nixflix.lidarr.mediaDirs;
-                defaultText = lib.literalExpression "builtins.head config.nixflix.lidarr.mediaDirs";
+                default =
+                  if defaultLibraryPaths != [ ] then
+                    builtins.head defaultLibraryPaths
+                  else
+                    builtins.head lidarr.mediaDirs;
+                defaultText = lib.literalExpression ''
+                  the first of the Lidarr root folder paths (when Lidarr is enabled) followed by
+                  config.nixflix.aurral.libraryDir (when Aurral is enabled), or
+                  builtins.head config.nixflix.lidarr.mediaDirs when neither is enabled
+                '';
                 example = "/data/media/music";
                 description = ''
                   Folder where your music library is stored. Can be read-only.
@@ -227,7 +291,7 @@ in
           };
         };
       };
-    };
+    });
   };
 
   config = lib.mkIf (config.nixflix.enable && cfg != null && cfg.enable) (
@@ -249,6 +313,7 @@ in
       {
         services.navidrome = builtins.removeAttrs cfg [
           "connectionAddress"
+          "libraries"
           "plugins"
           "reverseProxy"
           "subdomain"
@@ -260,6 +325,7 @@ in
           services.navidrome = {
             after = config.nixflix.serviceDependencies;
             requires = config.nixflix.serviceDependencies;
+            serviceConfig.BindReadOnlyPaths = lib.mapAttrsToList (_: library: library.path) cfg.libraries;
           };
 
           tmpfiles.settings.navidromeDirs = {
@@ -272,7 +338,10 @@ in
               inherit (cfg) user group;
             };
             "${cfg.settings.MusicFolder}"."d" = lib.mkForce { group = ":${cfg.group}"; };
-          };
+          }
+          // lib.mapAttrs' (
+            _: library: lib.nameValuePair library.path { "d" = lib.mkForce { group = ":${cfg.group}"; }; }
+          ) cfg.libraries;
         };
 
         users = {

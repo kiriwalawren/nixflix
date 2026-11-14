@@ -834,6 +834,13 @@ types.submodule {
           pp = 3;
           script = "None";
         }
+        ++ lib.optional (config.nixflix.aurral.enable or false) {
+          name = "aurral";
+          dir = "aurral";
+          priority = 0;
+          pp = 3;
+          script = "None";
+        }
         ++ [
           {
             name = "*";
@@ -857,6 +864,9 @@ types.submodule {
         }
         ++ lib.optional (config.nixflix.prowlarr.enable or false) {
           name = "prowlarr"; dir = "prowlarr"; priority = 0; pp = 3; script = "None";
+        }
+        ++ lib.optional (config.nixflix.aurral.enable or false) {
+          name = "aurral"; dir = "aurral"; priority = 0; pp = 3; script = "None";
         }
         ++ [
           { name = "*"; priority = 0; pp = 3; script = "None"; }
@@ -882,7 +892,7 @@ types.submodule {
       '';
       description = ''
         Download categories. By default, categories are automatically created based on enabled services,
-        using the service name as the category name (radarr, sonarr, sonarr-anime, lidarr, prowlarr).
+        using the service name as the category name (radarr, sonarr, sonarr-anime, lidarr, prowlarr, aurral).
 
         A catch-all "*" category is always included.
       '';

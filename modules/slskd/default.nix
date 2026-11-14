@@ -142,8 +142,11 @@ in
 
               shares.directories = mkOption {
                 type = types.listOf types.path;
-                default = if config.nixflix.lidarr.enable then config.nixflix.lidarr.mediaDirs else [ ];
-                defaultText = literalExpression "if config.nixflix.lidarr.enabled then config.nixflix.lidarr.mediaDirs else [ ]";
+                default = unique (
+                  optionals config.nixflix.lidarr.enable config.nixflix.lidarr.mediaDirs
+                  ++ optional (config.nixflix.aurral.enable or false) config.nixflix.aurral.libraryDir
+                );
+                defaultText = literalExpression "unique (optionals config.nixflix.lidarr.enable config.nixflix.lidarr.mediaDirs ++ optional config.nixflix.aurral.enable config.nixflix.aurral.libraryDir)";
                 example = [ "/data/media/music" ];
                 description = "Directories shared with the Soulseek network.";
               };

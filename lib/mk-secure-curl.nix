@@ -8,6 +8,7 @@ apiKeyValue:
   extraArgs ? "",
   silent ? true,
   apiKeyHeader ? "X-Api-Key",
+  apiKeyTemplate ? "{{apiKey:trim}}",
 }:
 let
   secrets = import ./secrets { inherit lib; };
@@ -24,7 +25,7 @@ let
       "--variable apiKey=${lib.escapeShellArg (toString apiKeyValue)}";
 
   apiKeyHeaderArg =
-    if apiKeyValue == null then "" else ''--expand-header "${apiKeyHeader}: {{apiKey:trim}}"'';
+    if apiKeyValue == null then "" else ''--expand-header "${apiKeyHeader}: ${apiKeyTemplate}"'';
 
   otherHeaderArgs = lib.concatStringsSep " " (
     lib.mapAttrsToList (name: value: ''--header "${name}: ${value}"'') headers

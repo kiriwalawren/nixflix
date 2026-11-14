@@ -100,8 +100,11 @@ mkOption {
         enable =
           if svc == "lidarr" then
             {
-              default = config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null;
-              defaultText = literalExpression "config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null";
+              default =
+                config.nixflix.lidarr.enable
+                && config.nixflix.jellyfin.enable
+                && config.nixflix.jellyfin.libraries.Music or null != null;
+              defaultText = literalExpression "config.nixflix.lidarr.enable && config.nixflix.jellyfin.enable && config.nixflix.jellyfin.libraries.Music or null != null";
             }
           else
             {
