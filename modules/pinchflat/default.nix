@@ -10,6 +10,11 @@ let
   cfg = config.nixflix.pinchflat;
 
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
+
+  mediaDirRule = {
+    inherit (globals.libraryOwner) user group;
+    mode = "0775";
+  };
 in
 {
   options.nixflix.pinchflat = lib.mkOption {
@@ -201,19 +206,12 @@ in
             };
           };
 
-          # showsDir too, or jellyfin-libraries' `mkdir -p` would create it root-owned 0755
-          tmpfiles.settings."10-pinchflat" =
-            lib.genAttrs
-              (lib.unique [
-                cfg.mediaDir
-                cfg.showsDir
-              ])
-              (_: {
-                d = {
-                  inherit (globals.libraryOwner) user group;
-                  mode = "0775";
-                };
-              });
+          # showsDir too, or jellyfin-libraries' `mkdir -p` would create it root-owned 0755.
+          # Separate definitions so showsDir == mediaDir merges instead of a duplicate-attribute error
+          tmpfiles.settings."10-pinchflat" = lib.mkMerge [
+            { ${cfg.mediaDir}.d = mediaDirRule; }
+            { ${cfg.showsDir}.d = mediaDirRule; }
+          ];
         };
 
         users = {

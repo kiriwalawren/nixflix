@@ -278,7 +278,11 @@ in
         ]
       )}
       ${check "YouTube library never queries TMDB/OMDb" (lib.all noRemote youtube.typeOptions)}
-      ${check "YouTube library keeps the NFO reader" (youtube.disabledLocalMetadataReaders == [ ])}
+      # disabledLocalMetadataReaders is a deny-list, and Pinchflat's .nfo files are
+      # the only metadata source once the remote fetchers are cleared
+      ${check "YouTube library does not disable the NFO reader" (
+        !(builtins.elem "Nfo" youtube.disabledLocalMetadataReaders)
+      )}
       ${check "YouTube library is created by jellyfin-libraries" (
         lib.hasInfix "Processing library: YouTube" config.config.systemd.services.jellyfin-libraries.script
       )}
