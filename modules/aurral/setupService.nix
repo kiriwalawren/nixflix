@@ -11,6 +11,8 @@ let
   inherit (config) nixflix;
   cfg = nixflix.aurral;
 
+  apiUtil = import ./apiUtil.nix { inherit lib pkgs cfg; };
+
   adminUsers = filterAttrs (_: user: user.role == "admin") cfg.settings.users;
 
   firstAdminUser =
@@ -72,34 +74,43 @@ in
 
         if [ "$ONBOARDING_REQUIRED" != "true" ]; then
           echo "Aurral onboarding already completed, skipping"
-          exit 0
+        else
+          echo "Completing Aurral onboarding..."
+          ONBOARDING_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+            ${jqSecrets.flagsString} \
+            --arg authUser ${escapeShellArg firstAdminUser.username} \
+            '{
+              authUser: $authUser,
+              authPassword: ${jqSecrets.refs.authPassword},
+              security: { localNetworkBypass: { enabled: ${boolToString cfg.settings.security.localNetworkBypass.enabled} } }
+            }')
+
+          RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$ONBOARDING_PAYLOAD" \
+            -w "\n%{http_code}" \
+            "$BASE_URL/api/onboarding/complete")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "Failed to complete Aurral onboarding (HTTP $HTTP_CODE): $BODY" >&2
+            exit 1
+          fi
+
+          echo "Aurral onboarding completed successfully"
         fi
 
-        echo "Completing Aurral onboarding..."
-        ONBOARDING_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
-          ${jqSecrets.flagsString} \
-          --arg authUser ${escapeShellArg firstAdminUser.username} \
-          '{
-            authUser: $authUser,
-            authPassword: ${jqSecrets.refs.authPassword},
-            security: { localNetworkBypass: { enabled: ${boolToString cfg.settings.security.localNetworkBypass.enabled} } }
-          }')
+        ${apiUtil.preamble}
 
-        RESPONSE=$(${pkgs.curl}/bin/curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -d "$ONBOARDING_PAYLOAD" \
-          -w "\n%{http_code}" \
-          "$BASE_URL/api/onboarding/complete")
-
-        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-        BODY=$(echo "$RESPONSE" | sed '$d')
-
-        if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-          echo "Failed to complete Aurral onboarding (HTTP $HTTP_CODE): $BODY" >&2
-          exit 1
-        fi
-
-        echo "Aurral onboarding completed successfully"
+        echo "Setting Aurral download folder..."
+        DOWNLOAD_FOLDER_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
+          --arg downloadFolderPath ${escapeShellArg cfg.libraryDir} \
+          '{ downloadFolderPath: $downloadFolderPath }')
+        check_response "set download folder" "$(${
+          apiUtil.apiCall "POST" "/settings" "$DOWNLOAD_FOLDER_PAYLOAD"
+        })"
       '';
     };
   };

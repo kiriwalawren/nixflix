@@ -21,11 +21,13 @@ let
       ${lidarrJq.flagsString} \
       --arg url ${escapeShellArg cfg.settings.lidarr.url} \
       --arg defaultMonitorOption ${escapeShellArg cfg.settings.lidarr.defaultMonitorOption} \
+      --arg externalUrl ${escapeShellArg cfg.settings.lidarr.externalUrl} \
       '{
         integrations: {
           lidarr: {
             enabled: true,
             url: $url,
+            externalUrl: $externalUrl,
             apiKey: ${lidarrJq.refs.lidarrApiKey},
             defaultMonitorOption: $defaultMonitorOption,
             searchOnAdd: ${boolToString cfg.settings.lidarr.searchOnAdd}
@@ -42,7 +44,7 @@ let
     check_response "fetch Lidarr metadata profiles" "$(${
       apiCall "GET" "/settings/lidarr/metadata-profiles" null
     })"
-    METADATA_PROFILE_ID=$(echo "$BODY" | ${pkgs.jq}/bin/jq -r '.[0].id // empty')
+    METADATA_PROFILE_ID=$(echo "$BODY" | ${pkgs.jq}/bin/jq -r '[.[] | select(.name != "None")][0].id // empty')
 
     if [ -z "$QUALITY_PROFILE_ID" ] || [ -z "$METADATA_PROFILE_ID" ]; then
       echo "Could not determine Lidarr quality/metadata profile IDs" >&2
@@ -53,7 +55,9 @@ let
     PROFILES_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
       --argjson qualityProfileId "$QUALITY_PROFILE_ID" \
       --argjson metadataProfileId "$METADATA_PROFILE_ID" \
-      '{ integrations: { lidarr: { qualityProfileId: $qualityProfileId, metadataProfileId: $metadataProfileId } } }')
+      --arg rootFolderPath ${escapeShellArg (toString cfg.settings.lidarr.rootFolderPath)} \
+      '{ integrations: { lidarr: ({ qualityProfileId: $qualityProfileId, metadataProfileId: $metadataProfileId }
+        + (if $rootFolderPath == "" then {} else { rootFolderPath: $rootFolderPath } end)) } }')
     check_response "save Lidarr profiles" "$(${apiCall "POST" "/settings" "$PROFILES_PAYLOAD"})"
   '';
 

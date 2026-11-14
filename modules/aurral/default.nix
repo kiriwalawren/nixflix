@@ -9,7 +9,14 @@ let
   inherit (import ../../lib/mkVirtualHosts.nix { inherit lib config; }) mkVirtualHost;
   secrets = import ../../lib/secrets { inherit lib; };
   getFirstAdmin = import ../../lib/getFirstAdmin.nix { inherit lib; };
-  inherit (config.nixflix) jellyfin navidrome;
+  inherit (config.nixflix)
+    jellyfin
+    lidarr
+    navidrome
+    prowlarr
+    slskd
+    ;
+  sabnzbd = config.nixflix.usenetClients.sabnzbd;
   cfg = config.nixflix.aurral;
 
   firstNavidromeAdmin =
@@ -22,10 +29,14 @@ in
 {
   imports = [
     ./jellyfin.nix
+    ./lastfm.nix
     ./lidarr.nix
     ./navidrome.nix
     ./oidc.nix
+    ./prowlarr.nix
+    ./sabnzbd.nix
     ./setupService.nix
+    ./slskd.nix
     ./users
   ];
 
@@ -50,16 +61,26 @@ in
 
         port = mkOption {
           type = types.port;
-          default = 5030;
+          default = 3001;
           description = "Port on which the Aurral web UI/API listens.";
         };
 
         directories = lib.mkOption {
           type = lib.types.listOf lib.types.externalPath;
-          default = if config.nixflix.lidarr.enable then config.nixflix.lidarr.mediaDirs else [ ];
+          default =
+            optionals lidarr.enable lidarr.mediaDirs
+            ++ optional cfg.settings.slskd.enable slskd.settings.directories.downloads
+            ++ optional cfg.settings.sabnzbd.enable sabnzbd.settings.misc.complete_dir;
+          defaultText = literalExpression ''
+            optionals config.nixflix.lidarr.enable config.nixflix.lidarr.mediaDirs
+            ++ optional config.nixflix.aurral.settings.slskd.enable config.nixflix.slskd.settings.directories.downloads
+            ++ optional config.nixflix.aurral.settings.sabnzbd.enable config.nixflix.usenetClients.sabnzbd.settings.misc.complete_dir
+          '';
           description = ''
-            Directories that Aurral needs access to. Other directories won't be visible by the app.
+            Directories that Aurral needs access to. Other directories are read-only to the app.
             Environment variable `DOWNLOAD_FOLDER` is added automatically.
+            Aurral removes completed slskd and SABnzbd downloads after importing them, so their
+            download folders must be listed here.
             See BindPaths in {manpage}`systemd.exec(5)`.
           '';
         };
@@ -147,8 +168,115 @@ in
 
             searchOnAdd = mkOption {
               type = types.bool;
-              default = false;
+              default = true;
               description = "Whether Aurral should trigger a search when adding items to Lidarr.";
+            };
+
+            externalUrl = mkOption {
+              type = types.str;
+              default =
+                optionalString (config.nixflix.reverseProxy.enable && lidarr.reverseProxy.expose)
+                  "${config.nixflix.reverseProxy.httpScheme}://${lidarr.subdomain}.${config.nixflix.reverseProxy.domain}";
+              defaultText = literalExpression ''
+                optionalString (config.nixflix.reverseProxy.enable && config.nixflix.lidarr.reverseProxy.expose)
+                  "''${config.nixflix.reverseProxy.httpScheme}://''${config.nixflix.lidarr.subdomain}.''${config.nixflix.reverseProxy.domain}"
+              '';
+              description = "Lidarr URL used for links in the Aurral UI. Empty means `url` is used.";
+            };
+
+            rootFolderPath = mkOption {
+              type = types.nullOr types.str;
+              default = if lidarr.config.rootFolders == [ ] then null else (head lidarr.config.rootFolders).path;
+              defaultText = literalExpression "(head config.nixflix.lidarr.config.rootFolders).path, or null when there are none";
+              description = "Lidarr root folder Aurral adds artists to. Left unchanged when null.";
+            };
+          };
+
+          prowlarr = {
+            enable = mkOption {
+              type = types.bool;
+              default = prowlarr.enable;
+              defaultText = literalExpression "config.nixflix.prowlarr.enable";
+              description = "Whether to configure Aurral's Prowlarr integration, used to search Usenet indexers.";
+            };
+
+            url = mkOption {
+              type = types.str;
+              default = "http://${prowlarr.connectionAddress}:${toString prowlarr.config.hostConfig.port}${prowlarr.config.hostConfig.urlBase}";
+              defaultText = literalExpression ''
+                "http://''${config.nixflix.prowlarr.connectionAddress}:''${toString config.nixflix.prowlarr.config.hostConfig.port}''${config.nixflix.prowlarr.config.hostConfig.urlBase}"
+              '';
+              description = "URL Aurral uses to connect to Prowlarr. Only used when `enable = true`.";
+            };
+
+            apiKey = secrets.mkSecretOption {
+              nullable = true;
+              default = prowlarr.config.apiKey;
+              defaultText = literalExpression "config.nixflix.prowlarr.config.apiKey";
+              description = "Prowlarr API key used by Aurral. Only used when `enable = true`.";
+            };
+
+            categories = mkOption {
+              type = types.listOf types.ints.positive;
+              default = [ 3000 ];
+              description = "Newznab categories Aurral searches in Prowlarr. 3000 is Audio.";
+            };
+          };
+
+          sabnzbd = {
+            enable = mkOption {
+              type = types.bool;
+              default = sabnzbd.enable;
+              defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.enable";
+              description = "Whether to configure Aurral's SABnzbd integration, used to download from Usenet.";
+            };
+
+            url = mkOption {
+              type = types.str;
+              default = "http://${sabnzbd.connectionAddress}:${toString sabnzbd.settings.misc.port}${sabnzbd.settings.misc.url_base}";
+              defaultText = literalExpression ''
+                "http://''${config.nixflix.usenetClients.sabnzbd.connectionAddress}:''${toString config.nixflix.usenetClients.sabnzbd.settings.misc.port}''${config.nixflix.usenetClients.sabnzbd.settings.misc.url_base}"
+              '';
+              description = "URL Aurral uses to connect to SABnzbd. Only used when `enable = true`.";
+            };
+
+            apiKey = secrets.mkSecretOption {
+              nullable = true;
+              default = sabnzbd.settings.misc.api_key;
+              defaultText = literalExpression "config.nixflix.usenetClients.sabnzbd.settings.misc.api_key";
+              description = "SABnzbd API key used by Aurral. Only used when `enable = true`.";
+            };
+
+            category = mkOption {
+              type = types.str;
+              default = "aurral";
+              description = ''
+                SABnzbd category Aurral downloads into. nixflix adds an `aurral` category to
+                SABnzbd by default.
+              '';
+            };
+          };
+
+          slskd = {
+            enable = mkOption {
+              type = types.bool;
+              default = slskd.enable;
+              defaultText = literalExpression "config.nixflix.slskd.enable";
+              description = "Whether to configure Aurral's slskd integration, used to download from Soulseek.";
+            };
+
+            url = mkOption {
+              type = types.str;
+              default = "http://${slskd.connectionAddress}:${toString slskd.settings.web.port}";
+              defaultText = literalExpression ''"http://''${config.nixflix.slskd.connectionAddress}:''${toString config.nixflix.slskd.settings.web.port}"'';
+              description = "URL Aurral uses to connect to slskd. Only used when `enable = true`.";
+            };
+
+            apiKey = secrets.mkSecretOption {
+              nullable = true;
+              default = slskd.apiKey;
+              defaultText = literalExpression "config.nixflix.slskd.apiKey";
+              description = "slskd API key used by Aurral. Only used when `enable = true`.";
             };
           };
 
@@ -192,6 +320,25 @@ in
               description = ''
                 Jellyfin user Aurral acts as. Resolved to the user's ID at runtime.
                 Only used when `enable = true`.
+              '';
+            };
+          };
+
+          lastfm = {
+            apiKey = secrets.mkSecretOption {
+              nullable = true;
+              description = ''
+                Last.fm API key, shown under Settings → Discovery → Last.fm. Aurral uses it for
+                recommendations and falls back to ListenBrainz without it.
+                Leaving it null clears the stored key.
+              '';
+            };
+
+            apiSecret = secrets.mkSecretOption {
+              nullable = true;
+              description = ''
+                Last.fm shared secret, shown under Settings → Discovery → Last.fm. Only needed for
+                scrobbling. Requires `apiKey`.
               '';
             };
           };

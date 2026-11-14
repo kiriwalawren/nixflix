@@ -10,6 +10,11 @@ let
   jellyfinApiKey = "jellyfinApiKey1111111111111111111";
   navidromePassword = "navidromepassword";
   listenerPassword = "listenerpassword";
+  prowlarrApiKey = "fedcba9876543210fedcba9876543210";
+  sabnzbdApiKey = "testapikey123456789abcdef";
+  slskdApiKey = "0123456789abcdef0123456789abcdef";
+  lastfmApiKey = "lastfmapikey0000000000000000000000";
+  lastfmApiSecret = "lastfmsecret0000000000000000000000";
 in
 pkgs.testers.runNixOSTest {
   name = "aurral-basic-test";
@@ -56,9 +61,45 @@ pkgs.testers.runNixOSTest {
         };
       };
 
+      prowlarr = {
+        enable = true;
+        config = {
+          hostConfig = {
+            username = "admin";
+            password._secret = pkgs.writeText "prowlarr-password" "testpassword123";
+          };
+          apiKey._secret = pkgs.writeText "prowlarr-apikey" prowlarrApiKey;
+        };
+      };
+
+      usenetClients.sabnzbd = {
+        enable = true;
+        settings.misc = {
+          api_key._secret = pkgs.writeText "sabnzbd-apikey" sabnzbdApiKey;
+          nzb_key._secret = pkgs.writeText "sabnzbd-nzbkey" "testnzbkey123456789abcdef";
+        };
+      };
+
+      slskd = {
+        enable = true;
+        vpn.enable = false;
+        username._secret = pkgs.writeText "slskd-username" "testuser";
+        password._secret = pkgs.writeText "slskd-password" "testpassword123";
+        apiKey._secret = pkgs.writeText "slskd-apikey" slskdApiKey;
+        settings.soulseek = {
+          username._secret = pkgs.writeText "soulseek-username" "soulseekuser";
+          password._secret = pkgs.writeText "soulseek-password" "soulseekpassword";
+        };
+      };
+
       aurral = {
         enable = true;
         apiKey._secret = pkgs.writeText "aurral-apikey" testApiKey;
+
+        settings.lastfm = {
+          apiKey._secret = pkgs.writeText "lastfm-apikey" lastfmApiKey;
+          apiSecret._secret = pkgs.writeText "lastfm-secret" lastfmApiSecret;
+        };
 
         settings.users = {
           admin = {
@@ -82,7 +123,7 @@ pkgs.testers.runNixOSTest {
 
     start_all()
 
-    port = 5030
+    port = 3001
     machine.wait_for_unit("lidarr.service", timeout=180)
     machine.wait_for_unit("lidarr-config.service", timeout=180)
     machine.wait_for_unit("aurral.service", timeout=180)
@@ -92,6 +133,10 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("aurral-jellyfin.service", timeout=300)
     machine.wait_for_unit("aurral-navidrome.service", timeout=180)
     machine.wait_for_unit("aurral-users-config.service", timeout=180)
+    machine.wait_for_unit("aurral-prowlarr.service", timeout=180)
+    machine.wait_for_unit("aurral-sabnzbd.service", timeout=180)
+    machine.wait_for_unit("aurral-slskd.service", timeout=180)
+    machine.wait_for_unit("aurral-lastfm.service", timeout=180)
 
     base_url = f"http://127.0.0.1:{port}"
 
@@ -125,6 +170,55 @@ pkgs.testers.runNixOSTest {
     assert lidarr.get("enabled") is not False, f"Expected Lidarr enabled, got {lidarr}"
     assert lidarr.get("qualityProfileId"), f"Expected a quality profile ID, got {lidarr}"
     assert lidarr.get("metadataProfileId"), f"Expected a metadata profile ID, got {lidarr}"
+    assert lidarr.get("searchOnAdd") is True, f"Expected searchOnAdd, got {lidarr}"
+    assert lidarr.get("rootFolderPath") == "/media/music", f"Unexpected root folder: {lidarr}"
+
+    lidarr_metadata_profiles = json.loads(machine.succeed(
+        "curl -sf -H 'X-Api-Key: 5678efgh5678efgh5678efgh5678efgh' http://127.0.0.1:8686/api/v1/metadataprofile"
+    ))
+    none_ids = [p["id"] for p in lidarr_metadata_profiles if p["name"] == "None"]
+    assert lidarr["metadataProfileId"] not in none_ids, \
+        f"Aurral picked the None metadata profile: {lidarr}, profiles {lidarr_metadata_profiles}"
+
+    print("Checking the Prowlarr, SABnzbd and slskd integrations...")
+    integrations = settings["integrations"]
+    prowlarr = integrations["prowlarr"]
+    assert prowlarr.get("enabled") is True, f"Unexpected Prowlarr integration: {prowlarr}"
+    assert prowlarr.get("url") == "http://127.0.0.1:9696", f"Unexpected Prowlarr url: {prowlarr}"
+    assert prowlarr.get("apiKey") == "${prowlarrApiKey}", "Prowlarr API key was not saved"
+    assert prowlarr.get("categories") == [3000], f"Unexpected Prowlarr categories: {prowlarr}"
+
+    sabnzbd = integrations["sabnzbd"]
+    assert sabnzbd.get("enabled") is True, f"Unexpected SABnzbd integration: {sabnzbd}"
+    assert sabnzbd.get("apiKey") == "${sabnzbdApiKey}", "SABnzbd API key was not saved"
+    assert sabnzbd.get("category") == "aurral", f"Unexpected SABnzbd category: {sabnzbd}"
+
+    slskd = integrations["slskd"]
+    assert slskd.get("enabled") is True, f"Unexpected slskd integration: {slskd}"
+    assert slskd.get("url") == "http://127.0.0.1:5030", f"Unexpected slskd url: {slskd}"
+    assert slskd.get("apiKey") == "${slskdApiKey}", "slskd API key was not saved"
+
+    print("Checking the Last.fm discovery credentials...")
+    lastfm = integrations["lastfm"]
+    assert lastfm.get("apiKey") == "${lastfmApiKey}", "Last.fm API key was not saved"
+    assert lastfm.get("apiSecret") == "${lastfmApiSecret}", "Last.fm shared secret was not saved"
+
+    print("Checking aurral-lastfm keeps discovery settings chosen in the UI...")
+    machine.succeed(
+        f"curl -sf -X POST -H 'X-Api-Key: ${testApiKey}' -H 'Content-Type: application/json' "
+        f"""-d '{{"integrations":{{"lastfm":{{"discoveryMode":"deeper"}}}}}}' {base_url}/api/settings"""
+    )
+    machine.succeed("systemctl restart aurral-lastfm.service")
+    lastfm = json.loads(machine.succeed(
+        f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/settings"
+    ))["integrations"]["lastfm"]
+    assert lastfm.get("discoveryMode") == "deeper", f"aurral-lastfm overwrote discoveryMode: {lastfm}"
+    assert lastfm.get("apiKey") == "${lastfmApiKey}", f"Last.fm API key was lost: {lastfm}"
+
+    print("Checking Aurral can write the slskd and SABnzbd download folders...")
+    bind_paths = machine.succeed("systemctl show aurral.service -p BindPaths")
+    for path in ("/data/downloads/slskd/complete", "/data/downloads/usenet/complete"):
+        assert path in bind_paths, f"{path} missing from Aurral BindPaths: {bind_paths}"
 
     print("Checking the Jellyfin integration resolved the admin user and uses the nixflix API key...")
     jellyfin = settings["integrations"]["jellyfin"]
@@ -195,6 +289,20 @@ pkgs.testers.runNixOSTest {
     listener = get_listener()
     assert listener["role"] == "user", f"Listener role was not restored: {listener}"
     assert listener["permissions"]["accessFlow"] is True, f"Listener permissions were not restored: {listener}"
+
+    print("Checking a stale downloadFolderPath outside the confined unit is replaced...")
+    data_dir = machine.succeed("systemctl show aurral.service -p WorkingDirectory --value").strip()
+    machine.succeed("systemctl stop aurral.service")
+    machine.succeed(
+        f"runuser -u aurral -- ${pkgs.sqlite}/bin/sqlite3 {data_dir}/aurral.db "
+        "\"INSERT OR REPLACE INTO settings (key, value) VALUES ('downloadFolderPath', '/data/downloads/aurral')\""
+    )
+    machine.succeed("systemctl restart aurral-lidarr.service")
+    settings = json.loads(machine.succeed(
+        f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/settings"
+    ))
+    assert settings["downloadFolderPath"] == "/data/media/aurral", \
+        f"Unexpected download folder: {settings['downloadFolderPath']}"
 
     print("All Aurral login assertions passed!")
   '';

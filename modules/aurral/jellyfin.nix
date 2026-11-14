@@ -75,7 +75,12 @@ in
 
         ${apiUtil.preamble}
 
-        ${if jfCfg.enable then configureJellyfin else clearJellyfin}
+        ${
+          if jfCfg.enable && nixflix.jellyfin.enable && nixflix.jellyfin.libraries.Music != null then
+            configureJellyfin
+          else
+            clearJellyfin
+        }
       '';
     };
   };

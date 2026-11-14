@@ -53,7 +53,7 @@ in
 
         ${apiUtil.preamble}
 
-        ${if ndCfg.enable then configureNavidrome else clearNavidrome}
+        ${if ndCfg.enable && nixflix.navidrome.enable then configureNavidrome else clearNavidrome}
       '';
     };
   };

@@ -104,6 +104,29 @@ let
       };
     } overrides;
 
+  withDownloadClients = {
+    prowlarr = {
+      enable = true;
+      config = {
+        hostConfig.password._secret = "/run/secrets/prowlarr-pass";
+        apiKey._secret = "/run/secrets/prowlarr-api";
+      };
+    };
+    usenetClients.sabnzbd = {
+      enable = true;
+      settings.misc = {
+        api_key._secret = "/run/secrets/sabnzbd-api";
+        nzb_key._secret = "/run/secrets/sabnzbd-nzb";
+      };
+    };
+    slskd = {
+      enable = true;
+      username._secret = "/run/secrets/slskd-user";
+      password._secret = "/run/secrets/slskd-pass";
+      apiKey._secret = "/run/secrets/slskd-api";
+    };
+  };
+
   withoutApiKey =
     (evalConfig [
       {
@@ -259,7 +282,135 @@ in
       && !(lib.elem "lidarr-config.service" svc.requires)
     )}
 
+    ${check "lidarr picks the first metadata profile that is not None" (
+      lib.hasInfix ''select(.name != "None")'' (lidarrService { }).script
+    )}
+
+    ${check "lidarr searchOnAdd defaults to true"
+      (aurralConfig { }).nixflix.aurral.settings.lidarr.searchOnAdd
+    }
+
+    ${check "lidarr rootFolderPath defaults to the first lidarr root folder" (
+      (aurralConfig { }).nixflix.aurral.settings.lidarr.rootFolderPath == "/data/media/music"
+      && lib.hasInfix "--arg rootFolderPath /data/media/music" (lidarrService { }).script
+    )}
+
+    ${check "lidarr externalUrl follows the reverse proxy" (
+      (aurralConfig { }).nixflix.aurral.settings.lidarr.externalUrl == ""
+      &&
+        (aurralConfig {
+          nginx = {
+            enable = true;
+            domain = "example.com";
+          };
+        }).nixflix.aurral.settings.lidarr.externalUrl == "http://lidarr.example.com"
+    )}
+
     echo 'PASS: aurral-lidarr' > $out
+  '';
+
+  aurral-download-clients = pkgs.runCommand "unit-test-aurral-download-clients" { } ''
+    ${check "download clients are disabled when their services are off" (
+      lib.all
+        (
+          name:
+          let
+            svc = (aurralConfig { }).systemd.services."aurral-${name}";
+          in
+          lib.hasInfix ''"${name}":{"enabled":false}'' svc.script
+          && svc.requires == [ "aurral-setup.service" ]
+        )
+        [
+          "prowlarr"
+          "sabnzbd"
+          "slskd"
+        ]
+    )}
+
+    ${check "enabled download clients are configured after their services" (
+      let
+        cfg = aurralConfig withDownloadClients;
+        svc = name: cfg.systemd.services."aurral-${name}";
+      in
+      lib.elem "prowlarr-config.service" (svc "prowlarr").requires
+      && lib.hasInfix "categories" (svc "prowlarr").script
+      && lib.elem "sabnzbd-categories.service" (svc "sabnzbd").requires
+      && lib.hasInfix "--arg category aurral" (svc "sabnzbd").script
+      && lib.elem "slskd.service" (svc "slskd").requires
+      && lib.hasInfix "http://127.0.0.1:5030" (svc "slskd").script
+    )}
+
+    ${check "aurral can write the slskd and SABnzbd download folders" (
+      let
+        dirs = (aurralConfig withDownloadClients).nixflix.aurral.directories;
+      in
+      lib.elem "/data/downloads/slskd/complete" dirs && lib.elem "/data/downloads/usenet/complete" dirs
+    )}
+
+    ${check "slskd shares the Aurral library alongside Lidarr's" (
+      (aurralConfig withDownloadClients).nixflix.slskd.settings.shares.directories == [
+        "/data/media/music"
+        "/data/media/aurral"
+      ]
+    )}
+
+    ${check "SABnzbd gets an aurral category" (
+      lib.any (c: c.name == "aurral")
+        (aurralConfig withDownloadClients).nixflix.usenetClients.sabnzbd.settings.categories
+    )}
+
+    ${check "aurral and slskd default to different ports" (
+      let
+        cfg = (aurralConfig withDownloadClients).nixflix;
+      in
+      cfg.aurral.port != cfg.slskd.settings.web.port
+    )}
+
+    ${check "an enabled slskd integration without an apiKey trips its assertion" (
+      lib.length (
+        failuresMatching (lib.recursiveUpdate withDownloadClients {
+          slskd.apiKey = null;
+        }) "settings.slskd.apiKey"
+      ) == 1
+    )}
+
+    ${check "configured download clients trip no aurral assertions" (
+      aurralFailures withDownloadClients == [ ]
+    )}
+
+    echo 'PASS: aurral-download-clients' > $out
+  '';
+
+  aurral-lastfm = pkgs.runCommand "unit-test-aurral-lastfm" { } ''
+    ${check "Last.fm credentials are cleared by default" (
+      lib.hasInfix ''{"integrations":{"lastfm":{"apiKey":"","apiSecret":""}}}''
+        (aurralConfig { }).systemd.services.aurral-lastfm.script
+    )}
+
+    ${check "configured Last.fm credentials are read from their secret files" (
+      let
+        script =
+          (aurralConfig {
+            aurral.settings.lastfm = {
+              apiKey._secret = "/run/secrets/lastfm-api";
+              apiSecret._secret = "/run/secrets/lastfm-secret";
+            };
+          }).systemd.services.aurral-lastfm.script;
+      in
+      lib.hasInfix "/run/secrets/lastfm-api" script
+      && lib.hasInfix "/run/secrets/lastfm-secret" script
+      && lib.hasInfix "lastfm: { apiKey:" script
+    )}
+
+    ${check "a Last.fm apiSecret without an apiKey trips its assertion" (
+      lib.length (
+        failuresMatching {
+          aurral.settings.lastfm.apiSecret._secret = "/run/secrets/lastfm-secret";
+        } "settings.lastfm.apiSecret"
+      ) == 1
+    )}
+
+    echo 'PASS: aurral-lastfm' > $out
   '';
 
   aurral-users = pkgs.runCommand "unit-test-aurral-users" { } ''

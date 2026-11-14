@@ -19,8 +19,14 @@ in
     mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null)
       {
         description = "Ensure Prowlarr tags exist via API";
-        after = [ "prowlarr-config.service" ];
-        requires = [ "prowlarr-config.service" ];
+        after = [
+          "prowlarr.service"
+          "prowlarr-config.service"
+        ];
+        requires = [
+          "prowlarr.service"
+          "prowlarr-config.service"
+        ];
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
