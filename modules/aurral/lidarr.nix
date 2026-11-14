@@ -64,7 +64,8 @@ let
   disableLidarr = ''
     echo "Disabling Lidarr integration..."
     check_response "disable Lidarr" "$(${
-      apiCall "POST" "/settings" ''{"integrations":{"lidarr":{"enabled":false}}}''
+      apiCall "POST" "/settings"
+        ''{"integrations":{"lidarr":{"enabled":false,"rootFolderPath":null,"rootFolderPaths":[]}}}''
     })"
   '';
 in

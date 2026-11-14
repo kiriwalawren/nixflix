@@ -252,7 +252,7 @@ pkgs.testers.runNixOSTest {
             f"curl -sf -H 'X-ND-Authorization: Bearer {nd_token}' "
             "'http://127.0.0.1:4533/api/library?_start=0&_end=1000'"
         ))
-        return [l["name"] for l in libraries if l["path"] == "/data/media/aurral"]
+        return [l["name"] for l in libraries if l["path"] == "/data/media/music"]
 
     assert aurral_library_names() == ["Aurral Playlists"], aurral_library_names()
     machine.succeed("systemctl restart aurral.service")
@@ -301,8 +301,21 @@ pkgs.testers.runNixOSTest {
     settings = json.loads(machine.succeed(
         f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/settings"
     ))
-    assert settings["downloadFolderPath"] == "/data/media/aurral", \
+    assert settings["downloadFolderPath"] == "/data/media/music", \
         f"Unexpected download folder: {settings['downloadFolderPath']}"
+
+    print("Checking the Lidarr disable payload clears the Lidarr root folders...")
+    machine.succeed(
+        f"curl -sf -X POST -H 'X-Api-Key: ${testApiKey}' -H 'Content-Type: application/json' "
+        """-d '{"integrations":{"lidarr":{"enabled":false,"rootFolderPath":null,"rootFolderPaths":[]}}}' """
+        f"{base_url}/api/settings"
+    )
+    lidarr = json.loads(machine.succeed(
+        f"curl -sf -H 'X-Api-Key: ${testApiKey}' {base_url}/api/settings"
+    ))["integrations"]["lidarr"]
+    assert lidarr.get("enabled") is False, f"Lidarr was not disabled: {lidarr}"
+    assert lidarr.get("rootFolderPath") is None, f"Lidarr root folder was kept: {lidarr}"
+    assert not lidarr.get("rootFolderPaths"), f"Lidarr root folders were kept: {lidarr}"
 
     print("All Aurral login assertions passed!")
   '';

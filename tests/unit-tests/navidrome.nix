@@ -40,27 +40,59 @@ let
   configWith = overrides: (evalConfig [ { nixflix = lib.recursiveUpdate base overrides; } ]).config;
 
   withLidarr = configWith { };
+  withSeparateAurral = configWith { aurral.libraryDir = "/data/media/aurral"; };
   withoutLidarr = configWith { lidarr.enable = false; };
-  withExtra = configWith { navidrome.libraries.Extra.path = "/data/media/extra"; };
+  withExtra = configWith {
+    aurral.libraryDir = "/data/media/aurral";
+    navidrome.libraries.Extra.path = "/data/media/extra";
+  };
+
+  multipleRoots = {
+    lidarr.mediaDirs = [
+      "/data/media/music"
+      "/data/media/music-lossless"
+    ];
+  };
+  withMultipleRoots = configWith (multipleRoots // { aurral.libraryDir = "/data/media/aurral"; });
+  withAurralInLidarrRoot = configWith (
+    multipleRoots // { aurral.libraryDir = "/data/media/music-lossless"; }
+  );
 
   bindPaths = cfg: cfg.systemd.services.navidrome.serviceConfig.BindReadOnlyPaths;
 in
 {
   navidrome-libraries = pkgs.runCommand "unit-test-navidrome-libraries" { } ''
-    ${check
-      "lidarr and aurral keep the lidarr folder as MusicFolder and add an Aurral Playlists library"
-      (
-        withLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
-        && withLidarr.nixflix.navidrome.libraries."Aurral Playlists".path == "/data/media/aurral"
-      )
-    }
+    ${check "the default aurral folder is the lidarr MusicFolder, so no extra library is added" (
+      withLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
+      && withLidarr.nixflix.navidrome.libraries == { }
+    )}
+
+    ${check "a separate aurral folder gets an Aurral Playlists library" (
+      withSeparateAurral.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
+      && withSeparateAurral.nixflix.navidrome.libraries."Aurral Playlists".path == "/data/media/aurral"
+    )}
+
+    ${check "every lidarr root folder and the aurral folder become libraries" (
+      withMultipleRoots.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
+      &&
+        lib.mapAttrs (_: l: l.path) withMultipleRoots.nixflix.navidrome.libraries == {
+          "Aurral Playlists" = "/data/media/aurral";
+          music-lossless = "/data/media/music-lossless";
+        }
+    )}
+
+    ${check "an aurral folder that is also a lidarr root folder is one Aurral Playlists library" (
+      lib.mapAttrs (_: l: l.path) withAurralInLidarrRoot.nixflix.navidrome.libraries == {
+        "Aurral Playlists" = "/data/media/music-lossless";
+      }
+    )}
 
     ${check "extra library paths are bind-mounted into the navidrome sandbox" (
-      lib.elem "/data/media/aurral" (bindPaths withLidarr)
+      lib.elem "/data/media/aurral" (bindPaths withSeparateAurral)
     )}
 
     ${check "aurral without lidarr becomes MusicFolder with no extra library" (
-      withoutLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/aurral"
+      withoutLidarr.nixflix.navidrome.settings.MusicFolder == "/data/media/music"
       && withoutLidarr.nixflix.navidrome.libraries == { }
     )}
 

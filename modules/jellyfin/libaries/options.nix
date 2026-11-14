@@ -594,9 +594,10 @@ in
 
     Music = mkIf ((config.nixflix.lidarr.enable or false) || (config.nixflix.aurral.enable or false)) {
       collectionType = "music";
-      paths =
+      paths = unique (
         optionals (config.nixflix.lidarr.enable or false) config.nixflix.lidarr.mediaDirs
-        ++ optional (config.nixflix.aurral.enable or false) config.nixflix.aurral.libraryDir;
+        ++ optional (config.nixflix.aurral.enable or false) config.nixflix.aurral.libraryDir
+      );
     };
   };
 }

@@ -13,6 +13,14 @@ let
   hostname = "${cfg.subdomain}.${config.nixflix.reverseProxy.domain}";
 
   inherit (config.nixflix) lidarr aurral;
+
+  defaultLibraryPaths = lib.unique (
+    lib.optionals lidarr.enable (map (folder: folder.path) lidarr.config.rootFolders)
+    ++ lib.optional aurral.enable aurral.libraryDir
+  );
+
+  libraryName =
+    path: if aurral.enable && path == aurral.libraryDir then "Aurral Playlists" else baseNameOf path;
 in
 {
   imports = [
@@ -26,9 +34,11 @@ in
     type = lib.types.submodule (navidrome: {
       freeformType = lib.types.attrsOf lib.types.anything;
 
-      config.libraries = lib.mkIf (
-        aurral.enable && navidrome.config.settings.MusicFolder != aurral.libraryDir
-      ) { "Aurral Playlists".path = lib.mkDefault aurral.libraryDir; };
+      config.libraries = lib.listToAttrs (
+        map (path: lib.nameValuePair (libraryName path) { path = lib.mkDefault path; }) (
+          lib.filter (path: path != navidrome.config.settings.MusicFolder) defaultLibraryPaths
+        )
+      );
 
       options = {
         enable = lib.mkOption {
@@ -136,10 +146,10 @@ in
             Libraries nixflix created are deleted from Navidrome when removed from this option
             (the music files are left alone).
 
-            When Aurral is enabled and isn't already `settings.MusicFolder`, an `Aurral Playlists`
-            library pointing at `nixflix.aurral.libraryDir` is added by default. Aurral's Navidrome
-            integration renames the library at that path to `Aurral Playlists`, so don't give it
-            another name.
+            By default, every Lidarr root folder and `nixflix.aurral.libraryDir` that isn't
+            `settings.MusicFolder` becomes a library, each path once. Lidarr folders are named
+            after their last path component. The Aurral folder is named `Aurral Playlists`, because
+            Aurral's Navidrome integration renames the library at that path to it.
           '';
         };
 
@@ -172,11 +182,14 @@ in
               MusicFolder = lib.mkOption {
                 type = lib.types.str;
                 default =
-                  if !lidarr.enable && aurral.enable then aurral.libraryDir else builtins.head lidarr.mediaDirs;
+                  if defaultLibraryPaths != [ ] then
+                    builtins.head defaultLibraryPaths
+                  else
+                    builtins.head lidarr.mediaDirs;
                 defaultText = lib.literalExpression ''
-                  if !config.nixflix.lidarr.enable && config.nixflix.aurral.enable
-                  then config.nixflix.aurral.libraryDir
-                  else builtins.head config.nixflix.lidarr.mediaDirs
+                  the first of the Lidarr root folder paths (when Lidarr is enabled) followed by
+                  config.nixflix.aurral.libraryDir (when Aurral is enabled), or
+                  builtins.head config.nixflix.lidarr.mediaDirs when neither is enabled
                 '';
                 example = "/data/media/music";
                 description = ''

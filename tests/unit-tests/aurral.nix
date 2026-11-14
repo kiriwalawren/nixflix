@@ -230,26 +230,33 @@ in
   '';
 
   aurral-library-dir = pkgs.runCommand "unit-test-aurral-library-dir" { } ''
-    ${check "aurral library root defaults to mediaDir/aurral" (
-      (aurralConfig { }).services.aurral.environment.DOWNLOAD_FOLDER == "/data/media/aurral"
+    ${check "aurral library root defaults to mediaDir/music" (
+      (aurralConfig { }).services.aurral.environment.DOWNLOAD_FOLDER == "/data/media/music"
     )}
 
-    ${check "jellyfin Music covers lidarr and aurral folders in one library" (
+    ${check "jellyfin Music lists the shared lidarr and aurral folder once" (
       let
         cfg = aurralConfig { jellyfin.enable = true; };
       in
-      cfg.nixflix.jellyfin.libraries.Music.paths == [
+      cfg.nixflix.jellyfin.libraries.Music.paths == [ "/data/media/music" ]
+      && lib.attrNames (lib.filterAttrs (_: v: v != null) cfg.nixflix.jellyfin.libraries) == [ "Music" ]
+    )}
+
+    ${check "jellyfin Music covers a separate aurral folder in the same library" (
+      (aurralConfig {
+        jellyfin.enable = true;
+        aurral.libraryDir = "/data/media/aurral";
+      }).nixflix.jellyfin.libraries.Music.paths == [
         "/data/media/music"
         "/data/media/aurral"
       ]
-      && lib.attrNames (lib.filterAttrs (_: v: v != null) cfg.nixflix.jellyfin.libraries) == [ "Music" ]
     )}
 
     ${check "jellyfin Music is just the aurral folder without lidarr" (
       (aurralConfig {
         jellyfin.enable = true;
         lidarr.enable = false;
-      }).nixflix.jellyfin.libraries.Music.paths == [ "/data/media/aurral" ]
+      }).nixflix.jellyfin.libraries.Music.paths == [ "/data/media/music" ]
     )}
 
     ${check "aurral without lidarr leaves the lidarr jellyfin notification off" (
@@ -276,7 +283,7 @@ in
       let
         svc = lidarrService { lidarr.enable = false; };
       in
-      lib.hasInfix ''"lidarr":{"enabled":false}'' svc.script
+      lib.hasInfix ''"lidarr":{"enabled":false,"rootFolderPath":null,"rootFolderPaths":[]}'' svc.script
       && !(lib.hasInfix "/settings/lidarr/profiles" svc.script)
       && !(lib.elem "lidarr-config.service" svc.after)
       && !(lib.elem "lidarr-config.service" svc.requires)
@@ -347,8 +354,15 @@ in
       lib.elem "/data/downloads/slskd/complete" dirs && lib.elem "/data/downloads/usenet/complete" dirs
     )}
 
-    ${check "slskd shares the Aurral library alongside Lidarr's" (
+    ${check "slskd shares the default Aurral library once, since it is the Lidarr folder" (
       (aurralConfig withDownloadClients).nixflix.slskd.settings.shares.directories == [
+        "/data/media/music"
+      ]
+    )}
+
+    ${check "slskd shares a separate Aurral library alongside the Lidarr media dirs" (
+      (aurralConfig (withDownloadClients // { aurral.libraryDir = "/data/media/aurral"; }))
+      .nixflix.slskd.settings.shares.directories == [
         "/data/media/music"
         "/data/media/aurral"
       ]

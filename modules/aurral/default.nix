@@ -94,11 +94,13 @@ in
 
         libraryDir = mkOption {
           type = types.path;
-          default = "${config.nixflix.mediaDir}/aurral";
-          defaultText = literalExpression ''"''${config.nixflix.mediaDir}/aurral"'';
+          default = "${config.nixflix.mediaDir}/music";
+          defaultText = literalExpression ''"''${config.nixflix.mediaDir}/music"'';
           description = ''
             Aurral's library root (its "Downloads Folder"). Downloads and imports land here,
             and it is added to the Navidrome and Jellyfin music libraries.
+            While Lidarr is enabled with this folder as a root folder, Aurral treats every file
+            in it as Lidarr's and never deletes it.
           '';
         };
 

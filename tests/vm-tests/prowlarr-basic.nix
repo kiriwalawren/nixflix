@@ -121,10 +121,10 @@ pkgsUnfree.testers.runNixOSTest {
     # Wait for tags and indexer proxies services
     machine.wait_for_unit("prowlarr-tags.service", timeout=60)
 
-    # Starting tags in the same transaction as Prowlarr must wait for Prowlarr's API
-    machine.succeed("systemctl stop prowlarr.service prowlarr-tags.service")
-    machine.succeed("systemctl start prowlarr-indexers.service")
-    machine.succeed("systemctl is-active prowlarr-tags.service")
+    # Starting these in the same transaction as Prowlarr must wait for Prowlarr's API
+    machine.succeed("systemctl stop prowlarr.service prowlarr-tags.service prowlarr-applications.service")
+    machine.succeed("systemctl start prowlarr-indexers.service prowlarr-applications.service")
+    machine.succeed("systemctl is-active prowlarr-tags.service prowlarr-applications.service")
     machine.succeed("systemctl start --no-block prowlarr-indexer-proxies.service")
 
     machine.wait_for_unit("prowlarr-indexer-proxies.service", timeout=180)
