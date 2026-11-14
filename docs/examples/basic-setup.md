@@ -34,6 +34,7 @@ This example shows a working media server configuration based on a real producti
     "usenet/newsgroupdirect/username" = {};
     "usenet/newsgroupdirect/password" = {};
     "navidrome/password" = {};
+    "pinchflat/env" = {}; # SECRET_KEY_BASE=<openssl rand -hex 64>
   };
 
   nixflix = {
@@ -180,6 +181,11 @@ This example shows a working media server configuration based on a real producti
       };
     };
 
+    pinchflat = {
+      enable = true;
+      secretsFile = config.sops.secrets."pinchflat/env".path;
+    };
+
     vpn = {
       enable = true;
       wgConfFile = config.sops.secrets."wireguard/conf".path;
@@ -198,6 +204,7 @@ This example shows a working media server configuration based on a real producti
 - **Radarr** - Movies
 - **Lidarr** - Music
 - **Navidrome** - Music Server
+- **Pinchflat** - YouTube media management
 - **Prowlarr** - Indexer management with 3 pre-configured indexers
 - **SABnzbd** - Usenet downloads with 2 providers
 - **Jellyfin** - Media streaming with automatic library configuration
@@ -218,6 +225,22 @@ This example shows a working media server configuration based on a real producti
 - "Shows" library pointing to Sonarr's media directories
 - "Movies" library pointing to Radarr's media directory
 - "Music" library pointing to Lidarr's media directory
+- "YouTube" library pointing to `<nixflix.pinchflat.mediaDir>/shows`
+  (`nixflix.pinchflat.showsDir`). It is a TV shows library that reads the NFO files and
+  posters Pinchflat writes, with no remote metadata or image fetchers for series, seasons
+  and episodes. Give your Pinchflat sources the "Media Center" media profile preset and
+  leave its output path template as it is: it writes `/shows/<channel>/...`, which
+  Jellyfin shows as one series per channel with a season per year. Turn on the preset's
+  "Create NFO data" toggle, which sits behind Pinchflat's free "Pro" switch; without
+  NFOs, episodes are still listed but get their titles from the file alone.
+  Pinchflat's "Music" preset writes `<mediaDir>/music/...`, which this library does not
+  pick up. If your template has no `/shows` prefix, set `nixflix.pinchflat.showsDir` to
+  `nixflix.pinchflat.mediaDir`. To change the YouTube
+  fetchers, set `nixflix.jellyfin.libraries.YouTube.typeOptions = lib.mkForce [ ... ];`:
+  `typeOptions` is a list, so without `lib.mkForce` your entries are appended to the
+  defaults and Series appears twice. Seerr leaves this library out (and disables it on
+  every sync) through `nixflix.seerr.jellyfin.excludeLibraries`, so YouTube channels
+  never show up as requestable TV shows next to Sonarr's
 
 **Prowlarr Apps**: Automatically configured connections to Sonarr, Radarr, and Lidarr
 
@@ -246,7 +269,8 @@ This example shows a working media server configuration based on a real producti
 │   ├── music/           # Music → Jellyfin "Music" library
 │   ├── anime/           # Anime series → Jellyfin "Shows" library
 │   ├── movies/          # Movies → Jellyfin "Movies" library
-│   └── tv/              # Standard TV shows → Jellyfin "Shows" library
+│   ├── tv/              # Standard TV shows → Jellyfin "Shows" library
+│   └── youtube/         # Pinchflat downloads → Jellyfin "YouTube" library
 ├── downloads/
 │   └── usenet/
 │       ├── complete/
@@ -263,6 +287,8 @@ This example shows a working media server configuration based on a real producti
     └── sonarr-anime/
 ```
 
+Pinchflat is the exception: its state lives in `/var/lib/pinchflat` (hardcoded by the nixpkgs module), not under `nixflix.stateDir`, so back it up separately.
+
 ## Service Access
 
 | Service | Via Reverse Proxy | Direct Access | Default Username |
@@ -277,6 +303,7 @@ This example shows a working media server configuration based on a real producti
 | Jellyfin | `http://jellyfin.nixflix` | `http://localhost:8096` | `admin` |
 | Seerr | `http://seerr.nixflix` | `http://localhost:5055` | `seerr` (local), `admin` (Jellyfin auth) |
 | Navidrome | `http://navidrome.nixflix` | `http://localhost:4533` | `admin` |
+| Pinchflat | `http://pinchflat.nixflix` | `http://localhost:8945` | none (set `BASIC_AUTH_*` in `secretsFile`) |
 
 ## Customization
 

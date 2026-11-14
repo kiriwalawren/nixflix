@@ -404,8 +404,20 @@ in
       - Movies: Created when Radarr is enabled
       - Music: Created when Lidarr is enabled
       - Anime: Created when either Sonarr anime or Radarr anime is enabled
+      - YouTube: Created when Pinchflat is enabled, pointing at `nixflix.pinchflat.showsDir`
+        (`<nixflix.pinchflat.mediaDir>/shows` by default). A TV shows library that reads
+        Pinchflat's NFO files and posters, with no remote metadata or image fetchers for
+        series, seasons and episodes. Give your Pinchflat sources the "Media Center" media
+        profile preset as-is: it writes `/shows/<channel>/...`, so each channel is a show
+        of the library. Turn on the preset's "Create NFO data" (behind Pinchflat's free
+        "Pro" switch), or episodes get their titles from the file name alone. Pinchflat's
+        "Music" preset writes `<mediaDir>/music/...`, which this library does not pick up.
+        `typeOptions` is a list, so to change the YouTube fetchers set
+        `nixflix.jellyfin.libraries.YouTube.typeOptions = lib.mkForce [ ... ];`;
+        without `lib.mkForce` your entries are appended and Series appears twice.
+        Seerr leaves it out via `nixflix.seerr.jellyfin.excludeLibraries`
 
-      Default libraries can be removed with the following: `nixflix.jellyfin.libraries.Movies = lib.mkForce {};`
+      Default libraries can be removed with the following: `nixflix.jellyfin.libraries.Movies = lib.mkForce null;`
     '';
     type = types.attrsOf (types.nullOr libraryModule);
     default = { };
@@ -595,6 +607,49 @@ in
     Music = mkIf (config.nixflix.lidarr.enable or false) {
       collectionType = "music";
       paths = config.nixflix.lidarr.mediaDirs;
+    };
+
+    # Pinchflat's "Media Center" profile lays a channel out as a show with
+    # season-by-year folders and writes tvshow.nfo/episode NFOs keyed by YouTube
+    # ID, so this is a tvshows library read from those NFOs. Remote fetchers are
+    # listed empty on purpose: a type with no typeOptions entry falls back to
+    # Jellyfin's defaults, which would match channels against TMDB/OMDb.
+    YouTube = mkIf (config.nixflix.pinchflat.enable or false) {
+      collectionType = "tvshows";
+      paths = [ config.nixflix.pinchflat.showsDir ];
+      # Nothing tells Jellyfin when Pinchflat downloads (unlike the Starr
+      # notifications), so watch the folder instead of waiting for a scheduled scan
+      enableRealtimeMonitor = mkDefault true;
+
+      typeOptions = [
+        {
+          type = "Series";
+          imageFetchers = [ ];
+          imageFetcherOrder = [ ];
+          metadataFetchers = [ ];
+          metadataFetcherOrder = [ ];
+        }
+        {
+          type = "Season";
+          imageFetchers = [ ];
+          imageFetcherOrder = [ ];
+          metadataFetchers = [ ];
+          metadataFetcherOrder = [ ];
+        }
+        {
+          type = "Episode";
+          imageFetchers = [
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          imageFetcherOrder = [
+            "Embedded Image Extractor"
+            "Screen Grabber"
+          ];
+          metadataFetchers = [ ];
+          metadataFetcherOrder = [ ];
+        }
+      ];
     };
   };
 }
