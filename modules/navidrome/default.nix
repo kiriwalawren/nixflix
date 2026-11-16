@@ -262,7 +262,6 @@ in
             requires = config.nixflix.serviceDependencies;
             serviceConfig = {
               BindPaths = [ cfg.settings.MusicFolder ];
-              # nixpkgs binds MusicFolder read-only; this is its list without it
               BindReadOnlyPaths = lib.mkForce (
                 [
                   "${config.security.pki.caBundle}:/etc/ssl/certs/ca-certificates.crt"
