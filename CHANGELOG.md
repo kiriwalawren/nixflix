@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Fixed Navidrome unable to write the media directory, preventing lyrics being saved ([#428](https://github.com/kiriwalawren/nixflix/pull/428))
 - Documentation only: the `nixflix.jellyfin.libraries` option description now says to remove a default library with `lib.mkForce null`. The `lib.mkForce {}` it showed before fails evaluation because `collectionType` and `paths` have no default. No module behavior changed
 
 ## [5.0.0] - 2026-11-11
