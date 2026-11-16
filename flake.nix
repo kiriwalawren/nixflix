@@ -64,7 +64,7 @@
         (import ./docs { inherit pkgs inputs; })
         // {
           default = self.packages.${system}.docs;
-          inherit (pkgs) maintainerr caddy-replace-response;
+          inherit (pkgs) caddy-replace-response;
         }
       );
 
