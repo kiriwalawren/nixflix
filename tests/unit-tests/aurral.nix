@@ -368,6 +368,11 @@ in
       ]
     )}
 
+    ${check "slskd makes downloads group-writable so aurral can delete imported files" (
+      (aurralConfig withDownloadClients)
+      .services.slskd.settings.transfers.download.destination.permissions.mode == "664"
+    )}
+
     ${check "SABnzbd gets an aurral category" (
       lib.any (c: c.name == "aurral")
         (aurralConfig withDownloadClients).nixflix.usenetClients.sabnzbd.settings.categories

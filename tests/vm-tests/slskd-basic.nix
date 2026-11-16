@@ -62,6 +62,13 @@ pkgsUnfree.testers.runNixOSTest {
     machine.wait_for_open_port(5030, timeout=120)
     machine.succeed("curl -fsS http://127.0.0.1:5030/health")
 
+    # slskd loaded the group-writable download permissions
+    mode = machine.succeed(
+        "curl -fsS -H 'X-API-Key: 0123456789abcdef0123456789abcdef' http://127.0.0.1:5030/api/v0/options "
+        "| ${pkgs.jq}/bin/jq -r '.transfers.download.destination.permissions.mode'"
+    ).strip()
+    assert mode == "664", f"Unexpected slskd download permissions mode: {mode}"
+
     print("DroppedNeedle and slskd both booted and are wired together!")
   '';
 }

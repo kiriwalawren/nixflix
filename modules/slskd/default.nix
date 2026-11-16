@@ -140,6 +140,17 @@ in
                 };
               };
 
+              transfers.download.destination.permissions.mode = mkOption {
+                type = types.str;
+                default = "664";
+                example = "644";
+                description = ''
+                  chmod mode slskd applies to downloaded files. Download folders also get an
+                  execute bit for each read bit (664 → 775). Group write lets other `media`
+                  services, such as Aurral, move and delete imported downloads.
+                '';
+              };
+
               shares.directories = mkOption {
                 type = types.listOf types.path;
                 default = unique (
