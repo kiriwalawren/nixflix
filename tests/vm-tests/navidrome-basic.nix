@@ -60,7 +60,7 @@ pkgs.testers.runNixOSTest {
     };
   };
 
-  testScript = ''
+  testScript = { nodes, ... }: ''
     start_all()
 
     import json
@@ -112,6 +112,17 @@ pkgs.testers.runNixOSTest {
         "systemctl show navidrome.service -p ExecStart --value | grep -oP -- '--configfile \\S+' | awk '{print $2}'"
     ).strip()
     machine.succeed(f"grep -q nd-lyrics {configfile}")
+
+    print("Checking MusicFolder is writable inside the sandbox...")
+    music_folder = "${nodes.machine.nixflix.navidrome.settings.MusicFolder}"
+    bind_rw = machine.succeed("systemctl show navidrome.service -p BindPaths --value")
+    bind_ro = machine.succeed("systemctl show navidrome.service -p BindReadOnlyPaths --value")
+    assert f"{music_folder}:{music_folder}:" in bind_rw, f"MusicFolder not in BindPaths: {bind_rw}"
+    assert music_folder not in bind_ro, f"MusicFolder still in BindReadOnlyPaths: {bind_ro}"
+    machine.succeed(
+        f"nsenter -t $(systemctl show -p MainPID --value navidrome.service) -m "
+        f"-r -S $(id -u navidrome) -G $(id -g navidrome) ${pkgs.coreutils}/bin/touch {music_folder}/.write-test"
+    )
 
     print("All Navidrome lyrics plugin assertions passed!")
 

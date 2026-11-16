@@ -154,6 +154,7 @@
     let
       tokenFile = "/run/secrets/notif-token";
       ntfyPasswordFile = "/run/secrets/ntfy-password";
+      ntfyTopicFile = "/run/secrets/ntfy-topic";
       config = evalConfig [
         {
           nixflix = {
@@ -170,7 +171,10 @@
             notif = {
               ntfy = {
                 sonarr.enable = true;
-                topics = [ "media" ];
+                topics = [
+                  "media"
+                  { _secret = ntfyTopicFile; }
+                ];
                 password._secret = ntfyPasswordFile;
               };
               extraNotifications = [
@@ -194,6 +198,9 @@
         lib.hasInfix "--rawfile" script && lib.hasInfix tokenFile script
       )}
       ${check "script reads the ntfy password via --rawfile" (lib.hasInfix ntfyPasswordFile script)}
+      ${check "a secret ntfy topic is read from its file into its list slot" (
+        lib.hasInfix ntfyTopicFile script && lib.hasInfix ''.["topics"][1] = '' script
+      )}
       ${check "no _secret refs leak into the override JSON" (!lib.hasInfix "_secret" script)}
       echo 'PASS: notif-any-field-secret' > $out
     '';
@@ -1069,6 +1076,12 @@
         };
       };
       disabledDiscord = eval { discord = removeAttrs discord [ "seerr" ]; };
+      secretTopic = eval {
+        ntfy = {
+          topics._secret = "/run/secrets/ntfy-topic";
+          seerr.enable = true;
+        };
+      };
       failures = seerrFailures (eval {
         discord = {
           seerr.enable = true;
@@ -1164,6 +1177,11 @@
         hasFailure "Set `nixflix.notif.email.seerr.pgpPrivateKey`."
       )}
       ${check "ntfy needs exactly one topic for Seerr" (hasFailure "single topic")}
+      ${check "a secret ntfy topic is read from its file into the Seerr topic" (
+        lib.hasInfix "/run/secrets/ntfy-topic" (scriptOf secretTopic)
+        && lib.hasInfix ''.["options"]["topic"] = '' (scriptOf secretTopic)
+        && !lib.hasInfix "_secret" (scriptOf secretTopic)
+      )}
       ${check "webhook authHeader conflicts with username/password" (
         hasFailure "sends a single Authorization header"
       )}

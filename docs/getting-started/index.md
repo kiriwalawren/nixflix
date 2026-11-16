@@ -166,6 +166,11 @@ Here's a minimal configuration to get started:
         password = {_secret = config.sops.secrets."navidrome/admin_password".path;};
       };
     };
+
+    pinchflat = {
+      enable = true;
+      secretsFile = config.sops.secrets."pinchflat/env".path; # SECRET_KEY_BASE=...
+    };
   };
 }
 ```

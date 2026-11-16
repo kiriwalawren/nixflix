@@ -19,6 +19,7 @@ let
     emailPassword = "email-password";
     pgpPrivateKey = "-----BEGIN PGP PRIVATE KEY BLOCK-----";
     pgpPassword = "pgp-password";
+    ntfyTopic = "supersecrettopic";
   };
 
   jsonPayload = ''{"event":"{{event}}","subject":"{{subject}}"}'';
@@ -130,7 +131,7 @@ pkgs.testers.runNixOSTest {
 
         ntfy = {
           serverUrl = "https://ntfy.example.com";
-          topics = [ "media" ];
+          topics = secret "ntfy-topic" s.ntfyTopic;
           ntfyTags = [
             "tv"
             "warning"
@@ -247,7 +248,7 @@ pkgs.testers.runNixOSTest {
             locale="fr")
         expect("ntfy", types=ALL_TYPES,
             url="https://ntfy.example.com",
-            topic="media",
+            topic="${s.ntfyTopic}",
             tags="tv,warning",
             username="ntfy-user",
             password="${s.ntfyPassword}",
