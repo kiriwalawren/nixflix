@@ -189,7 +189,7 @@ This example shows a working media server configuration based on a real producti
     vpn = {
       enable = true;
       wgConfFile = config.sops.secrets."wireguard/conf".path;
-      accessibleFrom = [ "192.168.1.0/24" ];
+      allowedIngress = [ "192.168.1.0/24" ];
     };
   };
 }

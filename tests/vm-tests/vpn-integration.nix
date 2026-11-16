@@ -94,7 +94,7 @@ pkgs.testers.runNixOSTest {
             Endpoint = server:51820
             AllowedIPs = 0.0.0.0/0
           '';
-          accessibleFrom = [ "192.168.1.0/24" ];
+          allowedIngress = [ "192.168.1.0/24" ];
         };
 
         radarr = {

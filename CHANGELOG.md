@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Breaking
+
+- `nixflix.vpn` options now match VPN-Confinement's, which removes the evaluation warnings shown when `nixflix.vpn` is enabled ([#427](https://github.com/kiriwalawren/nixflix/issues/427)):
+  - `nixflix.vpn.accessibleFrom` is renamed to `nixflix.vpn.allowedIngress`. The old name still works but prints a warning
+  - `nixflix.vpn.openVPNPorts` is removed in favour of `nixflix.vpn.allowedTCPPorts` and `nixflix.vpn.allowedUDPPorts`, which take plain port numbers. A port with `protocol = "both"` goes in both lists. Setting `openVPNPorts` is an evaluation error
+
 ### Added
 
 - `nixflix.postgres.host` and `nixflix.postgres.port` to use an existing (e.g. remote) PostgreSQL server instead of a local one. Each service's password is set with `nixflix.[sonarr|sonarr-anime|radarr|lidarr|prowlarr|seerr].postgres.password`, and the roles and databases must be created on the server beforehand. See the `nixflix.postgres.host` option docs ([#290](https://github.com/kiriwalawren/nixflix/issues/290))
