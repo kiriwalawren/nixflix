@@ -260,6 +260,21 @@ in
           services.navidrome = {
             after = config.nixflix.serviceDependencies;
             requires = config.nixflix.serviceDependencies;
+            serviceConfig = {
+              BindPaths = [ cfg.settings.MusicFolder ];
+              # nixpkgs binds MusicFolder read-only; this is its list without it
+              BindReadOnlyPaths = lib.mkForce (
+                [
+                  "${config.security.pki.caBundle}:/etc/ssl/certs/ca-certificates.crt"
+                  builtins.storeDir
+                  "/etc"
+                ]
+                ++ lib.optionals config.services.resolved.enable [
+                  "/run/systemd/resolve/stub-resolv.conf"
+                  "/run/systemd/resolve/resolv.conf"
+                ]
+              );
+            };
           };
 
           tmpfiles.settings.navidromeDirs = {
@@ -271,7 +286,10 @@ in
               mode = "755";
               inherit (cfg) user group;
             };
-            "${cfg.settings.MusicFolder}"."d" = lib.mkForce { group = ":${cfg.group}"; };
+            "${cfg.settings.MusicFolder}"."d" = lib.mkForce {
+              group = ":${cfg.group}";
+              mode = ":0775";
+            };
           };
         };
 
