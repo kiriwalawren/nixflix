@@ -253,6 +253,7 @@ def get_page_title(service: str, page_key: str) -> tuple[str, str]:
         "sabnzbd": "[SABnzbd](https://github.com/sabnzbd/sabnzbd) is a binary newsreader for Usenet.",
         "seerr": "[Seerr](https://github.com/seerr-team/seerr) is a media discovery and request application.",
         "slskd": "[slskd](https://github.com/slskd/slskd/) is a web based client for Soulseek.",
+        "pinchflat": "[Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX) is a self-hosted YouTube media manager.",
         "downloadarr": "Downloadarr is a service that conifgures download clients in each Starr service.",
         "notif": 'Notif is a service that configures "Connect" notifications in each Starr service.',
         "qbittorrent": "[qBittorrent](https://github.com/qbittorrent/qBittorrent) is a BitTorrent download client.",

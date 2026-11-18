@@ -4,6 +4,13 @@ let
   cfg = config.nixflix.vpn;
 in
 {
+  imports = [
+    (mkRenamedOptionModule [ "nixflix" "vpn" "accessibleFrom" ] [ "nixflix" "vpn" "allowedIngress" ])
+    (mkRemovedOptionModule [ "nixflix" "vpn" "openVPNPorts" ]
+      "Use `nixflix.vpn.allowedTCPPorts` and `nixflix.vpn.allowedUDPPorts` instead. A port with `protocol = \"both\"` goes in both lists."
+    )
+  ];
+
   options.nixflix.vpn = {
     enable = mkEnableOption ''
       WireGuard VPN. Configures Wireguard in a network namespace named `wg`.
@@ -71,7 +78,7 @@ in
       '';
     };
 
-    accessibleFrom = mkOption {
+    allowedIngress = mkOption {
       type = types.listOf types.str;
       default = [ "192.168.1.0/24" ];
       example = [ "192.168.1.0/24" ];
@@ -84,47 +91,45 @@ in
       '';
     };
 
-    openVPNPorts = mkOption {
-      type = types.listOf (
-        types.submodule {
-          options = {
-            port = mkOption {
-              type = types.port;
-              description = "Port number to open through the VPN interface.";
-            };
-            protocol = mkOption {
-              type = types.enum [
-                "tcp"
-                "udp"
-                "both"
-              ];
-              default = "tcp";
-              description = "Protocol for the port.";
-            };
-          };
-        }
-      );
+    allowedEgress = mkOption {
+      type = types.listOf types.str;
       default = [ ];
-      example = [
-        {
-          port = 60729;
-          protocol = "both";
-        }
-      ];
+      example = [ "192.168.1.10" ];
       description = ''
-        Ports to open through the VPN interface, e.g. for port forwarding
+        Subnets or addresses outside the VPN tunnel that VPN-confined services
+        may open connections to, such as an external PostgreSQL server set in
+        `nixflix.postgres.host`. All other outgoing traffic still goes through
+        the tunnel.
+      '';
+    };
+
+    allowedTCPPorts = mkOption {
+      type = types.listOf types.port;
+      default = [ ];
+      example = [ 60729 ];
+      description = ''
+        TCP ports to allow inbound on the VPN interface, e.g. for port forwarding
         provided by the VPN provider (AirVPN, IVPN, etc.).
       '';
     };
 
+    allowedUDPPorts = mkOption {
+      type = types.listOf types.port;
+      default = [ ];
+      example = [ 60729 ];
+      description = ''
+        UDP ports to allow inbound on the VPN interface, e.g. for port forwarding
+        provided by the VPN provider (AirVPN, IVPN, etc.).
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
     vpnNamespaces.${cfg.namespace} = {
       enable = true;
       wireguardConfigFile = cfg.wgConfFile;
-      inherit (cfg) accessibleFrom;
-      inherit (cfg) openVPNPorts;
+      inherit (cfg) allowedIngress allowedEgress;
+      vpn = { inherit (cfg) allowedTCPPorts allowedUDPPorts; };
     };
   };
 }

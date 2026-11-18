@@ -10,11 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
 - `nixflix.navidrome.libraries` adds Navidrome libraries beyond `settings.MusicFolder`. `navidrome-libraries.service` creates them, gives existing non-admin users access to new ones, scans them, and deletes the ones it created once they are removed from config (music files are left alone) ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
-- `nixflix.notif.ntfy.topics` accepts `{ _secret = ...; }` entries ([#418](https://github.com/kiriwalawren/nixflix/issues/418))
 
 ### Fixed
 
 - Defining a Jellyfin `Music` library without enabling Lidarr no longer turns off real-time monitoring for every Jellyfin library. `nixflix.notif.jellyfin.lidarr.enable` now also requires `nixflix.lidarr.enable` ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+
+## [6.0.0] - 2026-11-16
+
+### Breaking
+
+- `nixflix.vpn` options now match VPN-Confinement's, which removes the evaluation warnings shown when `nixflix.vpn` is enabled ([#427](https://github.com/kiriwalawren/nixflix/issues/427)):
+  - `nixflix.vpn.accessibleFrom` is renamed to `nixflix.vpn.allowedIngress`. The old name still works but prints a warning
+  - `nixflix.vpn.openVPNPorts` is removed in favour of `nixflix.vpn.allowedTCPPorts` and `nixflix.vpn.allowedUDPPorts`, which take plain port numbers. A port with `protocol = "both"` goes in both lists. Setting `openVPNPorts` is an evaluation error
+
+### Added
+
+- `nixflix.postgres.host` and `nixflix.postgres.port` to use an existing (e.g. remote) PostgreSQL server instead of a local one. Each service's password is set with `nixflix.[sonarr|sonarr-anime|radarr|lidarr|prowlarr|seerr].postgres.password`, and the roles and databases must be created on the server beforehand. See the `nixflix.postgres.host` option docs ([#290](https://github.com/kiriwalawren/nixflix/issues/290))
+- `nixflix.notif.ntfy.topics` accepts `{ _secret = ...; }` entries ([#418](https://github.com/kiriwalawren/nixflix/issues/418))
+- `nixflix.pinchflat` module for [Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX), a self-hosted YouTube media manager, with reverse proxy and VPN support. Videos download to `<nixflix.mediaDir>/youtube` by default, and enabling it with Jellyfin creates a `nixflix.jellyfin.libraries.YouTube` TV shows library on `nixflix.pinchflat.showsDir` (default `<nixflix.pinchflat.mediaDir>/shows`, where Pinchflat's stock "Media Center" preset puts each channel) that reads Pinchflat's NFO metadata, with no remote metadata or image fetchers for series, seasons and episodes. The new `nixflix.seerr.jellyfin.excludeLibraries` option (default `[ "YouTube" ]` when Pinchflat is enabled) keeps that library out of Seerr, with both `enableAllLibraries` and `libraryFilter` ([#412](https://github.com/kiriwalawren/nixflix/pull/412))
+
+### Fixed
+
+- Fixed Navidrome unable to write the media directory, preventing lyrics being saved ([#428](https://github.com/kiriwalawren/nixflix/pull/428))
+- Documentation only: the `nixflix.jellyfin.libraries` option description now says to remove a default library with `lib.mkForce null`. The `lib.mkForce {}` it showed before fails evaluation because `collectionType` and `paths` have no default. No module behavior changed
 
 ## [5.0.0] - 2026-11-11
 
@@ -32,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `nixflix.vpn.allowedEgress` to let VPN-confined services reach addresses outside the tunnel, such as an external PostgreSQL server
 - Lidarr metadata provider service that configures audio tag writing (`writeAudioTags`, `scrubAudioTags`, `embedCoverArt`) and the metadata source via `nixflix.lidarr.config.metadataProvider` ([#335](https://github.com/kiriwalawren/nixflix/issues/335))
 - `nixflix.nginx.sslCertificate`/`sslCertificateKey` and `nixflix.caddy.tls.certFile`/`keyFile` path options for using an existing (e.g. self-signed) certificate on all nixflix virtual hosts ([#332](https://github.com/kiriwalawren/nixflix/issues/332))
 - Notif connectors for every Starr notification type except Trakt: `apprise`, `customScript`, `discord`, `email`, `gotify`, `join`, `kodi`, `mailgun`, `notifiarr`, `plex`, `prowl`, `pushbullet`, `pushcut`, `pushover`, `pushsafer`, `sendgrid`, `signal`, `simplepush`, `slack`, `synologyIndexer`, `telegram`, `twitter` and `webhook` (including typed `webhook.headers`, whose values can be `_secret` files; Apprise's own tags field is `apprise.appriseTags`) ([#415](https://github.com/kiriwalawren/nixflix/pull/415))

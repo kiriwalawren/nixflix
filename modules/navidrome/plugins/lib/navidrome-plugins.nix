@@ -69,6 +69,18 @@
         description = "PUT as `libraries` (JSON-encoded) when `allLibraries = false`.";
       };
 
+      allUsers = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "PUT as `allUsers`.";
+      };
+
+      users = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "PUT as `users` (JSON-encoded Navidrome user IDs) when `allUsers = false`.";
+      };
+
       allowWriteAccess = lib.mkOption {
         type = lib.types.bool;
         default = false;

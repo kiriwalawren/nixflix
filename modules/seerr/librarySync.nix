@@ -9,6 +9,7 @@
 }:
 let
   mkSecureCurl = import ../../lib/mk-secure-curl.nix { inherit lib pkgs; };
+  librarySelect = import ./librarySelect.nix { inherit lib pkgs cfg; };
 in
 pkgs.writeShellScript "seerr-library-sync" ''
   # Report the endpoint's status rather than exiting on a bare `curl -f` code.
@@ -39,22 +40,8 @@ pkgs.writeShellScript "seerr-library-sync" ''
   echo "Available libraries:"
   echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '.[] | "\(.id) - \(.name) (\(.type))"'
 
-  ${
-    if cfg.jellyfin.enableAllLibraries then
-      ''
-        LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r '[.[].id] | join(",")')
-      ''
-    else
-      ''
-        LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r \
-          --argjson types ${lib.escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.types)} \
-          --argjson names ${lib.escapeShellArg (builtins.toJSON cfg.jellyfin.libraryFilter.names)} \
-          '[ .[]
-             | select(($types | length) == 0 or (.type | IN($types[])))
-             | select(($names | length) == 0 or (.name | IN($names[])))
-             | .id ] | join(",")')
-      ''
-  }
+  # libraryFilter only applies when enableAllLibraries = false; excludeLibraries always does
+  LIBRARY_IDS=$(echo "$LIBRARIES_RESPONSE" | ${pkgs.jq}/bin/jq -r ${librarySelect.args} -f ${librarySelect.filter})
 
   if [ -n "$LIBRARY_IDS" ]; then
     echo "Enabling libraries: $LIBRARY_IDS"

@@ -325,7 +325,23 @@ in
           services.navidrome = {
             after = config.nixflix.serviceDependencies;
             requires = config.nixflix.serviceDependencies;
-            serviceConfig.BindReadOnlyPaths = lib.mapAttrsToList (_: library: library.path) cfg.libraries;
+            serviceConfig = {
+              BindPaths = [
+                cfg.settings.MusicFolder
+              ]
+              ++ lib.mapAttrsToList (_: library: library.path) cfg.libraries;
+              BindReadOnlyPaths = lib.mkForce (
+                [
+                  "${config.security.pki.caBundle}:/etc/ssl/certs/ca-certificates.crt"
+                  builtins.storeDir
+                  "/etc"
+                ]
+                ++ lib.optionals config.services.resolved.enable [
+                  "/run/systemd/resolve/stub-resolv.conf"
+                  "/run/systemd/resolve/resolv.conf"
+                ]
+              );
+            };
           };
 
           tmpfiles.settings.navidromeDirs = {
@@ -337,10 +353,19 @@ in
               mode = "755";
               inherit (cfg) user group;
             };
-            "${cfg.settings.MusicFolder}"."d" = lib.mkForce { group = ":${cfg.group}"; };
+            "${cfg.settings.MusicFolder}"."d" = lib.mkForce {
+              group = ":${cfg.group}";
+              mode = ":0775";
+            };
           }
           // lib.mapAttrs' (
-            _: library: lib.nameValuePair library.path { "d" = lib.mkForce { group = ":${cfg.group}"; }; }
+            _: library:
+            lib.nameValuePair library.path {
+              "d" = lib.mkForce {
+                group = ":${cfg.group}";
+                mode = ":0775";
+              };
+            }
           ) cfg.libraries;
         };
 

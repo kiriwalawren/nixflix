@@ -97,4 +97,10 @@ in
       in
       if v == null then [ ] else lib.concatLists (lib.imap0 (_i: _item: [ ]) v)
     );
+  mkPermissionAssertions = plugin: [
+    {
+      assertion = plugin.${"allUsers"} || plugin.${"users"} != [ ];
+      message = "the plugin's manifest requires the `users` permission; set `allUsers = true` or a non-empty `users`, otherwise navidrome refuses to enable it";
+    }
+  ];
 }

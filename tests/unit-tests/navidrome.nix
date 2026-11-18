@@ -58,7 +58,7 @@ let
     multipleRoots // { aurral.libraryDir = "/data/media/music-lossless"; }
   );
 
-  bindPaths = cfg: cfg.systemd.services.navidrome.serviceConfig.BindReadOnlyPaths;
+  bindPaths = cfg: cfg.systemd.services.navidrome.serviceConfig.BindPaths;
 in
 {
   navidrome-libraries = pkgs.runCommand "unit-test-navidrome-libraries" { } ''

@@ -26,10 +26,10 @@ let
         imageUrl = "https://raw.githubusercontent.com/rs-jensen/lapse-jellyfin-plugin/v2.1.1/Jellyfin.Plugin.Lapse/Configuration/LAPSE.png";
         versions = [
           {
-            version = "2.1.3.0";
+            version = "2.2.0.0";
             changelog = "See the release notes on GitHub.";
             targetAbi = "10.11.0.0";
-            sourceUrl = "https://github.com/rs-jensen/lapse-jellyfin-plugin/releases/download/v2.1.3/lapse-jellyfin-plugin-v2.1.3.zip";
+            sourceUrl = "https://github.com/rs-jensen/lapse-jellyfin-plugin/releases/download/v2.2.0/lapse-jellyfin-plugin-v2.2.0.zip";
             checksum = "cf0633dab1acaf6e053862f3c2c47706";
             timestamp = "2026-10-17T10:18:11Z";
           }
@@ -414,8 +414,8 @@ pkgs.testers.runNixOSTest {
           "LAPSE" = {
             enable = true;
             package = jellyfinPlugins.fromRepo {
-              version = "2.1.3.0";
-              hash = "sha256-cyw017kDNA5p/qU/DSe2o/nAmiTfFexPRQDx5X5EuT8=";
+              version = "2.2.0.0";
+              hash = "sha256-fdQ0LC8ya3gTgCcoMVahggJJsV+oeoYD0osKzIbzXIc=";
             };
           };
         };
@@ -972,8 +972,8 @@ pkgs.testers.runNixOSTest {
         print(f"LAPSE plugin installed with id: {lapse_plugins[0]['Id']}")
 
         print("Verifying repo-resolved plugin sync...")
-        machine.succeed("test -d '/var/lib/jellyfin/plugins/LAPSE_2.1.3.0'")
-        machine.succeed("test -f '/var/lib/jellyfin/plugins/LAPSE_2.1.3.0/Jellyfin.Plugin.Lapse.dll'")
+        machine.succeed("test -d '/var/lib/jellyfin/plugins/LAPSE_2.2.0.0'")
+        machine.succeed("test -f '/var/lib/jellyfin/plugins/LAPSE_2.2.0.0/Jellyfin.Plugin.Lapse.dll'")
 
         print("All plugin management assertions passed!")
   '';

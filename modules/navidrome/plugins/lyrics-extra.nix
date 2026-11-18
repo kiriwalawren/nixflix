@@ -8,6 +8,7 @@ in
     {
       nixflix.navidrome.plugins.lyrics = {
         allLibraries = lib.mkDefault true;
+        allUsers = lib.mkDefault true;
         allowWriteAccess = lib.mkDefault true;
         config.durationToleranceSeconds = 5;
       };

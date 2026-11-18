@@ -23,6 +23,7 @@ in
     ./nginx.nix
     ./notif
     ./options.nix
+    ./pinchflat
     ./postgres.nix
     ./prowlarr
     ./radarr.nix

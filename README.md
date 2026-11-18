@@ -77,7 +77,7 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 
 - Media request management
 - Automatic integration with Starr services
-- Automatic integration with Jellyfin libraries
+- Automatic integration with Jellyfin libraries (the Pinchflat "YouTube" library is left out, see `nixflix.seerr.jellyfin.excludeLibraries`)
 
 ### Navidrome
 
@@ -89,6 +89,12 @@ All Arr services (Sonarr, Radarr, Lidarr, Prowlarr) support:
 - Music discovery and requests
 - Automatic configuration with Starr services
 - Automatic integration with `slskd`
+
+### Pinchflat
+
+- YouTube media manager ([Pinchflat-NGX](https://github.com/TheBadFella/Pinchflat-NGX))
+- Downloads channels and playlists into your media directory
+- Automatic integration with a Jellyfin "YouTube" library
 
 ### SABnzbd
 

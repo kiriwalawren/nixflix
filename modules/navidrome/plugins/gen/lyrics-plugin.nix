@@ -36,6 +36,11 @@ in
         default = true;
         description = "Enable lyrics cache";
       };
+      "fetchOnPlay" = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Fetch lyrics when a song starts playing";
+      };
       "instrumentalCacheTtlHours" = lib.mkOption {
         type = lib.types.ints.between 1 1000000;
         default = 336;
@@ -155,6 +160,11 @@ in
 
                   Optional. Leave empty to use the provider's default.'';
               };
+              "includeChineseTranslation" = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Include chinese translation (returned as TTML)";
+              };
               "mediaUserToken" = secrets.mkSecretOption {
                 nullable = true;
                 default = null;
@@ -175,6 +185,8 @@ in
                   "stixoi"
                   "genie"
                   "binilyrics"
+                  "lrc.red"
+                  "unison"
                 ];
                 default = "lrclib";
                 description = ''
@@ -182,7 +194,7 @@ in
 
 
 
-                  One of: `lrclib` (LRCLIB), `lyrics.ovh` (lyrics.ovh), `lrcmux` (lrcmux), `kugou` (KuGou), `netease` (NetEase), `qqmusic` (QQ Music), `applemusic` (Apple Music), `stixoi` (stixoi.info), `genie` (Genie Music), `binilyrics` (BiniLyrics)'';
+                  One of: `lrclib` (LRCLIB), `lyrics.ovh` (lyrics.ovh), `lrcmux` (lrcmux), `kugou` (KuGou), `netease` (NetEase), `qqmusic` (QQ Music), `applemusic` (Apple Music), `stixoi` (stixoi.info), `genie` (Genie Music), `binilyrics` (BiniLyrics), `lrc.red` (lrc.red), `unison` (Unison)'';
               };
               "romanizationScript" = lib.mkOption {
                 type = lib.types.enum [
@@ -202,19 +214,19 @@ in
               "sources" = lib.mkOption {
                 type = lib.types.listOf (
                   lib.types.enum [
+                    "deezer"
                     "genius"
                     "kugou"
                     "lrclib"
-                    "musixmatch"
                     "netease"
                     "ytmusic"
                   ]
                 );
                 default = [
+                  "deezer"
                   "genius"
                   "kugou"
                   "lrclib"
-                  "musixmatch"
                   "netease"
                   "ytmusic"
                 ];
@@ -254,8 +266,8 @@ in
           }
         );
         default = [
+          { provider = "lrc.red"; }
           { provider = "lrclib"; }
-          { provider = "lyrics.ovh"; }
         ];
         description = "Lyrics providers (use the \"+\" button to add more)";
       };
@@ -341,4 +353,14 @@ in
           )
       )
     );
+  mkPermissionAssertions = plugin: [
+    {
+      assertion = plugin.${"allUsers"} || plugin.${"users"} != [ ];
+      message = "the plugin's manifest requires the `users` permission; set `allUsers = true` or a non-empty `users`, otherwise navidrome refuses to enable it";
+    }
+    {
+      assertion = plugin.${"allLibraries"} || plugin.${"libraries"} != [ ];
+      message = "the plugin's manifest requires the `library` permission; set `allLibraries = true` or a non-empty `libraries`, otherwise navidrome refuses to enable it";
+    }
+  ];
 }
