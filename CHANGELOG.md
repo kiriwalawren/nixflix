@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added Aurral configuration ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+- `nixflix.navidrome.libraries` adds Navidrome libraries beyond `settings.MusicFolder`. `navidrome-libraries.service` creates them, gives existing non-admin users access to new ones, scans them, and deletes the ones it created once they are removed from config (music files are left alone) ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+
+### Fixed
+
+- Defining a Jellyfin `Music` library without enabling Lidarr no longer turns off real-time monitoring for every Jellyfin library. `nixflix.notif.jellyfin.lidarr.enable` now also requires `nixflix.lidarr.enable` ([#378](https://github.com/kiriwalawren/nixflix/pull/378))
+
 ## [6.0.0] - 2026-11-16
 
 ### Breaking

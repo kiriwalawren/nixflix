@@ -130,8 +130,8 @@ in
       only by the services whose block is enabled (for example `nixflix.notif.discord.radarr.enable = true`).
       Service blocks are opt-in and default to `false`, so services added to nixflix later stay off until you turn
       them on. The exceptions are `jellyfin` and `subsonic`, whose blocks default to whether Jellyfin or Navidrome
-      is enabled so their libraries keep refreshing automatically (`jellyfin.lidarr` only when a Jellyfin `Music`
-      library exists).
+      is enabled so their libraries keep refreshing automatically (`jellyfin.lidarr` only when Lidarr is enabled and a
+      Jellyfin `Music` library exists).
 
       Seerr is also a target, through the `seerr` block of a connector. When `seerr.enable` is set (for
       example `nixflix.notif.discord.seerr.enable = true`). The `seerr` block uses the same
