@@ -76,10 +76,12 @@ for plugin_name in $(echo "$PLUGINS_JSON" | jq -r 'keys[]'); do
   manifest_json=$(unzip -p "$NDP_FILE" manifest.json)
   schema_json=$(echo "$manifest_json" | jq -c '.config.schema // {}')
   description=$(echo "$manifest_json" | jq -r '.description // .name // empty')
+  permissions_json=$(echo "$manifest_json" | jq -c '{users: (.permissions.users != null), library: (.permissions.library != null)}')
 
   jq -n --arg pluginName "$plugin_name" --arg pluginId "$plugin_id" \
         --arg description "$description" --argjson schema "$schema_json" \
-        '{pluginName: $pluginName, pluginId: $pluginId, description: $description, schema: $schema}' \
+        --argjson permissions "$permissions_json" \
+        '{pluginName: $pluginName, pluginId: $pluginId, description: $description, schema: $schema, permissions: $permissions}' \
         > "$WORKDIR/input.json"
 
   OUT_FILE="$GEN_DIR/${plugin_name}-plugin.nix"

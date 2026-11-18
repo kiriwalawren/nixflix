@@ -4,25 +4,27 @@ let
   generatedFileNames = lib.filter (lib.hasSuffix "-plugin.nix") (
     lib.attrNames (lib.filterAttrs (_: type: type == "regular") (builtins.readDir ./gen))
   );
-  mkAssertionsByName = builtins.listToAttrs (
+  generatedByName = builtins.listToAttrs (
     map (
       fileName:
-      let
-        pluginName = lib.removeSuffix "-plugin.nix" fileName;
-        generated = import (./gen + "/${fileName}") { inherit lib; };
-      in
-      lib.nameValuePair pluginName (generated.mkAssertions or (_: [ ]))
+      lib.nameValuePair (lib.removeSuffix "-plugin.nix" fileName) (
+        import (./gen + "/${fileName}") { inherit lib; }
+      )
     ) generatedFileNames
   );
+  prefixed = prefix: map (a: a // { message = "${prefix}: ${a.message}"; });
 in
 {
   config.assertions = lib.concatLists (
     lib.mapAttrsToList (
       pluginName: pluginCfg:
-      if pluginCfg.enable && mkAssertionsByName ? ${pluginName} then
-        map (a: a // { message = ''nixflix.navidrome.plugins."${pluginName}".config: ${a.message}''; }) (
-          mkAssertionsByName.${pluginName} pluginCfg.config
-        )
+      if pluginCfg.enable && generatedByName ? ${pluginName} then
+        let
+          generated = generatedByName.${pluginName};
+          optionPath = ''nixflix.navidrome.plugins."${pluginName}"'';
+        in
+        prefixed "${optionPath}.config" ((generated.mkAssertions or (_: [ ])) pluginCfg.config)
+        ++ prefixed optionPath ((generated.mkPermissionAssertions or (_: [ ])) pluginCfg)
       else
         [ ]
     ) cfg.plugins

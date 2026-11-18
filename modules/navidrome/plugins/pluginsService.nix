@@ -21,9 +21,15 @@ let
       jqConfigSecrets = secrets.mkNestedJqSecretArgs pluginCfg.config;
     in
     {
-      inherit (pluginCfg) apiId allLibraries allowWriteAccess;
+      inherit (pluginCfg)
+        apiId
+        allLibraries
+        allUsers
+        allowWriteAccess
+        ;
       inherit plainConfigFile jqConfigSecrets;
       librariesJson = builtins.toJSON pluginCfg.libraries;
+      usersJson = builtins.toJSON pluginCfg.users;
     }
   ) enabledPlugins;
 in
@@ -64,10 +70,13 @@ in
               PUT_BODY=$(${pkgs.jq}/bin/jq -n \
                 --arg config "$CONFIG_OBJECT" \
                 --arg libraries ${lib.escapeShellArg data.librariesJson} \
+                --arg users ${lib.escapeShellArg data.usersJson} \
                 '{
                   config: $config,
                   libraries: $libraries,
                   allLibraries: ${lib.boolToString data.allLibraries},
+                  users: $users,
+                  allUsers: ${lib.boolToString data.allUsers},
                   allowWriteAccess: ${lib.boolToString data.allowWriteAccess},
                   enabled: true
                 }')

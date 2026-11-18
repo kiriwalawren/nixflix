@@ -265,6 +265,22 @@ let
     in
     "(${ownText} ++ ${childTextsFull})";
 
+  # Mirrors navidrome's plugins/manager.go checkPermissionGates, which refuses to enable the plugin otherwise.
+  mkPermissionAssertionsText =
+    objExpr: permissions:
+    let
+      gate =
+        permission: allField: listField:
+        let
+          msg = "the plugin's manifest requires the `${permission}` permission; set `${allField} = true` or a non-empty `${listField}`, otherwise navidrome refuses to enable it";
+        in
+        "{ assertion = ${accessExpr objExpr allField} || ${accessExpr objExpr listField} != [ ]; message = ${toNix msg}; }";
+      entries =
+        lib.optional (permissions.users or false) (gate "users" "allUsers" "users")
+        ++ lib.optional (permissions.library or false) (gate "library" "allLibraries" "libraries");
+    in
+    "[ " + lib.concatStringsSep " " entries + " ]";
+
   # Pure codegen output only: config option type/description + mkAssertions (no package/apiId).
   mkPluginFile =
     {
@@ -272,6 +288,7 @@ let
       pluginId,
       schema,
       description,
+      permissions ? { },
     }:
     let
       topNullable = conditionallyRequiredFields schema;
@@ -298,6 +315,7 @@ let
         };
         description = ${toNix description};
         mkAssertions = cfg: ${mkAssertionsText "cfg" schema};
+        mkPermissionAssertions = plugin: ${mkPermissionAssertionsText "plugin" permissions};
       }
     '';
 in
@@ -308,5 +326,6 @@ in
     mkPluginFile
     mkConditionalRule
     mkAssertionsText
+    mkPermissionAssertionsText
     ;
 }
