@@ -72,4 +72,5 @@ in
   };
   description = "Replaces the Instant Mix button with AudioMuse-AI recommendations for similar tracks";
   mkAssertions = _cfg: [ ];
+  mkPermissionAssertions = _plugin: [ ];
 }

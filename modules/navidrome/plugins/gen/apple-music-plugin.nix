@@ -58,4 +58,5 @@
   };
   description = "Fetches artist and album metadata from Apple Music using free iTunes/Apple Music endpoints";
   mkAssertions = _cfg: [ ];
+  mkPermissionAssertions = _plugin: [ ];
 }

@@ -198,6 +198,7 @@ in
             "~@swap"
             "~@privileged"
             "~@resources"
+            "@chown"
           ];
         };
       };

@@ -353,4 +353,14 @@ in
           )
       )
     );
+  mkPermissionAssertions = plugin: [
+    {
+      assertion = plugin.${"allUsers"} || plugin.${"users"} != [ ];
+      message = "the plugin's manifest requires the `users` permission; set `allUsers = true` or a non-empty `users`, otherwise navidrome refuses to enable it";
+    }
+    {
+      assertion = plugin.${"allLibraries"} || plugin.${"libraries"} != [ ];
+      message = "the plugin's manifest requires the `library` permission; set `allLibraries = true` or a non-empty `libraries`, otherwise navidrome refuses to enable it";
+    }
+  ];
 }
