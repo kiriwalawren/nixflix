@@ -1,11 +1,14 @@
-"""Exercise the test-only Dex -> Radarr authorization-code login in the VM."""
+"""Exercise a test-only Dex -> Arr authorization-code login in the VM."""
 
+import sys
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
-BASE = "https://radarr.test"
+name = sys.argv[1]
+assert name in {"radarr", "sonarr", "sonarr-anime"}, name
+BASE = f"https://{name}.test"
 session = requests.Session()
 session.trust_env = False
 session.verify = "/etc/ssl/certs/ca-certificates.crt"
@@ -47,7 +50,7 @@ assert response.status_code == 200, (
     response.status_code,
     response.text[:500],
 )
-assert urlparse(response.url).hostname == "radarr.test", response.url
+assert urlparse(response.url).hostname == f"{name}.test", response.url
 assert any("/signin-oidc" in step.url for step in response.history), [
     step.url for step in response.history
 ]
@@ -55,6 +58,6 @@ assert any("/signin-oidc" in step.url for step in response.history), [
 # An authenticated UI request must not start another OIDC challenge.
 response = session.get(BASE + "/", timeout=30)
 assert (
-    response.status_code == 200 and urlparse(response.url).hostname == "radarr.test"
+    response.status_code == 200 and urlparse(response.url).hostname == f"{name}.test"
 ), response.url
-print("PASS: Radarr OIDC login completed through Dex")
+print(f"PASS: {name} OIDC login completed through Dex")
