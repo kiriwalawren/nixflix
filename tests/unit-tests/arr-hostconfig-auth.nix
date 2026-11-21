@@ -159,6 +159,19 @@ in
       echo 'PASS: hostconfig-oidc' > $out
     '';
 
+  hostconfig-oidc-only-supported-services =
+    let
+      config = evalConfig [ ];
+      optionsFor = service: config.options.nixflix.${service}.config.hostConfig.type.getSubOptions [ ];
+    in
+    assertTest "hostconfig-oidc-only-supported-services" (
+      builtins.hasAttr "oidc" (optionsFor "radarr")
+      && builtins.hasAttr "oidc" (optionsFor "sonarr")
+      && builtins.hasAttr "oidc" (optionsFor "sonarr-anime")
+      && !(builtins.hasAttr "oidc" (optionsFor "lidarr"))
+      && !(builtins.hasAttr "oidc" (optionsFor "prowlarr"))
+    );
+
   hostconfig-oidc-requires-settings =
     let
       result =

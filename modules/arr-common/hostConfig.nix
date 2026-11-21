@@ -77,38 +77,6 @@ in
           description = "Networks whose forwarded headers are trusted (e.g. the reverse proxy IP).";
         };
 
-        oidc = mkOption {
-          type = types.nullOr (
-            types.submodule {
-              options = {
-                authority = mkOption {
-                  type = types.nonEmptyStr;
-                  description = "OIDC issuer URL (discovery authority).";
-                };
-                clientId = mkOption {
-                  type = types.nonEmptyStr;
-                  description = "OIDC client ID.";
-                };
-                clientSecret = secrets.mkSecretOption {
-                  type = types.nonEmptyStr;
-                  description = "OIDC client secret. Use a runtime secret file, not a Nix string.";
-                };
-                userIdentifier = mkOption {
-                  type = types.nonEmptyStr;
-                  description = "Identifier of the single user allowed to sign in (e.g. the IdP email claim).";
-                };
-                scopes = mkOption {
-                  type = types.nonEmptyStr;
-                  default = "openid profile email";
-                  description = "Space-separated OIDC scopes.";
-                };
-              };
-            }
-          );
-          default = null;
-          description = "OIDC settings.";
-        };
-
         authenticationRequired = mkOption {
           type = types.enum [
             "enabled"
@@ -306,6 +274,39 @@ in
           default = false;
           description = "Trust CGNAT IP addresses";
         };
+      }
+      // optionalAttrs supportsOidc {
+        oidc = mkOption {
+          type = types.nullOr (
+            types.submodule {
+              options = {
+                authority = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC issuer URL (discovery authority).";
+                };
+                clientId = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC client ID.";
+                };
+                clientSecret = secrets.mkSecretOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC client secret. Use a runtime secret file, not a Nix string.";
+                };
+                userIdentifier = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "Identifier of the single user allowed to sign in (e.g. the IdP email claim).";
+                };
+                scopes = mkOption {
+                  type = types.nonEmptyStr;
+                  default = "openid profile email";
+                  description = "Space-separated OIDC scopes.";
+                };
+              };
+            }
+          );
+          default = null;
+          description = "OIDC settings.";
+        };
       };
     };
     default = { };
@@ -319,12 +320,12 @@ in
           assertion = (cfg.config.hostConfig.username == null) == (cfg.config.hostConfig.password == null);
           message = "nixflix.${serviceName}.config.hostConfig: username and password must both be set or both be null";
         }
-        {
-          assertion =
-            (cfg.config.hostConfig.authenticationMethod == "oidc") == (cfg.config.hostConfig.oidc != null);
-          message = "nixflix.${serviceName}.config.hostConfig: oidc settings are required exactly when authenticationMethod is oidc";
-        }
-      ];
+      ]
+      ++ optional supportsOidc {
+        assertion =
+          (cfg.config.hostConfig.authenticationMethod == "oidc") == (cfg.config.hostConfig.oidc != null);
+        message = "nixflix.${serviceName}.config.hostConfig: oidc settings are required exactly when authenticationMethod is oidc";
+      };
     })
 
     (mkIf (config.nixflix.enable && cfg.enable && cfg.config.apiKey != null) {
@@ -343,7 +344,7 @@ in
           };
           # Build a data patch. Secret refs are omitted from JSON and filled from their files at runtime.
           networkPatch = optionalAttrs (hc.trustedNetworks != null) { inherit (hc) trustedNetworks; };
-          oidcPatch = optionalAttrs (hc.oidc != null) {
+          oidcPatch = optionalAttrs (supportsOidc && hc.oidc != null) {
             oidcAuthority = hc.oidc.authority;
             oidcClientId = hc.oidc.clientId;
             oidcClientSecret = hc.oidc.clientSecret;
