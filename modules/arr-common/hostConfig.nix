@@ -71,6 +71,12 @@ in
           description = "Authentication method";
         };
 
+        trustedNetworks = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "Networks whose forwarded headers are trusted (e.g. the reverse proxy IP).";
+        };
+
         oidc = mkOption {
           type = types.nullOr (
             types.submodule {
@@ -336,6 +342,7 @@ in
               ;
           };
           # Build a data patch. Secret refs are omitted from JSON and filled from their files at runtime.
+          networkPatch = optionalAttrs (hc.trustedNetworks != null) { inherit (hc) trustedNetworks; };
           oidcPatch = optionalAttrs (hc.oidc != null) {
             oidcAuthority = hc.oidc.authority;
             oidcClientId = hc.oidc.clientId;
@@ -385,6 +392,7 @@ in
               ${jqSecrets.flagsString} \
               ${oidcSecretArgs.flagsString} \
               --argjson oidcPatch ${escapeShellArg (builtins.toJSON (secrets.stripSecretRefs oidcPatch))} \
+              --argjson networkPatch ${escapeShellArg (builtins.toJSON networkPatch)} \
               --slurpfile current <(printf '%s' "$HOST_CONFIG") \
               --argjson id "$CONFIG_ID" \
               --arg allowedHosts "$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.allowedHosts // ""')" \
@@ -445,7 +453,7 @@ in
                 backupInterval: ${builtins.toString hc.backupInterval},
                 backupRetention: ${builtins.toString hc.backupRetention},
                 trustCgnatIpAddresses: ${boolToString hc.trustCgnatIpAddresses}
-              } + (${oidcJqPatch})')
+              } + $networkPatch + (${oidcJqPatch})')
 
             echo "Updating ${capitalizedName} configuration via API..."
             ${

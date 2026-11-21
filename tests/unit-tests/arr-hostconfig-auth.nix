@@ -124,6 +124,7 @@ in
                 apiKey._secret = testApiKey;
                 hostConfig = {
                   authenticationMethod = "oidc";
+                  trustedNetworks = "192.0.2.1";
                   username = null;
                   oidc = {
                     authority = "https://login.example.org";
@@ -151,6 +152,9 @@ in
       )}
       ${check "OIDC secret value is not embedded in the service script" (
         !(pkgs.lib.hasInfix "test-only-oidc-secret" script)
+      )}
+      ${check "reverse proxy is trusted explicitly" (
+        pkgs.lib.hasInfix "\"trustedNetworks\":\"192.0.2.1\"" script
       )}
       echo 'PASS: hostconfig-oidc' > $out
     '';

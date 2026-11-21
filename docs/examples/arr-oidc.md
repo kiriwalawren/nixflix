@@ -16,6 +16,7 @@ sops-nix (not required by nixflix):
   nixflix.sonarr.config.hostConfig = {
     authenticationMethod = "oidc";
     authenticationRequired = "enabled";
+    trustedNetworks = "192.0.2.1"; # reverse proxy source IP, not your LAN
     username = null;
     password = null;
     oidc = {
@@ -34,6 +35,9 @@ Apply the same settings to `nixflix.radarr` or `nixflix.sonarr-anime`, with a
 key separately as usual; integrations use the API key, not browser OIDC login.
 `userIdentifier` is the identity expected in the provider's claims: these
 applications currently support **one user**, not multiple OIDC accounts.
+Set `trustedNetworks` to the actual source IP/CIDR of your reverse proxy so
+forwarded HTTPS headers are accepted. Leave it unset to preserve the app's
+existing setting.
 
 The client secret is read from its file when the host-configuration service
 runs; do not put a plaintext secret in Nix configuration or `settings` (which
