@@ -8,6 +8,11 @@
 with lib;
 let
   cfg = config.nixflix.${serviceName};
+  supportsOidc = builtins.elem serviceName [
+    "radarr"
+    "sonarr"
+    "sonarr-anime"
+  ];
   secrets = import ../../lib/secrets { inherit lib; };
   inherit (import ./utils.nix { inherit lib pkgs serviceName; })
     capitalizedName
@@ -53,14 +58,49 @@ in
         };
 
         authenticationMethod = mkOption {
-          type = types.enum [
-            "none"
-            "basic"
-            "forms"
-            "external"
-          ];
+          type = types.enum (
+            [
+              "none"
+              "basic"
+              "forms"
+              "external"
+            ]
+            ++ optional supportsOidc "oidc"
+          );
           default = "forms";
           description = "Authentication method";
+        };
+
+        oidc = mkOption {
+          type = types.nullOr (
+            types.submodule {
+              options = {
+                authority = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC issuer URL (discovery authority).";
+                };
+                clientId = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC client ID.";
+                };
+                clientSecret = secrets.mkSecretOption {
+                  type = types.nonEmptyStr;
+                  description = "OIDC client secret. Use a runtime secret file, not a Nix string.";
+                };
+                userIdentifier = mkOption {
+                  type = types.nonEmptyStr;
+                  description = "Identifier of the single user allowed to sign in (e.g. the IdP email claim).";
+                };
+                scopes = mkOption {
+                  type = types.nonEmptyStr;
+                  default = "openid profile email";
+                  description = "Space-separated OIDC scopes.";
+                };
+              };
+            }
+          );
+          default = null;
+          description = "OIDC settings.";
         };
 
         authenticationRequired = mkOption {
@@ -273,6 +313,11 @@ in
           assertion = (cfg.config.hostConfig.username == null) == (cfg.config.hostConfig.password == null);
           message = "nixflix.${serviceName}.config.hostConfig: username and password must both be set or both be null";
         }
+        {
+          assertion =
+            (cfg.config.hostConfig.authenticationMethod == "oidc") == (cfg.config.hostConfig.oidc != null);
+          message = "nixflix.${serviceName}.config.hostConfig: oidc settings are required exactly when authenticationMethod is oidc";
+        }
       ];
     })
 
@@ -290,6 +335,16 @@ in
               proxyPassword
               ;
           };
+          # Build a data patch. Secret refs are omitted from JSON and filled from their files at runtime.
+          oidcPatch = optionalAttrs (hc.oidc != null) {
+            oidcAuthority = hc.oidc.authority;
+            oidcClientId = hc.oidc.clientId;
+            oidcClientSecret = hc.oidc.clientSecret;
+            oidcUserIdentifier = hc.oidc.userIdentifier;
+            oidcScopes = hc.oidc.scopes;
+          };
+          oidcSecretArgs = secrets.mkNestedJqSecretArgs oidcPatch;
+          oidcJqPatch = concatStringsSep " | " ([ "$oidcPatch" ] ++ oidcSecretArgs.assignments);
         in
         {
           description = "Configure ${serviceName} via API";
@@ -328,6 +383,9 @@ in
             echo "Building configuration..."
             NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
               ${jqSecrets.flagsString} \
+              ${oidcSecretArgs.flagsString} \
+              --argjson oidcPatch ${escapeShellArg (builtins.toJSON (secrets.stripSecretRefs oidcPatch))} \
+              --slurpfile current <(printf '%s' "$HOST_CONFIG") \
               --argjson id "$CONFIG_ID" \
               --arg allowedHosts "$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.allowedHosts // ""')" \
               --arg bindAddress ${escapeShellArg hc.bindAddress} \
@@ -347,7 +405,7 @@ in
               --arg proxyBypassFilter ${escapeShellArg hc.proxyBypassFilter} \
               --arg certificateValidation ${escapeShellArg hc.certificateValidation} \
               --arg backupFolder ${escapeShellArg hc.backupFolder} \
-              '{
+              '$current[0] + {
                 id: $id,
                 allowedHosts: $allowedHosts,
                 bindAddress: $bindAddress,
@@ -387,7 +445,7 @@ in
                 backupInterval: ${builtins.toString hc.backupInterval},
                 backupRetention: ${builtins.toString hc.backupRetention},
                 trustCgnatIpAddresses: ${boolToString hc.trustCgnatIpAddresses}
-              }')
+              } + (${oidcJqPatch})')
 
             echo "Updating ${capitalizedName} configuration via API..."
             ${
