@@ -155,7 +155,7 @@ in
             name = "LAPSE";
             versions = [
               {
-                version = "2.2.0.0";
+                version = "2.2.1.0";
                 targetAbi = "10.11.0.0";
                 sourceUrl = "https://github.com/Schwponaco-org/lapse-jellyfin-plugin/releases/download/v2.0.1/lapse-jellyfin-plugin-v2.0.1.zip";
               }
@@ -180,8 +180,8 @@ in
               plugins."LAPSE" = {
                 enable = true;
                 package = jellyfinPlugins.fromRepo {
-                  version = "2.2.0.0";
-                  hash = "sha256-fdQ0LC8ya3gTgCcoMVahggJJsV+oeoYD0osKzIbzXIc=";
+                  version = "2.2.1.0";
+                  hash = "sha256-YJaDwg9Ky2tbDTocx5xZ5SwM1SXFtKj5bPa6qX1qwNw=";
                 };
               };
               users.admin = {
@@ -196,7 +196,7 @@ in
     in
     pkgs.runCommand "unit-test-jellyfin-plugin-repo-relaxed-version-check" { } ''
       ${check "Plugin with incompatible target ABI installed with relaxed version check" (
-        lib.hasInfix "LAPSE_2.2.0.0" pluginService.script
+        lib.hasInfix "LAPSE_2.2.1.0" pluginService.script
       )}
 
       echo 'PASS: jellyfin-plugin-repo-relax-version-check' > $out
