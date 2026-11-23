@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Add provider-agnostic OIDC host configuration for Radarr and Sonarr ([#431](https://github.com/kiriwalawren/nixflix/pull/431))
 
+### Fixed
+
+- Fix prowlarr service race conditions
+
 ## [6.0.0] - 2026-11-16
 
 ### Breaking
