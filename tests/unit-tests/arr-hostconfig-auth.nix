@@ -5,6 +5,11 @@
   check,
   ...
 }:
+let
+  testPassword = pkgs.writeText "arr-auth-test-password" "test-only-password";
+  testApiKey = pkgs.writeText "arr-auth-test-api-key" "test-only-api-key";
+  testOidcSecret = pkgs.writeText "arr-oidc-test-secret" "test-only-oidc-secret";
+in
 {
   # hostConfig assertion: username and password must both be set or both be null
   hostconfig-username-requires-password =
@@ -45,7 +50,7 @@
                   config.hostConfig = {
                     port = 8989;
                     username = null;
-                    password._secret = "/run/secrets/sonarr-pass";
+                    password._secret = testPassword;
                   };
                 };
               };
@@ -75,9 +80,9 @@
                   authenticationMethod = "external";
                   authenticationRequired = "disabledForLocalAddresses";
                   username = "admin";
-                  password._secret = "/run/secrets/radarr-pass";
+                  password._secret = testPassword;
                 };
-                apiKey._secret = "/run/secrets/radarr-api";
+                apiKey._secret = testApiKey;
                 rootFolders = [ { path = "/media/movies"; } ];
               };
             };
@@ -107,6 +112,80 @@
       echo 'PASS: hostconfig-drives-settings-auth' > $out
     '';
 
+  hostconfig-oidc =
+    let
+      config = evalConfig [
+        {
+          nixflix = {
+            enable = true;
+            sonarr = {
+              enable = true;
+              config = {
+                apiKey._secret = testApiKey;
+                hostConfig = {
+                  authenticationMethod = "oidc";
+                  trustedNetworks = "192.0.2.1";
+                  username = null;
+                  oidc = {
+                    authority = "https://login.example.org";
+                    clientId = "sonarr";
+                    clientSecret._secret = testOidcSecret;
+                    userIdentifier = "user@example.org";
+                  };
+                };
+              };
+            };
+          };
+        }
+      ];
+      script = config.config.systemd.services.sonarr-config.script;
+    in
+    pkgs.runCommand "unit-test-hostconfig-oidc" { } ''
+      ${check "OIDC authentication is reflected in service environment" (
+        config.config.systemd.services.sonarr.environment.SONARR__AUTH__METHOD == "Oidc"
+      )}
+      ${check "OIDC client secret is read from the supplied file" (
+        pkgs.lib.hasInfix "--rawfile nixflixSecret0Content ${builtins.unsafeDiscardStringContext (toString testOidcSecret)}" script
+      )}
+      ${check "OIDC settings are included in the host configuration PUT" (
+        pkgs.lib.hasInfix "oidcAuthority" script && pkgs.lib.hasInfix ".[\"oidcClientSecret\"] =" script
+      )}
+      ${check "OIDC secret value is not embedded in the service script" (
+        !(pkgs.lib.hasInfix "test-only-oidc-secret" script)
+      )}
+      ${check "reverse proxy is trusted explicitly" (
+        pkgs.lib.hasInfix "\"trustedNetworks\":\"192.0.2.1\"" script
+      )}
+      echo 'PASS: hostconfig-oidc' > $out
+    '';
+
+  hostconfig-oidc-only-supported-services =
+    let
+      config = evalConfig [ ];
+      optionsFor = service: config.options.nixflix.${service}.config.hostConfig.type.getSubOptions [ ];
+    in
+    assertTest "hostconfig-oidc-only-supported-services" (
+      builtins.hasAttr "oidc" (optionsFor "radarr")
+      && builtins.hasAttr "oidc" (optionsFor "sonarr")
+      && builtins.hasAttr "oidc" (optionsFor "sonarr-anime")
+      && !(builtins.hasAttr "oidc" (optionsFor "lidarr"))
+      && !(builtins.hasAttr "oidc" (optionsFor "prowlarr"))
+    );
+
+  hostconfig-oidc-requires-settings =
+    let
+      result =
+        builtins.tryEval
+          (evalConfig [
+            {
+              nixflix.enable = true;
+              nixflix.radarr.enable = true;
+              nixflix.radarr.config.hostConfig.authenticationMethod = "oidc";
+            }
+          ]).config.system.build.toplevel.drvPath;
+    in
+    assertTest "hostconfig-oidc-requires-settings" (!result.success);
+
   # A user should be able to override settings.auth directly (normal priority,
   # no lib.mkForce needed) since the hostConfig-derived value is only mkDefault.
   settings-auth-overrides-hostconfig =
@@ -122,9 +201,9 @@
                   port = 7878;
                   authenticationMethod = "forms";
                   username = "admin";
-                  password._secret = "/run/secrets/radarr-pass";
+                  password._secret = testPassword;
                 };
-                apiKey._secret = "/run/secrets/radarr-api";
+                apiKey._secret = testApiKey;
                 rootFolders = [ { path = "/media/movies"; } ];
               };
               settings.auth.method = "External";
