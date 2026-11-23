@@ -56,6 +56,7 @@ in
       {
         description = "Configure Prowlarr applications via API";
         after = [
+          "prowlarr.service"
           "prowlarr-config.service"
         ]
         ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
@@ -63,6 +64,7 @@ in
         ++ lib.optional config.nixflix.sonarr-anime.enable "sonarr-anime-config.service"
         ++ lib.optional config.nixflix.lidarr.enable "lidarr-config.service";
         requires = [
+          "prowlarr.service"
           "prowlarr-config.service"
         ]
         ++ lib.optional config.nixflix.radarr.enable "radarr-config.service"
