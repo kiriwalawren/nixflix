@@ -11,6 +11,7 @@ let
 in
 {
   imports = [
+    ./aurral
     ./caddy.nix
     ./downloadarr
     ./flaresolverr.nix
